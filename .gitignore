@@ -396,3 +396,9 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Custom
+node_modules/
+.DS_Store
+dist/
+yarn-error.log
