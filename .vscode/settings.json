@@ -2,7 +2,7 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "eslint.enable": true,
-  "eslint.validate": ["javascript", "typescript"],
+  "eslint.validate": ["javascript", "typescript", "typescriptreact", "javascriptreact"],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
