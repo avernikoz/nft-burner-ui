@@ -1,0 +1,7 @@
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.master]
+  command = "GENERATE_SOURCEMAP=false REACT_APP_ENVIRONMENT=production yarn build"
