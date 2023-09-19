@@ -7,7 +7,7 @@ export const main = () => {
   }
 
   // WebGL rendering context
-  const gl = canvas.getContext("webgl2");
+  const gl = canvas.getContext("webgl2", { powerPreference: "high-performance" });
 
   if (!gl) {
     throw new Error("Unable to initialize WebGL.");
