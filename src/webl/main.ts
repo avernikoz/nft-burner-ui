@@ -1,3 +1,6 @@
+import { initShader } from "./initShader";
+import { vertexShader } from "./vertexShader";
+
 export const main = () => {
   // Find the canvas element
   const canvas = document.querySelector("#my-super-id");
@@ -19,39 +22,9 @@ export const main = () => {
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  // A user-defined function to create and compile shaders
-  const initShader = (type: "VERTEX_SHADER" | "FRAGMENT_SHADER", source: string) => {
-    const shader = gl.createShader(gl[type]);
-
-    if (!shader) {
-      throw new Error("Unable to create a shader.");
-    }
-
-    gl.shaderSource(shader, source);
-
-    gl.compileShader(shader);
-
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      throw new Error(`An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`);
-    }
-
-    return shader;
-  };
-
-  // Vertex shader
-  const vertexShader = initShader(
-    "VERTEX_SHADER",
-    `
-    attribute vec4 a_position;
-
-    void main() {
-      gl_Position = a_position;
-    }
-  `,
-  );
-
   // Fragment shader
   const fragmentShader = initShader(
+    gl,
     "FRAGMENT_SHADER",
     `
     void main() {
@@ -67,7 +40,7 @@ export const main = () => {
     throw new Error("Unable to create the program.");
   }
 
-  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, vertexShader(gl));
   gl.attachShader(program, fragmentShader);
 
   gl.linkProgram(program);
