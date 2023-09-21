@@ -544,6 +544,13 @@ export function RenderMain() {
     bMouseDown = false;
   });
 
+  canvas.addEventListener("touchstart", () => {
+    bMouseDown = true;
+  });
+  canvas.addEventListener("touchend", () => {
+    bMouseDown = false;
+  });
+
   if (!canvas) {
     showError("Canvas Error");
   }
