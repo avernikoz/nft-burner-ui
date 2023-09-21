@@ -16,6 +16,11 @@ export function GetMousePosNDC(canvas: HTMLCanvasElement) {
   canvas.addEventListener("mousemove", (event) => {
     getMousePosition(event);
   });
+
+  canvas.addEventListener("touchmove", (event) => {
+    // TODO:
+    // getMousePosition(event);
+  });
 }
 
 export function showError(errorText: string) {
