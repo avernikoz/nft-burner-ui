@@ -1,3 +1,4 @@
+import { APP_ENVIRONMENT } from "../config/config";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUI } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
@@ -551,6 +552,19 @@ export function RenderMain() {
     bMouseDown = false;
   });
 
+  // Set the canvas dimensions to maintain a 1:1 aspect ratio
+  function resizeCanvas() {
+    const size = Math.min(window.innerWidth, window.innerHeight);
+    canvas.width = size;
+    canvas.height = size;
+
+    // You can use the canvas context to draw here if needed
+  }
+
+  // Call the resizeCanvas function initially and whenever the window is resized
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
   if (!canvas) {
     showError("Canvas Error");
   }
@@ -597,12 +611,11 @@ export function RenderMain() {
   FrameBufferCheck(gl, "DebugFBO2");
 
   //GUI
-  DrawUI(GSettings);
+  if (APP_ENVIRONMENT === "development") {
+    DrawUI(GSettings);
+  }
 
   GetMousePosNDC(canvas);
-
-  canvas.width = 1024;
-  canvas.height = 1024;
 
   gl.clearColor(0.05, 0.05, 0.1, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
