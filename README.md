@@ -20,3 +20,7 @@ In debug mode:
 
 - `yarn run start`
 - Run -> Start Debugging (F5) in the VS code
+
+In production mode:
+
+- `yarn run start:prod`
