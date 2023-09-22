@@ -11,6 +11,7 @@
   "scripts": {
     "audit": "yarn audit --groups dependencies",
     "start": "craco start",
+    "start:prod": "REACT_APP_ENVIRONMENT=production craco start",
     "build": "craco build",
     "test": "craco test",
     "format": "prettier --write src/**/*.ts{,x}",
@@ -19,6 +20,7 @@
   },
   "dependencies": {
     "dat.gui": "^0.7.9",
+    "normalize.css": "^8.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "web-vitals": "^2.1.4"
