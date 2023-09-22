@@ -7,7 +7,7 @@ function App() {
     RenderMain();
   }, []);
   return (
-    <div className="App" style={{ width: "100%", height: "100%" }}>
+    <div className="App">
       <canvas id="demo-canvas">
         Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
       </canvas>

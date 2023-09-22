@@ -19,6 +19,10 @@ body,
   flex: 1;
 }
 
+#root {
+  justify-content: center;
+}
+
 input,
 textarea {
   user-select: auto;
