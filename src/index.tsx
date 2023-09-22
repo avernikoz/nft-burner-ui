@@ -6,6 +6,7 @@ import reportWebVitals from "./utils/reportWebVitals";
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
+  // TODO: Return it back, but only in dev mode
   // <React.StrictMode>
   <App />,
   // </React.StrictMode>,
