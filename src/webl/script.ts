@@ -601,8 +601,11 @@ export function RenderMain() {
 
   GetMousePosNDC(canvas);
 
-  canvas.width = 1024;
-  canvas.height = 1024;
+  /* canvas.width = 1024;
+  canvas.height = 1024; */
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
   gl.clearColor(0.05, 0.05, 0.1, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
