@@ -33,7 +33,7 @@ module.exports = {
         indent: "off",
         "linebreak-style": "off",
         "prettier/prettier": [
-            "error",
+            "warn",
             {
                 endOfLine: "auto",
             },

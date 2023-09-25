@@ -2038,6 +2038,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/dat.gui@^0.7.10":
+  version "0.7.10"
+  resolved "https://registry.yarnpkg.com/@types/dat.gui/-/dat.gui-0.7.10.tgz#e61b78c06ea5614397e8c2199fd0cd1afcd66675"
+  integrity sha512-sLifoNrvs4lgJkAUZcTB28dbWy0AM05Yc0BzTqHheK0tRYRVsJHoFLocB5heDbb5amaFLEXna41GOM6IG06oqA==
+
 "@types/eslint-scope@^3.7.3":
   version "3.7.4"
   resolved "https://registry.yarnpkg.com/@types/eslint-scope/-/eslint-scope-3.7.4.tgz#37fc1223f0786c39627068a12e94d6e6fc61de16"
@@ -7009,6 +7014,11 @@ normalize-url@^6.0.1:
   version "6.1.0"
   resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-6.1.0.tgz#40d0885b535deffe3f3147bec877d05fe4c5668a"
   integrity sha512-DlL+XwOy3NxAQ8xuC0okPgK46iuVNAK01YN7RueYBqqFeGsBjV9XmCAzAdgt+667bCl5kPh9EqKKDwnaPG1I7A==
+
+normalize.css@^8.0.1:
+  version "8.0.1"
+  resolved "https://registry.yarnpkg.com/normalize.css/-/normalize.css-8.0.1.tgz#9b98a208738b9cc2634caacbc42d131c97487bf3"
+  integrity sha512-qizSNPO93t1YUuUhP22btGOo3chcvDFqFaj2TRybP0DMxkHOCTYwp3n34fel4a31ORXy4m1Xq0Gyqpb5m33qIg==
 
 npm-run-path@^4.0.1:
   version "4.0.1"

@@ -4,4 +4,4 @@
   status = 200
 
 [context.master]
-  command = "GENERATE_SOURCEMAP=false REACT_APP_ENVIRONMENT=production yarn build"
+  command = "GENERATE_SOURCEMAP=false yarn build"
