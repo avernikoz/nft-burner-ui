@@ -1,5 +1,5 @@
 export function GetParticleUpdateShaderVS() {
-  return /* glsl */ `#version 300 es
+    return /* glsl */ `#version 300 es
   
 	  precision highp float;
   

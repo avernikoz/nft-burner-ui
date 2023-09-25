@@ -1,9 +1,9 @@
 export const getWebGLProgram = (gl: WebGL2RenderingContext) => {
-  const shaderProgram = gl.createProgram();
+    const shaderProgram = gl.createProgram();
 
-  if (shaderProgram === null) {
-    throw new Error("Shader program is null");
-  }
+    if (shaderProgram === null) {
+        throw new Error("Shader program is null");
+    }
 
-  return shaderProgram;
+    return shaderProgram;
 };
