@@ -11,6 +11,7 @@ import { CreateTexture } from "./resourcesUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { getWebGLProgram } from "./helpers/getWebGLProgram";
 import { GTime, showError } from "./utils";
+import { APP_ENVIRONMENT } from "../config/config";
 
 // ====================================================== SHADERS END ======================================================
 
@@ -447,13 +448,15 @@ export class ParticlesEmitter {
   }
 
   DrawUI(name: string) {
-    const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-    const folder = GDatGUI.addFolder(name);
-    folder.open();
-    folder
-      .add({ NumberOfActiveParticles: this.NumActiveParticles }, "NumberOfActiveParticles", 0, 65000)
-      .step(1)
-      .listen();
+    if (APP_ENVIRONMENT === "development") {
+      const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
+      const folder = GDatGUI.addFolder(name);
+      folder.open();
+      folder
+        .add({ NumberOfActiveParticles: this.NumActiveParticles }, "NumberOfActiveParticles", 0, 65000)
+        .step(1)
+        .listen();
+    }
   }
 
   private GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
