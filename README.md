@@ -10,11 +10,15 @@ The NFT Burner UI is a user-friendly, closed-source web application designed to 
 4. Install prettier extension (https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 5. Install WebGL GLSL Editor extenstion (https://marketplace.visualstudio.com/items?itemName=raczzalan.webgl-glsl-editor)
 
+# How to install dependencies
+
+-   `yarn install` (should be called in the root of the repo)
+
 # How to run
 
 Normally:
 
-- `yarn run start`
+-   `yarn run start`
 
 In debug mode:
 
