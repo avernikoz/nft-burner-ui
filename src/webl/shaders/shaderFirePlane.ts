@@ -120,8 +120,8 @@ export const ShaderSourceFireUpdatePS = /* glsl */ `#version 300 es
 		float curFuel = texelFetch(FuelTexture, SampleCoord, 0).r;
 
 		const float GFireSpreadSpeed = 10.;
-		const float GFuelConsumeSpeed = 3.5f;
-		const float GFireDissipationSpeed = 2.0f;
+		const float GFuelConsumeSpeed = 2.5f;
+		const float GFireDissipationSpeed = 1.0f;
 
 		if(curFuel > 0.0)
 		{

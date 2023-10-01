@@ -2,9 +2,9 @@ import { APP_ENVIRONMENT } from "../config/config";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUI } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
-import { EmberParticlesDesc } from "./particlesConfig";
+import { FlameParticlesDesc } from "./particlesConfig";
 import { CreateTexture, CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
-import { CreateShaderProgramVSPS } from "./shaderUtils";
+import { CheckGL, CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import {
     ShaderSourceApplyFireVS,
@@ -493,57 +493,6 @@ const GSettings = {
     bRunSimulation: true,
 };
 
-// // eslint-disable-next-line @typescript-eslint/no-unused-vars
-// function RenderLoop({ gl, canvas, bMouseDown, PresentPass, FirePlanePass, EmberParticles }: RenderLoopArgType) {
-//   UpdateTime();
-
-//   if (bMouseDown) {
-//     const curMouseDir = { x: 0, y: 0 };
-//     curMouseDir.x = CGConstants.MousePosNDC.x - CGConstants.PrevMousePosNDC.x;
-//     curMouseDir.y = CGConstants.MousePosNDC.y - CGConstants.PrevMousePosNDC.y;
-//     const mouseDirLength = MathGetVectorLength(curMouseDir);
-//     let applierSize;
-//     if (CGConstants.bMouseMoved == false) {
-//       applierSize = 0.005;
-//       curMouseDir.x = 0;
-//       curMouseDir.y = 1;
-//     } else {
-//       applierSize = MathClamp(mouseDirLength * 0.5, 0.001, 0.05);
-//     }
-//     FirePlanePass.ApplyFire(gl, CGConstants.MousePosNDC, applierSize, MathVectorNormalize(curMouseDir));
-//   }
-
-//   FirePlanePass.UpdateFire(gl);
-
-//   //PresentPass.Execute(gl, canvas, RFirePlanePass.FireTexture[RFirePlanePass.CurrentFireTextureIndex]);
-//   //PresentPass.Execute(gl, canvas, RFirePlanePass.FuelTexture[RFirePlanePass.CurrentFuelTextureIndex]);
-
-//   EmberParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-
-//   gl.viewport(0, 0, canvas.width, canvas.height);
-//   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-//   gl.clearColor(0.05, 0.05, 0.1, 1);
-//   gl.clear(gl.COLOR_BUFFER_BIT);
-
-//   //PresentPass.Execute(gl, canvas, FirePlanePass.GetCurFireTexture());
-//   FirePlanePass.VisualizeFire(gl, null, { x: canvas.width, y: canvas.height });
-
-//   EmberParticles.Render(gl);
-
-//   /* gl.viewport(0, 0, DebugRTSize.x, DebugRTSize.y);
-//   gl.bindFramebuffer(gl.FRAMEBUFFER, DebugFBO);
-//   gl.clearColor(0.05,0.05,0.1,1.);
-//   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-//   PlaneDrawingPass.Execute(gl, CGConstants.PosOffset, 0.25);
-//   PresentPass.Execute(gl, canvas, DebugRT); */
-
-//   CGConstants.bMouseMoved = false;
-
-//   if (CheckGL(gl) && GSettings.bRunSimulation) {
-//     requestAnimationFrame(RenderLoop({ gl, canvas, bMouseDown, PresentPass, FirePlanePass, EmberParticles }));
-//   }
-// }
-
 export function RenderMain() {
     const canvas = getCanvas();
 
@@ -634,8 +583,7 @@ export function RenderMain() {
     const PresentPass = new RPresentPass(gl);
     const FirePlanePass = new RFirePlanePass(gl);
 
-    //var ParticlesPass = new RParticlesPassMain(gl);
-    const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
+    const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
@@ -663,7 +611,7 @@ export function RenderMain() {
             //PresentPass.Execute(gl, canvas, RFirePlanePass.FireTexture[RFirePlanePass.CurrentFireTextureIndex]);
             //PresentPass.Execute(gl, canvas, RFirePlanePass.FuelTexture[RFirePlanePass.CurrentFuelTextureIndex]);
 
-            EmberParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+            FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
             gl.viewport(0, 0, canvas.width, canvas.height);
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -673,20 +621,21 @@ export function RenderMain() {
             //PresentPass.Execute(gl, canvas, FirePlanePass.GetCurFireTexture());
             FirePlanePass.VisualizeFire(gl, null, { x: canvas.width, y: canvas.height });
 
-            EmberParticles.Render(gl);
+            FlameParticles.Render(gl);
 
             /* gl.viewport(0, 0, DebugRTSize.x, DebugRTSize.y);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, DebugFBO);
-  gl.clearColor(0.05,0.05,0.1,1.);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  PlaneDrawingPass.Execute(gl, CGConstants.PosOffset, 0.25);
-  PresentPass.Execute(gl, canvas, DebugRT); */
+  			gl.bindFramebuffer(gl.FRAMEBUFFER, DebugFBO);
+  			gl.clearColor(0.05,0.05,0.1,1.);
+  			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  			PlaneDrawingPass.Execute(gl, CGConstants.PosOffset, 0.25);
+  			PresentPass.Execute(gl, canvas, DebugRT); */
 
             CGConstants.bMouseMoved = false;
 
-            //if (CheckGL(gl) && GSettings.bRunSimulation) {
             if (gl !== null) {
-                requestAnimationFrame(RenderLoop);
+                if (CheckGL(gl) && GSettings.bRunSimulation) {
+                    requestAnimationFrame(RenderLoop);
+                }
             }
         }
 
@@ -697,15 +646,6 @@ export function RenderMain() {
         RenderLoop();
     }
 }
-
-export type RenderLoopArgType = {
-    gl: WebGL2RenderingContext;
-    bMouseDown: boolean;
-    canvas: HTMLCanvasElement;
-    PresentPass: RPresentPass;
-    FirePlanePass: RFirePlanePass;
-    EmberParticles: ParticlesEmitter;
-};
 
 try {
     RenderMain();

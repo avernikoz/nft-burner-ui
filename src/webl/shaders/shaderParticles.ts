@@ -171,37 +171,7 @@ export const ParticleUpdatePS = /* glsl */ `#version 300 es
 	  precision highp float;
 	  void main()
 	  {}`;
-/* const ParticleRenderVS = `#version 300 es
-  
-	  precision highp float;
-  
-	  layout(location = 2) in vec2 inPosition;
-	  layout(location = 3) in float inAge;
-  
-	  flat out float interpolatorAge;
-	  out vec2 interpolatorTexCoords;
-  
-	  //check if particle should never be drawn again
-	  bool IsParticleDead()
-	  {
-		  return (inAge < 0.f);
-	  }
-  
-	  void main()
-	  {
-		  if(IsParticleDead())
-		  {
-			  gl_Position = vec4(-10, -10, -10, 1.0);
-		  }
-		  else
-		  {
-			  gl_PointSize = 2.0;
-				gl_Position = vec4(inPosition.xy, 0.0, 1.0);
-  
-			  interpolatorAge = inAge / 10.;
-		  }
-		  
-	  }`; */
+
 export const ParticleRenderInstancedVS = /* glsl */ `#version 300 es
   
 	  precision highp float;
@@ -213,6 +183,9 @@ export const ParticleRenderInstancedVS = /* glsl */ `#version 300 es
 	  layout(location = 3) in float inAge;
   
 	  uniform float ParticleLife;
+	  uniform float NumLoops;
+	  uniform float CurTime;
+	  uniform sampler2D NoiseTexture;
   
 	  flat out float interpolatorAge;
 	  flat out float interpolatorFrameIndex;
@@ -222,6 +195,12 @@ export const ParticleRenderInstancedVS = /* glsl */ `#version 300 es
 	  bool IsParticleDead()
 	  {
 		  return (inAge < 0.f);
+	  }
+
+	  float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	  {
+		  ///Translate to origin, scale by ranges ratio, translate to new position
+		  return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
 	  }
   
 	  void main()
@@ -240,32 +219,66 @@ export const ParticleRenderInstancedVS = /* glsl */ `#version 300 es
 				  uvLocal.x = 1.f - uvLocal.x;
 			  }
 		  #endif
-  
+
 			  interpolatorTexCoords = uvLocal;
 			  float ageNorm = inAge / ParticleLife;
 			  interpolatorAge = ageNorm;
+
+			  float animationParameterNorm = ageNorm;
+			  if(NumLoops > 1.f)
+			  {
+				animationParameterNorm = fract(inAge / (ParticleLife / NumLoops));
+			  }
   
 			  const float TotalFlipFrames = 16.f * 4.f;
-			  interpolatorFrameIndex = (ageNorm * TotalFlipFrames);
-  
-  
-			  ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
-			  
+			  interpolatorFrameIndex = (animationParameterNorm * TotalFlipFrames);
   
   
 			  vec2 pos = VertexBuffer.xy;
+
 			  //scale
-			  const float scale = 0.075f;
+			  float scale = 0.075f;
+			#if 1 //NOISE-DRIVEN SIZE
+			  vec2 noiseUV = vec2(CurTime * 0.17f + 0.23f * float(gl_InstanceID), CurTime * 0.09 + 0.17 * float(gl_InstanceID));
+			  noiseUV *= 0.1f;
+			  vec2 noise = texture(NoiseTexture, noiseUV.xy).rg;
+			  //noise.r = clamp(MapToRange(noise.r, 0.4, 0.6, 0.f, 1.f), 0.f, 2.f);
+			  noise.r = clamp(MapToRange(noise.r, 0.2, 0.8, 0.f, 1.f), 0.f, 2.f);
+
+			  const float scaleAmount = 0.2f;
+			  scale = noise.r * scaleAmount;
+
+			  if(scale < 0.35 * scaleAmount)
+			  {
+				scale = 0.f;
+			  }
+			#endif
+			  
 			  pos.xy *= scale;
 			  //offset to origin
-			  pos.y += scale;
-			  pos.y *= 2.5f;
+			  const float scaleOffsetAmount = 0.9f;
+			  pos.y += scale * scaleOffsetAmount;
+			  //scale
+			  pos.y *= 3.0f;
+
+			  //fade in-out
+			#if 1 //SINGLE CURVE
+			  ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
+			  pos.x *= clamp(ageNorm, 0.1, 1.f);
 			  pos.y *= ageNorm;
+			#else
+
+			  float normAgeFadeInPow = sqrt(1.f - pow(1.f - ageNorm, 8.f));
+			  pos.xy *= normAgeFadeInPow;
+
+			  float normAgeFadeOutPow = 1.f - clamp(pow(ageNorm, 4.f), 0.f, 1.f);
+			  pos.xy *= normAgeFadeOutPow;
+			#endif
+
 			  //translate
 			  pos.xy += inPosition;
   
-				gl_Position = vec4(pos.xy, 0.0, 1.0);
-  
+			  gl_Position = vec4(pos.xy, 0.0, 1.0);
 			  
 		  }
 		  
@@ -291,6 +304,8 @@ export const ParticleRenderColorPS = /* glsl */ `#version 300 es
 		  {
 			  discard;
 		  }
+
+		  //OutColor = vec4(0.5, 0.5, 0.5, 1); return;
   
 		  uint flipBookIndex1D = uint(floor(interpolatorFrameIndex));
 		  uvec2 FlipBookIndex2D;
@@ -309,7 +324,7 @@ export const ParticleRenderColorPS = /* glsl */ `#version 300 es
 		  //colorFinal.rgb *= flameColor * 1.5;
 		  
 		  float ageNormalized = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
-		  //vec3 colorFinal = vec3((1.f - interpolatorAge) + 0.5,0.5,0.5) * ageNormalized;
+		  //colorFinal.rgb *= colorFinal.a;
   
 		  OutColor = vec4(colorFinal.rgb,1);
 	  }`;

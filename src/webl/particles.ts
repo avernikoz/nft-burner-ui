@@ -21,6 +21,7 @@ const GParticleUpdatePassDesc = {
         Velocity: 1,
         Age: 2,
         DefaultPosition: 3,
+        Size: 4,
     },
 };
 
@@ -30,6 +31,7 @@ const GParticleRenderPassDesc = {
         TexCoordsBuffer: 1,
         Position: 2,
         Age: 3,
+        Size: 4,
     },
 };
 
@@ -40,6 +42,8 @@ export class ParticlesEmitter {
 
     public ParticleLife;
 
+    public NumLoops;
+
     public TimeBetweenParticleSpawn: number;
 
     public NumActiveParticles: number;
@@ -47,6 +51,8 @@ export class ParticlesEmitter {
     public InitialPositionsBufferGPU;
 
     public PositionsBufferGPU;
+
+    //public SizeBufferGPU;
 
     public VelocitiesBufferGPU;
 
@@ -80,11 +86,18 @@ export class ParticlesEmitter {
 
     constructor(
         gl: WebGL2RenderingContext,
-        { inName = "Particles", inNumSpawners2D = 128, inNumParticlesPerSpawner = 8, inParticleLife = 10 },
+        {
+            inName = "Particles",
+            inNumSpawners2D = 128,
+            inNumParticlesPerSpawner = 8,
+            inParticleLife = 10,
+            inNumLoops = 1,
+        },
     ) {
         this.NumSpawners2D = inNumSpawners2D;
         this.NumParticlesPerSpawner = inNumParticlesPerSpawner;
         this.ParticleLife = inParticleLife;
+        this.NumLoops = inNumLoops;
 
         this.TimeBetweenParticleSpawn = this.ParticleLife / this.NumParticlesPerSpawner;
 
@@ -112,7 +125,7 @@ export class ParticlesEmitter {
         gl.bufferData(gl.ARRAY_BUFFER, initialPositionsBufferCPU, gl.STATIC_DRAW);
 
         //========================================================= Allocate Particle Data
-        //Position, Velocity, Age
+        //Position, Velocity, Age, Size
         {
             //Position
             const positionsBufferCPU = new Float32Array(this.NumActiveParticles * 2);
@@ -432,8 +445,14 @@ export class ParticlesEmitter {
         gl.bindTexture(gl.TEXTURE_2D, this.FlameColorLUTTexture);
         gl.uniform1i(this.ParticleRenderUniformParametersLocationList.FlameColorLUT, 5);
 
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
+        gl.uniform1i(this.ParticleRenderUniformParametersLocationList.NoiseTexture, 1);
+
         //Constants
         gl.uniform1f(this.ParticleRenderUniformParametersLocationList.ParticleLife, this.ParticleLife);
+        gl.uniform1f(this.ParticleRenderUniformParametersLocationList.NumLoops, this.NumLoops);
+        gl.uniform1f(this.UniformParametersLocationList.CurTime, GTime.Cur);
 
         /* Set up blending */
         gl.enable(gl.BLEND);
@@ -464,6 +483,7 @@ export class ParticlesEmitter {
             DeltaTime: gl.getUniformLocation(shaderProgram, "DeltaTime"),
             CurTime: gl.getUniformLocation(shaderProgram, "CurTime"),
             ParticleLife: gl.getUniformLocation(shaderProgram, "ParticleLife"),
+            NumLoops: gl.getUniformLocation(shaderProgram, "NumLoops"),
             NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
             NoiseTextureHQ: gl.getUniformLocation(shaderProgram, "NoiseTextureHQ"),
             FireTexture: gl.getUniformLocation(shaderProgram, "FireTexture"),
