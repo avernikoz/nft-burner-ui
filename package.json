@@ -19,6 +19,11 @@
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "@solana/wallet-adapter-base": "^0.9.23",
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/wallet-adapter-react-ui": "^0.9.34",
+    "@solana/wallet-adapter-wallets": "^0.19.22",
+    "@solana/web3.js": "^1.78.5",
     "dat.gui": "^0.7.9",
     "normalize.css": "^8.0.1",
     "react": "^18.2.0",
