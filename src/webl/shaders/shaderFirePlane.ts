@@ -52,7 +52,7 @@ export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 		//vec4 Color = texture(ColorTexture, texCoords.xy).r;
 
 		//Color.r = clamp((Color.r - 0.4) * 100.f, 0.5f, 1.f);
-		const float AppliedFireIntensity = 0.5f;
+		const float AppliedFireIntensity = 1.0f;
 		float Fire = AppliedFireIntensity;
 
 		// Calculate the distance from the center
@@ -62,7 +62,7 @@ export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 		float radius = 0.555; // Adjust this value to change the circle size	
 		// Create a circle mask
 		float circleMask = smoothstep(radius, radius - 0.01, distance);	
-		Fire *= circleMask;
+		Fire *= (1.f - distance);
 
 
 		OutColor = Fire;
@@ -80,23 +80,7 @@ export const ShaderSourceFullscreenPassVS = /* glsl */ `#version 300 es
 		gl_Position = vec4(VertexBuffer.xy, 0.0, 1.0);
 		vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
 	}`;
-export const ShaderSourcePresentPassPS = /* glsl */ `#version 300 es
-	
-	precision highp float;
-	precision highp sampler2D;
 
-	out vec4 OutColor;
-
-	uniform sampler2D ColorTexture;
-
-	in vec2 vsOutTexCoords;
-
-	void main()
-	{
-		vec2 texCoords = vsOutTexCoords;
-		vec4 Color = texture(ColorTexture, texCoords.xy);
-		OutColor = vec4(Color.rgb, 1);
-	}`;
 export const ShaderSourceFireUpdatePS = /* glsl */ `#version 300 es
 	
 	precision highp float;
@@ -255,6 +239,7 @@ export const ShaderSourceFireUpdatePS = /* glsl */ `#version 300 es
 		OutFire = curFire;
 
 	}`;
+
 export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 	
 	precision highp float;
@@ -288,11 +273,12 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 
 		//vec3 imageColor = texture(ImageTexture, vsOutTexCoords.xy).rgb;
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
-		vec3 imageColor = texture(ImageTexture, flippedUVs.xy).rgb * 0.75;
+		vec3 imageColor = texture(ImageTexture, flippedUVs.xy).rgb * 0.5;
 
 		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * 0.25;
 		float afterBurnNoise = texture(AfterBurnTexture, vsOutTexCoords.xy).r;
-		ashesColor.r += (afterBurnNoise * 1.1f);
+		vec3 embersColor = vec3(afterBurnNoise, afterBurnNoise * 0.2, afterBurnNoise * 0.1);
+		ashesColor.rgb += embersColor * 10.f;
 
 		vec3 paperColor= ashesColor;
 
@@ -308,6 +294,11 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 		fireColor = texture(FlameColorLUT, vec2(uvu, 0.5)).rgb;
 		//fireColor = vec3(uvu,uvu,uvu);
 	#else
+
+		const float FireBrightnessScale = 0.5f;
+
+		curFire *= FireBrightnessScale;
+
 		vec3 brightFlameColor = vec3(curFire, curFire * 0.2, curFire * 0.1);
 		vec3 lowFlameColor = vec3(curFire * 0.1f, curFire * 0.2, curFire);
 		if(curFire > 1.f)
@@ -320,6 +311,9 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 			//float t = curFire;
 			fireColor = mix(lowFlameColor, brightFlameColor, t);
 		}
+
+		
+
 	#endif
 		
 

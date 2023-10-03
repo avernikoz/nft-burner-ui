@@ -16,3 +16,8 @@ export const CommonRenderingResources: {
     PlaneShapeTexCoordsBufferGPU: null,
     PlaneShapeVAO: null,
 };
+
+export const CommonVertexAttributeLocationList = {
+    VertexBuffer: 0,
+    TexCoordsBuffer: 1,
+};

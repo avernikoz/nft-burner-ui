@@ -185,6 +185,8 @@ export const ParticleRenderInstancedVS = /* glsl */ `#version 300 es
 	  uniform float ParticleLife;
 	  uniform float NumLoops;
 	  uniform float CurTime;
+	  uniform vec2 FlipbookSizeRC;
+
 	  uniform sampler2D NoiseTexture;
   
 	  flat out float interpolatorAge;
@@ -230,7 +232,7 @@ export const ParticleRenderInstancedVS = /* glsl */ `#version 300 es
 				animationParameterNorm = fract(inAge / (ParticleLife / NumLoops));
 			  }
   
-			  const float TotalFlipFrames = 16.f * 4.f;
+			  float TotalFlipFrames = FlipbookSizeRC.x * FlipbookSizeRC.y;
 			  interpolatorFrameIndex = (animationParameterNorm * TotalFlipFrames);
   
   
@@ -240,8 +242,8 @@ export const ParticleRenderInstancedVS = /* glsl */ `#version 300 es
 			  float scale = 0.075f;
 			#if 1 //NOISE-DRIVEN SIZE
 			  vec2 noiseUV = vec2(CurTime * 0.17f + 0.23f * float(gl_InstanceID), CurTime * 0.09 + 0.17 * float(gl_InstanceID));
-			  noiseUV *= 0.1f;
-			  vec2 noise = texture(NoiseTexture, noiseUV.xy).rg;
+			  //noiseUV *= 0.1f;
+			  vec2 noise = textureLod(NoiseTexture, noiseUV.xy, 0.f).rg;
 			  //noise.r = clamp(MapToRange(noise.r, 0.4, 0.6, 0.f, 1.f), 0.f, 2.f);
 			  noise.r = clamp(MapToRange(noise.r, 0.2, 0.8, 0.f, 1.f), 0.f, 2.f);
 
@@ -250,7 +252,8 @@ export const ParticleRenderInstancedVS = /* glsl */ `#version 300 es
 
 			  if(scale < 0.35 * scaleAmount)
 			  {
-				scale = 0.f;
+				gl_Position = vec4(-10, -10, -10, 1.0);
+				return;
 			  }
 			#endif
 			  
@@ -267,7 +270,6 @@ export const ParticleRenderInstancedVS = /* glsl */ `#version 300 es
 			  pos.x *= clamp(ageNorm, 0.1, 1.f);
 			  pos.y *= ageNorm;
 			#else
-
 			  float normAgeFadeInPow = sqrt(1.f - pow(1.f - ageNorm, 8.f));
 			  pos.xy *= normAgeFadeInPow;
 
@@ -296,7 +298,8 @@ export const ParticleRenderColorPS = /* glsl */ `#version 300 es
   
 	  uniform sampler2D ColorTexture;
 	  uniform sampler2D FlameColorLUT;
-  
+	  
+	  uniform vec2 FlipbookSizeRC;
   
 	  void main()
 	  {
@@ -309,22 +312,22 @@ export const ParticleRenderColorPS = /* glsl */ `#version 300 es
   
 		  uint flipBookIndex1D = uint(floor(interpolatorFrameIndex));
 		  uvec2 FlipBookIndex2D;
-		  FlipBookIndex2D.x = (flipBookIndex1D % 16u);
-		  FlipBookIndex2D.y = (flipBookIndex1D / 16u);
+		  FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
+		  FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
   
-		  vec2 frameSize = 1.f / (vec2(16.f, 4.f));
+		  vec2 frameSize = 1.f / (FlipbookSizeRC);
 		  vec2 uv = interpolatorTexCoords * frameSize;
 		  uv.x += (frameSize.x * float(FlipBookIndex2D.x));
 		  uv.y += (frameSize.y * float(FlipBookIndex2D.y));
 		  
-		  
 		  vec4 colorFinal = texture(ColorTexture, uv).rgba;
-  
-		  //vec3 flameColor = texture(FlameColorLUT, vec2(1.f - interpolatorTexCoords.y, 0.5)).rgb;
-		  //colorFinal.rgb *= flameColor * 1.5;
+
+		  /* 
+		  vec3 flameColor = texture(FlameColorLUT, vec2(1.f - interpolatorTexCoords.y, 0.5)).rgb;
+		  colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 3.5, interpolatorAge); */
 		  
-		  float ageNormalized = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
-		  //colorFinal.rgb *= colorFinal.a;
+		  //float ageNormalized = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
+		  //colorFinal.rgb *= (1.f - interpolatorAge);
   
 		  OutColor = vec4(colorFinal.rgb,1);
 	  }`;

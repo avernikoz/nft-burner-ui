@@ -1,56 +1,18 @@
 import { APP_ENVIRONMENT } from "../config/config";
+import { RFirePlanePass } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
-import { DrawUI } from "./helpers/gui";
+import { DrawUI, DrawUISingleton } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
 import { FlameParticlesDesc } from "./particlesConfig";
-import { CreateTexture, CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
-import { CheckGL, CreateShaderProgramVSPS } from "./shaderUtils";
-import { CommonRenderingResources } from "./shaders/shaderConfig";
-import {
-    ShaderSourceApplyFireVS,
-    ShaderSourceApplyFirePS,
-    ShaderSourceFullscreenPassVS,
-    ShaderSourcePresentPassPS,
-    ShaderSourceFireUpdatePS,
-    ShaderSourceFireVisualizerPS,
-} from "./shaders/shaderFirePlane";
+import { RBloomPass, RBlurPass, RCombinerPass, RPresentPass } from "./postprocess";
+import { CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
+import { CheckGL } from "./shaderUtils";
+import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
+
 import { CGConstants } from "./systemValues";
 
 import { Vector2 } from "./types";
-import {
-    GTime,
-    GetMousePosNDC,
-    MathClamp,
-    MathGetVectorLength,
-    MathVectorNormalize,
-    UpdateTime,
-    showError,
-} from "./utils";
-
-const VertexAttributeLocationList = {
-    VertexBuffer: 0,
-    TexCoordsBuffer: 1,
-};
-
-function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
-    const params = {
-        GPositionOffset: gl.getUniformLocation(shaderProgram, "GPositionOffset"),
-        SizeScale: gl.getUniformLocation(shaderProgram, "SizeScale"),
-        VelocityDir: gl.getUniformLocation(shaderProgram, "VelocityDir"),
-        ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
-        FireTexture: gl.getUniformLocation(shaderProgram, "FireTexture"),
-        FuelTexture: gl.getUniformLocation(shaderProgram, "FuelTexture"),
-        FlameColorLUT: gl.getUniformLocation(shaderProgram, "FlameColorLUT"),
-        ImageTexture: gl.getUniformLocation(shaderProgram, "ImageTexture"),
-        AshTexture: gl.getUniformLocation(shaderProgram, "AshTexture"),
-        AfterBurnTexture: gl.getUniformLocation(shaderProgram, "AfterBurnTexture"),
-        DeltaTime: gl.getUniformLocation(shaderProgram, "DeltaTime"),
-        NoiseTextureInterpolator: gl.getUniformLocation(shaderProgram, "NoiseTextureInterpolator"),
-        NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
-    };
-    return params;
-}
-// ====================================================== SHADERS END ======================================================
+import { GetMousePosNDC, MathClamp, MathGetVectorLength, MathVectorNormalize, UpdateTime, showError } from "./utils";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -73,11 +35,11 @@ function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
             CommonRenderingResources.FullscreenPassVAO = gl.createVertexArray();
             gl.bindVertexArray(CommonRenderingResources.FullscreenPassVAO);
             //Vertex Buffer Bind
-            gl.enableVertexAttribArray(VertexAttributeLocationList.VertexBuffer); //turn on attribute
+            gl.enableVertexAttribArray(CommonVertexAttributeLocationList.VertexBuffer); //turn on attribute
             //bind resource to this attribute
             gl.bindBuffer(gl.ARRAY_BUFFER, CommonRenderingResources.FullscreenPassVertexBufferGPU);
             gl.vertexAttribPointer(
-                VertexAttributeLocationList.VertexBuffer,
+                CommonVertexAttributeLocationList.VertexBuffer,
                 2,
                 gl.FLOAT,
                 false,
@@ -116,9 +78,9 @@ function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
         //Vertex Buffer Bind
         //bind resource to this attribute
         gl.bindBuffer(gl.ARRAY_BUFFER, CommonRenderingResources.PlaneShapeVertexBufferGPU);
-        gl.enableVertexAttribArray(VertexAttributeLocationList.VertexBuffer); //turn on attribute
+        gl.enableVertexAttribArray(CommonVertexAttributeLocationList.VertexBuffer); //turn on attribute
         gl.vertexAttribPointer(
-            VertexAttributeLocationList.VertexBuffer,
+            CommonVertexAttributeLocationList.VertexBuffer,
             2,
             gl.FLOAT,
             false,
@@ -129,9 +91,9 @@ function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
         //TexCoords Buffer Bind
         //bind resource to this attribute
         gl.bindBuffer(gl.ARRAY_BUFFER, CommonRenderingResources.PlaneShapeTexCoordsBufferGPU);
-        gl.enableVertexAttribArray(VertexAttributeLocationList.TexCoordsBuffer); //turn on attribute
+        gl.enableVertexAttribArray(CommonVertexAttributeLocationList.TexCoordsBuffer); //turn on attribute
         gl.vertexAttribPointer(
-            VertexAttributeLocationList.TexCoordsBuffer,
+            CommonVertexAttributeLocationList.TexCoordsBuffer,
             2,
             gl.FLOAT,
             false,
@@ -141,357 +103,38 @@ function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     }
 }
 
-class RPresentPass {
-    public shaderProgram;
-
-    public UniformParametersLocationList;
-
-    constructor(gl: WebGL2RenderingContext) {
-        //Create Shader Program
-        this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceFullscreenPassVS, ShaderSourcePresentPassPS);
-
-        //Shader Parameters
-        this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
-    }
-
-    Execute(
-        gl: WebGL2RenderingContext,
-        canvas: HTMLCanvasElement,
-        sourceTexture: WebGLTexture,
-        destFramebuffer: WebGLFramebuffer | null,
-        destSize: Vector2,
-    ) {
-        if (destFramebuffer) {
-            gl.viewport(0, 0, destSize.x, destSize.y);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, destFramebuffer);
-        } else {
-            //Final present
-            gl.viewport(0, 0, canvas.width, canvas.height);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-            gl.clearColor(0.05, 0.05, 0.1, 1);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-        }
-
-        gl.bindVertexArray(CommonRenderingResources.FullscreenPassVAO);
-
-        gl.useProgram(this.shaderProgram);
-
-        //Constants
-
-        //Textures
-        //TODO: The source texture might be already bound to texture unit
-        gl.activeTexture(gl.TEXTURE0 + 1);
-        gl.bindTexture(gl.TEXTURE_2D, sourceTexture);
-        gl.uniform1i(this.UniformParametersLocationList.ColorTexture, 1);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
-}
-
-class RApplyFireRenderPass {
-    public colorTexture;
-
-    public shaderProgram;
-
-    public UniformParametersLocationList;
-
-    constructor(gl: WebGL2RenderingContext, imageSrc: string | null) {
-        //Create Texture
-        this.colorTexture = null;
-
-        //Create Shader Program
-        if (imageSrc != null) {
-            this.colorTexture = CreateTexture(gl, 0, imageSrc);
-        }
-
-        this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceApplyFireVS, ShaderSourceApplyFirePS);
-
-        //Shader Parameters
-        this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
-    }
-
-    Execute(gl: WebGL2RenderingContext, positionOffset: Vector2, sizeScale: number, velDirection: Vector2) {
-        gl.useProgram(this.shaderProgram);
-        //VAO
-        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
-        //Textures
-        gl.activeTexture(gl.TEXTURE0 + 0);
-        gl.uniform1i(this.UniformParametersLocationList.ColorTexture, 0);
-        //Bind Constants
-        gl.uniform2f(this.UniformParametersLocationList.GPositionOffset, positionOffset.x, positionOffset.y);
-        gl.uniform1f(this.UniformParametersLocationList.SizeScale, sizeScale);
-        gl.uniform2f(this.UniformParametersLocationList.VelocityDir, velDirection.x, velDirection.y);
-
-        /* Set up blending */
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.ONE, gl.ONE);
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.disable(gl.BLEND);
-    }
-}
-
-class RFirePlanePass {
-    public RenderTargetSize;
-
-    public FrameBuffer;
-
-    public FireTexture;
-
-    public FuelTexture;
-
-    public CurrentFireTextureIndex: number;
-
-    public CurrentFuelTextureIndex: number;
-
-    PlaneDrawingPass: RApplyFireRenderPass;
-
-    shaderProgramFireUpdate: WebGLProgram;
-
-    UniformParametersLocationListFireUpdate: {
-        GPositionOffset: WebGLUniformLocation | null;
-        SizeScale: WebGLUniformLocation | null;
-        VelocityDir: WebGLUniformLocation | null;
-        ColorTexture: WebGLUniformLocation | null;
-        FireTexture: WebGLUniformLocation | null;
-        FuelTexture: WebGLUniformLocation | null;
-        FlameColorLUT: WebGLUniformLocation | null;
-        ImageTexture: WebGLUniformLocation | null;
-        AshTexture: WebGLUniformLocation | null;
-        AfterBurnTexture: WebGLUniformLocation | null;
-        DeltaTime: WebGLUniformLocation | null;
-        NoiseTextureInterpolator: WebGLUniformLocation | null;
-        NoiseTexture: WebGLUniformLocation | null;
-    };
-
-    NoiseTexture: WebGLTexture;
-
-    NoiseTextureInterpolator: number;
-
-    VisualizerShaderProgram: WebGLProgram;
-
-    VisualizerUniformParametersLocationList: {
-        GPositionOffset: WebGLUniformLocation | null;
-        SizeScale: WebGLUniformLocation | null;
-        VelocityDir: WebGLUniformLocation | null;
-        ColorTexture: WebGLUniformLocation | null;
-        FireTexture: WebGLUniformLocation | null;
-        FuelTexture: WebGLUniformLocation | null;
-        FlameColorLUT: WebGLUniformLocation | null;
-        ImageTexture: WebGLUniformLocation | null;
-        AshTexture: WebGLUniformLocation | null;
-        AfterBurnTexture: WebGLUniformLocation | null;
-        DeltaTime: WebGLUniformLocation | null;
-        NoiseTextureInterpolator: WebGLUniformLocation | null;
-        NoiseTexture: WebGLUniformLocation | null;
-    };
-
-    VisualizerFlameColorLUT: WebGLTexture;
-
-    VisualizerImageTexture: WebGLTexture;
-
-    VisualizerAshTexture: WebGLTexture;
-
-    VisualizerAfterBurnNoiseTexture: WebGLTexture;
-
-    constructor(gl: WebGL2RenderingContext, inRenderTargetSize = { x: 512, y: 512 }) {
-        this.RenderTargetSize = inRenderTargetSize;
-
-        //FBO
-        this.FrameBuffer = [];
-        this.FrameBuffer[0] = gl.createFramebuffer();
-        this.FrameBuffer[1] = gl.createFramebuffer();
-
-        //Fire Texture
-        this.FireTexture = [];
-        this.FireTexture[0] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT);
-        this.FireTexture[1] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT);
-
-        //Fire Texture
-        this.FuelTexture = [];
-        this.FuelTexture[0] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT);
-        this.FuelTexture[1] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT);
-
-        //link our RTs to Framebuffers
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[0]);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.FireTexture[0], 0);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this.FuelTexture[0], 0);
-
-        const drawBuffers = [gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1];
-        gl.drawBuffers(drawBuffers);
-
-        //Fill Fuel texture with 1.f
-        const clearColor1 = new Float32Array([1.0, 1.0, 1.0, 1.0]);
-        gl.clearBufferfv(gl.COLOR, 1, clearColor1);
-        gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
-
-        FrameBufferCheck(gl, "RFirePlanePass");
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[1]);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.FireTexture[1], 0);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this.FuelTexture[1], 0);
-
-        gl.drawBuffers(drawBuffers);
-        gl.clearBufferfv(gl.COLOR, 1, clearColor1);
-        gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
-
-        FrameBufferCheck(gl, "RFirePlanePass");
-
-        this.CurrentFireTextureIndex = 0;
-        this.CurrentFuelTextureIndex = 0;
-
-        //========================================================= Apply Fire
-        this.PlaneDrawingPass = new RApplyFireRenderPass(gl, null);
-
-        //================================================ Fire Update Shader
-
-        //Create Shader Program
-        this.shaderProgramFireUpdate = CreateShaderProgramVSPS(
-            gl,
-            ShaderSourceFullscreenPassVS,
-            ShaderSourceFireUpdatePS,
-        );
-
-        //Shader Parameters
-        this.UniformParametersLocationListFireUpdate = GetUniformParametersList(gl, this.shaderProgramFireUpdate);
-
-        this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
-
-        this.NoiseTextureInterpolator = 0;
-
-        //================================================ Fire Visualize Shader
-
-        //Create Shader Program
-        this.VisualizerShaderProgram = CreateShaderProgramVSPS(
-            gl,
-            ShaderSourceFullscreenPassVS,
-            ShaderSourceFireVisualizerPS,
-        );
-
-        //Shader Parameters
-        this.VisualizerUniformParametersLocationList = GetUniformParametersList(gl, this.VisualizerShaderProgram);
-
-        this.VisualizerFlameColorLUT = CreateTexture(gl, 4, "assets/flameColorLUT5.png");
-        this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/apeBlue.png");
-        this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg");
-        this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
-    }
-
-    bFirstBoot = true;
-
-    ApplyFire(gl: WebGL2RenderingContext, positionOffset: Vector2, sizeScale: number, velDirection: Vector2) {
-        const curSourceIndex = this.CurrentFireTextureIndex;
-        //Raster particle to current fire texture
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[curSourceIndex]);
-        gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
-        this.PlaneDrawingPass.Execute(gl, positionOffset, sizeScale, velDirection);
-        if (this.bFirstBoot) {
-            gl.clearColor(0.0, 0.0, 0, 1);
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            this.bFirstBoot = false;
-        }
-    }
-
-    UpdateFire(gl: WebGL2RenderingContext) {
-        const curSourceIndex = this.CurrentFireTextureIndex;
-
-        gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[1 - curSourceIndex]);
-
-        // Set draw buffers
-        const drawBuffers = [gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1];
-        gl.drawBuffers(drawBuffers);
-
-        gl.bindVertexArray(CommonRenderingResources.FullscreenPassVAO);
-
-        gl.useProgram(this.shaderProgramFireUpdate);
-
-        //Constants
-        gl.uniform1f(this.UniformParametersLocationListFireUpdate.DeltaTime, GTime.Delta);
-
-        const NoiseTextureInterpolatorSpeed = 0.25;
-        const NoiseTextureInterpolatorMax = 3;
-        this.NoiseTextureInterpolator += NoiseTextureInterpolatorSpeed * GTime.Delta;
-        this.NoiseTextureInterpolator = this.NoiseTextureInterpolator % NoiseTextureInterpolatorMax;
-        gl.uniform1f(
-            this.UniformParametersLocationListFireUpdate.NoiseTextureInterpolator,
-            this.NoiseTextureInterpolator,
-        );
-
-        //Textures
-        gl.activeTexture(gl.TEXTURE0 + 2);
-        gl.bindTexture(gl.TEXTURE_2D, this.FireTexture[curSourceIndex]);
-        gl.uniform1i(this.UniformParametersLocationListFireUpdate.FireTexture, 2);
-
-        gl.activeTexture(gl.TEXTURE0 + 3);
-        gl.bindTexture(gl.TEXTURE_2D, this.FuelTexture[this.CurrentFuelTextureIndex]);
-        gl.uniform1i(this.UniformParametersLocationListFireUpdate.FuelTexture, 3);
-
-        gl.activeTexture(gl.TEXTURE0 + 4);
-        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
-        gl.uniform1i(this.UniformParametersLocationListFireUpdate.NoiseTexture, 4);
-
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-        gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
-
-        this.CurrentFireTextureIndex = 1 - this.CurrentFireTextureIndex;
-        this.CurrentFuelTextureIndex = 1 - this.CurrentFuelTextureIndex;
-    }
-
-    VisualizeFire(gl: WebGL2RenderingContext, destFramebuffer: WebGLFramebuffer | null, destSize: Vector2) {
-        gl.viewport(0, 0, destSize.x, destSize.y);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, destFramebuffer);
-
-        gl.bindVertexArray(CommonRenderingResources.FullscreenPassVAO);
-
-        gl.useProgram(this.VisualizerShaderProgram);
-
-        //Constants
-        gl.uniform1f(
-            this.VisualizerUniformParametersLocationList.NoiseTextureInterpolator,
-            this.NoiseTextureInterpolator,
-        );
-
-        //Textures
-        const curSourceIndex = this.CurrentFireTextureIndex;
-        gl.activeTexture(gl.TEXTURE0 + 2);
-        gl.bindTexture(gl.TEXTURE_2D, this.FireTexture[curSourceIndex]);
-        gl.uniform1i(this.VisualizerUniformParametersLocationList.FireTexture, 2);
-
-        gl.activeTexture(gl.TEXTURE0 + 3);
-        gl.bindTexture(gl.TEXTURE_2D, this.FuelTexture[this.CurrentFuelTextureIndex]);
-        gl.uniform1i(this.VisualizerUniformParametersLocationList.FuelTexture, 3);
-
-        gl.activeTexture(gl.TEXTURE0 + 4);
-        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerFlameColorLUT);
-        gl.uniform1i(this.VisualizerUniformParametersLocationList.FlameColorLUT, 4);
-
-        gl.activeTexture(gl.TEXTURE0 + 5);
-        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerImageTexture);
-        gl.uniform1i(this.VisualizerUniformParametersLocationList.ImageTexture, 5);
-
-        gl.activeTexture(gl.TEXTURE0 + 6);
-        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerAshTexture);
-        gl.uniform1i(this.VisualizerUniformParametersLocationList.AshTexture, 6);
-
-        gl.activeTexture(gl.TEXTURE0 + 7);
-        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerAfterBurnNoiseTexture);
-        gl.uniform1i(this.VisualizerUniformParametersLocationList.AfterBurnTexture, 7);
-
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
-
-    GetCurFireTexture() {
-        return this.FireTexture[this.CurrentFireTextureIndex];
-    }
-}
-
 const GSettings = {
     bRunSimulation: true,
 };
+
+const GPostProcessPasses: {
+    CopyPresemt: RPresentPass | null;
+    Blur: RBlurPass | null;
+    Bloom: RBloomPass | null;
+    Combiner: RCombinerPass | null;
+    BloomNumBlurPasses: number;
+} = {
+    CopyPresemt: null,
+    Blur: null,
+    Bloom: null,
+    Combiner: null,
+    BloomNumBlurPasses: 3,
+};
+
+function SetupPostProcessPasses(gl: WebGL2RenderingContext, bloomTextureSize: Vector2) {
+    GPostProcessPasses.CopyPresemt = new RPresentPass(gl);
+    GPostProcessPasses.Blur = new RBlurPass(gl);
+    GPostProcessPasses.Bloom = new RBloomPass(gl, bloomTextureSize);
+    GPostProcessPasses.Combiner = new RCombinerPass(gl);
+
+    if (APP_ENVIRONMENT === "development") {
+        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
+        //const folder = GDatGUI.addFolder(name);
+        //folder.open();
+
+        GDatGUI.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses");
+    }
+}
 
 export function RenderMain() {
     const canvas = getCanvas();
@@ -549,25 +192,24 @@ export function RenderMain() {
 
     AllocateCommonRenderingResources(gl);
 
-    //Create Debug RenderTarget
-    const DebugRTSize = { x: 512, y: 512 };
-    gl.activeTexture(gl.TEXTURE0 + 1);
-    //const DebugRT = CreateTextureRT(gl, DebugRTSize, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
-    //const DebugRT = CreateTextureRT(gl, DebugRTSize, gl.RGBA32F, gl.RGBA, gl.FLOAT);
-    //const DebugRT = CreateTextureRT(gl, DebugRTSize, gl.RGBA16F, gl.RGBA, gl.FLOAT);
-    const DebugRT = CreateTextureRT(gl, DebugRTSize, gl.RGBA16F, gl.RGBA, gl.HALF_FLOAT);
-    const DebugFBO = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, DebugFBO);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, DebugRT, 0);
-    FrameBufferCheck(gl, "DebugFBO");
+    //Create RenderTargets
+    const RenderTargetSize = { x: 512, y: 512 };
 
     gl.activeTexture(gl.TEXTURE0 + 1);
-    const DebugRT2 = CreateTextureRT(gl, DebugRTSize, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
-    //const DebugRT2 = CreateTextureRT(gl, DebugRTSize, gl.RGBA32F, gl.RGBA, gl.FLOAT);
-    const DebugFBO2 = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, DebugFBO2);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, DebugRT2, 0);
-    FrameBufferCheck(gl, "DebugFBO2");
+    const RenderTargetMain = CreateTextureRT(gl, RenderTargetSize, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, true);
+    const FrameBufferMain = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, FrameBufferMain);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, RenderTargetMain, 0);
+    FrameBufferCheck(gl, "FrameBuffer");
+
+    gl.activeTexture(gl.TEXTURE0 + 1);
+    const RenderTargetMainFloat = CreateTextureRT(gl, RenderTargetSize, gl.RGBA16F, gl.RGBA, gl.HALF_FLOAT);
+    const FrameBufferFloat = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, FrameBufferFloat);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, RenderTargetMainFloat, 0);
+    FrameBufferCheck(gl, "FrameBufferFloat");
+
+    //const DebugColorTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg", true);
 
     //GUI
     if (APP_ENVIRONMENT === "development") {
@@ -580,14 +222,27 @@ export function RenderMain() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const PresentPass = new RPresentPass(gl);
     const FirePlanePass = new RFirePlanePass(gl);
 
     const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
 
+    //generate intermediate texture for Blur
+    const RenderTargetMIPForBlur = 4.0;
+    const RenderTargetMIPSize = {
+        x: RenderTargetSize.x / Math.pow(2.0, RenderTargetMIPForBlur),
+        y: RenderTargetSize.y / Math.pow(2.0, RenderTargetMIPForBlur),
+    };
+    SetupPostProcessPasses(gl, RenderTargetMIPSize);
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
-        if (gl !== null) {
+        if (
+            gl !== null &&
+            RenderTargetMain !== null &&
+            GPostProcessPasses.Bloom !== null &&
+            GPostProcessPasses.Combiner !== null &&
+            GPostProcessPasses.Blur !== null
+        ) {
             UpdateTime();
 
             if (bMouseDown) {
@@ -613,22 +268,38 @@ export function RenderMain() {
 
             FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
-            gl.viewport(0, 0, canvas.width, canvas.height);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            //gl.viewport(0, 0, canvas.width, canvas.height);
+            //gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.viewport(0, 0, RenderTargetSize.x, RenderTargetSize.y);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, FrameBufferMain);
             gl.clearColor(0.05, 0.05, 0.1, 1);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
             //PresentPass.Execute(gl, canvas, FirePlanePass.GetCurFireTexture());
-            FirePlanePass.VisualizeFire(gl, null, { x: canvas.width, y: canvas.height });
+
+            FirePlanePass.VisualizeFire(gl);
 
             FlameParticles.Render(gl);
 
-            /* gl.viewport(0, 0, DebugRTSize.x, DebugRTSize.y);
-  			gl.bindFramebuffer(gl.FRAMEBUFFER, DebugFBO);
-  			gl.clearColor(0.05,0.05,0.1,1.);
-  			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  			PlaneDrawingPass.Execute(gl, CGConstants.PosOffset, 0.25);
-  			PresentPass.Execute(gl, canvas, DebugRT); */
+            gl.bindTexture(gl.TEXTURE_2D, RenderTargetMain);
+            gl.generateMipmap(gl.TEXTURE_2D);
+
+            if (GPostProcessPasses.Bloom.BloomTexture !== null) {
+                GPostProcessPasses.Bloom.PrePass(gl, RenderTargetMain, 4.0);
+
+                for (let i = 0; i < GPostProcessPasses.BloomNumBlurPasses; i++) {
+                    GPostProcessPasses.Bloom.Blur(gl, GPostProcessPasses.Blur);
+                }
+
+                GPostProcessPasses.Combiner.Execute(gl, RenderTargetMain, GPostProcessPasses.Bloom.BloomTexture, null, {
+                    x: canvas.width,
+                    y: canvas.height,
+                });
+            }
+
+            /* if (RenderTargetMain !== null) {
+                PresentPass.Execute(gl, canvas, RenderTargetMain, null, { x: canvas.width, y: canvas.height });
+            } */
 
             CGConstants.bMouseMoved = false;
 

@@ -12,6 +12,7 @@ import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { getWebGLProgram } from "./helpers/getWebGLProgram";
 import { GTime, showError } from "./utils";
 import { APP_ENVIRONMENT } from "../config/config";
+import { Vector2 } from "./types";
 
 // ====================================================== SHADERS END ======================================================
 
@@ -43,6 +44,8 @@ export class ParticlesEmitter {
     public ParticleLife;
 
     public NumLoops;
+
+    public FlipbookSizeRC: Vector2;
 
     public TimeBetweenParticleSpawn: number;
 
@@ -92,12 +95,15 @@ export class ParticlesEmitter {
             inNumParticlesPerSpawner = 8,
             inParticleLife = 10,
             inNumLoops = 1,
+            inTextureFileName = "",
+            inFlipbookSizeRC = { x: 16.0, y: 4.0 },
         },
     ) {
         this.NumSpawners2D = inNumSpawners2D;
         this.NumParticlesPerSpawner = inNumParticlesPerSpawner;
         this.ParticleLife = inParticleLife;
         this.NumLoops = inNumLoops;
+        this.FlipbookSizeRC = inFlipbookSizeRC;
 
         this.TimeBetweenParticleSpawn = this.ParticleLife / this.NumParticlesPerSpawner;
 
@@ -279,11 +285,9 @@ export class ParticlesEmitter {
 
         //========================================================= Allocate Rendering Data
 
-        //this.ColorTexture = CreateTexture(gl, 4, "assets/sprites/Flame02_16x4.png");
-        this.ColorTexture = CreateTexture(gl, 4, "assets/sprites/Flame03_16x4.png");
-        this.FlameColorLUTTexture = CreateTexture(gl, 5, "assets/flameColorLUT2.jpg", true);
+        this.ColorTexture = CreateTexture(gl, 4, inTextureFileName, true);
+        this.FlameColorLUTTexture = CreateTexture(gl, 5, "assets/flameColorLUT5.png", true);
 
-        //this.ParticleRenderShaderProgram = CreateShaderProgramVSPS(gl, ParticleRenderVS, ParticleRenderColorPS);
         this.ParticleInstancedRenderShaderProgram = CreateShaderProgramVSPS(
             gl,
             ParticleRenderInstancedVS,
@@ -452,6 +456,11 @@ export class ParticlesEmitter {
         //Constants
         gl.uniform1f(this.ParticleRenderUniformParametersLocationList.ParticleLife, this.ParticleLife);
         gl.uniform1f(this.ParticleRenderUniformParametersLocationList.NumLoops, this.NumLoops);
+        gl.uniform2f(
+            this.ParticleRenderUniformParametersLocationList.FlipbookSizeRC,
+            this.FlipbookSizeRC.x,
+            this.FlipbookSizeRC.y,
+        );
         gl.uniform1f(this.UniformParametersLocationList.CurTime, GTime.Cur);
 
         /* Set up blending */
@@ -484,6 +493,7 @@ export class ParticlesEmitter {
             CurTime: gl.getUniformLocation(shaderProgram, "CurTime"),
             ParticleLife: gl.getUniformLocation(shaderProgram, "ParticleLife"),
             NumLoops: gl.getUniformLocation(shaderProgram, "NumLoops"),
+            FlipbookSizeRC: gl.getUniformLocation(shaderProgram, "FlipbookSizeRC"),
             NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
             NoiseTextureHQ: gl.getUniformLocation(shaderProgram, "NoiseTextureHQ"),
             FireTexture: gl.getUniformLocation(shaderProgram, "FireTexture"),
