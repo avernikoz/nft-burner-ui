@@ -1,0 +1,54 @@
+name: CI
+
+on:
+    pull_request:
+        types:
+            - opened
+            - synchronize
+    push:
+        branches-ignore:
+            - "*"
+
+jobs:
+    build:
+        name: Build
+        runs-on: ubuntu-18.04
+        strategy:
+            matrix:
+                node_version: [18]
+
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Cache node_modules
+              uses: actions/cache@v2
+              with:
+                  path: ~/.npm
+                  key: node-modules-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+                  restore-keys: |
+                      node-modules-${{ runner.os }}-
+                      node-modules-
+
+            - name: Use Node.js ${{ matrix.node_version }}
+              uses: actions/setup-node@v1
+              with:
+                  node_version: ${{ matrix.node_version }}
+
+            - name: Install Dependencies
+              run: yarn install
+              # Cache the dependencies after installing
+              if: steps.cache.outputs.cache-hit != 'true'
+
+            - name: Run Lint and Tests
+              run: |
+                  yarn lint
+                  yarn test
+                  yarn build
+
+            - name: Cache node_modules
+              uses: actions/cache@v2
+              with:
+                  path: ~/.npm
+                  key: node-modules-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+                  # Only save the cache if package.json or yarn.lock changes
+                  if: steps.cache.outputs.cache-hit != 'true'
