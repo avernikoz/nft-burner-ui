@@ -1,1 +1,5 @@
-export {};
+export default {
+    jest: {
+        passWithNoTests: true,
+    },
+};
