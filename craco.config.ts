@@ -1,5 +1,7 @@
 export default {
     jest: {
-        passWithNoTests: true,
+        configure: {
+            passWithNoTests: true,
+        },
     },
 };
