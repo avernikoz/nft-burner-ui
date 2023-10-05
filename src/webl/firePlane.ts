@@ -1,13 +1,15 @@
 import { CreateTexture, CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
+import { SceneDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import {
+    GetShaderSourceFireVisualizerVS,
     ShaderSourceApplyFirePS,
     ShaderSourceApplyFireVS,
     ShaderSourceFireUpdatePS,
     ShaderSourceFireVisualizerPS,
-    ShaderSourceFullscreenPassVS,
 } from "./shaders/shaderFirePlane";
+import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
 import { Vector2 } from "./types";
 import { GTime } from "./utils";
 
@@ -88,7 +90,7 @@ export class RFirePlanePass {
 
     public CurrentFuelTextureIndex: number;
 
-    PlaneDrawingPass: RApplyFireRenderPass;
+    ApplyFirePass: RApplyFireRenderPass;
 
     shaderProgramFireUpdate: WebGLProgram;
 
@@ -159,7 +161,7 @@ export class RFirePlanePass {
         this.CurrentFuelTextureIndex = 0;
 
         //========================================================= Apply Fire
-        this.PlaneDrawingPass = new RApplyFireRenderPass(gl, null);
+        this.ApplyFirePass = new RApplyFireRenderPass(gl, null);
 
         //================================================ Fire Update Shader
 
@@ -182,7 +184,7 @@ export class RFirePlanePass {
         //Create Shader Program
         this.VisualizerShaderProgram = CreateShaderProgramVSPS(
             gl,
-            ShaderSourceFullscreenPassVS,
+            GetShaderSourceFireVisualizerVS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
             ShaderSourceFireVisualizerPS,
         );
 
@@ -203,7 +205,7 @@ export class RFirePlanePass {
         //Raster particle to current fire texture
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[curSourceIndex]);
         gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
-        this.PlaneDrawingPass.Execute(gl, positionOffset, sizeScale, velDirection);
+        this.ApplyFirePass.Execute(gl, positionOffset, sizeScale, velDirection);
         if (this.bFirstBoot) {
             gl.clearColor(0.0, 0.0, 0, 1);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -259,11 +261,11 @@ export class RFirePlanePass {
         this.CurrentFuelTextureIndex = 1 - this.CurrentFuelTextureIndex;
     }
 
-    VisualizeFire(gl: WebGL2RenderingContext /* , destFramebuffer: WebGLFramebuffer | null, destSize: Vector2 */) {
+    VisualizeFirePlane(gl: WebGL2RenderingContext /* , destFramebuffer: WebGLFramebuffer | null, destSize: Vector2 */) {
         /* gl.viewport(0, 0, destSize.x, destSize.y);
         gl.bindFramebuffer(gl.FRAMEBUFFER, destFramebuffer); */
 
-        gl.bindVertexArray(CommonRenderingResources.FullscreenPassVAO);
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
         gl.useProgram(this.VisualizerShaderProgram);
 
@@ -305,7 +307,7 @@ export class RFirePlanePass {
         gl.bindTexture(gl.TEXTURE_2D, this.VisualizerFirePlaneNoiseTexture);
         gl.uniform1i(this.VisualizerUniformParametersLocationList.NoiseTexture, 8);
 
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
     GetCurFireTexture() {

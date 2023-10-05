@@ -1,3 +1,5 @@
+import { Vector2 } from "../types";
+
 export const ShaderSourceApplyFireVS = /* glsl */ `#version 300 es
 
 	precision highp float;
@@ -66,19 +68,6 @@ export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 
 
 		OutColor = Fire;
-	}`;
-export const ShaderSourceFullscreenPassVS = /* glsl */ `#version 300 es
-
-	precision highp float;
-
-	layout(location = 0) in vec2 VertexBuffer;
-
-	out vec2 vsOutTexCoords;
-
-	void main()
-	{
-		gl_Position = vec4(VertexBuffer.xy, 0.0, 1.0);
-		vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
 	}`;
 
 export const ShaderSourceFireUpdatePS = /* glsl */ `#version 300 es
@@ -240,6 +229,35 @@ export const ShaderSourceFireUpdatePS = /* glsl */ `#version 300 es
 
 	}`;
 
+export function GetShaderSourceFireVisualizerVS(sizeScale: number, viewSize: Vector2) {
+    return (
+        /* glsl */ `#version 300 es
+
+		precision highp float;
+	
+		layout(location = 0) in vec2 VertexBuffer;
+	
+		out vec2 vsOutTexCoords;
+	
+		void main()
+		{
+			vec2 pos = VertexBuffer.xy;
+
+			pos *= float(` +
+        sizeScale +
+        /* glsl */ `);
+			pos.x /= float(` +
+        viewSize.x +
+        /* glsl */ `);
+		pos.y /= float(` +
+        viewSize.y +
+        /* glsl */ `);
+
+			gl_Position = vec4(pos, 0.0, 1.0);
+			vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
+		}`
+    );
+}
 export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 	
 	precision highp float;

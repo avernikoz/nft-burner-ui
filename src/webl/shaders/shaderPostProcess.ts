@@ -1,3 +1,18 @@
+import { SceneDesc } from "../scene";
+
+export const ShaderSourceFullscreenPassVS = /* glsl */ `#version 300 es
+
+	precision highp float;
+
+	layout(location = 0) in vec2 VertexBuffer;
+
+	out vec2 vsOutTexCoords;
+
+	void main()
+	{
+		gl_Position = vec4(VertexBuffer.xy, 0.0, 1.0);
+		vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
+	}`;
 export const ShaderSourcePresentPassPS = /* glsl */ `#version 300 es
 	
 	precision highp float;
@@ -112,71 +127,88 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 		
 	}`;
 
-export const ShaderSourceCombinerPassPS = /* glsl */ `#version 300 es
+export function GetShaderSourceCombinerPassPS() {
+    const SizeScale = SceneDesc.FirePlaneSizeScaleNDC;
+    const ViewSize = SceneDesc.ViewRatioXY;
+    return (
+        /* glsl */ `#version 300 es
 	
-	precision highp float;
-	precision highp sampler2D;
-
-	out vec4 OutColor;
-
-	uniform float Time;
-
-	uniform sampler2D FlameTexture;
-	uniform sampler2D FirePlaneTexture;
-	uniform sampler2D BloomTexture;
-	uniform sampler2D NoiseTexture;
-
-	in vec2 vsOutTexCoords;
-
-	void main()
-	{
-		vec2 texCoords = vsOutTexCoords;
-		vec4 flame = textureLod(FlameTexture, texCoords.xy, 0.f);
-		flame.rgb *= 1.1f;
-
-	#if 1//heat distortion
-		vec2 distortionUV = vsOutTexCoords;
-		distortionUV.y += Time * 0.25;
-		distortionUV.x *= 2.5;
-		distortionUV.y *= 0.5;
-		distortionUV *= 0.4f;
-		vec3 distortionNoise = textureLod(NoiseTexture, distortionUV.xy, 0.f).rgb;
-		distortionNoise = (distortionNoise * 2.f) - 1.f;
-		distortionUV = vsOutTexCoords;
-		float t = mod(Time, 2.f);
-		if(t < 1.f)
+		precision highp float;
+		precision highp sampler2D;
+	
+		out vec4 OutColor;
+	
+		uniform float Time;
+	
+		uniform sampler2D FlameTexture;
+		uniform sampler2D FirePlaneTexture;
+		uniform sampler2D BloomTexture;
+		uniform sampler2D NoiseTexture;
+	
+		in vec2 vsOutTexCoords;
+	
+		void main()
 		{
-			distortionNoise.r = mix(distortionNoise.r, distortionNoise.g, t);
-		}
-		else
-		{
-			distortionNoise.r = mix(distortionNoise.g, distortionNoise.r, t - 1.f);
-		}
-		vec4 heat = textureLod(FlameTexture, (texCoords - vec2(0.f, 0.2)), 0.f);
-		distortionNoise.x *= 0.0025;
-		distortionNoise.y *= 0.001;
-		//distortionNoise *= 0.5f;
-		distortionNoise *= 5.f;
-		distortionNoise *= clamp(dot(heat.rgb, vec3(0.333f)), 0.f, 1.f);
-		//OutColor = vec4(distortionNoise.rg, 0.f, 1.f); return;
-		distortionUV.x += distortionNoise.r;
-		distortionUV.y += distortionNoise.g;
-		vec4 firePlane = textureLod(FirePlaneTexture, distortionUV.xy, 0.f);
-	#else
-		vec4 firePlane = textureLod(FirePlaneTexture, texCoords.xy, 0.f);
-	#endif
+			const float kSizeScale = float(` +
+        SizeScale +
+        /* glsl */ `);
+			const vec2 kViewSize = vec2(float(` +
+        ViewSize.x +
+        /* glsl */ `), float(` +
+        ViewSize.y +
+        /* glsl */ `));
 
-		
-		vec4 bloom = textureLod(BloomTexture, texCoords.xy, 0.f);
-		bloom.rgb *= 0.75f;
-		vec3 final = max(firePlane.rgb, bloom.rgb);
-		final = max(final, flame.rgb);
-		//vec4 final = bloom;
-
-		const float exposure = 1.f;
-		final.rgb *= exposure;
-		OutColor = vec4(final.rgb, 1);
-	}`;
+			vec2 texCoords = vsOutTexCoords;
+			vec4 flame = textureLod(FlameTexture, texCoords.xy, 0.f);
+			flame.rgb *= 1.1f;
+	
+		#if 1//heat distortion
+			vec2 distortionUV = vsOutTexCoords;
+			distortionUV.y -= Time * 0.25;
+			distortionUV.x *= 2.5;
+			distortionUV.y *= 0.5;
+			distortionUV *= 0.4f;
+			distortionUV *= (2.0 - kSizeScale);
+			distortionUV *= kViewSize;
+			vec3 distortionNoise = textureLod(NoiseTexture, distortionUV.xy, 0.f).rgb;
+			distortionNoise = (distortionNoise * 2.f) - 1.f;
+			distortionUV = vsOutTexCoords;
+			float t = mod(Time, 2.f);
+			if(t < 1.f)
+			{
+				distortionNoise.r = mix(distortionNoise.r, distortionNoise.g, t);
+			}
+			else
+			{
+				distortionNoise.r = mix(distortionNoise.g, distortionNoise.r, t - 1.f);
+			}
+			vec4 heat = textureLod(FlameTexture, (texCoords - vec2(0.f, (0.2f * kSizeScale) / kViewSize.y )), 0.f);
+			distortionNoise.x *= 0.0025;
+			distortionNoise.y *= 0.001;
+			//distortionNoise *= 0.5f;
+			distortionNoise *= 5.f;
+			distortionNoise *= clamp(dot(heat.rgb, vec3(0.333f)), 0.f, 1.f);
+			//OutColor = vec4(distortionNoise.rg, 0.f, 1.f); return;
+			distortionUV.x += distortionNoise.r;
+			distortionUV.y += distortionNoise.g;
+			vec4 firePlane = textureLod(FirePlaneTexture, distortionUV.xy, 0.f);
+		#else
+			vec4 firePlane = textureLod(FirePlaneTexture, texCoords.xy, 0.f);
+		#endif
+	
+			
+			vec4 bloom = textureLod(BloomTexture, texCoords.xy, 0.f);
+			bloom.rgb *= 0.75f;
+			vec3 final = max(firePlane.rgb, bloom.rgb);
+			final = max(final, flame.rgb);
+			//vec4 final = bloom;
+	
+			const float exposure = 1.f;
+			final.rgb *= exposure;
+			OutColor = vec4(final.rgb, 1);
+		}`
+    );
+}
 
 export const ShaderSourceFlamePostProcessPS = /* glsl */ `#version 300 es
 	

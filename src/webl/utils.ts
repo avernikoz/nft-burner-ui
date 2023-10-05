@@ -84,3 +84,8 @@ export function MathVectorNormalize(vec: Vector2) {
         return { x: vec.x / length, y: vec.y / length };
     }
 }
+
+export function MathMapToRange(t: number, t0: number, t1: number, newt0: number, newt1: number) {
+    ///Translate to origin, scale by ranges ratio, translate to new position
+    return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+}

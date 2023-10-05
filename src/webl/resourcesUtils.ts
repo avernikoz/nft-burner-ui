@@ -96,7 +96,7 @@ export function BindRenderTarget(
     viewportSize: Vector2,
     bClear = false,
 ) {
-    gl.viewport(0, 0, viewportSize.x, viewportSize.y);
+    gl.viewport(0.0, 0.0, viewportSize.x, viewportSize.y);
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
     if (bClear) {
         gl.clearColor(0.0, 0.0, 0.0, 1);

@@ -3,13 +3,13 @@
 import { CreateTexture, CreateTextureRT } from "./resourcesUtils";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
-import { ShaderSourceFullscreenPassVS } from "./shaders/shaderFirePlane";
 import {
+    GetShaderSourceCombinerPassPS,
     ShaderSourceBloomPrePassPS,
     ShaderSourceBlurPassHorizontalPS,
     ShaderSourceBlurPassVerticalPS,
-    ShaderSourceCombinerPassPS,
     ShaderSourceFlamePostProcessPS,
+    ShaderSourceFullscreenPassVS,
     ShaderSourcePresentPassPS,
 } from "./shaders/shaderPostProcess";
 import { Vector2 } from "./types";
@@ -262,7 +262,7 @@ export class RCombinerPass {
 
     constructor(gl: WebGL2RenderingContext) {
         //Create Shader Program
-        this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceFullscreenPassVS, ShaderSourceCombinerPassPS);
+        this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceFullscreenPassVS, GetShaderSourceCombinerPassPS());
 
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);

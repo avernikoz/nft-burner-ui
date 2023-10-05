@@ -1,7 +1,7 @@
 import {
     GetParticleRenderColorPS,
+    GetParticleRenderInstancedVS,
     GetParticleUpdateShaderVS,
-    ParticleRenderInstancedVS,
     ParticleUpdatePS,
 } from "./shaders/shaderParticles";
 
@@ -13,6 +13,7 @@ import { getWebGLProgram } from "./helpers/getWebGLProgram";
 import { GTime, showError } from "./utils";
 import { APP_ENVIRONMENT } from "../config/config";
 import { Vector2 } from "./types";
+import { SceneDesc } from "./scene";
 
 // ====================================================== SHADERS END ======================================================
 
@@ -290,7 +291,7 @@ export class ParticlesEmitter {
 
         this.ParticleInstancedRenderShaderProgram = CreateShaderProgramVSPS(
             gl,
-            ParticleRenderInstancedVS,
+            GetParticleRenderInstancedVS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
             GetParticleRenderColorPS(),
         );
 

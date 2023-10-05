@@ -1,3 +1,5 @@
+import { Vector2 } from "../types";
+
 export function GetParticleUpdateShaderVS() {
     return /* glsl */ `#version 300 es
   
@@ -172,119 +174,142 @@ export const ParticleUpdatePS = /* glsl */ `#version 300 es
 	  void main()
 	  {}`;
 
-export const ParticleRenderInstancedVS = /* glsl */ `#version 300 es
+export function GetParticleRenderInstancedVS(sizeScale: number, viewSize: Vector2) {
+    return (
+        /* glsl */ `#version 300 es
   
-	  precision highp float;
+		precision highp float;
+	
+		layout(location = 0) in vec2 VertexBuffer;
+		layout(location = 1) in vec2 TexCoordsBuffer;
+	
+		layout(location = 2) in vec2 inPosition;
+		layout(location = 3) in float inAge;
+	
+		uniform float ParticleLife;
+		uniform float NumLoops;
+		uniform float CurTime;
+		uniform vec2 FlipbookSizeRC;
   
-	  layout(location = 0) in vec2 VertexBuffer;
-	  layout(location = 1) in vec2 TexCoordsBuffer;
+		uniform sampler2D NoiseTexture;
+	
+		flat out float interpolatorAge;
+		flat out float interpolatorFrameIndex;
+		out vec2 interpolatorTexCoords;
+	
+		//check if particle should never be drawn again
+		bool IsParticleDead()
+		{
+			return (inAge < 0.f);
+		}
   
-	  layout(location = 2) in vec2 inPosition;
-	  layout(location = 3) in float inAge;
-  
-	  uniform float ParticleLife;
-	  uniform float NumLoops;
-	  uniform float CurTime;
-	  uniform vec2 FlipbookSizeRC;
-
-	  uniform sampler2D NoiseTexture;
-  
-	  flat out float interpolatorAge;
-	  flat out float interpolatorFrameIndex;
-	  out vec2 interpolatorTexCoords;
-  
-	  //check if particle should never be drawn again
-	  bool IsParticleDead()
-	  {
-		  return (inAge < 0.f);
-	  }
-
-	  float MapToRange(float t, float t0, float t1, float newt0, float newt1)
-	  {
-		  ///Translate to origin, scale by ranges ratio, translate to new position
-		  return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
-	  }
-  
-	  void main()
-	  {
-		  if(IsParticleDead())
-		  {
-			  gl_Position = vec4(-10, -10, -10, 1.0);
-		  }
-		  else
-		  {	
-  
-			  vec2 uvLocal = vec2(TexCoordsBuffer.x, 1.f - TexCoordsBuffer.y);
-		  #if 1//flip uv's
-			  if(gl_InstanceID % 3 == 0)
-			  {
-				  uvLocal.x = 1.f - uvLocal.x;
-			  }
-		  #endif
-
-			  interpolatorTexCoords = uvLocal;
-			  float ageNorm = inAge / ParticleLife;
-			  interpolatorAge = ageNorm;
-
-			  float animationParameterNorm = ageNorm;
-			  if(NumLoops > 1.f)
-			  {
-				animationParameterNorm = fract(inAge / (ParticleLife / NumLoops));
-			  }
-  
-			  float TotalFlipFrames = FlipbookSizeRC.x * FlipbookSizeRC.y;
-			  interpolatorFrameIndex = (animationParameterNorm * TotalFlipFrames);
-  
-  
-			  vec2 pos = VertexBuffer.xy;
-
-			  //scale
-			  float scale = 0.075f;
-			#if 1 //NOISE-DRIVEN SIZE
-			  vec2 noiseUV = vec2(CurTime * 0.17f + 0.23f * float(gl_InstanceID), CurTime * 0.09 + 0.17 * float(gl_InstanceID));
-			  //noiseUV *= 0.1f;
-			  vec2 noise = textureLod(NoiseTexture, noiseUV.xy, 0.f).rg;
-			  //noise.r = clamp(MapToRange(noise.r, 0.4, 0.6, 0.f, 1.f), 0.f, 2.f);
-			  noise.r = clamp(MapToRange(noise.r, 0.2, 0.8, 0.f, 1.f), 0.f, 2.f);
-
-			  const float scaleAmount = 0.2f;
-			  scale = noise.r * scaleAmount;
-
-			  if(scale < 0.35 * scaleAmount)
-			  {
+		float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+		{
+			///Translate to origin, scale by ranges ratio, translate to new position
+			return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+		}
+	
+		void main()
+		{
+			if(IsParticleDead())
+			{
 				gl_Position = vec4(-10, -10, -10, 1.0);
-				return;
-			  }
+			}
+			else
+			{	
+	
+				vec2 uvLocal = vec2(TexCoordsBuffer.x, 1.f - TexCoordsBuffer.y);
+			#if 1//flip uv's
+				if(gl_InstanceID % 3 == 0)
+				{
+					uvLocal.x = 1.f - uvLocal.x;
+				}
 			#endif
-			  
-			  pos.xy *= scale;
-			  //offset to origin
-			  const float scaleOffsetAmount = 0.9f;
-			  pos.y += scale * scaleOffsetAmount;
-			  //scale
-			  pos.y *= 3.0f;
-
-			  //fade in-out
-			#if 1 //SINGLE CURVE
-			  ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
-			  pos.x *= clamp(ageNorm, 0.1, 1.f);
-			  pos.y *= ageNorm;
-			#else
-			  float normAgeFadeInPow = sqrt(1.f - pow(1.f - ageNorm, 8.f));
-			  pos.xy *= normAgeFadeInPow;
-
-			  float normAgeFadeOutPow = 1.f - clamp(pow(ageNorm, 4.f), 0.f, 1.f);
-			  pos.xy *= normAgeFadeOutPow;
-			#endif
-
-			  //translate
-			  pos.xy += inPosition;
   
-			  gl_Position = vec4(pos.xy, 0.0, 1.0);
-			  
-		  }
-		  
-	  }`;
+				interpolatorTexCoords = uvLocal;
+				float ageNorm = inAge / ParticleLife;
+				interpolatorAge = ageNorm;
+  
+				float animationParameterNorm = ageNorm;
+				if(NumLoops > 1.f)
+				{
+				  animationParameterNorm = fract(inAge / (ParticleLife / NumLoops));
+				}
+	
+				float TotalFlipFrames = FlipbookSizeRC.x * FlipbookSizeRC.y;
+				interpolatorFrameIndex = (animationParameterNorm * TotalFlipFrames);
+	
+	
+				vec2 pos = VertexBuffer.xy;
+				float kSizeScale = float(` +
+        sizeScale +
+        /* glsl */ `);
+				const vec2 kViewSize = vec2(float(` +
+        viewSize.x +
+        /* glsl */ `), float(` +
+        viewSize.y +
+        /* glsl */ `));
+
+				pos /= kViewSize;
+  
+				//scale
+				float scale = 0.075f;
+			  #if 1 //NOISE-DRIVEN SIZE
+				vec2 noiseUV = vec2(CurTime * 0.17f + 0.23f * float(gl_InstanceID), CurTime * 0.09 + 0.17 * float(gl_InstanceID));
+				//noiseUV *= 0.1f;
+				vec2 noise = textureLod(NoiseTexture, noiseUV.xy, 0.f).rg;
+				//noise.r = clamp(MapToRange(noise.r, 0.4, 0.6, 0.f, 1.f), 0.f, 2.f);
+				noise.r = clamp(MapToRange(noise.r, 0.2, 0.8, 0.f, 1.f), 0.f, 2.f);
+  
+				const float scaleAmount = 0.2f;
+				scale = noise.r * scaleAmount;
+  
+				if(scale < 0.35 * scaleAmount)
+				{
+				  gl_Position = vec4(-10, -10, -10, 1.0);
+				  return;
+				}
+			  #endif
+				
+				scale *= kSizeScale;
+				pos.xy *= scale;
+				//offset to origin
+				const float scaleOffsetAmount = 0.9f;
+				pos.y += (scale / kViewSize.y) * scaleOffsetAmount;
+				//scale
+				pos.y *= 3.0f;
+  
+				//fade in-out
+			  #if 1 //SINGLE CURVE
+				ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
+				pos.x *= clamp(ageNorm, 0.1, 1.f);
+				pos.y *= ageNorm;
+			  #else
+				float normAgeFadeInPow = sqrt(1.f - pow(1.f - ageNorm, 8.f));
+				pos.xy *= normAgeFadeInPow;
+  
+				float normAgeFadeOutPow = 1.f - clamp(pow(ageNorm, 4.f), 0.f, 1.f);
+				pos.xy *= normAgeFadeOutPow;
+			  #endif
+  
+				//translate
+				vec2 translation = inPosition;
+				translation *= kSizeScale;
+				translation.x /= float(` +
+        viewSize.x +
+        /* glsl */ `);
+				translation.y /= float(` +
+        viewSize.y +
+        /* glsl */ `);
+				pos.xy += translation;
+	
+				gl_Position = vec4(pos.xy, 0.0, 1.0);
+				
+			}
+			
+		}`
+    );
+}
 
 export function GetParticleRenderColorPS(artificialFlameAmount = 0.45) {
     return (

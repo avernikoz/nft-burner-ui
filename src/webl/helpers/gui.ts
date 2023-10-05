@@ -1,5 +1,6 @@
 import * as dat from "dat.gui";
 import { GTime } from "../utils";
+import { SceneDesc } from "../scene";
 
 export class DrawUISingleton {
     private static _instance: DrawUISingleton;
@@ -32,4 +33,6 @@ export function DrawUI(GSettings: { bRunSimulation: boolean }) {
 
     GDatGUI.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
     GDatGUI.add(GTime, "Cur").name("CurTime").listen().step(0.0001);
+
+    GDatGUI.add(SceneDesc, "ScreenRatio").name("ScreenRatio").listen().step(0.01);
 }

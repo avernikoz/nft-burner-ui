@@ -188,20 +188,25 @@ export function RenderMain() {
     });
 
     // Set the canvas dimensions to maintain a 1:1 aspect ratio
-    function resizeCanvas() {
-        /* const size = Math.min(window.innerWidth, window.innerHeight);
-        canvas.width = size;
-        canvas.height = size; */
-
+    function OnWindowResize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
+        SceneDesc.ViewportSize = { x: window.innerWidth, y: window.innerHeight };
         SceneDesc.ViewportMin = Math.min(window.innerWidth, window.innerHeight);
+        SceneDesc.ScreenRatio = window.innerWidth / window.innerHeight;
+        SceneDesc.bWideScreen = SceneDesc.ScreenRatio > 1.0;
+        SceneDesc.ViewRatioXY = { x: 1.0, y: 1.0 };
+        if (SceneDesc.bWideScreen) {
+            SceneDesc.ViewRatioXY.x = window.innerWidth / window.innerHeight;
+        } else {
+            SceneDesc.ViewRatioXY.y = window.innerHeight / window.innerWidth;
+        }
     }
 
     // Call the resizeCanvas function initially and whenever the window is resized
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+    //window.addEventListener("resize", OnWindowResize); //@Alex: disabled for now to avoid visual artifacts
+    OnWindowResize();
 
     if (!canvas) {
         showError("Canvas Error");
@@ -229,7 +234,9 @@ export function RenderMain() {
     AllocateCommonRenderingResources(gl);
 
     //Create RenderTargets
-    const RenderTargetSize = { x: 512, y: 512 };
+    //const RenderTargetSize = { x: 512, y: 512 };
+    //TODO: Set base2 size derived from Viewport Size! We need to set Min Max allowed Resolution to prevent performance issues
+    const RenderTargetSize = SceneDesc.ViewportSize;
 
     AllocateMainRenderTargets(gl, RenderTargetSize);
 
@@ -248,10 +255,12 @@ export function RenderMain() {
     const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
 
     //generate intermediate texture for Blur
-    const RenderTargetMIPForBlur = 4.0;
+    //TODO: Specify target MIP resolution instead, and deduce MIP Index from it
+    //const TextureSizeForBloom = 128;
+    const RenderTargetMIPForBloom = 4.0;
     const RenderTargetMIPSize = {
-        x: RenderTargetSize.x / Math.pow(2.0, RenderTargetMIPForBlur),
-        y: RenderTargetSize.y / Math.pow(2.0, RenderTargetMIPForBlur),
+        x: RenderTargetSize.x / Math.pow(2.0, RenderTargetMIPForBloom),
+        y: RenderTargetSize.y / Math.pow(2.0, RenderTargetMIPForBloom),
     };
     SetupPostProcessPasses(gl, RenderTargetMIPSize);
 
@@ -261,19 +270,27 @@ export function RenderMain() {
             UpdateTime();
 
             if (bMouseDown) {
-                const curMouseDir = { x: 0, y: 0 };
-                curMouseDir.x = CGConstants.MousePosNDC.x - CGConstants.PrevMousePosNDC.x;
-                curMouseDir.y = CGConstants.MousePosNDC.y - CGConstants.PrevMousePosNDC.y;
-                const mouseDirLength = MathGetVectorLength(curMouseDir);
-                let applierSize;
-                if (CGConstants.bMouseMoved == false) {
-                    applierSize = 0.005;
-                    curMouseDir.x = 0;
-                    curMouseDir.y = 1;
-                } else {
-                    applierSize = MathClamp(mouseDirLength * 0.5, 0.001, 0.05);
+                //If we are in Plane range -> apply fire
+                const MousePosNDCPlaneRange = { x: 0, y: 0 };
+                MousePosNDCPlaneRange.x =
+                    CGConstants.MousePosNDC.x * SceneDesc.ViewRatioXY.x * (2.0 - SceneDesc.FirePlaneSizeScaleNDC);
+                MousePosNDCPlaneRange.y =
+                    CGConstants.MousePosNDC.y * SceneDesc.ViewRatioXY.y * (2.0 - SceneDesc.FirePlaneSizeScaleNDC);
+                if (Math.abs(MousePosNDCPlaneRange.x) < 1.0 && Math.abs(MousePosNDCPlaneRange.y) < 1.0) {
+                    const curMouseDir = { x: 0, y: 0 };
+                    curMouseDir.x = CGConstants.MousePosNDC.x - CGConstants.PrevMousePosNDC.x;
+                    curMouseDir.y = CGConstants.MousePosNDC.y - CGConstants.PrevMousePosNDC.y;
+                    const mouseDirLength = MathGetVectorLength(curMouseDir);
+                    let applierSize;
+                    if (CGConstants.bMouseMoved == false) {
+                        applierSize = 0.005;
+                        curMouseDir.x = 0;
+                        curMouseDir.y = 1;
+                    } else {
+                        applierSize = MathClamp(mouseDirLength * 0.5, 0.001, 0.05);
+                    }
+                    FirePlanePass.ApplyFire(gl, MousePosNDCPlaneRange, applierSize, MathVectorNormalize(curMouseDir));
                 }
-                FirePlanePass.ApplyFire(gl, CGConstants.MousePosNDC, applierSize, MathVectorNormalize(curMouseDir));
             }
 
             FirePlanePass.UpdateFire(gl);
@@ -281,11 +298,14 @@ export function RenderMain() {
             FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
             BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, RenderTargetSize, true);
+            FirePlanePass.VisualizeFirePlane(gl);
 
-            FirePlanePass.VisualizeFire(gl);
+            /* GPostProcessPasses.CopyPresemt.Execute(gl, canvas, GRenderTargets.FirePlaneTexture!, 0, null, {
+                x: canvas.width,
+                y: canvas.height,
+            }); */
 
             BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, RenderTargetSize, true);
-
             FlameParticles.Render(gl);
 
             GPostProcessPasses.FlamePostProcess!.Execute(
@@ -294,20 +314,16 @@ export function RenderMain() {
                 GRenderTargets.FlameFramebuffer2!,
                 RenderTargetSize,
             );
+            const flameSourceTextureRef = GRenderTargets.FlameTexture2;
 
             if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
                 //Downsample Source
                 gl.bindTexture(gl.TEXTURE_2D, GRenderTargets.FirePlaneTexture);
                 gl.generateMipmap(gl.TEXTURE_2D);
-                gl.bindTexture(gl.TEXTURE_2D, GRenderTargets.FlameTexture2);
+                gl.bindTexture(gl.TEXTURE_2D, flameSourceTextureRef);
                 gl.generateMipmap(gl.TEXTURE_2D);
 
-                GPostProcessPasses.Bloom!.PrePass(
-                    gl,
-                    GRenderTargets.FlameTexture2!,
-                    GRenderTargets.FirePlaneTexture,
-                    4.0,
-                );
+                GPostProcessPasses.Bloom!.PrePass(gl, flameSourceTextureRef!, GRenderTargets.FirePlaneTexture, 4.0);
 
                 for (let i = 0; i < GPostProcessPasses.BloomNumBlurPasses; i++) {
                     GPostProcessPasses.Bloom!.Blur(gl, GPostProcessPasses.Blur!);
@@ -316,7 +332,7 @@ export function RenderMain() {
                 GPostProcessPasses.Combiner!.Execute(
                     gl,
                     GRenderTargets.FirePlaneTexture!,
-                    GRenderTargets.FlameTexture2!,
+                    flameSourceTextureRef!,
                     GPostProcessPasses.Bloom!.BloomTexture,
                     null,
                     {
@@ -325,10 +341,6 @@ export function RenderMain() {
                     },
                 );
             }
-
-            /* if (RenderTargetMain !== null) {
-                PresentPass.Execute(gl, canvas, RenderTargetMain, null, { x: canvas.width, y: canvas.height });
-            } */
 
             CGConstants.bMouseMoved = false;
 
