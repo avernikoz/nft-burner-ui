@@ -4,8 +4,8 @@ import { getCanvas } from "./helpers/canvas";
 import { DrawUI, DrawUISingleton } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
 import { FlameParticlesDesc } from "./particlesConfig";
-import { RBloomPass, RBlurPass, RCombinerPass, RPresentPass } from "./postprocess";
-import { CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
+import { RBloomPass, RBlurPass, RCombinerPass, RFlamePostProcessPass, RPresentPass } from "./postprocess";
+import { BindRenderTarget, CreateFramebufferWithAttachment, CreateTextureRT } from "./resourcesUtils";
 import { CheckGL } from "./shaderUtils";
 import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
 
@@ -112,11 +112,13 @@ const GPostProcessPasses: {
     Blur: RBlurPass | null;
     Bloom: RBloomPass | null;
     Combiner: RCombinerPass | null;
+    FlamePostProcess: RFlamePostProcessPass | null;
     BloomNumBlurPasses: number;
 } = {
     CopyPresemt: null,
     Blur: null,
     Bloom: null,
+    FlamePostProcess: null,
     Combiner: null,
     BloomNumBlurPasses: 3,
 };
@@ -126,6 +128,7 @@ function SetupPostProcessPasses(gl: WebGL2RenderingContext, bloomTextureSize: Ve
     GPostProcessPasses.Blur = new RBlurPass(gl);
     GPostProcessPasses.Bloom = new RBloomPass(gl, bloomTextureSize);
     GPostProcessPasses.Combiner = new RCombinerPass(gl);
+    GPostProcessPasses.FlamePostProcess = new RFlamePostProcessPass(gl);
 
     if (APP_ENVIRONMENT === "development") {
         const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
@@ -134,6 +137,35 @@ function SetupPostProcessPasses(gl: WebGL2RenderingContext, bloomTextureSize: Ve
 
         GDatGUI.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses");
     }
+}
+
+const GRenderTargets: {
+    FirePlaneTexture: WebGLTexture | null;
+    FirePlaneFramebuffer: WebGLFramebuffer | null;
+    FlameTexture: WebGLTexture | null;
+    FlameTexture2: WebGLTexture | null;
+    FlameFramebuffer: WebGLFramebuffer | null;
+    FlameFramebuffer2: WebGLFramebuffer | null;
+} = {
+    FirePlaneTexture: null,
+    FirePlaneFramebuffer: null,
+    FlameTexture: null,
+    FlameFramebuffer: null,
+    FlameTexture2: null,
+    FlameFramebuffer2: null,
+};
+
+function AllocateMainRenderTargets(gl: WebGL2RenderingContext, size: Vector2) {
+    //const RenderTargetMainFloat = CreateTextureRT(gl, RenderTargetSize, gl.RGBA16F, gl.RGBA, gl.HALF_FLOAT);
+    //Fire Plane
+    GRenderTargets.FirePlaneTexture = CreateTextureRT(gl, size, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, true);
+    GRenderTargets.FirePlaneFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.FirePlaneTexture!);
+
+    //Flame
+    GRenderTargets.FlameTexture = CreateTextureRT(gl, size, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
+    GRenderTargets.FlameFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture!);
+    GRenderTargets.FlameTexture2 = CreateTextureRT(gl, size, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, true);
+    GRenderTargets.FlameFramebuffer2 = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture2!);
 }
 
 export function RenderMain() {
@@ -195,19 +227,7 @@ export function RenderMain() {
     //Create RenderTargets
     const RenderTargetSize = { x: 512, y: 512 };
 
-    gl.activeTexture(gl.TEXTURE0 + 1);
-    const RenderTargetMain = CreateTextureRT(gl, RenderTargetSize, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, true);
-    const FrameBufferMain = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, FrameBufferMain);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, RenderTargetMain, 0);
-    FrameBufferCheck(gl, "FrameBuffer");
-
-    gl.activeTexture(gl.TEXTURE0 + 1);
-    const RenderTargetMainFloat = CreateTextureRT(gl, RenderTargetSize, gl.RGBA16F, gl.RGBA, gl.HALF_FLOAT);
-    const FrameBufferFloat = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, FrameBufferFloat);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, RenderTargetMainFloat, 0);
-    FrameBufferCheck(gl, "FrameBufferFloat");
+    AllocateMainRenderTargets(gl, RenderTargetSize);
 
     //const DebugColorTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg", true);
 
@@ -236,13 +256,7 @@ export function RenderMain() {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
-        if (
-            gl !== null &&
-            RenderTargetMain !== null &&
-            GPostProcessPasses.Bloom !== null &&
-            GPostProcessPasses.Combiner !== null &&
-            GPostProcessPasses.Blur !== null
-        ) {
+        if (gl !== null && GRenderTargets.FirePlaneTexture !== null && GPostProcessPasses.CopyPresemt !== null) {
             UpdateTime();
 
             if (bMouseDown) {
@@ -263,38 +277,52 @@ export function RenderMain() {
 
             FirePlanePass.UpdateFire(gl);
 
-            //PresentPass.Execute(gl, canvas, RFirePlanePass.FireTexture[RFirePlanePass.CurrentFireTextureIndex]);
-            //PresentPass.Execute(gl, canvas, RFirePlanePass.FuelTexture[RFirePlanePass.CurrentFuelTextureIndex]);
-
             FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
-            //gl.viewport(0, 0, canvas.width, canvas.height);
-            //gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            gl.viewport(0, 0, RenderTargetSize.x, RenderTargetSize.y);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, FrameBufferMain);
-            gl.clearColor(0.05, 0.05, 0.1, 1);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-
-            //PresentPass.Execute(gl, canvas, FirePlanePass.GetCurFireTexture());
+            BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, RenderTargetSize, true);
 
             FirePlanePass.VisualizeFire(gl);
 
+            BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, RenderTargetSize, true);
+
             FlameParticles.Render(gl);
 
-            gl.bindTexture(gl.TEXTURE_2D, RenderTargetMain);
-            gl.generateMipmap(gl.TEXTURE_2D);
+            GPostProcessPasses.FlamePostProcess!.Execute(
+                gl,
+                GRenderTargets.FlameTexture!,
+                GRenderTargets.FlameFramebuffer2!,
+                RenderTargetSize,
+            );
 
-            if (GPostProcessPasses.Bloom.BloomTexture !== null) {
-                GPostProcessPasses.Bloom.PrePass(gl, RenderTargetMain, 4.0);
+            if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
+                //Downsample Source
+                gl.bindTexture(gl.TEXTURE_2D, GRenderTargets.FirePlaneTexture);
+                gl.generateMipmap(gl.TEXTURE_2D);
+                gl.bindTexture(gl.TEXTURE_2D, GRenderTargets.FlameTexture2);
+                gl.generateMipmap(gl.TEXTURE_2D);
+
+                GPostProcessPasses.Bloom!.PrePass(
+                    gl,
+                    GRenderTargets.FlameTexture2!,
+                    GRenderTargets.FirePlaneTexture,
+                    4.0,
+                );
 
                 for (let i = 0; i < GPostProcessPasses.BloomNumBlurPasses; i++) {
-                    GPostProcessPasses.Bloom.Blur(gl, GPostProcessPasses.Blur);
+                    GPostProcessPasses.Bloom!.Blur(gl, GPostProcessPasses.Blur!);
                 }
 
-                GPostProcessPasses.Combiner.Execute(gl, RenderTargetMain, GPostProcessPasses.Bloom.BloomTexture, null, {
-                    x: canvas.width,
-                    y: canvas.height,
-                });
+                GPostProcessPasses.Combiner!.Execute(
+                    gl,
+                    GRenderTargets.FirePlaneTexture!,
+                    GRenderTargets.FlameTexture!,
+                    GPostProcessPasses.Bloom!.BloomTexture,
+                    null,
+                    {
+                        x: canvas.width,
+                        y: canvas.height,
+                    },
+                );
             }
 
             /* if (RenderTargetMain !== null) {

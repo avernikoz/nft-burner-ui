@@ -89,3 +89,25 @@ export function FrameBufferCheck(gl: WebGL2RenderingContext, passname = "") {
         }
     }
 }
+
+export function BindRenderTarget(
+    gl: WebGL2RenderingContext,
+    fbo: WebGLFramebuffer,
+    viewportSize: Vector2,
+    bClear = false,
+) {
+    gl.viewport(0, 0, viewportSize.x, viewportSize.y);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    if (bClear) {
+        gl.clearColor(0.0, 0.0, 0.0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    }
+}
+
+export function CreateFramebufferWithAttachment(gl: WebGL2RenderingContext, texture: WebGLTexture) {
+    const fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    FrameBufferCheck(gl, "FrameBuffer");
+    return fbo;
+}

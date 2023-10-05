@@ -300,6 +300,24 @@ export const ParticleRenderColorPS = /* glsl */ `#version 300 es
 	  uniform sampler2D FlameColorLUT;
 	  
 	  uniform vec2 FlipbookSizeRC;
+
+	  float CircularFadeIn(float x) 
+	  {
+		float y = 1.f - sqrt(1.f - x * x);
+		return y;
+	  }
+
+	  float CircularFadeOut(float x) 
+	  {
+		float y = sqrt(1.f - ((1.f - x) * (1.f - x)));
+		return y;
+	  }
+
+	  float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	  {
+		  ///Translate to origin, scale by ranges ratio, translate to new position
+		  return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	  }
   
 	  void main()
 	  {
@@ -322,12 +340,21 @@ export const ParticleRenderColorPS = /* glsl */ `#version 300 es
 		  
 		  vec4 colorFinal = texture(ColorTexture, uv).rgba;
 
-		  /* 
-		  vec3 flameColor = texture(FlameColorLUT, vec2(1.f - interpolatorTexCoords.y, 0.5)).rgb;
-		  colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 3.5, interpolatorAge); */
+		  
+		  float lutSamplingU = 1.f - interpolatorTexCoords.y;
+		  lutSamplingU *= clamp((1.f - interpolatorAge), 0.25, 0.5f);
+		  //lutSamplingU *= 0.2f;
+		  vec3 flameColor = texture(FlameColorLUT, vec2(lutSamplingU, 0.5)).rgb;
+		  float t = interpolatorAge;
+		  t = t + MapToRange(interpolatorTexCoords.y, 0.f, 1.f, -1.f, 0.75f);
+		  t = CircularFadeIn(clamp(t, 0.f, 1.f));
+		  t *= 0.25f;
+		  //t = clamp(t + CircularFadeIn(interpolatorTexCoords.y * 0.5f), 0.f, 1.f);
+
+		  colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 7.5f, t);
 		  
 		  //float ageNormalized = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
 		  //colorFinal.rgb *= (1.f - interpolatorAge);
-  
-		  OutColor = vec4(colorFinal.rgb,1);
+
+		  OutColor = colorFinal;
 	  }`;

@@ -479,7 +479,7 @@ export class ParticlesEmitter {
         if (APP_ENVIRONMENT === "development") {
             const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
             const folder = GDatGUI.addFolder(name);
-            folder.open();
+            //folder.open();
             folder
                 .add({ NumberOfActiveParticles: this.NumActiveParticles }, "NumberOfActiveParticles", 0, 65000)
                 .step(1)

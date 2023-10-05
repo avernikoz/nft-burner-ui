@@ -4,6 +4,6 @@ export const FlameParticlesDesc = {
     inNumParticlesPerSpawner: 1,
     inParticleLife: 2.5,
     inNumLoops: 3.0,
-    inTextureFileName: "assets/sprites/Flame03_16x4.png", //"assets/sprites/Flame02_16x4.png"
+    inTextureFileName: "assets/sprites/Flame03_16x4.png",
     inFlipbookSizeRC: { x: 16.0, y: 4.0 },
 };

@@ -24,6 +24,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         AshTexture: gl.getUniformLocation(shaderProgram, "AshTexture"),
         AfterBurnTexture: gl.getUniformLocation(shaderProgram, "AfterBurnTexture"),
         DeltaTime: gl.getUniformLocation(shaderProgram, "DeltaTime"),
+        Time: gl.getUniformLocation(shaderProgram, "Time"),
         NoiseTextureInterpolator: gl.getUniformLocation(shaderProgram, "NoiseTextureInterpolator"),
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
     };
@@ -65,12 +66,12 @@ export class RApplyFireRenderPass {
         gl.uniform2f(this.UniformParametersLocationList.VelocityDir, velDirection.x, velDirection.y);
 
         /* Set up blending */
-        gl.enable(gl.BLEND);
+        //gl.enable(gl.BLEND);
         gl.blendFunc(gl.ONE, gl.ONE);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-        gl.disable(gl.BLEND);
+        //gl.disable(gl.BLEND);
     }
 }
 
@@ -91,21 +92,7 @@ export class RFirePlanePass {
 
     shaderProgramFireUpdate: WebGLProgram;
 
-    UniformParametersLocationListFireUpdate: {
-        GPositionOffset: WebGLUniformLocation | null;
-        SizeScale: WebGLUniformLocation | null;
-        VelocityDir: WebGLUniformLocation | null;
-        ColorTexture: WebGLUniformLocation | null;
-        FireTexture: WebGLUniformLocation | null;
-        FuelTexture: WebGLUniformLocation | null;
-        FlameColorLUT: WebGLUniformLocation | null;
-        ImageTexture: WebGLUniformLocation | null;
-        AshTexture: WebGLUniformLocation | null;
-        AfterBurnTexture: WebGLUniformLocation | null;
-        DeltaTime: WebGLUniformLocation | null;
-        NoiseTextureInterpolator: WebGLUniformLocation | null;
-        NoiseTexture: WebGLUniformLocation | null;
-    };
+    UniformParametersLocationListFireUpdate;
 
     NoiseTexture: WebGLTexture;
 
@@ -113,21 +100,7 @@ export class RFirePlanePass {
 
     VisualizerShaderProgram: WebGLProgram;
 
-    VisualizerUniformParametersLocationList: {
-        GPositionOffset: WebGLUniformLocation | null;
-        SizeScale: WebGLUniformLocation | null;
-        VelocityDir: WebGLUniformLocation | null;
-        ColorTexture: WebGLUniformLocation | null;
-        FireTexture: WebGLUniformLocation | null;
-        FuelTexture: WebGLUniformLocation | null;
-        FlameColorLUT: WebGLUniformLocation | null;
-        ImageTexture: WebGLUniformLocation | null;
-        AshTexture: WebGLUniformLocation | null;
-        AfterBurnTexture: WebGLUniformLocation | null;
-        DeltaTime: WebGLUniformLocation | null;
-        NoiseTextureInterpolator: WebGLUniformLocation | null;
-        NoiseTexture: WebGLUniformLocation | null;
-    };
+    public VisualizerUniformParametersLocationList;
 
     VisualizerFlameColorLUT: WebGLTexture;
 
@@ -136,6 +109,8 @@ export class RFirePlanePass {
     VisualizerAshTexture: WebGLTexture;
 
     VisualizerAfterBurnNoiseTexture: WebGLTexture;
+
+    VisualizerFirePlaneNoiseTexture: WebGLTexture;
 
     constructor(gl: WebGL2RenderingContext, inRenderTargetSize = { x: 512, y: 512 }) {
         this.RenderTargetSize = inRenderTargetSize;
@@ -218,6 +193,7 @@ export class RFirePlanePass {
         this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/apeBlue.png");
         this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg");
         this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
+        this.VisualizerFirePlaneNoiseTexture = CreateTexture(gl, 7, "assets/fireNoise.png");
     }
 
     bFirstBoot = true;
@@ -297,6 +273,8 @@ export class RFirePlanePass {
             this.NoiseTextureInterpolator,
         );
 
+        gl.uniform1f(this.VisualizerUniformParametersLocationList.Time, GTime.Cur);
+
         //Textures
         const curSourceIndex = this.CurrentFireTextureIndex;
         gl.activeTexture(gl.TEXTURE0 + 2);
@@ -322,6 +300,10 @@ export class RFirePlanePass {
         gl.activeTexture(gl.TEXTURE0 + 7);
         gl.bindTexture(gl.TEXTURE_2D, this.VisualizerAfterBurnNoiseTexture);
         gl.uniform1i(this.VisualizerUniformParametersLocationList.AfterBurnTexture, 7);
+
+        gl.activeTexture(gl.TEXTURE0 + 8);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerFirePlaneNoiseTexture);
+        gl.uniform1i(this.VisualizerUniformParametersLocationList.NoiseTexture, 8);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }

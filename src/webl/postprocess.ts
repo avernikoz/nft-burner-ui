@@ -1,6 +1,6 @@
 //Bloom
 
-import { CreateTextureRT } from "./resourcesUtils";
+import { CreateTexture, CreateTextureRT } from "./resourcesUtils";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { ShaderSourceFullscreenPassVS } from "./shaders/shaderFirePlane";
@@ -9,17 +9,24 @@ import {
     ShaderSourceBlurPassHorizontalPS,
     ShaderSourceBlurPassVerticalPS,
     ShaderSourceCombinerPassPS,
+    ShaderSourceFlamePostProcessPS,
     ShaderSourcePresentPassPS,
 } from "./shaders/shaderPostProcess";
 import { Vector2 } from "./types";
+import { GTime } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
         MipLevel: gl.getUniformLocation(shaderProgram, "MipLevel"),
+        Time: gl.getUniformLocation(shaderProgram, "Time"),
         TextureSize: gl.getUniformLocation(shaderProgram, "TextureSize"),
         SourceTexture: gl.getUniformLocation(shaderProgram, "SourceTexture"),
         FlameTexture: gl.getUniformLocation(shaderProgram, "FlameTexture"),
+        FirePlaneTexture: gl.getUniformLocation(shaderProgram, "FirePlaneTexture"),
         BloomTexture: gl.getUniformLocation(shaderProgram, "BloomTexture"),
+        NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
+        FlameNoiseTexture: gl.getUniformLocation(shaderProgram, "FlameNoiseTexture"),
+        FlameNoiseTexture2: gl.getUniformLocation(shaderProgram, "FlameNoiseTexture2"),
     };
     return params;
 }
@@ -197,7 +204,12 @@ export class RBloomPass {
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.BloomTextureIntermediate, 0);
     }
 
-    PrePass(gl: WebGL2RenderingContext, sourceTexture: WebGLTexture, sourceMipIndex: number) {
+    PrePass(
+        gl: WebGL2RenderingContext,
+        flameTexture: WebGLTexture,
+        firePlaneTexture: WebGLTexture,
+        sourceMipIndex: number,
+    ) {
         gl.viewport(0, 0, this.TextureSize.x, this.TextureSize.y);
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.BloomTextureFramebuffer);
 
@@ -211,8 +223,13 @@ export class RBloomPass {
         //Textures
         //TODO: The source texture might be already bound to texture unit
         gl.activeTexture(gl.TEXTURE0 + 1);
-        gl.bindTexture(gl.TEXTURE_2D, sourceTexture);
-        gl.uniform1i(this.UniformParametersLocationListBloomPrePass.SourceTexture, 1);
+        gl.bindTexture(gl.TEXTURE_2D, flameTexture);
+        gl.uniform1i(this.UniformParametersLocationListBloomPrePass.FlameTexture, 1);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        gl.activeTexture(gl.TEXTURE0 + 2);
+        gl.bindTexture(gl.TEXTURE_2D, firePlaneTexture);
+        gl.uniform1i(this.UniformParametersLocationListBloomPrePass.FirePlaneTexture, 2);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
 
@@ -241,16 +258,21 @@ export class RCombinerPass {
 
     public UniformParametersLocationList;
 
+    NoiseTexture: WebGLTexture;
+
     constructor(gl: WebGL2RenderingContext) {
         //Create Shader Program
         this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceFullscreenPassVS, ShaderSourceCombinerPassPS);
 
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
+
+        this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
     }
 
     Execute(
         gl: WebGL2RenderingContext,
+        firePlaneTexture: WebGLTexture,
         flameTexture: WebGLTexture,
         bloomTexture: WebGLTexture,
         destFramebuffer: WebGLFramebuffer | null,
@@ -264,6 +286,67 @@ export class RCombinerPass {
         gl.useProgram(this.shaderProgram);
 
         //Constants
+        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.Cur);
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, firePlaneTexture);
+        gl.uniform1i(this.UniformParametersLocationList.FirePlaneTexture, 1);
+
+        gl.activeTexture(gl.TEXTURE0 + 2);
+        gl.bindTexture(gl.TEXTURE_2D, flameTexture);
+        gl.uniform1i(this.UniformParametersLocationList.FlameTexture, 2);
+
+        gl.activeTexture(gl.TEXTURE0 + 3);
+        gl.bindTexture(gl.TEXTURE_2D, bloomTexture);
+        gl.uniform1i(this.UniformParametersLocationList.BloomTexture, 3);
+
+        gl.activeTexture(gl.TEXTURE0 + 4);
+        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
+        gl.uniform1i(this.UniformParametersLocationList.NoiseTexture, 4);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+}
+
+export class RFlamePostProcessPass {
+    public shaderProgram;
+
+    public UniformParametersLocationList;
+
+    NoiseTexture;
+
+    FlameNoiseTexture;
+
+    FlameNoiseTexture2;
+
+    constructor(gl: WebGL2RenderingContext) {
+        //Create Shader Program
+        this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceFullscreenPassVS, ShaderSourceFlamePostProcessPS);
+
+        //Shader Parameters
+        this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
+
+        this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
+        this.FlameNoiseTexture = CreateTexture(gl, 5, "assets/flameNoise1.png");
+        this.FlameNoiseTexture2 = CreateTexture(gl, 6, "assets/flameNoise2.png");
+    }
+
+    Execute(
+        gl: WebGL2RenderingContext,
+        flameTexture: WebGLTexture,
+        destFramebuffer: WebGLFramebuffer,
+        destSize: Vector2,
+    ) {
+        gl.viewport(0, 0, destSize.x, destSize.y);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, destFramebuffer);
+
+        gl.bindVertexArray(CommonRenderingResources.FullscreenPassVAO);
+
+        gl.useProgram(this.shaderProgram);
+
+        //Constants
+        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.Cur);
 
         //Textures
         gl.activeTexture(gl.TEXTURE0 + 1);
@@ -271,8 +354,16 @@ export class RCombinerPass {
         gl.uniform1i(this.UniformParametersLocationList.FlameTexture, 1);
 
         gl.activeTexture(gl.TEXTURE0 + 2);
-        gl.bindTexture(gl.TEXTURE_2D, bloomTexture);
-        gl.uniform1i(this.UniformParametersLocationList.BloomTexture, 2);
+        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
+        gl.uniform1i(this.UniformParametersLocationList.NoiseTexture, 2);
+
+        gl.activeTexture(gl.TEXTURE0 + 3);
+        gl.bindTexture(gl.TEXTURE_2D, this.FlameNoiseTexture);
+        gl.uniform1i(this.UniformParametersLocationList.FlameNoiseTexture, 3);
+
+        gl.activeTexture(gl.TEXTURE0 + 4);
+        gl.bindTexture(gl.TEXTURE_2D, this.FlameNoiseTexture2);
+        gl.uniform1i(this.UniformParametersLocationList.FlameNoiseTexture2, 4);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }

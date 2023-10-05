@@ -52,7 +52,7 @@ export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 		//vec4 Color = texture(ColorTexture, texCoords.xy).r;
 
 		//Color.r = clamp((Color.r - 0.4) * 100.f, 0.5f, 1.f);
-		const float AppliedFireIntensity = 1.0f;
+		const float AppliedFireIntensity = 1.5f;
 		float Fire = AppliedFireIntensity;
 
 		// Calculate the distance from the center
@@ -189,7 +189,7 @@ export const ShaderSourceFireUpdatePS = /* glsl */ `#version 300 es
 			neighborFire = texelFetch(FireTexture, (SampleCoord + noiseVecOffset), 0).r;
 			if(neighborFire > originalFireValue)
 			{
-				const float NoiseAdvectedSpreadStrength = 0.5f;
+				const float NoiseAdvectedSpreadStrength = 0.35f;
 				accumulatedFire += neighborFire * NoiseAdvectedSpreadStrength * GFireSpreadSpeed * DeltaTime;
 			}
 		#endif
@@ -248,6 +248,7 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 	layout(location = 0) out vec4 OutFirePlane;
 
 	uniform float NoiseTextureInterpolator;
+	uniform float Time;
 
 	uniform sampler2D FireTexture;
 	uniform sampler2D FuelTexture;
@@ -255,6 +256,7 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 	uniform sampler2D ImageTexture;
 	uniform sampler2D AshTexture;
 	uniform sampler2D AfterBurnTexture;
+	uniform sampler2D NoiseTexture;
 
 	in vec2 vsOutTexCoords;
 
@@ -280,7 +282,7 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 		vec3 embersColor = vec3(afterBurnNoise, afterBurnNoise * 0.2, afterBurnNoise * 0.1);
 		ashesColor.rgb += embersColor * 10.f;
 
-		vec3 paperColor= ashesColor;
+		vec3 paperColor = ashesColor;
 
 		if(curFuel > 0.)
 		{
@@ -312,7 +314,30 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 			fireColor = mix(lowFlameColor, brightFlameColor, t);
 		}
 
-		
+		#if 1//ADD NOISE TO FIRE COLOR
+		vec2 noiseUV = vec2(vsOutTexCoords.x + Time * 0.01, vsOutTexCoords.y - Time * 0.2);
+		//noiseUV *= 0.35f;
+		noiseUV *= 1.5f;
+		vec3 noiseTexture = texture(NoiseTexture, noiseUV.xy).rgb;
+		float fireScale = 1.f;
+		fireScale = noiseTexture.r;
+		/* if(NoiseTextureInterpolator < 1.f)
+		{
+			fireScale = mix(noiseTexture.x, noiseTexture.y, NoiseTextureInterpolator);
+		}
+		else if(NoiseTextureInterpolator < 2.f)
+		{
+			fireScale = mix(noiseTexture.y, noiseTexture.z, fract(NoiseTextureInterpolator));
+		}
+		else
+		{
+			fireScale = mix(noiseTexture.z, noiseTexture.x, fract(NoiseTextureInterpolator));
+		} */
+		fireScale = MapToRange(fireScale, 0.2, 0.8, 0.f, 1.f);
+		//fireScale = 1.f - fireScale;
+		fireColor.rg *= clamp(fireScale, 0., 1.f);
+		fireColor.b *= clamp(fireScale, 0.5, 1.f);
+		#endif
 
 	#endif
 		

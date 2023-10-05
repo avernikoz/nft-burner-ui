@@ -26,6 +26,8 @@ export function DrawUI(GSettings: { bRunSimulation: boolean }) {
     // Create a GUI instance
     const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
 
+    GDatGUI.close();
+
     GDatGUI.add(GSettings, "bRunSimulation").name("Run Simulation"); // 'Enable Feature' is the label for the checkbox
 
     GDatGUI.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
