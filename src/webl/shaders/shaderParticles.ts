@@ -286,75 +286,84 @@ export const ParticleRenderInstancedVS = /* glsl */ `#version 300 es
 		  
 	  }`;
 
-export const ParticleRenderColorPS = /* glsl */ `#version 300 es
+export function GetParticleRenderColorPS(artificialFlameAmount = 0.45) {
+    return (
+        /* glsl */ `#version 300 es
 	  
-	  precision highp float;
+		precision highp float;
+	
+		out vec4 OutColor;
+	
+		flat in float interpolatorAge;
+		flat in float interpolatorFrameIndex;
+		in vec2 interpolatorTexCoords;
+	
+		uniform sampler2D ColorTexture;
+		uniform sampler2D FlameColorLUT;
+		
+		uniform vec2 FlipbookSizeRC;
   
-	  out vec4 OutColor;
+		float CircularFadeIn(float x) 
+		{
+		  float y = 1.f - sqrt(1.f - x * x);
+		  return y;
+		}
   
-	  flat in float interpolatorAge;
-	  flat in float interpolatorFrameIndex;
-	  in vec2 interpolatorTexCoords;
+		float CircularFadeOut(float x) 
+		{
+		  float y = sqrt(1.f - ((1.f - x) * (1.f - x)));
+		  return y;
+		}
   
-	  uniform sampler2D ColorTexture;
-	  uniform sampler2D FlameColorLUT;
-	  
-	  uniform vec2 FlipbookSizeRC;
-
-	  float CircularFadeIn(float x) 
-	  {
-		float y = 1.f - sqrt(1.f - x * x);
-		return y;
-	  }
-
-	  float CircularFadeOut(float x) 
-	  {
-		float y = sqrt(1.f - ((1.f - x) * (1.f - x)));
-		return y;
-	  }
-
-	  float MapToRange(float t, float t0, float t1, float newt0, float newt1)
-	  {
-		  ///Translate to origin, scale by ranges ratio, translate to new position
-		  return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
-	  }
+		float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+		{
+			///Translate to origin, scale by ranges ratio, translate to new position
+			return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+		}
+	
+		void main()
+		{
+			if(interpolatorAge < 0.f)
+			{
+				discard;
+			}
   
-	  void main()
-	  {
-		  if(interpolatorAge < 0.f)
-		  {
-			  discard;
-		  }
-
-		  //OutColor = vec4(0.5, 0.5, 0.5, 1); return;
+			//OutColor = vec4(0.5, 0.5, 0.5, 1); return;
+	
+			uint flipBookIndex1D = uint(floor(interpolatorFrameIndex));
+			uvec2 FlipBookIndex2D;
+			FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
+			FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
+	
+			vec2 frameSize = 1.f / (FlipbookSizeRC);
+			vec2 uv = interpolatorTexCoords * frameSize;
+			uv.x += (frameSize.x * float(FlipBookIndex2D.x));
+			uv.y += (frameSize.y * float(FlipBookIndex2D.y));
+			
+			vec4 colorFinal = texture(ColorTexture, uv).rgba;
   
-		  uint flipBookIndex1D = uint(floor(interpolatorFrameIndex));
-		  uvec2 FlipBookIndex2D;
-		  FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
-		  FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
+		  #if 1 //ARTIFICIAL COLOR
+			float lutSamplingU = 1.f - interpolatorTexCoords.y;
+			lutSamplingU *= clamp((1.f - interpolatorAge), 0.25, 0.75f);
+			//lutSamplingU *= 0.2f;
+			vec3 flameColor = texture(FlameColorLUT, vec2(lutSamplingU, 0.5)).rgb;
+			//flameColor = vec3(0., 0.f, 1.0);
+			float t = interpolatorAge;
+			t = (t * t) + MapToRange(interpolatorTexCoords.y, 0.f, 1.f, -1.f, 1.05f);
+			t = CircularFadeIn(clamp(t, 0.f, 1.f));
   
-		  vec2 frameSize = 1.f / (FlipbookSizeRC);
-		  vec2 uv = interpolatorTexCoords * frameSize;
-		  uv.x += (frameSize.x * float(FlipBookIndex2D.x));
-		  uv.y += (frameSize.y * float(FlipBookIndex2D.y));
-		  
-		  vec4 colorFinal = texture(ColorTexture, uv).rgba;
-
-		  
-		  float lutSamplingU = 1.f - interpolatorTexCoords.y;
-		  lutSamplingU *= clamp((1.f - interpolatorAge), 0.25, 0.5f);
-		  //lutSamplingU *= 0.2f;
-		  vec3 flameColor = texture(FlameColorLUT, vec2(lutSamplingU, 0.5)).rgb;
-		  float t = interpolatorAge;
-		  t = t + MapToRange(interpolatorTexCoords.y, 0.f, 1.f, -1.f, 0.75f);
-		  t = CircularFadeIn(clamp(t, 0.f, 1.f));
-		  t *= 0.25f;
-		  //t = clamp(t + CircularFadeIn(interpolatorTexCoords.y * 0.5f), 0.f, 1.f);
-
-		  colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 7.5f, t);
-		  
-		  //float ageNormalized = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
-		  //colorFinal.rgb *= (1.f - interpolatorAge);
-
-		  OutColor = colorFinal;
-	  }`;
+			//const float ArtFlameAmount = 0.45f;//TODO:Randomise this
+			t *= ` +
+        artificialFlameAmount +
+        /* glsl */ `;
+  
+			colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 5.0f, t);
+		  #endif
+			
+			//float ageNormalized = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
+			//colorFinal.rgb *= (1.f - interpolatorAge);
+  
+			OutColor = colorFinal;
+		}`
+    );
+}

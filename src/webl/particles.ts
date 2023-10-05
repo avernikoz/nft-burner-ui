@@ -1,6 +1,6 @@
 import {
+    GetParticleRenderColorPS,
     GetParticleUpdateShaderVS,
-    ParticleRenderColorPS,
     ParticleRenderInstancedVS,
     ParticleUpdatePS,
 } from "./shaders/shaderParticles";
@@ -291,7 +291,7 @@ export class ParticlesEmitter {
         this.ParticleInstancedRenderShaderProgram = CreateShaderProgramVSPS(
             gl,
             ParticleRenderInstancedVS,
-            ParticleRenderColorPS,
+            GetParticleRenderColorPS(),
         );
 
         this.ParticleRenderUniformParametersLocationList = this.GetUniformParametersList(

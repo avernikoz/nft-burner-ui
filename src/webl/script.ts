@@ -6,6 +6,7 @@ import { ParticlesEmitter } from "./particles";
 import { FlameParticlesDesc } from "./particlesConfig";
 import { RBloomPass, RBlurPass, RCombinerPass, RFlamePostProcessPass, RPresentPass } from "./postprocess";
 import { BindRenderTarget, CreateFramebufferWithAttachment, CreateTextureRT } from "./resourcesUtils";
+import { SceneDesc } from "./scene";
 import { CheckGL } from "./shaderUtils";
 import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
 
@@ -188,11 +189,14 @@ export function RenderMain() {
 
     // Set the canvas dimensions to maintain a 1:1 aspect ratio
     function resizeCanvas() {
-        const size = Math.min(window.innerWidth, window.innerHeight);
+        /* const size = Math.min(window.innerWidth, window.innerHeight);
         canvas.width = size;
-        canvas.height = size;
+        canvas.height = size; */
 
-        // You can use the canvas context to draw here if needed
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        SceneDesc.ViewportMin = Math.min(window.innerWidth, window.innerHeight);
     }
 
     // Call the resizeCanvas function initially and whenever the window is resized
@@ -237,9 +241,6 @@ export function RenderMain() {
     }
 
     GetMousePosNDC(canvas);
-
-    gl.clearColor(0.05, 0.05, 0.1, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FirePlanePass = new RFirePlanePass(gl);
@@ -315,7 +316,7 @@ export function RenderMain() {
                 GPostProcessPasses.Combiner!.Execute(
                     gl,
                     GRenderTargets.FirePlaneTexture!,
-                    GRenderTargets.FlameTexture!,
+                    GRenderTargets.FlameTexture2!,
                     GPostProcessPasses.Bloom!.BloomTexture,
                     null,
                     {
