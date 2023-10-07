@@ -25,10 +25,11 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
             randomVelocityScale +
             /* glsl */ `);
 		outVelocity = (noise.xy) * InitialVelocityScale;
-		if(outVelocity.y < 0.f)
+		/* if(outVelocity.y < 0.f)
 		{
 			outVelocity.y *= 0.25f;
-		}
+		} */
+		outVelocity.y += InitialVelocityScale * 0.25f;
 		`
         );
     } else {
@@ -41,11 +42,11 @@ function scGetVectorFieldForce(scale: number) {
         return (
             //sample vector field based on cur pos
             /* glsl */ `vec2 uv = (inPosition + 1.f) * 0.5f;
-			//uv *= 0.35f;
+			//uv *= 0.5f;
 			uv.y -= CurTime * 0.1f;
 			//uv *= mix(0.1f, 0.5f, fract(mod(CurTime, 10.f) * 0.1f));
-			//vec3 randVelNoise = texture(NoiseTexture, uv.xy).rgb;
-			vec3 randVelNoise = texture(NoiseTextureHQ, uv.xy).rgb;
+			vec3 randVelNoise = texture(NoiseTexture, uv.xy).rgb;
+			//vec3 randVelNoise = texture(NoiseTextureHQ, uv.xy).rgb;
 			vec2 randVel;
 			randVel.x = randVelNoise.r;
 			randVel.y = mix(randVelNoise.g, randVelNoise.b, fract(mod(CurTime, 10.f) * 0.1f));
@@ -511,6 +512,7 @@ function scEmbersSpecificShading() {
 		//s += 0.15f;
 		s = (1.f - clamp(s, 0.f, 1.f));
 		colorFinal.rgb *= s;
+		//colorFinal.rgb *= 50.f;
 		//colorFinal.r *= s;
 		`;
 }

@@ -19,17 +19,17 @@ export const FlameParticlesDesc = {
 
 export const EmberParticlesDesc = {
     inName: "Ember Particles",
-    inNumSpawners2D: 32,
+    inNumSpawners2D: 64,
     inNumParticlesPerSpawner: 1,
-    inSpawnRange: { x: 0.1, y: 1000.0 },
-    inParticleLife: 5.1,
+    inSpawnRange: { x: 0.9, y: 1000.0 },
+    inParticleLife: 2.2,
     inNumLoops: 1.0,
     inTextureFileName: "",
     inFlipbookSizeRC: { x: 16.0, y: 4.0 },
     inDefaultSize: { x: 0.125, y: 0.125 },
     inInitialVelocityScale: 30.0,
-    inVelocityFieldForceScale: 75.0,
-    inBuoyancyForceScale: 5,
+    inVelocityFieldForceScale: 100.0,
+    inBuoyancyForceScale: 10,
     inbOriginAtCenter: false,
     inESpecificShadingMode: EParticleShadingMode.Embers,
 };

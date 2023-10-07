@@ -157,15 +157,29 @@ const GRenderTargets: {
 };
 
 function AllocateMainRenderTargets(gl: WebGL2RenderingContext, size: Vector2) {
+    const textureInternalFormat = gl.R11F_G11F_B10F;
+    const textureFormat = gl.RGB;
+    const textureType = gl.HALF_FLOAT;
+    /* const textureInternalFormat = gl.RGBA8;
+    const textureFormat = gl.RGBA;
+    const textureType = gl.UNSIGNED_BYTE; */
+
     //const RenderTargetMainFloat = CreateTextureRT(gl, RenderTargetSize, gl.RGBA16F, gl.RGBA, gl.HALF_FLOAT);
     //Fire Plane
-    GRenderTargets.FirePlaneTexture = CreateTextureRT(gl, size, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, true);
+    GRenderTargets.FirePlaneTexture = CreateTextureRT(
+        gl,
+        size,
+        textureInternalFormat,
+        textureFormat,
+        textureType,
+        true,
+    );
     GRenderTargets.FirePlaneFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.FirePlaneTexture!);
 
     //Flame
-    GRenderTargets.FlameTexture = CreateTextureRT(gl, size, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
+    GRenderTargets.FlameTexture = CreateTextureRT(gl, size, textureInternalFormat, textureFormat, textureType);
     GRenderTargets.FlameFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture!);
-    GRenderTargets.FlameTexture2 = CreateTextureRT(gl, size, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, true);
+    GRenderTargets.FlameTexture2 = CreateTextureRT(gl, size, textureInternalFormat, textureFormat, textureType, true);
     GRenderTargets.FlameFramebuffer2 = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture2!);
 }
 

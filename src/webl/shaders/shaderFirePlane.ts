@@ -359,6 +359,7 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 			fireColor = mix(lowFlameColor, brightFlameColor, t);
 		}
 
+
 	#if 1//ADD NOISE TO FIRE COLOR
 		vec2 noiseUV = vec2(vsOutTexCoords.x + Time * 0.01, vsOutTexCoords.y - Time * 0.2);
 		//noiseUV *= 0.35f;
@@ -373,8 +374,9 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 	#endif
 
 	#endif
-		
 
+		fireColor = clamp(fireColor, 0.f, 1.f);
+	
 		vec3 finalColor = max(paperColor, fireColor);
 
 		OutFirePlane = vec4(finalColor.rgb, 1);

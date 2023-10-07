@@ -191,14 +191,27 @@ export class RBloomPass {
         //Shader Parameters
         this.UniformParametersLocationListBloomPrePass = GetUniformParametersList(gl, this.ShaderProgramBloomPrePass);
 
+        const textureInternalFormat = gl.R11F_G11F_B10F;
+        const textureFormat = gl.RGB;
+        const textureType = gl.HALF_FLOAT;
+        /* const textureInternalFormat = gl.RGBA8;
+        const textureFormat = gl.RGBA;
+        const textureType = gl.UNSIGNED_BYTE; */
+
         gl.activeTexture(gl.TEXTURE0 + 1);
-        this.BloomTexture = CreateTextureRT(gl, bloomTextureSize, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
+        this.BloomTexture = CreateTextureRT(gl, bloomTextureSize, textureInternalFormat, textureFormat, textureType);
         this.BloomTextureFramebuffer = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.BloomTextureFramebuffer);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.BloomTexture, 0);
 
         gl.activeTexture(gl.TEXTURE0 + 1);
-        this.BloomTextureIntermediate = CreateTextureRT(gl, bloomTextureSize, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
+        this.BloomTextureIntermediate = CreateTextureRT(
+            gl,
+            bloomTextureSize,
+            textureInternalFormat,
+            textureFormat,
+            textureType,
+        );
         this.BloomTextureIntermediateFramebuffer = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.BloomTextureIntermediateFramebuffer);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.BloomTextureIntermediate, 0);
