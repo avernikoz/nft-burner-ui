@@ -24,7 +24,12 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
 		const float InitialVelocityScale = float(` +
             randomVelocityScale +
             /* glsl */ `);
-		outVelocity = (noise.xy) * InitialVelocityScale;`
+		outVelocity = (noise.xy) * InitialVelocityScale;
+		if(outVelocity.y < 0.f)
+		{
+			outVelocity.y *= 0.25f;
+		}
+		`
         );
     } else {
         return /* glsl */ `outVelocity = vec2(0, 0);`;
@@ -221,7 +226,16 @@ export function GetParticleUpdateShaderVS(
 				  const float buoyancyForce = float(` +
         buoyancyForceScale +
         /* glsl */ `);
+
+				  float ageNorm = curAge / ParticleLife;
+				  float posYNorm = (inPosition.y + 1.f) * 0.5f;
 				  curVel.y += buoyancyForce * DeltaTime * temperature;
+
+				  float downwardForce = /* ageNorm * */ (posYNorm /* * posYNorm */) * buoyancyForce * 1.f;
+				  if(curVel.y > 0.f)
+				  {
+					curVel.y -= downwardForce * DeltaTime * curVel.y * 0.2f;
+				  }
   
 				  const float Damping = 0.99f;
 				  curVel *= Damping;
@@ -246,7 +260,7 @@ export const ParticleUpdatePS = /* glsl */ `#version 300 es
 	  void main()
 	  {}`;
 
-export function GetParticleRenderInstancedVS(defaultSize: Vector2, bOriginAtCenter = true) {
+export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize: Vector2, bOriginAtCenter = true) {
     const sizeScale = SceneDesc.FirePlaneSizeScaleNDC;
     const viewSize = SceneDesc.ViewRatioXY;
     return (
@@ -259,6 +273,7 @@ export function GetParticleRenderInstancedVS(defaultSize: Vector2, bOriginAtCent
 	
 		layout(location = 2) in vec2 inPosition;
 		layout(location = 3) in float inAge;
+		layout(location = 4) in vec2 inVelocity;
 	
 		uniform float ParticleLife;
 		uniform float NumLoops;
@@ -304,17 +319,16 @@ export function GetParticleRenderInstancedVS(defaultSize: Vector2, bOriginAtCent
 				float ageNorm = inAge / ParticleLife;
 				interpolatorAge = ageNorm;
   
+
 				float animationParameterNorm = ageNorm;
 				if(NumLoops > 1.f)
 				{
 				  animationParameterNorm = fract(inAge / (ParticleLife / NumLoops));
 				}
-	
 				float TotalFlipFrames = FlipbookSizeRC.x * FlipbookSizeRC.y;
 				interpolatorFrameIndex = (animationParameterNorm * TotalFlipFrames);
 	
 	
-				vec2 pos = VertexBuffer.xy;
 				float kSizeScale = float(` +
         sizeScale +
         /* glsl */ `);
@@ -324,10 +338,11 @@ export function GetParticleRenderInstancedVS(defaultSize: Vector2, bOriginAtCent
         viewSize.y +
         /* glsl */ `));
 
+				vec2 pos = VertexBuffer.xy;
 				pos /= kViewSize;
   
 				//scale
-				float scale = 0.075f;
+				float scale = 1.f;
 			  #if 1 //NOISE-DRIVEN SIZE
 				float particleDiffScale = 0.01f;
 				vec2 noiseUV = vec2(CurTime * 0.0017f + 0.23f * float(gl_InstanceID) * particleDiffScale, CurTime * 0.09 + 0.17 * float(gl_InstanceID) * particleDiffScale);
@@ -370,12 +385,36 @@ export function GetParticleRenderInstancedVS(defaultSize: Vector2, bOriginAtCent
 				pos.y *= float(` +
         defaultSize.y +
         /* glsl */ `);
+
+			#if 1//Rotate based on velocity
+				vec2 curVelocity = inVelocity;
+				float velLength = length(curVelocity) * 0.1;
+				if(velLength > 0.f)
+				{
+					pos.y *= clamp(1.f - velLength, 0.f, 1.f);
+					pos.x *= (1.f + velLength);
+					
+					// Calculate the angle between the initial direction (1, 0) and the desired direction
+					float angle = atan(curVelocity.y, curVelocity.x);
+
+					// Rotate the stretched position
+					float cosAngle = cos(angle);
+					float sinAngle = sin(angle);
+					vec2 rotatedPosition = vec2(
+						pos.x * cosAngle - pos.y * sinAngle,
+						pos.x * sinAngle + pos.y * cosAngle
+					);
+					
+					pos = rotatedPosition;
+				}
+				
+			#endif
   
 				//fade in-out
-			  #if 1 //SINGLE CURVE
+			  #if 1 //SINGLE CURVE SCALE FADE OUT
 				ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
 				pos.x *= clamp(ageNorm, 0.1, 1.f);
-				pos.y *= ageNorm;
+				pos.y *= clamp(ageNorm, 0.0, 1.f);
 			  #else
 				float normAgeFadeInPow = sqrt(1.f - pow(1.f - ageNorm, 8.f));
 				pos.xy *= normAgeFadeInPow;
@@ -438,17 +477,41 @@ function scFlameSpecificShading(bUsesTexture: boolean, artificialFlameAmount: nu
 
 function scEmbersSpecificShading() {
     return /* glsl */ `
-		vec3 colorBright = vec3(1.f, 0.5f, 0.1f) * 1.5f;
-		vec3 colorLow = vec3(0.5f, 0.5f, 0.5f);
+		/* vec3 colorBright = vec3(1.f, 0.5f, 0.1f) * 1.5f;
+		vec3 colorLow = vec3(0.5f, 0.5f, 0.5f); */
 
-		
 		float t = interpolatorAge;
-		t = CircularFadeIn(clamp(t, 0.f, 1.f));
-		colorFinal.rgb = mix(colorBright.rgb, colorLow.rgb, t);
+		t = CircularFadeOut(clamp(t, 0.f, 1.f));
+		float curFire = (1.f - t) * 10.f;
 
+		vec3 colorBright = vec3(curFire * 0.4, curFire * 0.2, curFire * 0.1);
+		vec3 colorLow = vec3(curFire * 0.2f, curFire * 0.2, curFire * 0.2f);
+
+		if(t < 0.5f)
+		{
+			colorFinal.rgb = colorBright;
+		}
+		else
+		{
+			colorFinal.rgb = mix(colorBright, colorLow, (t - 0.5f) * 2.f);
+		}
+		
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
-		s += 0.15f;
-		colorFinal.rgb *= (1.f - clamp(s, 0.f, 1.f));
+		s *= 2.f;
+		if(s > 0.5f)
+		{
+			s += 0.25f;
+			//s = 1.f;
+		}
+		else
+		{
+			s -= 0.25f;
+			//s = 0.f;
+		}
+		//s += 0.15f;
+		s = (1.f - clamp(s, 0.f, 1.f));
+		colorFinal.rgb *= s;
+		//colorFinal.r *= s;
 		`;
 }
 

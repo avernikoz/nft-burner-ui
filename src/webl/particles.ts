@@ -22,7 +22,6 @@ const GParticleUpdatePassDesc = {
         Velocity: 1,
         Age: 2,
         DefaultPosition: 3,
-        Size: 4,
     },
 };
 
@@ -32,7 +31,7 @@ const GParticleRenderPassDesc = {
         TexCoordsBuffer: 1,
         Position: 2,
         Age: 3,
-        Size: 4,
+        Velocity: 4,
     },
 };
 
@@ -319,7 +318,7 @@ export class ParticlesEmitter {
 
         this.ParticleInstancedRenderShaderProgram = CreateShaderProgramVSPS(
             gl,
-            GetParticleRenderInstancedVS(inDefaultSize, inbOriginAtCenter),
+            GetParticleRenderInstancedVS(this.bUsesTexture, inDefaultSize, inbOriginAtCenter),
             GetParticleRenderColorPS(inESpecificShadingMode, this.bUsesTexture, 0.0),
         );
 
@@ -355,6 +354,18 @@ export class ParticlesEmitter {
                 gl.FLOAT,
                 false,
                 1 * Float32Array.BYTES_PER_ELEMENT,
+                0,
+            );
+
+            //Velocity
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.VelocitiesBufferGPU[i]);
+            gl.enableVertexAttribArray(GParticleRenderPassDesc.VertexAttributesList.Velocity);
+            gl.vertexAttribPointer(
+                GParticleRenderPassDesc.VertexAttributesList.Velocity,
+                2,
+                gl.FLOAT,
+                false,
+                2 * Float32Array.BYTES_PER_ELEMENT,
                 0,
             );
 
@@ -415,6 +426,19 @@ export class ParticlesEmitter {
                 0,
             );
             gl.vertexAttribDivisor(GParticleRenderPassDesc.VertexAttributesList.Age, 1);
+
+            //Velocity
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.VelocitiesBufferGPU[i]);
+            gl.enableVertexAttribArray(GParticleRenderPassDesc.VertexAttributesList.Velocity);
+            gl.vertexAttribPointer(
+                GParticleRenderPassDesc.VertexAttributesList.Velocity,
+                2,
+                gl.FLOAT,
+                false,
+                2 * Float32Array.BYTES_PER_ELEMENT,
+                0,
+            );
+            gl.vertexAttribDivisor(GParticleRenderPassDesc.VertexAttributesList.Velocity, 1);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
         }
