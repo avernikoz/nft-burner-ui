@@ -29,6 +29,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         Time: gl.getUniformLocation(shaderProgram, "Time"),
         NoiseTextureInterpolator: gl.getUniformLocation(shaderProgram, "NoiseTextureInterpolator"),
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
+        NoiseTextureLQ: gl.getUniformLocation(shaderProgram, "NoiseTextureLQ"),
     };
     return params;
 }
@@ -97,6 +98,8 @@ export class RFirePlanePass {
     UniformParametersLocationListFireUpdate;
 
     NoiseTexture: WebGLTexture;
+
+    NoiseTextureLQ: WebGLTexture;
 
     NoiseTextureInterpolator: number;
 
@@ -176,6 +179,7 @@ export class RFirePlanePass {
         this.UniformParametersLocationListFireUpdate = GetUniformParametersList(gl, this.shaderProgramFireUpdate);
 
         this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
+        this.NoiseTextureLQ = CreateTexture(gl, 4, "assets/perlinNoise32.png");
 
         this.NoiseTextureInterpolator = 0;
 
@@ -306,6 +310,10 @@ export class RFirePlanePass {
         gl.activeTexture(gl.TEXTURE0 + 8);
         gl.bindTexture(gl.TEXTURE_2D, this.VisualizerFirePlaneNoiseTexture);
         gl.uniform1i(this.VisualizerUniformParametersLocationList.NoiseTexture, 8);
+
+        gl.activeTexture(gl.TEXTURE0 + 9);
+        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTextureLQ);
+        gl.uniform1i(this.VisualizerUniformParametersLocationList.NoiseTextureLQ, 9);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }

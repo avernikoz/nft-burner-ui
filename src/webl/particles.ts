@@ -13,7 +13,6 @@ import { getWebGLProgram } from "./helpers/getWebGLProgram";
 import { GTime, showError } from "./utils";
 import { APP_ENVIRONMENT } from "../config/config";
 import { Vector2 } from "./types";
-import { SceneDesc } from "./scene";
 
 // ====================================================== SHADERS END ======================================================
 
@@ -35,6 +34,12 @@ const GParticleRenderPassDesc = {
         Age: 3,
         Size: 4,
     },
+};
+
+export const EParticleShadingMode = {
+    Default: 0,
+    Flame: 1,
+    Embers: 2,
 };
 
 export class ParticlesEmitter {
@@ -88,16 +93,25 @@ export class ParticlesEmitter {
 
     public FlameColorLUTTexture;
 
+    public bUsesTexture;
+
     constructor(
         gl: WebGL2RenderingContext,
         {
             inName = "Particles",
             inNumSpawners2D = 128,
             inNumParticlesPerSpawner = 8,
+            inSpawnRange = { x: 1, y: 1000 },
             inParticleLife = 10,
             inNumLoops = 1,
             inTextureFileName = "",
             inFlipbookSizeRC = { x: 16.0, y: 4.0 },
+            inDefaultSize = { x: 1.0, y: 1.0 },
+            inInitialVelocityScale = 0.0,
+            inVelocityFieldForceScale = 0.0,
+            inBuoyancyForceScale = 0.0,
+            inbOriginAtCenter = true,
+            inESpecificShadingMode = EParticleShadingMode.Default,
         },
     ) {
         this.NumSpawners2D = inNumSpawners2D;
@@ -105,6 +119,8 @@ export class ParticlesEmitter {
         this.ParticleLife = inParticleLife;
         this.NumLoops = inNumLoops;
         this.FlipbookSizeRC = inFlipbookSizeRC;
+
+        this.bUsesTexture = inTextureFileName != "";
 
         this.TimeBetweenParticleSpawn = this.ParticleLife / this.NumParticlesPerSpawner;
 
@@ -245,7 +261,16 @@ export class ParticlesEmitter {
 
         //Compile Shaders
         {
-            const shaderVS = CreateShader(gl, gl.VERTEX_SHADER, GetParticleUpdateShaderVS());
+            const shaderVS = CreateShader(
+                gl,
+                gl.VERTEX_SHADER,
+                GetParticleUpdateShaderVS(
+                    inSpawnRange,
+                    inInitialVelocityScale,
+                    inVelocityFieldForceScale,
+                    inBuoyancyForceScale,
+                ),
+            );
             const shaderPS = CreateShader(gl, gl.FRAGMENT_SHADER, ParticleUpdatePS);
 
             this.ParticleUpdateShaderProgram = getWebGLProgram(gl);
@@ -276,8 +301,8 @@ export class ParticlesEmitter {
 
         //Noise Texture
         //TODO: Use Static Noise Texture, not a texture per Particle System
-        this.NoiseTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg");
-        //this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise32.png");
+        //this.NoiseTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg");
+        this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise32.png");
         this.NoiseTextureHQ = CreateTexture(gl, 5, "assets/perlinNoise512.png");
 
         this.UniformParametersLocationList = this.GetUniformParametersList(gl, this.ParticleUpdateShaderProgram);
@@ -286,13 +311,16 @@ export class ParticlesEmitter {
 
         //========================================================= Allocate Rendering Data
 
-        this.ColorTexture = CreateTexture(gl, 4, inTextureFileName, true);
+        if (this.bUsesTexture) {
+            this.ColorTexture = CreateTexture(gl, 4, inTextureFileName, true);
+        }
+
         this.FlameColorLUTTexture = CreateTexture(gl, 5, "assets/flameColorLUT5.png", true);
 
         this.ParticleInstancedRenderShaderProgram = CreateShaderProgramVSPS(
             gl,
-            GetParticleRenderInstancedVS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
-            GetParticleRenderColorPS(),
+            GetParticleRenderInstancedVS(inDefaultSize, inbOriginAtCenter),
+            GetParticleRenderColorPS(inESpecificShadingMode, this.bUsesTexture, 0.0),
         );
 
         this.ParticleRenderUniformParametersLocationList = this.GetUniformParametersList(
@@ -434,7 +462,7 @@ export class ParticlesEmitter {
         this.CurrentBufferIndex = 1 - this.CurrentBufferIndex;
     }
 
-    Render(gl: WebGL2RenderingContext) {
+    Render(gl: WebGL2RenderingContext, blendMode: number) {
         //gl.bindVertexArray(this.ParticleRenderVAO[1 - this.CurrentBufferIndex]);
         gl.bindVertexArray(this.ParticleInstancedRenderVAO[1 - this.CurrentBufferIndex]);
 
@@ -442,9 +470,11 @@ export class ParticlesEmitter {
         gl.useProgram(this.ParticleInstancedRenderShaderProgram);
 
         //Uniforms
-        gl.activeTexture(gl.TEXTURE0 + 4);
-        gl.bindTexture(gl.TEXTURE_2D, this.ColorTexture);
-        gl.uniform1i(this.ParticleRenderUniformParametersLocationList.ColorTexture, 4);
+        if (this.bUsesTexture && this.ColorTexture) {
+            gl.activeTexture(gl.TEXTURE0 + 4);
+            gl.bindTexture(gl.TEXTURE_2D, this.ColorTexture);
+            gl.uniform1i(this.ParticleRenderUniformParametersLocationList.ColorTexture, 4);
+        }
 
         gl.activeTexture(gl.TEXTURE0 + 5);
         gl.bindTexture(gl.TEXTURE_2D, this.FlameColorLUTTexture);
@@ -462,13 +492,13 @@ export class ParticlesEmitter {
             this.FlipbookSizeRC.x,
             this.FlipbookSizeRC.y,
         );
-        gl.uniform1f(this.UniformParametersLocationList.CurTime, GTime.Cur);
+        gl.uniform1f(this.ParticleRenderUniformParametersLocationList.CurTime, GTime.Cur);
 
         /* Set up blending */
         gl.enable(gl.BLEND);
         //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.blendFunc(gl.ONE, gl.ONE);
-        gl.blendEquation(gl.MAX);
+        gl.blendEquation(blendMode);
 
         //gl.drawArrays(gl.POINTS, 0, this.NumActiveParticles);
         gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.NumActiveParticles);

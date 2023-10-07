@@ -3,7 +3,7 @@ import { RFirePlanePass } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUI, DrawUISingleton } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
-import { FlameParticlesDesc } from "./particlesConfig";
+import { EmberParticlesDesc, FlameParticlesDesc } from "./particlesConfig";
 import { RBloomPass, RBlurPass, RCombinerPass, RFlamePostProcessPass, RPresentPass } from "./postprocess";
 import { BindRenderTarget, CreateFramebufferWithAttachment, CreateTextureRT } from "./resourcesUtils";
 import { SceneDesc } from "./scene";
@@ -252,7 +252,10 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FirePlanePass = new RFirePlanePass(gl);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
 
     //generate intermediate texture for Blur
     //TODO: Specify target MIP resolution instead, and deduce MIP Index from it
@@ -296,6 +299,7 @@ export function RenderMain() {
             FirePlanePass.UpdateFire(gl);
 
             FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+            EmberParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
             BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, RenderTargetSize, true);
             FirePlanePass.VisualizeFirePlane(gl);
@@ -306,7 +310,7 @@ export function RenderMain() {
             }); */
 
             BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, RenderTargetSize, true);
-            FlameParticles.Render(gl);
+            FlameParticles.Render(gl, gl.MAX);
 
             GPostProcessPasses.FlamePostProcess!.Execute(
                 gl,
@@ -315,6 +319,8 @@ export function RenderMain() {
                 RenderTargetSize,
             );
             const flameSourceTextureRef = GRenderTargets.FlameTexture2;
+
+            EmberParticles.Render(gl, gl.FUNC_ADD);
 
             if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
                 //Downsample Source

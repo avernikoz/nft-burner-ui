@@ -178,7 +178,7 @@ export const ShaderSourceFireUpdatePS = /* glsl */ `#version 300 es
 			neighborFire = texelFetch(FireTexture, (SampleCoord + noiseVecOffset), 0).r;
 			if(neighborFire > originalFireValue)
 			{
-				const float NoiseAdvectedSpreadStrength = 0.35f;
+				const float NoiseAdvectedSpreadStrength = 0.45f;
 				accumulatedFire += neighborFire * NoiseAdvectedSpreadStrength * GFireSpreadSpeed * DeltaTime;
 			}
 		#endif
@@ -275,6 +275,7 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 	uniform sampler2D AshTexture;
 	uniform sampler2D AfterBurnTexture;
 	uniform sampler2D NoiseTexture;
+	uniform sampler2D NoiseTextureLQ;
 
 	in vec2 vsOutTexCoords;
 
@@ -297,14 +298,40 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 
 		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * 0.25;
 		float afterBurnNoise = texture(AfterBurnTexture, vsOutTexCoords.xy).r;
+		
 		vec3 embersColor = vec3(afterBurnNoise, afterBurnNoise * 0.2, afterBurnNoise * 0.1);
-		ashesColor.rgb += embersColor * 10.f;
+		float emberScale = 1.f;
+	#if 1 //NOISE EMBERS SCALE
+		vec3 noiseVec = textureLod(NoiseTextureLQ, vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0093), 0.f).rgb;
+		float t = NoiseTextureInterpolator;
+		//float t = mod(Time, 3.f);
+		if(t < 1.f)
+		{
+			emberScale = mix(noiseVec.x, noiseVec.y, t);
+		}
+		else if(t < 2.f)
+		{
+			emberScale = mix(noiseVec.y, noiseVec.z, t - 1.f);
+		}
+		else
+		{
+			emberScale = mix(noiseVec.z, noiseVec.x, t - 2.f);
+		}
+		emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.f, 2.f);
+	#endif
+
+			ashesColor.rgb += embersColor * 10.f * emberScale;
+			ashesColor.b += (1.f - emberScale) * 0.05f;
 
 		vec3 paperColor = ashesColor;
 
 		if(curFuel > 0.)
 		{
 			paperColor = mix(ashesColor, imageColor, /* saturate */(curFuel));
+		}
+		else
+		{
+			
 		}
 
 		vec3 fireColor;
@@ -332,30 +359,18 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 			fireColor = mix(lowFlameColor, brightFlameColor, t);
 		}
 
-		#if 1//ADD NOISE TO FIRE COLOR
+	#if 1//ADD NOISE TO FIRE COLOR
 		vec2 noiseUV = vec2(vsOutTexCoords.x + Time * 0.01, vsOutTexCoords.y - Time * 0.2);
 		//noiseUV *= 0.35f;
 		noiseUV *= 1.5f;
 		vec3 noiseTexture = texture(NoiseTexture, noiseUV.xy).rgb;
 		float fireScale = 1.f;
 		fireScale = noiseTexture.r;
-		/* if(NoiseTextureInterpolator < 1.f)
-		{
-			fireScale = mix(noiseTexture.x, noiseTexture.y, NoiseTextureInterpolator);
-		}
-		else if(NoiseTextureInterpolator < 2.f)
-		{
-			fireScale = mix(noiseTexture.y, noiseTexture.z, fract(NoiseTextureInterpolator));
-		}
-		else
-		{
-			fireScale = mix(noiseTexture.z, noiseTexture.x, fract(NoiseTextureInterpolator));
-		} */
 		fireScale = MapToRange(fireScale, 0.2, 0.8, 0.f, 1.f);
 		//fireScale = 1.f - fireScale;
 		fireColor.rg *= clamp(fireScale, 0., 1.f);
 		fireColor.b *= clamp(fireScale, 0.5, 1.f);
-		#endif
+	#endif
 
 	#endif
 		

@@ -5,10 +5,10 @@ import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import {
     GetShaderSourceCombinerPassPS,
+    GetShaderSourceFlamePostProcessPS,
     ShaderSourceBloomPrePassPS,
     ShaderSourceBlurPassHorizontalPS,
     ShaderSourceBlurPassVerticalPS,
-    ShaderSourceFlamePostProcessPS,
     ShaderSourceFullscreenPassVS,
     ShaderSourcePresentPassPS,
 } from "./shaders/shaderPostProcess";
@@ -322,7 +322,11 @@ export class RFlamePostProcessPass {
 
     constructor(gl: WebGL2RenderingContext) {
         //Create Shader Program
-        this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceFullscreenPassVS, ShaderSourceFlamePostProcessPS);
+        this.shaderProgram = CreateShaderProgramVSPS(
+            gl,
+            ShaderSourceFullscreenPassVS,
+            GetShaderSourceFlamePostProcessPS(),
+        );
 
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);

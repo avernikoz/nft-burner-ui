@@ -108,14 +108,16 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 
 	void main()
 	{
-		const float Threshold = 0.9f;
+		const float Threshold = 0.5f;
 		vec2 texCoords = vsOutTexCoords;
 		vec4 flame = textureLod(FlameTexture, texCoords.xy, MipLevel);
 		vec4 firePlane = textureLod(FirePlaneTexture, texCoords.xy, MipLevel);
 		vec4 Color = vec4(max(flame.rgb, firePlane.rgb).rgb, 1.f);
 		//vec4 Color = firePlane;
-		float brightness = dot(Color.rgb, vec3( 0.299f, 0.587f, 0.114f ));
-		if(brightness > 0.75f)
+		//Color.rgb = flame.rgb;
+		//float brightness = dot(Color.rgb, vec3( 0.299f, 0.587f, 0.114f ));
+		float brightness = dot(Color.rgb, vec3( 0.33f, 0.33f, 0.33f ));
+		if(brightness > Threshold)
 		{
 			//Color.r *= 1.5f;
 			OutColor = Color;
@@ -126,6 +128,134 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 		}
 		
 	}`;
+
+export function GetShaderSourceFlamePostProcessPS() {
+    const SizeScale = SceneDesc.FirePlaneSizeScaleNDC;
+    const ViewSize = SceneDesc.ViewRatioXY;
+    return (
+        /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	out vec4 OutColor;
+
+	uniform float Time;
+
+	uniform sampler2D FlameTexture;
+	uniform sampler2D NoiseTexture;
+	uniform sampler2D FlameNoiseTexture;
+	uniform sampler2D FlameNoiseTexture2;
+
+	in vec2 vsOutTexCoords;
+
+	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	{
+		///Translate to origin, scale by ranges ratio, translate to new position
+		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
+
+	void main()
+	{
+		const float kSizeScale = float(` +
+        SizeScale +
+        /* glsl */ `);
+			const vec2 kViewSize = vec2(float(` +
+        ViewSize.x +
+        /* glsl */ `), float(` +
+        ViewSize.y +
+        /* glsl */ `));
+		
+		vec2 flameNoiseUV = vsOutTexCoords;
+		vec2 flameSamplingUV = flameNoiseUV;
+		
+		float t = mod(Time, 10.0) / 5.f;
+		t = clamp(t, 0.f, 2.f);
+		const float distUVStartScale = 0.025f;
+		const float distUVEndScale = 0.1f;
+		if(t < 1.f)
+		{
+			flameSamplingUV *= mix(distUVStartScale, distUVEndScale, smoothstep(0.f, 1.f, t));
+		}
+		else
+		{
+			flameSamplingUV *= mix(distUVEndScale, distUVStartScale, smoothstep(0.f, 1.f, t - 1.f));
+		}
+
+		flameSamplingUV.y -= Time * 0.013;
+		flameSamplingUV.x += Time * 0.003;
+
+		//flameSamplingUV *= (2.0 - kSizeScale);
+		flameSamplingUV *= kViewSize;
+		vec3 distortionNoise = textureLod(NoiseTexture, flameSamplingUV.xy, 0.f).rgb;
+		distortionNoise = (distortionNoise * 2.f) - 1.f;
+		flameSamplingUV = flameNoiseUV;
+
+		t = mod(Time, 2.f);
+		if(t < 1.f)
+		{
+			distortionNoise.r = mix(distortionNoise.r, distortionNoise.g, t);
+		}
+		else
+		{
+			distortionNoise.r = mix(distortionNoise.g, distortionNoise.r, t - 1.f);
+		}
+
+		//OutColor = vec4(distortionNoise.r, distortionNoise.r,distortionNoise.r, 1.0);return;
+
+		distortionNoise *= 2.5f;
+		flameSamplingUV.x += distortionNoise.r * 0.0075;
+		flameSamplingUV.y += distortionNoise.g * 0.001;
+
+		flameSamplingUV.x -= (0.5 - vsOutTexCoords.x) * 0.1 * (vsOutTexCoords.y * vsOutTexCoords.y); 
+
+		flameNoiseUV = flameSamplingUV;
+
+		//float4 flame = FlameTextureSRV[SampleCoord];
+		vec4 flame = textureLod(FlameTexture, flameSamplingUV.xy, 0.f);
+
+		//Pre-Translate Scale
+		flameNoiseUV *= 0.9f;
+		flameNoiseUV.x *= 4.f;
+
+		flameNoiseUV *= (2.0 - kSizeScale);
+		flameNoiseUV *= kViewSize;
+
+		//Translate
+		const float flameSpeed = 0.75f; //TODO: USE VARYING SPEED [0.25,0.75]
+		flameNoiseUV.y -= Time * flameSpeed;
+		flameNoiseUV.x += Time * 0.05f;
+
+		//Post-Translate Scale
+		flameNoiseUV *= 0.2f;
+
+		flameNoiseUV.x += distortionNoise.r * 0.0095f;
+		flameNoiseUV.y -= distortionNoise.g * 0.0055f;
+
+		vec2 flameNoise2;
+		flameNoise2.r = textureLod(FlameNoiseTexture, flameNoiseUV.xy, 0.f).r;
+		flameNoise2.g = textureLod(FlameNoiseTexture2, flameNoiseUV.xy, 0.f).r;
+
+		float flameNoise;
+		if(t < 1.f)
+		{
+			flameNoise = mix(flameNoise2.r, flameNoise2.g, t);
+		}
+		else
+		{
+			flameNoise = mix(flameNoise2.g, flameNoise2.r, t - 1.f);
+		}
+
+		//OutColor = vec4(flameNoise, flameNoise,flameNoise, 1.0);return;
+
+		flameNoise = 1.f - flameNoise;
+
+		flame.rgb *= flameNoise * 1.f;
+
+		OutColor = flame;
+	}`
+    );
+}
 
 export function GetShaderSourceCombinerPassPS() {
     const SizeScale = SceneDesc.FirePlaneSizeScaleNDC;
@@ -198,10 +328,11 @@ export function GetShaderSourceCombinerPassPS() {
 	
 			
 			vec4 bloom = textureLod(BloomTexture, texCoords.xy, 0.f);
-			bloom.rgb *= 0.75f;
+			//bloom.rgb *= 0.75f;
 			vec3 final = max(firePlane.rgb, bloom.rgb);
 			final = max(final, flame.rgb);
-			//vec4 final = bloom;
+
+			//final = bloom.rgb;
 	
 			const float exposure = 1.f;
 			final.rgb *= exposure;
@@ -209,101 +340,3 @@ export function GetShaderSourceCombinerPassPS() {
 		}`
     );
 }
-
-export const ShaderSourceFlamePostProcessPS = /* glsl */ `#version 300 es
-	
-	precision highp float;
-	precision highp sampler2D;
-
-	out vec4 OutColor;
-
-	uniform float Time;
-
-	uniform sampler2D FlameTexture;
-	uniform sampler2D NoiseTexture;
-	uniform sampler2D FlameNoiseTexture;
-	uniform sampler2D FlameNoiseTexture2;
-
-	in vec2 vsOutTexCoords;
-
-	void main()
-	{
-		vec2 flameNoiseUV = vsOutTexCoords;
-
-		vec2 flameSamplingUV = flameNoiseUV;
-		flameSamplingUV.y -= Time * 0.13;
-		flameSamplingUV.x += Time * 0.003;
-		float t = mod(Time, 10.0) * 0.2;
-		const float distUVStartScale = 0.025f;
-		const float distUVEndScale = 0.05f;
-		if(t < 1.f)
-		{
-			flameSamplingUV *= mix(distUVStartScale, distUVEndScale, t);
-		}
-		else
-		{
-			flameSamplingUV *= mix(distUVEndScale, distUVStartScale, t - 1.f);
-		}
-		//flameSamplingUV *= 0.05;
-		vec3 distortionNoise = textureLod(NoiseTexture, flameSamplingUV.xy, 0.f).rgb;
-		distortionNoise = (distortionNoise * 2.f) - 1.f;
-		flameSamplingUV = flameNoiseUV;
-
-		t = mod(Time, 2.f);
-		if(t < 1.f)
-		{
-			distortionNoise.r = mix(distortionNoise.r, distortionNoise.g, t);
-		}
-		else
-		{
-			distortionNoise.r = mix(distortionNoise.g, distortionNoise.r, t - 1.f);
-		}
-
-		//OutColor = vec4(distortionNoise.r, distortionNoise.r,distortionNoise.r, 1.0);return;
-
-		distortionNoise *= 2.5f;
-		flameSamplingUV.x += distortionNoise.r * 0.0075;
-		flameSamplingUV.y += distortionNoise.g * 0.001;
-
-		flameNoiseUV = flameSamplingUV;
-
-		//float4 flame = FlameTextureSRV[SampleCoord];
-		vec4 flame = textureLod(FlameTexture, flameSamplingUV.xy, 0.f);
-
-		//Pre-Translate Scale
-		flameNoiseUV *= 0.9f;
-		flameNoiseUV.x *= 5.f;
-
-		//Translate
-		const float flameSpeed = 0.85f; //TODO: USE VARYING SPEED [0.25,0.75]
-		flameNoiseUV.y -= Time * flameSpeed;
-		flameNoiseUV.x += Time * 0.05f;
-
-		//Post-Translate Scale
-		flameNoiseUV *= 0.2f;
-
-		flameNoiseUV.x += distortionNoise.r * 0.0075f;
-
-		vec2 flameNoise2;
-		flameNoise2.r = textureLod(FlameNoiseTexture, flameNoiseUV.xy, 0.f).r;
-		flameNoise2.g = textureLod(FlameNoiseTexture2, flameNoiseUV.xy, 0.f).r;
-
-		float flameNoise;
-		if(t < 1.f)
-		{
-			flameNoise = mix(flameNoise2.r, flameNoise2.g, t);
-		}
-		else
-		{
-			flameNoise = mix(flameNoise2.g, flameNoise2.r, t - 1.f);
-		}
-
-		
-		//OutColor = vec4(flameNoise, flameNoise,flameNoise, 1.0);return;
-  
-		flameNoise = 1.f - flameNoise;
-
-		flame.rgb *= flameNoise * 1.f;
-
-		OutColor = flame;
-	}`;
