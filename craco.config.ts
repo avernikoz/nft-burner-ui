@@ -2,6 +2,11 @@
 import webpack from "webpack";
 
 export default {
+    jest: {
+        configure: {
+            passWithNoTests: true,
+        },
+    },
     webpack: {
         configure: {
             resolve: {
