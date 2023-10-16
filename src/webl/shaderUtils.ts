@@ -1,3 +1,4 @@
+import { APP_ENVIRONMENT } from "../config/config";
 import { getWebGLProgram } from "./helpers/getWebGLProgram";
 import { showError } from "./utils";
 
@@ -57,10 +58,12 @@ export function CreateShaderProgramVSPS(gl: WebGL2RenderingContext, shaderSource
 }
 
 export function CheckGL(gl: WebGL2RenderingContext) {
-    const error = gl.getError();
-    if (error !== gl.NO_ERROR) {
-        showError("WebGL error: " + error);
-        return false;
+    if (APP_ENVIRONMENT === "development") {
+        const error = gl.getError();
+        if (error !== gl.NO_ERROR) {
+            showError("WebGL error: " + error);
+            return false;
+        }
     }
     return true;
 }

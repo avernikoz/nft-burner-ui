@@ -1,3 +1,4 @@
+import { APP_ENVIRONMENT } from "../config/config";
 import { Vector2 } from "./types";
 import { showError } from "./utils";
 
@@ -7,12 +8,6 @@ export function CreateTexture(
     inImageSrc: string | null,
     bGenerateMips = false,
 ): WebGLTexture {
-    /*
-	var self = this;
-	self.TextureUnitIndex = inUnitIndex;
-	self.Resource = gl.createTexture();
-	self.UniformBufferIndex = 0; */
-
     const texture = gl.createTexture();
 
     //Set Cur Texture Unit
@@ -50,13 +45,6 @@ export function CreateTexture(
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
     }
 
-    /* self.Bind = function(gl, inUniformBufferIndex)
-	{
-		gl.activeTexture(gl.TEXTURE0 + self.TextureUnitIndex);
-		gl.bindTexture(gl.TEXTURE_2D, self.Resource);
-		gl.uniform1i(inUniformBufferIndex, self.TextureUnitIndex);
-	} */
-
     if (texture === null) {
         throw new Error("Texture create fail");
     } else {
@@ -70,6 +58,7 @@ export function CreateTextureRT(
     internalFormat: GLenum,
     format: GLenum,
     type: GLenum,
+    bGenerateMips = false,
 ) {
     const rtTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, rtTexture);
@@ -80,8 +69,12 @@ export function CreateTextureRT(
         const data = null;
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, size.x, size.y, border, format, type, data);
 
-        // set the filtering so we don't need mips
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        if (bGenerateMips) {
+            gl.generateMipmap(gl.TEXTURE_2D);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+        } else {
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        }
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     }
@@ -89,8 +82,32 @@ export function CreateTextureRT(
 }
 
 export function FrameBufferCheck(gl: WebGL2RenderingContext, passname = "") {
-    const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-    if (status !== gl.FRAMEBUFFER_COMPLETE) {
-        showError(passname + " Framebuffer is incomplete");
+    if (APP_ENVIRONMENT === "development") {
+        const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if (status !== gl.FRAMEBUFFER_COMPLETE) {
+            showError(passname + " Framebuffer is incomplete");
+        }
     }
+}
+
+export function BindRenderTarget(
+    gl: WebGL2RenderingContext,
+    fbo: WebGLFramebuffer,
+    viewportSize: Vector2,
+    bClear = false,
+) {
+    gl.viewport(0.0, 0.0, viewportSize.x, viewportSize.y);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    if (bClear) {
+        gl.clearColor(0.0, 0.0, 0.0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    }
+}
+
+export function CreateFramebufferWithAttachment(gl: WebGL2RenderingContext, texture: WebGLTexture) {
+    const fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    FrameBufferCheck(gl, "FrameBuffer");
+    return fbo;
 }

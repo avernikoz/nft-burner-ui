@@ -1,5 +1,6 @@
 import * as dat from "dat.gui";
 import { GTime } from "../utils";
+import { SceneDesc } from "../scene";
 
 export class DrawUISingleton {
     private static _instance: DrawUISingleton;
@@ -26,8 +27,12 @@ export function DrawUI(GSettings: { bRunSimulation: boolean }) {
     // Create a GUI instance
     const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
 
+    GDatGUI.close();
+
     GDatGUI.add(GSettings, "bRunSimulation").name("Run Simulation"); // 'Enable Feature' is the label for the checkbox
 
     GDatGUI.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
     GDatGUI.add(GTime, "Cur").name("CurTime").listen().step(0.0001);
+
+    GDatGUI.add(SceneDesc, "ScreenRatio").name("ScreenRatio").listen().step(0.01);
 }
