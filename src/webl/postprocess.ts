@@ -22,7 +22,9 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         TextureSize: gl.getUniformLocation(shaderProgram, "TextureSize"),
         SourceTexture: gl.getUniformLocation(shaderProgram, "SourceTexture"),
         FlameTexture: gl.getUniformLocation(shaderProgram, "FlameTexture"),
+        SmokeTexture: gl.getUniformLocation(shaderProgram, "SmokeTexture"),
         FirePlaneTexture: gl.getUniformLocation(shaderProgram, "FirePlaneTexture"),
+        SpotlightTexture: gl.getUniformLocation(shaderProgram, "SpotlightTexture"),
         BloomTexture: gl.getUniformLocation(shaderProgram, "BloomTexture"),
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
         FlameNoiseTexture: gl.getUniformLocation(shaderProgram, "FlameNoiseTexture"),
@@ -273,6 +275,8 @@ export class RCombinerPass {
 
     NoiseTexture: WebGLTexture;
 
+    SpotlightTexture: WebGLTexture;
+
     constructor(gl: WebGL2RenderingContext) {
         //Create Shader Program
         this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceFullscreenPassVS, GetShaderSourceCombinerPassPS());
@@ -281,6 +285,7 @@ export class RCombinerPass {
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
 
         this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
+        this.SpotlightTexture = CreateTexture(gl, 4, "assets/spotlightCut2.png");
     }
 
     Execute(
@@ -288,6 +293,7 @@ export class RCombinerPass {
         firePlaneTexture: WebGLTexture,
         flameTexture: WebGLTexture,
         bloomTexture: WebGLTexture,
+        smokeTexture: WebGLTexture,
         destFramebuffer: WebGLFramebuffer | null,
         destSize: Vector2,
     ) {
@@ -317,6 +323,14 @@ export class RCombinerPass {
         gl.activeTexture(gl.TEXTURE0 + 4);
         gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
         gl.uniform1i(this.UniformParametersLocationList.NoiseTexture, 4);
+
+        gl.activeTexture(gl.TEXTURE0 + 5);
+        gl.bindTexture(gl.TEXTURE_2D, smokeTexture);
+        gl.uniform1i(this.UniformParametersLocationList.SmokeTexture, 5);
+
+        gl.activeTexture(gl.TEXTURE0 + 6);
+        gl.bindTexture(gl.TEXTURE_2D, this.SpotlightTexture);
+        gl.uniform1i(this.UniformParametersLocationList.SpotlightTexture, 6);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }

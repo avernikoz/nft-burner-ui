@@ -20,7 +20,7 @@ export const ShaderSourcePresentPassPS = /* glsl */ `#version 300 es
 
 	out vec4 OutColor;
 
-	uniform sampler2D SourceTexture;
+	uniform highp sampler2D SourceTexture;
 	uniform float MipLevel;
 
 	in vec2 vsOutTexCoords;
@@ -38,7 +38,7 @@ export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 
 	out vec4 OutColor;
 
-	uniform sampler2D SourceTexture;
+	uniform highp sampler2D SourceTexture;
 
 	uniform float MipLevel;
 	uniform vec2 TextureSize;
@@ -69,7 +69,7 @@ export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 
 	out vec4 OutColor;
 
-	uniform sampler2D SourceTexture;
+	uniform highp sampler2D SourceTexture;
 
 	uniform float MipLevel;
 	uniform vec2 TextureSize;
@@ -100,8 +100,8 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 
 	out vec4 OutColor;
 
-	uniform sampler2D FlameTexture;
-	uniform sampler2D FirePlaneTexture;
+	uniform highp sampler2D FlameTexture;
+	uniform highp sampler2D FirePlaneTexture;
 	uniform float MipLevel;
 
 	in vec2 vsOutTexCoords;
@@ -142,10 +142,10 @@ export function GetShaderSourceFlamePostProcessPS() {
 
 	uniform float Time;
 
-	uniform sampler2D FlameTexture;
-	uniform sampler2D NoiseTexture;
-	uniform sampler2D FlameNoiseTexture;
-	uniform sampler2D FlameNoiseTexture2;
+	uniform highp sampler2D FlameTexture;
+	uniform highp sampler2D NoiseTexture;
+	uniform highp sampler2D FlameNoiseTexture;
+	uniform highp sampler2D FlameNoiseTexture2;
 
 	in vec2 vsOutTexCoords;
 
@@ -222,7 +222,7 @@ export function GetShaderSourceFlamePostProcessPS() {
 		flameNoiseUV *= kViewSize;
 
 		//Translate
-		const float flameSpeed = 0.75f; //TODO: USE VARYING SPEED [0.25,0.75]
+		const float flameSpeed = 0.85f; //TODO: USE VARYING SPEED [0.25,0.75]
 		flameNoiseUV.y -= Time * flameSpeed;
 		flameNoiseUV.x += Time * 0.05f;
 
@@ -270,10 +270,12 @@ export function GetShaderSourceCombinerPassPS() {
 	
 		uniform float Time;
 	
-		uniform sampler2D FlameTexture;
-		uniform sampler2D FirePlaneTexture;
-		uniform sampler2D BloomTexture;
-		uniform sampler2D NoiseTexture;
+		uniform highp sampler2D FlameTexture;
+		uniform highp sampler2D FirePlaneTexture;
+		uniform highp sampler2D BloomTexture;
+		uniform highp sampler2D SmokeTexture;
+		uniform highp sampler2D NoiseTexture;
+		uniform highp sampler2D SpotlightTexture;
 	
 		in vec2 vsOutTexCoords;
 	
@@ -289,7 +291,7 @@ export function GetShaderSourceCombinerPassPS() {
         /* glsl */ `));
 
 			vec2 texCoords = vsOutTexCoords;
-			vec4 flame = textureLod(FlameTexture, texCoords.xy, 0.f);
+			vec3 flame = textureLod(FlameTexture, texCoords.xy, 0.f).rgb;
 			flame.rgb *= 1.1f;
 	
 		#if 1//heat distortion
@@ -312,28 +314,73 @@ export function GetShaderSourceCombinerPassPS() {
 			{
 				distortionNoise.r = mix(distortionNoise.g, distortionNoise.r, t - 1.f);
 			}
-			vec4 heat = textureLod(FlameTexture, (texCoords - vec2(0.f, (0.2f * kSizeScale) / kViewSize.y )), 0.f);
+			vec3 heat = textureLod(FlameTexture, (texCoords - vec2(0.f, (0.2f * kSizeScale) / kViewSize.y )), 0.f).rgb;
 			distortionNoise.x *= 0.0025;
 			distortionNoise.y *= 0.001;
 			//distortionNoise *= 0.5f;
-			distortionNoise *= 5.f;
+			distortionNoise *= 10.f;
 			distortionNoise *= clamp(dot(heat.rgb, vec3(0.333f)), 0.f, 1.f);
 			//OutColor = vec4(distortionNoise.rg, 0.f, 1.f); return;
 			distortionUV.x += distortionNoise.r;
 			distortionUV.y += distortionNoise.g;
-			vec4 firePlane = textureLod(FirePlaneTexture, distortionUV.xy, 0.f);
+			vec3 firePlane = textureLod(FirePlaneTexture, distortionUV.xy, 0.f).rgb;
 		#else
 			vec4 firePlane = textureLod(FirePlaneTexture, texCoords.xy, 0.f);
-		#endif
-	
+			#endif
 			
-			vec4 bloom = textureLod(BloomTexture, texCoords.xy, 0.f);
-			//bloom.rgb *= 0.75f;
-			vec3 final = max(firePlane.rgb, bloom.rgb);
+			vec3 bloom = textureLod(BloomTexture, texCoords.xy, 0.f).rgb;
+
+			float light = textureLod(SpotlightTexture, vec2(texCoords.x, 1.f - texCoords.y), 0.f).r;
+			
+			vec4 smoke = textureLod(SmokeTexture, texCoords.xy, 0.f);
+
+			smoke.rgb *= 0.75f;
+
+			//light
+			smoke.rgb *= 0.25f;
+
+			const float BloomStrength = 5.0f;
+			const vec2 SmokeBloomColorClampMinMax = vec2(0.15, 1.f);
+			const vec2 SmokeBloomAlphaClampMinMax = vec2(0.f, 1.f);
+			vec3 smokeLightFromBloom = bloom.rgb
+			* BloomStrength
+			* clamp(1.f + clamp(smoke.r, SmokeBloomColorClampMinMax.x, SmokeBloomColorClampMinMax.y) - clamp(smoke.a, SmokeBloomAlphaClampMinMax.x, SmokeBloomAlphaClampMinMax.y), 0.f, 1.f) * clamp(smoke.a, 0.f, 1.f)
+			;
+
+			const float SmokeSpotlightStrength = 1.0f;
+			float smokeLightFromSpotlight = light
+			* SmokeSpotlightStrength
+			* clamp(1.f + clamp(smoke.r, SmokeBloomColorClampMinMax.x, SmokeBloomColorClampMinMax.y) - clamp(smoke.a, SmokeBloomAlphaClampMinMax.x, SmokeBloomAlphaClampMinMax.y), 0.f, 1.f) * clamp(smoke.a, 0.f, 1.f)
+			;
+			smoke.rgb += max(smokeLightFromBloom, smokeLightFromSpotlight);
+			//smoke.rgb += smokeLightFromBloom;
+			//smoke.rgb += smokeLightFromSpotlight;
+
+
+			smoke.a *= 0.75f;
+
+			float smokeScale = 1.f;
+			//smokeScale *= (texCoords.y * kViewSize.y * (kSizeScale));
+			smokeScale *= clamp(length((texCoords.xy * kViewSize.xy * (2.0 - kSizeScale)) - vec2(0.5) * kViewSize.xy * (2.0 - kSizeScale)), 0.f, 1.f);
+			smokeScale *= 2.0f;
+			smokeScale = min(1.5f, smokeScale);
+			smoke.a *= smokeScale;
+
+			//lit plane with spotlight
+			if(firePlane.r < 1.0)
+			{
+				firePlane.rgb *= (light + 0.5f);
+			}
+
+			firePlane.rgb = smoke.rgb * 1.f + firePlane.rgb * clamp(1.f - smoke.a, 0.0, 1.f);
+
+			vec3 final = firePlane.rgb;
+			const float bloomStrengthPlane = 0.75f;
+			final = max(firePlane.rgb, bloom.rgb * bloomStrengthPlane);
 			final = max(final, flame.rgb);
 
 			//final = bloom.rgb;
-	
+
 			const float exposure = 1.f;
 			final.rgb *= exposure;
 			OutColor = vec4(final.rgb, 1);

@@ -294,9 +294,11 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 
 		//vec3 imageColor = texture(ImageTexture, vsOutTexCoords.xy).rgb;
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
-		vec3 imageColor = texture(ImageTexture, flippedUVs.xy).rgb * 0.5;
+		const float imageBrightness = 0.5f;
+		vec3 imageColor = texture(ImageTexture, flippedUVs.xy).rgb * imageBrightness;
 
-		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * 0.25;
+		const float ashesBrightness = 0.5f;
+		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * ashesBrightness;
 		float afterBurnNoise = texture(AfterBurnTexture, vsOutTexCoords.xy).r;
 		
 		vec3 embersColor = vec3(afterBurnNoise, afterBurnNoise * 0.2, afterBurnNoise * 0.1);
@@ -320,18 +322,33 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 		emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.f, 2.f);
 	#endif
 
-			ashesColor.rgb += embersColor * 10.f * emberScale;
-			ashesColor.b += (1.f - emberScale) * 0.05f;
+		ashesColor.rgb += embersColor * 10.f * emberScale;
+		ashesColor.b += (1.f - emberScale) * 0.05f;
+
+	#if 1 //BURNED IMAGE
+		vec3 burnedImageTexture = vec3(0.f);
+		const float BurnedImageSharpness = 0.1f;
+		float h = BurnedImageSharpness * 0.1;
+		vec3 n = textureLod(ImageTexture, flippedUVs + vec2(0, h), 0.f).rgb;
+		vec3 e = textureLod(ImageTexture, flippedUVs + vec2(h, 0), 0.f).rgb;
+		vec3 s = textureLod(ImageTexture, flippedUVs + vec2(0, -h), 0.f).rgb;
+		vec3 w = textureLod(ImageTexture, flippedUVs + vec2(-h, 0), 0.f).rgb;
+
+		vec3 dy = (n - s)*.5;
+		vec3 dx = (e - w)*.5;
+
+		vec3 edge = sqrt(dx*dx + dy*dy);
+		float luminance = dot( edge.rgb, vec3( 0.299f, 0.587f, 0.114f ) );
+		burnedImageTexture = luminance * 10.0 * vec3(1, 0.2, 0.1);
+		//ashesColor.rgb += burnedImageTexture * emberScale;
+		ashesColor.rgb = max(ashesColor.rgb, burnedImageTexture * emberScale);
+	#endif
 
 		vec3 paperColor = ashesColor;
 
 		if(curFuel > 0.)
 		{
 			paperColor = mix(ashesColor, imageColor, /* saturate */(curFuel));
-		}
-		else
-		{
-			
 		}
 
 		vec3 fireColor;

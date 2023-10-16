@@ -39,6 +39,8 @@ export const EParticleShadingMode = {
     Default: 0,
     Flame: 1,
     Embers: 2,
+    Smoke: 3,
+    Ashes: 4,
 };
 
 export class ParticlesEmitter {
@@ -106,10 +108,14 @@ export class ParticlesEmitter {
             inTextureFileName = "",
             inFlipbookSizeRC = { x: 16.0, y: 4.0 },
             inDefaultSize = { x: 1.0, y: 1.0 },
+            inSizeRangeMinMax = { x: 1.0, y: 1.0 },
+            inSizeClampMax = { x: 1.0, y: 1.0 },
             inInitialVelocityScale = 0.0,
             inVelocityFieldForceScale = 0.0,
             inBuoyancyForceScale = 0.0,
             inbOriginAtCenter = true,
+            inbMotionBasedTransform = false,
+            inbAlphaFade = false,
             inESpecificShadingMode = EParticleShadingMode.Default,
         },
     ) {
@@ -318,8 +324,15 @@ export class ParticlesEmitter {
 
         this.ParticleInstancedRenderShaderProgram = CreateShaderProgramVSPS(
             gl,
-            GetParticleRenderInstancedVS(this.bUsesTexture, inDefaultSize, inbOriginAtCenter),
-            GetParticleRenderColorPS(inESpecificShadingMode, this.bUsesTexture, 0.0),
+            GetParticleRenderInstancedVS(
+                this.bUsesTexture,
+                inDefaultSize,
+                inSizeRangeMinMax,
+                inSizeClampMax,
+                inbOriginAtCenter,
+                inbMotionBasedTransform,
+            ),
+            GetParticleRenderColorPS(inESpecificShadingMode, this.bUsesTexture, inbAlphaFade, 0.5),
         );
 
         this.ParticleRenderUniformParametersLocationList = this.GetUniformParametersList(
@@ -486,7 +499,7 @@ export class ParticlesEmitter {
         this.CurrentBufferIndex = 1 - this.CurrentBufferIndex;
     }
 
-    Render(gl: WebGL2RenderingContext, blendMode: number) {
+    Render(gl: WebGL2RenderingContext, blendMode: number, blendSource: number, blendDest: number) {
         //gl.bindVertexArray(this.ParticleRenderVAO[1 - this.CurrentBufferIndex]);
         gl.bindVertexArray(this.ParticleInstancedRenderVAO[1 - this.CurrentBufferIndex]);
 
@@ -520,8 +533,7 @@ export class ParticlesEmitter {
 
         /* Set up blending */
         gl.enable(gl.BLEND);
-        //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-        gl.blendFunc(gl.ONE, gl.ONE);
+        gl.blendFunc(blendSource, blendDest);
         gl.blendEquation(blendMode);
 
         //gl.drawArrays(gl.POINTS, 0, this.NumActiveParticles);

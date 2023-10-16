@@ -99,7 +99,7 @@ export function BindRenderTarget(
     gl.viewport(0.0, 0.0, viewportSize.x, viewportSize.y);
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
     if (bClear) {
-        gl.clearColor(0.0, 0.0, 0.0, 1);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 }

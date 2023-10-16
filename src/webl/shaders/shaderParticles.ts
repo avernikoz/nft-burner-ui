@@ -5,7 +5,7 @@ import { Vector2 } from "../types";
 //SC - Shader Code
 function scTranslateToBaseAtOrigin(condition: boolean) {
     if (condition) {
-        return `const float scaleOffsetAmount = 0.9f;
+        return /* glsl */ `const float scaleOffsetAmount = 0.9f;
 			pos.y += (scale / kViewSize.y) * scaleOffsetAmount;`;
     } else {
         return ``;
@@ -30,6 +30,7 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
 			outVelocity.y *= 0.25f;
 		} */
 		outVelocity.y += InitialVelocityScale * 0.25f;
+		//outVelocity.y += abs(outVelocity.y) * 0.75f;
 		`
         );
     } else {
@@ -67,6 +68,8 @@ function scParticleSampleFlipbook(condition: boolean) {
     if (condition) {
         return /* glsl */ `uint flipBookIndex1D = uint(floor(interpolatorFrameIndex));
 		uvec2 FlipBookIndex2D;
+		/* FlipBookIndex2D.x = 1u;
+		FlipBookIndex2D.y = 1u; */
 		FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
 		FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
 
@@ -75,7 +78,19 @@ function scParticleSampleFlipbook(condition: boolean) {
 		uv.x += (frameSize.x * float(FlipBookIndex2D.x));
 		uv.y += (frameSize.y * float(FlipBookIndex2D.y));
 		
-		colorFinal = texture(ColorTexture, uv).rgba;`;
+		colorFinal = texture(ColorTexture, uv).rgba;
+
+		//dissipation fade-out
+		//float dissipationThres = 1.f - CircularFadeIn(interpolatorAge);
+		//float dissipationThres = /* CircularFadeIn */(interpolatorAge);
+		//float dissipationThres = 1.f - (interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74);
+		/* if(colorFinal.a < (dissipationThres))
+		{
+			discard;
+		} */
+		//colorFinal.rgb *= dissipationThres;
+		
+		`;
     } else {
         return ``;
     }
@@ -144,11 +159,15 @@ export function GetParticleUpdateShaderVS(
 			  vec2 fireUV = (inDefaultPosition + 1.f) * 0.5f;
 			  float curFire = texture(FireTexture, fireUV.xy).r;
 			
-			  const vec2 kSpawnRange = vec2(float(` +
+			  vec2 kSpawnRange = vec2(float(` +
         spawnFireRange.x +
         /* glsl */ `), float(` +
         spawnFireRange.y +
         /* glsl */ `));
+			  /* if(gl_VertexID % 400 == 0)
+			  {
+				kSpawnRange.x = 0.001f;
+			  } */
 			  bool bIsInSpawnRange = ((curFire >= kSpawnRange.x) && (curFire <= kSpawnRange.y ));
 			  bool bAllowNewSpawn = false;
 			  bool bAllowUpdate = false;
@@ -232,10 +251,10 @@ export function GetParticleUpdateShaderVS(
 				  float posYNorm = (inPosition.y + 1.f) * 0.5f;
 				  curVel.y += buoyancyForce * DeltaTime * temperature;
 
-				  float downwardForce = /* ageNorm * */ (posYNorm /* * posYNorm */) * buoyancyForce * 1.f;
+				  float downwardForce = /* ageNorm * */ (posYNorm /* * posYNorm */) /* * buoyancyForce */ * 2.5f;
 				  if(curVel.y > 0.f)
 				  {
-					curVel.y -= downwardForce * DeltaTime * curVel.y * 0.2f;
+					curVel.y -= downwardForce * DeltaTime * curVel.y;
 				  }
   
 				  const float Damping = 0.99f;
@@ -261,7 +280,72 @@ export const ParticleUpdatePS = /* glsl */ `#version 300 es
 	  void main()
 	  {}`;
 
-export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize: Vector2, bOriginAtCenter = true) {
+function scTransformBasedOnMotion(condition: boolean) {
+    if (condition) {
+        return /* glsl */ `vec2 curVelocity = inVelocity;
+			float velLength = length(curVelocity) * 0.1;
+			if(velLength > 0.f)
+			{
+				pos.y *= clamp(1.f - velLength, 0.15f, 0.35f);
+				pos.x *= (1.f + velLength);
+				
+				// Calculate the angle between the initial direction (1, 0) and the desired direction
+				float angle = atan(curVelocity.y, curVelocity.x);
+
+				// Rotate the stretched position
+				float cosAngle = cos(angle);
+				float sinAngle = sin(angle);
+				vec2 rotatedPosition = vec2(
+					pos.x * cosAngle - pos.y * sinAngle,
+					pos.x * sinAngle + pos.y * cosAngle
+				);
+				
+				pos = rotatedPosition;
+			}`;
+    } else {
+        return ``;
+    }
+}
+
+function scFadeInOutTransform(condition: boolean) {
+    if (condition) {
+        return /* glsl */ `
+		#if 1 //SINGLE CURVE SCALE FADE OUT
+
+		float velLength = length(inVelocity);//TODO Optimization : Replace with compile time const
+		if(ageNorm < 0.333f)
+		{
+			ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
+			pos.x *= clamp(ageNorm, 0.2, 1.f);
+			pos.y *= clamp(ageNorm, 0.05, 1.f);
+		}
+		else if((velLength < 0.01))
+		{
+			ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
+			pos.x *= clamp(ageNorm, 0.5, 1.f);
+			pos.y *= clamp(ageNorm, 0.0, 1.f);
+		}
+	  #else
+		float normAgeFadeInPow = sqrt(1.f - pow(1.f - ageNorm, 8.f));
+		pos.xy *= normAgeFadeInPow;
+
+		float normAgeFadeOutPow = 1.f - clamp(pow(ageNorm, 4.f), 0.f, 1.f);
+		pos.xy *= normAgeFadeOutPow;
+	  #endif
+	  `;
+    } else {
+        return ``;
+    }
+}
+
+export function GetParticleRenderInstancedVS(
+    bUsesTexture: boolean,
+    defaultSize: Vector2,
+    sizeRangeMinMax: Vector2,
+    sizeClampMax: Vector2,
+    bOriginAtCenter = true,
+    bMotionBasedTransform = false,
+) {
     const sizeScale = SceneDesc.FirePlaneSizeScaleNDC;
     const viewSize = SceneDesc.ViewRatioXY;
     return (
@@ -286,6 +370,7 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
 		flat out float interpolatorAge;
 		flat out float interpolatorFrameIndex;
 		out vec2 interpolatorTexCoords;
+		flat out float interpolatorSize;
 	
 		//check if particle should never be drawn again
 		bool IsParticleDead()
@@ -317,14 +402,15 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
 			#endif
   
 				interpolatorTexCoords = uvLocal;
-				float ageNorm = inAge / ParticleLife;
+				float ageNorm = min(inAge, ParticleLife - 0.0001) / ParticleLife;
+				//float ageNorm = min(inAge, ParticleLife) / ParticleLife;
 				interpolatorAge = ageNorm;
   
 
 				float animationParameterNorm = ageNorm;
 				if(NumLoops > 1.f)
 				{
-				  animationParameterNorm = fract(inAge / (ParticleLife / NumLoops));
+				  animationParameterNorm = fract((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops));
 				}
 				float TotalFlipFrames = FlipbookSizeRC.x * FlipbookSizeRC.y;
 				interpolatorFrameIndex = (animationParameterNorm * TotalFlipFrames);
@@ -343,12 +429,32 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
 				pos /= kViewSize;
   
 				//scale
-				float scale = 1.f;
+				float scale = 1.0f;
 			  #if 1 //NOISE-DRIVEN SIZE
-				float particleDiffScale = 0.01f;
-				vec2 noiseUV = vec2(CurTime * 0.0017f + 0.23f * float(gl_InstanceID) * particleDiffScale, CurTime * 0.09 + 0.17 * float(gl_InstanceID) * particleDiffScale);
+				vec2 noiseUV = vec2((inPosition.x + 1.f) * 0.5f, (inPosition.y + 1.f) * 0.5f);
+				noiseUV *= 0.25f;
+				//noiseUV.x += CurTime * 0.017f;
+				noiseUV.y += CurTime * 0.033f;
 				vec2 noise = textureLod(NoiseTexture, noiseUV.xy, 0.f).rg;
 
+				const vec2 kSizeRangeMinMax = vec2(float(` +
+        sizeRangeMinMax.x +
+        /* glsl */ `), float(` +
+        sizeRangeMinMax.y +
+        /* glsl */ `));
+				const vec2 kSizeClampMax = vec2(float(` +
+        sizeClampMax.x +
+        /* glsl */ `), float(` +
+        sizeClampMax.y +
+        /* glsl */ `));
+
+				scale = clamp(MapToRange(noise.r, 0.35, 0.65, kSizeRangeMinMax.x, kSizeRangeMinMax.y), kSizeRangeMinMax.x, kSizeRangeMinMax.y);
+
+				
+				float particleDiffScale = 0.17f;
+				float sizeChangeSpeed = 0.77;
+				noiseUV = vec2(CurTime * 0.0017f + 0.23f * float(gl_InstanceID) * particleDiffScale, CurTime * sizeChangeSpeed * 0.1f + 0.17 * float(gl_InstanceID) * particleDiffScale);
+				noise = textureLod(NoiseTexture, noiseUV.xy, 0.f).rg;
 				float t = mod(CurTime, 2.f);
 				if(t < 1.f)
 				{
@@ -359,20 +465,26 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
 					noise.r = mix(noise.g, noise.r, t - 1.f);
 				}
 
-				noise.r = clamp(MapToRange(noise.r, 0.3, 0.65, 0.2f, 1.f), 0.f, 2.f);
+				float scale2 = clamp(MapToRange(noise.r, 0.35, 0.65, kSizeRangeMinMax.x, kSizeRangeMinMax.y), kSizeRangeMinMax.x, kSizeRangeMinMax.y);
 
-				const float scaleAmount = 0.2f;
-				scale = noise.r * scaleAmount;
-  
-				if(scale < 0.3 * scaleAmount)
+				scale = scale * scale2;
+				//scale = scale2;
+
+				if(scale < 0.2f)
 				{
 				  gl_Position = vec4(-10, -10, -10, 1.0);
 				  return;
 				}
-			  #endif
-				
+
 				scale *= kSizeScale;
-				pos.xy *= scale;
+				pos.x *= max(kSizeClampMax.x, scale);
+				pos.y *= max(kSizeClampMax.y, scale);
+
+				
+				#endif//NOISE DRIVEN SIZE
+
+				interpolatorSize = scale;
+				
 
 				//offset to origin
 				` +
@@ -387,42 +499,16 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
         defaultSize.y +
         /* glsl */ `);
 
-			#if 1//Rotate based on velocity
-				vec2 curVelocity = inVelocity;
-				float velLength = length(curVelocity) * 0.1;
-				if(velLength > 0.f)
-				{
-					pos.y *= clamp(1.f - velLength, 0.f, 1.f);
-					pos.x *= (1.f + velLength);
-					
-					// Calculate the angle between the initial direction (1, 0) and the desired direction
-					float angle = atan(curVelocity.y, curVelocity.x);
 
-					// Rotate the stretched position
-					float cosAngle = cos(angle);
-					float sinAngle = sin(angle);
-					vec2 rotatedPosition = vec2(
-						pos.x * cosAngle - pos.y * sinAngle,
-						pos.x * sinAngle + pos.y * cosAngle
-					);
-					
-					pos = rotatedPosition;
-				}
-				
-			#endif
-  
-				//fade in-out
-			  #if 1 //SINGLE CURVE SCALE FADE OUT
-				ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
-				pos.x *= clamp(ageNorm, 0.1, 1.f);
-				pos.y *= clamp(ageNorm, 0.0, 1.f);
-			  #else
-				float normAgeFadeInPow = sqrt(1.f - pow(1.f - ageNorm, 8.f));
-				pos.xy *= normAgeFadeInPow;
-  
-				float normAgeFadeOutPow = 1.f - clamp(pow(ageNorm, 4.f), 0.f, 1.f);
-				pos.xy *= normAgeFadeOutPow;
-			  #endif
+			//Rotate based on velocity
+			` +
+        scTransformBasedOnMotion(bMotionBasedTransform) +
+        /* glsl */ `
+
+			//fade in-out
+		` +
+        scFadeInOutTransform(bUsesTexture) +
+        /* glsl */ `
   
 				//translate
 				vec2 translation = inPosition;
@@ -441,6 +527,15 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
 			
 		}`
     );
+}
+
+function scAlphaFade(condition: boolean) {
+    if (condition) {
+        return /* glsl */ `float ageNorm = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
+		colorFinal.rgb *= ageNorm;`;
+    } else {
+        return ``;
+    }
 }
 
 function scDefaultShading() {
@@ -468,10 +563,36 @@ function scFlameSpecificShading(bUsesTexture: boolean, artificialFlameAmount: nu
         /* glsl */ `);
 
 		colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 5.0f, t);
+
+		//colorFinal.rgb *= CircularFadeOut(interpolatorTexCoords.y);
+
 	  #endif
 		
 		//float ageNormalized = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
 		//colorFinal.rgb *= (1.f - interpolatorAge);
+		`
+    );
+}
+
+function scSmokeSpecificShading() {
+    return (
+        scParticleSampleFlipbook(true) +
+        /* glsl */ `
+
+		
+		//float alphaScale = 0.4f;
+		float alphaScale = 0.5f;
+		colorFinal.a *= alphaScale;
+		
+		/* float brightness = mix(0.35, 0.15, interpolatorAge);
+		colorFinal.rgb *= brightness; */
+
+		colorFinal.rgba *= (1.f - interpolatorAge);
+
+
+		colorFinal.rgb *= colorFinal.a;
+
+		
 		`
     );
 }
@@ -517,6 +638,70 @@ function scEmbersSpecificShading() {
 		`;
 }
 
+function scAshesSpecificShading() {
+    return /* glsl */ `
+	
+		/* const vec3 colorBright = vec3(0.9, 0.25, 0.0) * 2.f;
+		const vec3 colorLow = vec3(0.2, 0.25, 0.9); */
+
+		/* float t = sin(interpolatorAge) + 1.f;
+		if(t < 1.f)
+		{
+			colorFinal.rgb = mix(colorBright, colorLow, t);
+		}
+		else
+		{
+			colorFinal.rgb = mix(colorBright, colorLow, t - 1.f);
+		} */
+
+		//colorFinal.rgb = mix(colorBright, colorLow, interpolatorAge);
+
+		colorFinal.rgb = vec3(0.5);
+
+		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		s *= 2.f;
+
+		//Color LUT 
+		/* const vec3 redColor = vec3(1.0, 0.3, 0.1);
+		const vec3 yellowColor = vec3(0.9, 0.9, 0.1);
+		const vec3 blueColor = vec3(0.1, 0.1, 0.9);
+
+		float t = s * 3.f;
+
+		if(t < 1.f)
+		{
+			colorFinal.rgb = mix(redColor, yellowColor, t);
+		}
+		else if(t < 2.f)
+		{
+			colorFinal.rgb = mix(yellowColor, blueColor, t - 1.f);
+		}
+		else
+		{
+			colorFinal.rgb = mix(redColor, blueColor, t - 2.f);
+		} */
+
+		float blurRadius = 0.5f;
+		blurRadius = interpolatorAge * 0.75;
+		if(s > 0.5f)
+		{
+			s += blurRadius;
+			//s = 1.f;
+		}
+		else
+		{
+			s -= blurRadius;
+			//s = 0.f;
+		}
+		//s += 0.15f;
+		s = (1.f - clamp(s, 0.f, 1.f));
+		colorFinal.rgba *= s;
+		//colorFinal.rgba *= 0.25f;
+		//colorFinal.rgb *= 50.f;
+		//colorFinal.r *= s;
+		`;
+}
+
 function scGetBasedOnShadingMode(shadingMode: number, bUsesTexture: boolean, artificialFlameAmount: number) {
     switch (shadingMode) {
         case EParticleShadingMode.Default:
@@ -525,10 +710,19 @@ function scGetBasedOnShadingMode(shadingMode: number, bUsesTexture: boolean, art
             return scFlameSpecificShading(bUsesTexture, artificialFlameAmount);
         case EParticleShadingMode.Embers:
             return scEmbersSpecificShading();
+        case EParticleShadingMode.Smoke:
+            return scSmokeSpecificShading();
+        case EParticleShadingMode.Ashes:
+            return scAshesSpecificShading();
     }
 }
 
-export function GetParticleRenderColorPS(eShadingMode: number, bUsesTexture: boolean, artificialFlameAmount = 0.45) {
+export function GetParticleRenderColorPS(
+    eShadingMode: number,
+    bUsesTexture: boolean,
+    bAlphaFadeEnabled: boolean,
+    artificialFlameAmount = 0.45,
+) {
     return (
         /* glsl */ `#version 300 es
 	  
@@ -539,6 +733,7 @@ export function GetParticleRenderColorPS(eShadingMode: number, bUsesTexture: boo
 		flat in float interpolatorAge;
 		flat in float interpolatorFrameIndex;
 		in vec2 interpolatorTexCoords;
+		flat in float interpolatorSize;
 
 		uniform sampler2D ColorTexture;
 		uniform sampler2D FlameColorLUT;
@@ -575,6 +770,12 @@ export function GetParticleRenderColorPS(eShadingMode: number, bUsesTexture: boo
 			` +
         scGetBasedOnShadingMode(eShadingMode, bUsesTexture, artificialFlameAmount) +
         /* glsl */ `
+
+		//fade in-out
+		` +
+        scAlphaFade(bAlphaFadeEnabled) +
+        /* glsl */ `
+
 			OutColor = colorFinal;
 		}`
     );

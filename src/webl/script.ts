@@ -3,7 +3,13 @@ import { RFirePlanePass } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUI, DrawUISingleton } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
-import { EmberParticlesDesc, FlameParticlesDesc } from "./particlesConfig";
+import {
+    AfterBurnAshesParticlesDesc,
+    AfterBurnSmokeParticlesDesc,
+    EmberParticlesDesc,
+    FlameParticlesDesc,
+    SmokeParticlesDesc,
+} from "./particlesConfig";
 import { RBloomPass, RBlurPass, RCombinerPass, RFlamePostProcessPass, RPresentPass } from "./postprocess";
 import { BindRenderTarget, CreateFramebufferWithAttachment, CreateTextureRT } from "./resourcesUtils";
 import { SceneDesc } from "./scene";
@@ -147,6 +153,8 @@ const GRenderTargets: {
     FlameTexture2: WebGLTexture | null;
     FlameFramebuffer: WebGLFramebuffer | null;
     FlameFramebuffer2: WebGLFramebuffer | null;
+    SmokeTexture: WebGLTexture | null;
+    SmokeFramebuffer: WebGLFramebuffer | null;
 } = {
     FirePlaneTexture: null,
     FirePlaneFramebuffer: null,
@@ -154,6 +162,8 @@ const GRenderTargets: {
     FlameFramebuffer: null,
     FlameTexture2: null,
     FlameFramebuffer2: null,
+    SmokeTexture: null,
+    SmokeFramebuffer: null,
 };
 
 function AllocateMainRenderTargets(gl: WebGL2RenderingContext, size: Vector2) {
@@ -181,6 +191,10 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext, size: Vector2) {
     GRenderTargets.FlameFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture!);
     GRenderTargets.FlameTexture2 = CreateTextureRT(gl, size, textureInternalFormat, textureFormat, textureType, true);
     GRenderTargets.FlameFramebuffer2 = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture2!);
+
+    //Smoke
+    GRenderTargets.SmokeTexture = CreateTextureRT(gl, size, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
+    GRenderTargets.SmokeFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.SmokeTexture!);
 }
 
 export function RenderMain() {
@@ -270,6 +284,12 @@ export function RenderMain() {
     const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const AfterBurnSmokeParticles = new ParticlesEmitter(gl, AfterBurnSmokeParticlesDesc);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const AshesParticles = new ParticlesEmitter(gl, AfterBurnAshesParticlesDesc);
 
     //generate intermediate texture for Blur
     //TODO: Specify target MIP resolution instead, and deduce MIP Index from it
@@ -314,6 +334,9 @@ export function RenderMain() {
 
             FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
             EmberParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+            AshesParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+            SmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+            AfterBurnSmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
             BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, RenderTargetSize, true);
             FirePlanePass.VisualizeFirePlane(gl);
@@ -324,7 +347,7 @@ export function RenderMain() {
             }); */
 
             BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, RenderTargetSize, true);
-            FlameParticles.Render(gl, gl.MAX);
+            FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
 
             GPostProcessPasses.FlamePostProcess!.Execute(
                 gl,
@@ -334,7 +357,7 @@ export function RenderMain() {
             );
             const flameSourceTextureRef = GRenderTargets.FlameTexture2;
 
-            EmberParticles.Render(gl, gl.FUNC_ADD);
+            EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
 
             if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
                 //Downsample Source
@@ -348,19 +371,25 @@ export function RenderMain() {
                 for (let i = 0; i < GPostProcessPasses.BloomNumBlurPasses; i++) {
                     GPostProcessPasses.Bloom!.Blur(gl, GPostProcessPasses.Blur!);
                 }
-
-                GPostProcessPasses.Combiner!.Execute(
-                    gl,
-                    GRenderTargets.FirePlaneTexture!,
-                    flameSourceTextureRef!,
-                    GPostProcessPasses.Bloom!.BloomTexture,
-                    null,
-                    {
-                        x: canvas.width,
-                        y: canvas.height,
-                    },
-                );
             }
+
+            BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, RenderTargetSize, true);
+            SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+            GPostProcessPasses.Combiner!.Execute(
+                gl,
+                GRenderTargets.FirePlaneTexture!,
+                flameSourceTextureRef!,
+                GPostProcessPasses.Bloom!.BloomTexture!,
+                GRenderTargets.SmokeTexture!,
+                null,
+                {
+                    x: canvas.width,
+                    y: canvas.height,
+                },
+            );
 
             CGConstants.bMouseMoved = false;
 
