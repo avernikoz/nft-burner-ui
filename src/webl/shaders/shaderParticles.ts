@@ -79,17 +79,6 @@ function scParticleSampleFlipbook(condition: boolean) {
 		uv.y += (frameSize.y * float(FlipBookIndex2D.y));
 		
 		colorFinal = texture(ColorTexture, uv).rgba;
-
-		//dissipation fade-out
-		//float dissipationThres = 1.f - CircularFadeIn(interpolatorAge);
-		//float dissipationThres = /* CircularFadeIn */(interpolatorAge);
-		//float dissipationThres = 1.f - (interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74);
-		/* if(colorFinal.a < (dissipationThres))
-		{
-			discard;
-		} */
-		//colorFinal.rgb *= dissipationThres;
-		
 		`;
     } else {
         return ``;
@@ -370,7 +359,7 @@ export function GetParticleRenderInstancedVS(
 		flat out float interpolatorAge;
 		flat out float interpolatorFrameIndex;
 		out vec2 interpolatorTexCoords;
-		flat out float interpolatorSize;
+		flat out int interpolatorInstanceId;
 	
 		//check if particle should never be drawn again
 		bool IsParticleDead()
@@ -392,7 +381,9 @@ export function GetParticleRenderInstancedVS(
 			}
 			else
 			{	
-	
+				
+				interpolatorInstanceId = gl_InstanceID;
+
 				vec2 uvLocal = vec2(TexCoordsBuffer.x, 1.f - TexCoordsBuffer.y);
 			#if 1//flip uv's
 				if(gl_InstanceID % 3 == 0)
@@ -483,9 +474,6 @@ export function GetParticleRenderInstancedVS(
 				
 				#endif//NOISE DRIVEN SIZE
 
-				interpolatorSize = scale;
-				
-
 				//offset to origin
 				` +
         scTranslateToBaseAtOrigin(!bOriginAtCenter) +
@@ -532,7 +520,15 @@ export function GetParticleRenderInstancedVS(
 function scAlphaFade(condition: boolean) {
     if (condition) {
         return /* glsl */ `float ageNorm = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
-		colorFinal.rgb *= ageNorm;`;
+		colorFinal.rgba *= ageNorm;`;
+    } else {
+        return ``;
+    }
+}
+
+function scApplyBrightness(value: number) {
+    if (value != 1.0) {
+        return /* glsl */ `colorFinal.rgb *= float(` + value + /* glsl */ `);`;
     } else {
         return ``;
     }
@@ -581,15 +577,29 @@ function scSmokeSpecificShading() {
 
 		
 		//float alphaScale = 0.4f;
-		float alphaScale = 0.5f;
+		float alphaScale = 0.4f;
 		colorFinal.a *= alphaScale;
+
+		#if 1
+		float radialDistanceScale = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		//radialDistanceScale *= 2.f;
+		/* if(radialDistanceScale > 0.5f)
+		{
+			radialDistanceScale = 1.f;
+		}
+		else
+		{
+			radialDistanceScale = 0.f;
+		} */
+		radialDistanceScale = (1.f - clamp(radialDistanceScale, 0.f, 1.f));
+
+		colorFinal.a *= radialDistanceScale;
+		#endif
+
 		
-		/* float brightness = mix(0.35, 0.15, interpolatorAge);
-		colorFinal.rgb *= brightness; */
-
-		colorFinal.rgba *= (1.f - interpolatorAge);
-
-
+		float brightness = mix(0.35, 0.15, interpolatorAge);
+		colorFinal.rgb *= brightness;
+		
 		colorFinal.rgb *= colorFinal.a;
 
 		
@@ -639,67 +649,72 @@ function scEmbersSpecificShading() {
 }
 
 function scAshesSpecificShading() {
-    return /* glsl */ `
-	
-		/* const vec3 colorBright = vec3(0.9, 0.25, 0.0) * 2.f;
-		const vec3 colorLow = vec3(0.2, 0.25, 0.9); */
-
-		/* float t = sin(interpolatorAge) + 1.f;
-		if(t < 1.f)
+    return (
+        //scParticleSampleFlipbook(true) +
+        /* glsl */ `
+		
+		vec2 uv = interpolatorTexCoords * 0.05f;
+		float instanceId = float(interpolatorInstanceId);
+		uv.x += instanceId * 0.073f;
+		uv.y += instanceId * 0.177f;
+		uv.y += interpolatorFrameIndex * 0.0037f;
+		uv.x += interpolatorFrameIndex * 0.0053f;
+		float noise = texture(ColorTexture, uv).r;
+		noise = clamp(MapToRange(noise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
+		
+		const vec3 colorEmber = vec3(0.5, 0.4, 0.4);
+		const vec3 colorEmber2 = vec3(0.9, 0.4, 0.1f) * 10.f;
+		const vec3 colorAsh  = vec3(0.1, 0.1, 0.1);
+		vec3 colorEmberFinal = mix(colorEmber2, colorEmber, noise);
+		vec3 color = mix(colorEmberFinal, colorAsh, min(1.f, 3.5f * interpolatorAge));
+		
+		if(noise <= clamp((interpolatorAge) + 0.25, 0.0, 0.9))
 		{
-			colorFinal.rgb = mix(colorBright, colorLow, t);
+			noise = 0.0f;
 		}
 		else
 		{
-			colorFinal.rgb = mix(colorBright, colorLow, t - 1.f);
-		} */
-
-		//colorFinal.rgb = mix(colorBright, colorLow, interpolatorAge);
-
-		colorFinal.rgb = vec3(0.5);
-
-		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
-		s *= 2.f;
-
-		//Color LUT 
-		/* const vec3 redColor = vec3(1.0, 0.3, 0.1);
-		const vec3 yellowColor = vec3(0.9, 0.9, 0.1);
-		const vec3 blueColor = vec3(0.1, 0.1, 0.9);
-
-		float t = s * 3.f;
-
-		if(t < 1.f)
-		{
-			colorFinal.rgb = mix(redColor, yellowColor, t);
+			noise = 1.0f;
 		}
-		else if(t < 2.f)
+
+		noise = clamp(noise, 0.f, 1.f);
+
+		float radialDistanceScale = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		radialDistanceScale *= 2.f;
+		if(radialDistanceScale > 0.5f)
 		{
-			colorFinal.rgb = mix(yellowColor, blueColor, t - 1.f);
+			radialDistanceScale = 1.f;
 		}
 		else
 		{
-			colorFinal.rgb = mix(redColor, blueColor, t - 2.f);
-		} */
+			radialDistanceScale = 0.f;
+		}
+		radialDistanceScale = (1.f - clamp(radialDistanceScale, 0.f, 1.f));
 
-		float blurRadius = 0.5f;
-		blurRadius = interpolatorAge * 0.75;
-		if(s > 0.5f)
+		noise *= radialDistanceScale;
+
+		
+
+		color *= noise;
+
+		float dx = abs(dFdx(noise));
+		float dy = abs(dFdy(noise));
+
+		//color += colorEmber * (dx + dy) * 0.5f;
+
+		const float thres = 0.04f;
+
+		colorFinal.rgb = color;
+		colorFinal.a = noise;
+
+		if(interpolatorAge >= 0.8f)
 		{
-			s += blurRadius;
-			//s = 1.f;
+			float s = MapToRange(interpolatorAge, 0.8, 1.0, 1.0, 0.0);
+			colorFinal.rgba *= s;
 		}
-		else
-		{
-			s -= blurRadius;
-			//s = 0.f;
-		}
-		//s += 0.15f;
-		s = (1.f - clamp(s, 0.f, 1.f));
-		colorFinal.rgba *= s;
-		//colorFinal.rgba *= 0.25f;
-		//colorFinal.rgb *= 50.f;
-		//colorFinal.r *= s;
-		`;
+
+		`
+    );
 }
 
 function scGetBasedOnShadingMode(shadingMode: number, bUsesTexture: boolean, artificialFlameAmount: number) {
@@ -721,6 +736,7 @@ export function GetParticleRenderColorPS(
     eShadingMode: number,
     bUsesTexture: boolean,
     bAlphaFadeEnabled: boolean,
+    brightness = 1.0,
     artificialFlameAmount = 0.45,
 ) {
     return (
@@ -733,7 +749,7 @@ export function GetParticleRenderColorPS(
 		flat in float interpolatorAge;
 		flat in float interpolatorFrameIndex;
 		in vec2 interpolatorTexCoords;
-		flat in float interpolatorSize;
+		flat in int interpolatorInstanceId;
 
 		uniform sampler2D ColorTexture;
 		uniform sampler2D FlameColorLUT;
@@ -774,6 +790,11 @@ export function GetParticleRenderColorPS(
 		//fade in-out
 		` +
         scAlphaFade(bAlphaFadeEnabled) +
+        /* glsl */ `
+
+		//initial brightness
+		` +
+        scApplyBrightness(brightness) +
         /* glsl */ `
 
 			OutColor = colorFinal;

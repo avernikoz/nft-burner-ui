@@ -314,7 +314,7 @@ export function GetShaderSourceCombinerPassPS() {
 			{
 				distortionNoise.r = mix(distortionNoise.g, distortionNoise.r, t - 1.f);
 			}
-			vec3 heat = textureLod(FlameTexture, (texCoords - vec2(0.f, (0.2f * kSizeScale) / kViewSize.y )), 0.f).rgb;
+			vec3 heat = textureLod(FlameTexture, (texCoords - vec2(0.f, (0.25f * kSizeScale) / kViewSize.y )), 0.f).rgb;
 			distortionNoise.x *= 0.0025;
 			distortionNoise.y *= 0.001;
 			//distortionNoise *= 0.5f;
@@ -348,7 +348,7 @@ export function GetShaderSourceCombinerPassPS() {
 			;
 
 			const float SmokeSpotlightStrength = 1.0f;
-			float smokeLightFromSpotlight = light
+			float smokeLightFromSpotlight = min(1.f, light + 0.1)
 			* SmokeSpotlightStrength
 			* clamp(1.f + clamp(smoke.r, SmokeBloomColorClampMinMax.x, SmokeBloomColorClampMinMax.y) - clamp(smoke.a, SmokeBloomAlphaClampMinMax.x, SmokeBloomAlphaClampMinMax.y), 0.f, 1.f) * clamp(smoke.a, 0.f, 1.f)
 			;

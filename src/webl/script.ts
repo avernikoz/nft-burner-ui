@@ -358,6 +358,7 @@ export function RenderMain() {
             const flameSourceTextureRef = GRenderTargets.FlameTexture2;
 
             EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+            //AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
 
             if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
                 //Downsample Source

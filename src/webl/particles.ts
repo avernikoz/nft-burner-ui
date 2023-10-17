@@ -113,6 +113,7 @@ export class ParticlesEmitter {
             inInitialVelocityScale = 0.0,
             inVelocityFieldForceScale = 0.0,
             inBuoyancyForceScale = 0.0,
+            inBrightness = 1.0,
             inbOriginAtCenter = true,
             inbMotionBasedTransform = false,
             inbAlphaFade = false,
@@ -332,7 +333,7 @@ export class ParticlesEmitter {
                 inbOriginAtCenter,
                 inbMotionBasedTransform,
             ),
-            GetParticleRenderColorPS(inESpecificShadingMode, this.bUsesTexture, inbAlphaFade, 0.5),
+            GetParticleRenderColorPS(inESpecificShadingMode, this.bUsesTexture, inbAlphaFade, inBrightness, 0.5),
         );
 
         this.ParticleRenderUniformParametersLocationList = this.GetUniformParametersList(
