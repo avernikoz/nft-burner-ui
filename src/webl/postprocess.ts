@@ -27,6 +27,8 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         FirePlaneTexture: gl.getUniformLocation(shaderProgram, "FirePlaneTexture"),
         SpotlightTexture: gl.getUniformLocation(shaderProgram, "SpotlightTexture"),
         PointLightsTexture: gl.getUniformLocation(shaderProgram, "PointLightsTexture"),
+        LogoImageTexture: gl.getUniformLocation(shaderProgram, "LogoImageTexture"),
+        LensTexture: gl.getUniformLocation(shaderProgram, "LensTexture"),
         BloomTexture: gl.getUniformLocation(shaderProgram, "BloomTexture"),
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
         FlameNoiseTexture: gl.getUniformLocation(shaderProgram, "FlameNoiseTexture"),
@@ -281,6 +283,10 @@ export class RCombinerPass {
 
     SmokeNoiseTexture: WebGLTexture;
 
+    LogoImageTexture: WebGLTexture;
+
+    LensTexture: WebGLTexture;
+
     constructor(gl: WebGL2RenderingContext) {
         //Create Shader Program
         this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceFullscreenPassVS, GetShaderSourceCombinerPassPS());
@@ -291,6 +297,8 @@ export class RCombinerPass {
         this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
         this.SpotlightTexture = CreateTexture(gl, 4, "assets/spotlightCut2.png");
         this.SmokeNoiseTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg");
+        this.LogoImageTexture = CreateTexture(gl, 4, "assets/background/logo.png");
+        this.LensTexture = CreateTexture(gl, 4, "assets/lensDirt6Edit.jpg");
     }
 
     Execute(
@@ -345,6 +353,14 @@ export class RCombinerPass {
         gl.activeTexture(gl.TEXTURE0 + 8);
         gl.bindTexture(gl.TEXTURE_2D, pointLightsTexture);
         gl.uniform1i(this.UniformParametersLocationList.PointLightsTexture, 8);
+
+        gl.activeTexture(gl.TEXTURE0 + 9);
+        gl.bindTexture(gl.TEXTURE_2D, this.LensTexture);
+        gl.uniform1i(this.UniformParametersLocationList.LensTexture, 9);
+
+        gl.activeTexture(gl.TEXTURE0 + 10);
+        gl.bindTexture(gl.TEXTURE_2D, this.LogoImageTexture);
+        gl.uniform1i(this.UniformParametersLocationList.LogoImageTexture, 10);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }

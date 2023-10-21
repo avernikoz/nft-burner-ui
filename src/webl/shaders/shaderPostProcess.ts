@@ -278,8 +278,16 @@ export function GetShaderSourceCombinerPassPS() {
 		uniform highp sampler2D SpotlightTexture;
 		uniform highp sampler2D SmokeNoiseTexture;
 		uniform highp sampler2D PointLightsTexture;
+		uniform highp sampler2D LogoImageTexture;
+		uniform highp sampler2D LensTexture;
 	
 		in vec2 vsOutTexCoords;
+
+		float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+		{
+			///Translate to origin, scale by ranges ratio, translate to new position
+			return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+		}
 	
 		void main()
 		{
@@ -419,10 +427,29 @@ export function GetShaderSourceCombinerPassPS() {
 			final = max(firePlane.rgb, bloom.rgb * bloomStrengthPlane);
 			final = max(final, flame.rgb);
 
+			const vec2 lensOffset = vec2(0.0, 0.0);
+			vec4 lensDirt = textureLod(LensTexture, (texCoords.xy * vec2(0.5, 0.5) + lensOffset) * kViewSize, 0.f);
+			final.rgb += (bloom.rgb + pointLights) * lensDirt.rgb * 2.5f;
 			//final = bloom.rgb;
 
 			const float exposure = 1.f;
 			final.rgb *= exposure;
+
+			if(texCoords.x <= 0.2 && texCoords.y <= 0.1)
+			{
+				vec2 logoUV;
+				logoUV.x = MapToRange(texCoords.x, 0.2, 0.01, 0.f, 1.f);
+				logoUV.x = 1.f - logoUV.x;	
+				logoUV.y = MapToRange(texCoords.y, 0.1, 0.00, 0.f, 1.f);
+
+				logoUV *= kViewSize;
+				if(logoUV.x >= 0.f && logoUV.x <= 1.f && logoUV.y >= 0.f && logoUV.y <= 1.f)
+				{
+					vec4 logo = textureLod(LogoImageTexture, logoUV.xy, 0.f);
+					final.rgb = logo.rgb * logo.a + final.rgb * clamp(1.f - logo.a, 0.0, 1.f);
+				}
+				
+			}
 
 			//final.rgb = pow(final.rgb, vec3(1.f/2.2f));
 
