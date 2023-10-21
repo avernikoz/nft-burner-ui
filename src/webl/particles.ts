@@ -99,6 +99,7 @@ export class ParticlesEmitter {
     constructor(
         gl: WebGL2RenderingContext,
         {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             inName = "Particles",
             inNumSpawners2D = 128,
             inNumParticlesPerSpawner = 8,
@@ -457,7 +458,7 @@ export class ParticlesEmitter {
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
         }
 
-        this.DrawUI(inName);
+        //this.DrawUI(inName);
     }
 
     Update(gl: WebGL2RenderingContext, fireTexture: WebGLTexture) {

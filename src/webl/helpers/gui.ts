@@ -14,7 +14,7 @@ export class DrawUISingleton {
         return DrawUISingleton._instance;
     }
 
-    public getDrawUI(guiParams: dat.GUIParams = { width: 768 }) {
+    public getDrawUI(guiParams: dat.GUIParams = {}) {
         if (!this.drawUI) {
             this.drawUI = new dat.GUI({ ...guiParams });
         }

@@ -30,6 +30,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         NoiseTextureInterpolator: gl.getUniformLocation(shaderProgram, "NoiseTextureInterpolator"),
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
         NoiseTextureLQ: gl.getUniformLocation(shaderProgram, "NoiseTextureLQ"),
+        PointLightsTexture: gl.getUniformLocation(shaderProgram, "PointLightsTexture"),
     };
     return params;
 }
@@ -127,8 +128,8 @@ export class RFirePlanePass {
 
         //Fire Texture
         this.FireTexture = [];
-        this.FireTexture[0] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT);
-        this.FireTexture[1] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT);
+        this.FireTexture[0] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT, true);
+        this.FireTexture[1] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT, true);
 
         //Fire Texture
         this.FuelTexture = [];
@@ -265,10 +266,7 @@ export class RFirePlanePass {
         this.CurrentFuelTextureIndex = 1 - this.CurrentFuelTextureIndex;
     }
 
-    VisualizeFirePlane(gl: WebGL2RenderingContext /* , destFramebuffer: WebGLFramebuffer | null, destSize: Vector2 */) {
-        /* gl.viewport(0, 0, destSize.x, destSize.y);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, destFramebuffer); */
-
+    VisualizeFirePlane(gl: WebGL2RenderingContext, pointLightsTexture: WebGLTexture) {
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
         gl.useProgram(this.VisualizerShaderProgram);
@@ -314,6 +312,10 @@ export class RFirePlanePass {
         gl.activeTexture(gl.TEXTURE0 + 9);
         gl.bindTexture(gl.TEXTURE_2D, this.NoiseTextureLQ);
         gl.uniform1i(this.VisualizerUniformParametersLocationList.NoiseTextureLQ, 9);
+
+        gl.activeTexture(gl.TEXTURE0 + 10);
+        gl.bindTexture(gl.TEXTURE_2D, pointLightsTexture);
+        gl.uniform1i(this.VisualizerUniformParametersLocationList.PointLightsTexture, 10);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }

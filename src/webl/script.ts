@@ -1,4 +1,5 @@
 import { APP_ENVIRONMENT } from "../config/config";
+import { RBackgroundRenderPass } from "./backgroundScene";
 import { RFirePlanePass } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUI, DrawUISingleton } from "./helpers/gui";
@@ -11,6 +12,7 @@ import {
     SmokeParticlesDesc,
 } from "./particlesConfig";
 import { RBloomPass, RBlurPass, RCombinerPass, RFlamePostProcessPass, RPresentPass } from "./postprocess";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { BindRenderTarget, CreateFramebufferWithAttachment, CreateTextureRT } from "./resourcesUtils";
 import { SceneDesc } from "./scene";
 import { CheckGL } from "./shaderUtils";
@@ -278,7 +280,11 @@ export function RenderMain() {
     GetMousePosNDC(canvas);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const FirePlanePass = new RFirePlanePass(gl);
+    const BackGroundRenderPass = new RBackgroundRenderPass(gl);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const FirePlaneSizePixels = { x: 512, y: 512 };
+    const FirePlanePass = new RFirePlanePass(gl, FirePlaneSizePixels);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
@@ -331,6 +337,19 @@ export function RenderMain() {
             }
 
             FirePlanePass.UpdateFire(gl);
+            BackGroundRenderPass.PointLights.Update(gl, FirePlanePass.GetCurFireTexture()!);
+
+            /* GPostProcessPasses.CopyPresemt.Execute(
+                gl,
+                canvas,
+                BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
+                0,
+                null,
+                {
+                    x: canvas.width,
+                    y: canvas.height,
+                },
+            ); */
 
             FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
             EmberParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
@@ -339,12 +358,11 @@ export function RenderMain() {
             AfterBurnSmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
             BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, RenderTargetSize, true);
-            FirePlanePass.VisualizeFirePlane(gl);
 
-            /* GPostProcessPasses.CopyPresemt.Execute(gl, canvas, GRenderTargets.FirePlaneTexture!, 0, null, {
-                x: canvas.width,
-                y: canvas.height,
-            }); */
+            //BackGroundRenderPass.RenderSpotlight(gl);
+            BackGroundRenderPass.RenderFloor(gl);
+
+            FirePlanePass.VisualizeFirePlane(gl, BackGroundRenderPass.PointLights.LightsBufferTextureGPU!);
 
             BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, RenderTargetSize, true);
             FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
@@ -358,7 +376,6 @@ export function RenderMain() {
             const flameSourceTextureRef = GRenderTargets.FlameTexture2;
 
             EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
-            //AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
 
             if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
                 //Downsample Source
@@ -374,17 +391,20 @@ export function RenderMain() {
                 }
             }
 
+            //Render Smoke
             BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, RenderTargetSize, true);
             SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
             AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
             AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
+            //Combine results
             GPostProcessPasses.Combiner!.Execute(
                 gl,
                 GRenderTargets.FirePlaneTexture!,
                 flameSourceTextureRef!,
                 GPostProcessPasses.Bloom!.BloomTexture!,
                 GRenderTargets.SmokeTexture!,
+                BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
                 null,
                 {
                     x: canvas.width,

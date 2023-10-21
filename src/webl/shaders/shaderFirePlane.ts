@@ -276,6 +276,7 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 	uniform sampler2D AfterBurnTexture;
 	uniform sampler2D NoiseTexture;
 	uniform sampler2D NoiseTextureLQ;
+	uniform sampler2D PointLightsTexture;
 
 	in vec2 vsOutTexCoords;
 
@@ -292,7 +293,6 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 		float curFire = texture(FireTexture, vsOutTexCoords.xy).r;
 		float curFuel = texture(FuelTexture, vsOutTexCoords.xy).r;
 
-		//vec3 imageColor = texture(ImageTexture, vsOutTexCoords.xy).rgb;
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
 		const float imageBrightness = 0.5f;
 		vec3 imageColor = texture(ImageTexture, flippedUVs.xy).rgb * imageBrightness;
@@ -322,6 +322,55 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 		emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.f, 2.f);
 	#endif
 
+	#if 1 //VIRTUAL POINT LIGHTS
+
+		#if 1 //HQ
+		vec2 interpolatorViewSpacePos = vsOutTexCoords * 2.f - 1.f;
+
+		const int NumLights2D = 4;
+
+		const float FirePlaneSizeScaleNDC = 1.f;
+
+		const float distanceBetweenLightsNDC = (FirePlaneSizeScaleNDC * 2.f) / float(NumLights2D);
+        const float domainStart = (FirePlaneSizeScaleNDC * -1.0) + distanceBetweenLightsNDC * 0.5f;
+
+		float lightIntensityFinal = 0.f;
+
+		vec3 lightColor1 = vec3(1.f, 0.5f, 0.1f);
+
+		vec3 lightColorFinal = vec3(0.f);
+
+		for(int y = 0; y < NumLights2D; y++)
+		{
+			for(int x = 0; x < NumLights2D; x++)
+			{
+				ivec2 lightIndex2D = ivec2(x,y);
+				float curLightIntensity = texelFetch(PointLightsTexture, lightIndex2D, 0).r;
+				
+				vec2 lightPos;
+				lightPos.x = domainStart + float(lightIndex2D.x) * distanceBetweenLightsNDC;
+        		lightPos.y = domainStart + float(lightIndex2D.y) * distanceBetweenLightsNDC;
+
+				float distance = length(lightPos - interpolatorViewSpacePos);
+				const float VirtualLightRadius = 1.0f;
+				float attenuation = clamp(1.f - (distance / VirtualLightRadius), 0.f, 1.f);
+
+				lightIntensityFinal += curLightIntensity * attenuation;
+
+			}
+		}
+
+		lightIntensityFinal = min(lightIntensityFinal, 0.75f);
+
+		#else
+
+		vec3 lightColor1 = vec3(1.f, 0.5f, 0.1f);
+		float lightIntensityFinal = texture(PointLightsTexture, vsOutTexCoords.xy).r;
+
+		#endif //HQ
+
+	#endif////VIRTUAL POINT LIGHTS
+
 		ashesColor.rgb += embersColor * 10.f * emberScale;
 		ashesColor.b += (1.f - emberScale) * 0.05f;
 
@@ -349,6 +398,8 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 		if(curFuel > 0.)
 		{
 			paperColor = mix(ashesColor, imageColor, /* saturate */(curFuel));
+
+			paperColor += lightColor1 * lightIntensityFinal;
 		}
 
 		vec3 fireColor;

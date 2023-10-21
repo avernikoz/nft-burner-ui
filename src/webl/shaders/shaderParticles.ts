@@ -66,19 +66,33 @@ function scGetVectorFieldForce(scale: number) {
 
 function scParticleSampleFlipbook(condition: boolean) {
     if (condition) {
-        return /* glsl */ `uint flipBookIndex1D = uint(floor(interpolatorFrameIndex));
+        return /* glsl */ `
+		vec2 frameSize = 1.f / (FlipbookSizeRC);
+		vec2 uv = interpolatorTexCoords * frameSize;
+
+		uint flipBookIndex1D = uint(floor(interpolatorFrameIndex));
 		uvec2 FlipBookIndex2D;
-		/* FlipBookIndex2D.x = 1u;
-		FlipBookIndex2D.y = 1u; */
 		FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
 		FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
 
-		vec2 frameSize = 1.f / (FlipbookSizeRC);
-		vec2 uv = interpolatorTexCoords * frameSize;
 		uv.x += (frameSize.x * float(FlipBookIndex2D.x));
 		uv.y += (frameSize.y * float(FlipBookIndex2D.y));
 		
 		colorFinal = texture(ColorTexture, uv).rgba;
+
+		#if 0//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
+		if(ceil(interpolatorFrameIndex) < float(FlipbookSizeRC.x * FlipbookSizeRC.y))
+		{
+			flipBookIndex1D = uint(ceil(interpolatorFrameIndex));
+			FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
+			FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
+			uv = interpolatorTexCoords * frameSize;
+			uv.x += (frameSize.x * float(FlipBookIndex2D.x));
+			uv.y += (frameSize.y * float(FlipBookIndex2D.y));
+			vec4 color2 = texture(ColorTexture, uv).rgba;
+			colorFinal = mix(colorFinal, color2, fract(interpolatorFrameIndex));
+		}
+		#endif
 		`;
     } else {
         return ``;
@@ -393,7 +407,7 @@ export function GetParticleRenderInstancedVS(
 			#endif
   
 				interpolatorTexCoords = uvLocal;
-				float ageNorm = min(inAge, ParticleLife - 0.0001) / ParticleLife;
+				float ageNorm = min(0.999f, inAge / ParticleLife);
 				//float ageNorm = min(inAge, ParticleLife) / ParticleLife;
 				interpolatorAge = ageNorm;
   
@@ -401,7 +415,9 @@ export function GetParticleRenderInstancedVS(
 				float animationParameterNorm = ageNorm;
 				if(NumLoops > 1.f)
 				{
-				  animationParameterNorm = fract((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops));
+				  //animationParameterNorm = fract((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops));
+				  animationParameterNorm = mod((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops), 1.f);
+				  //animationParameterNorm = fract((inAge) / (ParticleLife / NumLoops));
 				}
 				float TotalFlipFrames = FlipbookSizeRC.x * FlipbookSizeRC.y;
 				interpolatorFrameIndex = (animationParameterNorm * TotalFlipFrames);
@@ -577,8 +593,9 @@ function scSmokeSpecificShading() {
 
 		
 		//float alphaScale = 0.4f;
-		float alphaScale = 0.4f;
-		colorFinal.a *= alphaScale;
+		float alphaScale = 0.25f;
+		//colorFinal.a *= (alphaScale);
+		colorFinal.a *= (alphaScale + colorFinal.r * 0.75);
 
 		#if 1
 		float radialDistanceScale = length(interpolatorTexCoords - vec2(0.5, 0.5));

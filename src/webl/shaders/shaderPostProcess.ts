@@ -276,6 +276,8 @@ export function GetShaderSourceCombinerPassPS() {
 		uniform highp sampler2D SmokeTexture;
 		uniform highp sampler2D NoiseTexture;
 		uniform highp sampler2D SpotlightTexture;
+		uniform highp sampler2D SmokeNoiseTexture;
+		uniform highp sampler2D PointLightsTexture;
 	
 		in vec2 vsOutTexCoords;
 	
@@ -330,9 +332,38 @@ export function GetShaderSourceCombinerPassPS() {
 			
 			vec3 bloom = textureLod(BloomTexture, texCoords.xy, 0.f).rgb;
 
+			float pointLights = textureLod(PointLightsTexture, texCoords.xy, 0.f).r; 
+
 			float light = textureLod(SpotlightTexture, vec2(texCoords.x, 1.f - texCoords.y), 0.f).r;
 			
 			vec4 smoke = textureLod(SmokeTexture, texCoords.xy, 0.f);
+
+			vec2 noiseUV = texCoords;
+			noiseUV *= (2.0 - kSizeScale);
+			noiseUV *= kViewSize;
+			noiseUV.x -= Time * 0.0043f;
+			noiseUV.y -= Time * 0.0093f;
+			vec4 smokeNoise = textureLod(SmokeNoiseTexture, noiseUV, 0.f);
+			float smokeNoiseChannel = 1.f;
+			{
+				float tx = mod(Time, 9.f) / 3.f;
+				if(tx < 1.f)
+				{
+					smokeNoise.r = mix(smokeNoise.r, smokeNoise.g, tx);
+				}
+				else if(tx < 2.f)
+				{
+					smokeNoise.r = mix(smokeNoise.g, smokeNoise.b, smoothstep(0.f, 1.f, tx - 1.f));
+				}
+				else
+				{
+					smokeNoise.r = mix(smokeNoise.b, smokeNoise.r, smoothstep(0.f, 1.f, tx - 2.f));
+				}
+			}
+
+			//smoke = max(smoke, vec4(vec3(smokeNoise.r), 1.f));
+			smokeNoise.r *= min(1.f, texCoords.y + 0.3f);
+			smoke.rgba = smoke.rgba * 1.f + vec4(vec3(smokeNoise.r) * 0.15, smokeNoise.r * 0.15) * clamp(1.f - smoke.a, 0.0, 1.f);
 
 			smoke.rgb *= 0.75f;
 
@@ -352,29 +383,38 @@ export function GetShaderSourceCombinerPassPS() {
 			* SmokeSpotlightStrength
 			* clamp(1.f + clamp(smoke.r, SmokeBloomColorClampMinMax.x, SmokeBloomColorClampMinMax.y) - clamp(smoke.a, SmokeBloomAlphaClampMinMax.x, SmokeBloomAlphaClampMinMax.y), 0.f, 1.f) * clamp(smoke.a, 0.f, 1.f)
 			;
+
+
+			float smokeLightFromPointLights = pointLights * 3.5f
+			* clamp(1.f + clamp(smoke.r, SmokeBloomColorClampMinMax.x, SmokeBloomColorClampMinMax.y) - clamp(smoke.a, SmokeBloomAlphaClampMinMax.x, SmokeBloomAlphaClampMinMax.y), 0.f, 1.f) * clamp(smoke.a, 0.f, 1.f)
+			;
+
 			smoke.rgb += max(smokeLightFromBloom, smokeLightFromSpotlight);
-			//smoke.rgb += smokeLightFromBloom;
-			//smoke.rgb += smokeLightFromSpotlight;
+			smoke.rgb += smokeLightFromPointLights * vec3(1.f, 0.4f, 0.1f);
 
 
-			smoke.a *= 0.75f;
+			smoke.a *= 0.85f;
+			smoke.rgb *= 0.85f;
 
 			float smokeScale = 1.f;
 			//smokeScale *= (texCoords.y * kViewSize.y * (kSizeScale));
 			smokeScale *= clamp(length((texCoords.xy * kViewSize.xy * (2.0 - kSizeScale)) - vec2(0.5) * kViewSize.xy * (2.0 - kSizeScale)), 0.f, 1.f);
 			smokeScale *= 2.0f;
 			smokeScale = min(1.5f, smokeScale);
+
 			smoke.a *= smokeScale;
+			smoke.rgb *= clamp(smokeScale, 0.5f, 1.f);
 
 			//lit plane with spotlight
 			if(firePlane.r < 1.0)
 			{
-				firePlane.rgb *= (light + 0.5f);
+				const float ambientLight = 0.15f;
+				firePlane.rgb *= min(1.f, light + ambientLight);
 			}
 
 			firePlane.rgb = smoke.rgb * 1.f + firePlane.rgb * clamp(1.f - smoke.a, 0.0, 1.f);
 
-			vec3 final = firePlane.rgb;
+			highp vec3 final = firePlane.rgb;
 			const float bloomStrengthPlane = 0.75f;
 			final = max(firePlane.rgb, bloom.rgb * bloomStrengthPlane);
 			final = max(final, flame.rgb);
@@ -383,6 +423,9 @@ export function GetShaderSourceCombinerPassPS() {
 
 			const float exposure = 1.f;
 			final.rgb *= exposure;
+
+			//final.rgb = pow(final.rgb, vec3(1.f/2.2f));
+
 			OutColor = vec4(final.rgb, 1);
 		}`
     );
