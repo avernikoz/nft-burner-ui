@@ -271,12 +271,12 @@ export const ShaderSourceBackgroundFloorRenderPS = /* glsl */ `#version 300 es
 			vec2 spotlightUV;
 			//spotlightUV.x = (interpolatorViewSpacePos.x * 0.1 + 0.5f);
 			float s = interpolatorViewSpacePos.x;
-			s *= 0.5f;
+			s *= 0.25f;
 			s += 0.01f;
 			spotlightUV.x = (s + 1.f) * 0.5f;
 			spotlightUV.y = MapToRange(interpolatorViewSpacePos.z, spotlightStartViewSpace, spotlightEndViewSpace, 0.0, 1.0);
 			spotlightUV.y *= 1.2f;
-			spotlightUV.y -= 0.25f;
+			spotlightUV.y -= 0.3f;
 			spotlghtColor = texture(SpotlightTexture, spotlightUV.xy).rgb;
 
 			//fade

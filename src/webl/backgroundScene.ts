@@ -115,7 +115,7 @@ export class RBackgroundRenderPass {
         Scale: { x: 1.0, y: 1.0 },
         FloorTexScale: 1.0,
         LightTexScale: { x: 1.5, y: 8.0 },
-        FloorBrightness: 1.0,
+        FloorBrightness: 1.5,
     };
 
     constructor(gl: WebGL2RenderingContext) {

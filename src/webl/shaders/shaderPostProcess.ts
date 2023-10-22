@@ -343,6 +343,30 @@ export function GetShaderSourceCombinerPassPS() {
 			float pointLights = textureLod(PointLightsTexture, texCoords.xy, 0.f).r; 
 
 			float light = textureLod(SpotlightTexture, vec2(texCoords.x, 1.f - texCoords.y), 0.f).r;
+
+			#if 1
+			float time = mod(Time, 12.4f);
+			if(time < 1.3f)
+			{
+				vec2 lightFlickerUV;
+				lightFlickerUV.y = 0.1f;
+				//const float flickScale = 0.2f;
+				//const float flickScale = 0.02f;
+				float flickScale = mix(0.01, 0.2, mod(Time, 20.f) * 0.05);
+				lightFlickerUV.x = Time * flickScale;
+				float flickerNoise = textureLod(NoiseTexture, lightFlickerUV.xy, 0.f).r;
+				flickerNoise = min(1.0, flickerNoise + 0.35f);
+				/* if(flickerNoise > 0.5)
+				{
+					flickerNoise = 1.f;
+				}
+				else
+				{
+					flickerNoise = 0.0f;
+				} */
+				light *= clamp(abs(flickerNoise) , 0.0, 1.0);
+			}
+			#endif
 			
 			vec4 smoke = textureLod(SmokeTexture, texCoords.xy, 0.f);
 
@@ -387,7 +411,7 @@ export function GetShaderSourceCombinerPassPS() {
 			;
 
 			const float SmokeSpotlightStrength = 1.0f;
-			float smokeLightFromSpotlight = min(1.f, light + 0.1)
+			float smokeLightFromSpotlight = min(1.f, light + 0.05)
 			* SmokeSpotlightStrength
 			* clamp(1.f + clamp(smoke.r, SmokeBloomColorClampMinMax.x, SmokeBloomColorClampMinMax.y) - clamp(smoke.a, SmokeBloomAlphaClampMinMax.x, SmokeBloomAlphaClampMinMax.y), 0.f, 1.f) * clamp(smoke.a, 0.f, 1.f)
 			;
@@ -427,9 +451,15 @@ export function GetShaderSourceCombinerPassPS() {
 			final = max(firePlane.rgb, bloom.rgb * bloomStrengthPlane);
 			final = max(final, flame.rgb);
 
-			const vec2 lensOffset = vec2(0.0, 0.0);
-			vec4 lensDirt = textureLod(LensTexture, (texCoords.xy * vec2(0.5, 0.5) + lensOffset) * kViewSize, 0.f);
-			final.rgb += (bloom.rgb + pointLights) * lensDirt.rgb * 2.5f;
+			vec2 lensUV = texCoords.xy;
+			if(kViewSize.y > 1.f)
+			{
+				const float xScale = 0.75f; //TODO: Startup random
+				lensUV = vec2(-texCoords.y, texCoords.x) * vec2(1.0, xScale);
+			}
+			vec4 lensDirt = textureLod(LensTexture, lensUV, 0.f);
+			final.rgb += (bloom.rgb + pointLights) * lensDirt.rgb * 2.0f;
+			//final.rgb = lensDirt.rgb;
 			//final = bloom.rgb;
 
 			const float exposure = 1.f;

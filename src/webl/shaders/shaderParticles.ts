@@ -80,7 +80,7 @@ function scParticleSampleFlipbook(condition: boolean) {
 		
 		colorFinal = texture(ColorTexture, uv).rgba;
 
-		#if 0//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
+		#if 1//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
 		if(ceil(interpolatorFrameIndex) < float(FlipbookSizeRC.x * FlipbookSizeRC.y))
 		{
 			flipBookIndex1D = uint(ceil(interpolatorFrameIndex));
@@ -104,6 +104,7 @@ export function GetParticleUpdateShaderVS(
     initialVelocityScale: number,
     velocityFieldForceScale: number,
     buoyancyForceScale: number,
+    downwardForceScale: number,
 ) {
     return (
         /* glsl */ `#version 300 es
@@ -254,7 +255,10 @@ export function GetParticleUpdateShaderVS(
 				  float posYNorm = (inPosition.y + 1.f) * 0.5f;
 				  curVel.y += buoyancyForce * DeltaTime * temperature;
 
-				  float downwardForce = /* ageNorm * */ (posYNorm /* * posYNorm */) /* * buoyancyForce */ * 2.5f;
+				  const float downwardForceScale = float(` +
+        downwardForceScale +
+        /* glsl */ `);
+				  float downwardForce = /* ageNorm * */ (posYNorm /* * posYNorm */) /* * buoyancyForce */ * downwardForceScale;
 				  if(curVel.y > 0.f)
 				  {
 					curVel.y -= downwardForce * DeltaTime * curVel.y;
@@ -533,10 +537,19 @@ export function GetParticleRenderInstancedVS(
     );
 }
 
-function scAlphaFade(condition: boolean) {
-    if (condition) {
+function scAlphaFade(condition: number) {
+    if (condition == 1) {
         return /* glsl */ `float ageNorm = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
 		colorFinal.rgba *= ageNorm;`;
+    } else if (condition == 2) {
+        return /* glsl */ `
+		const float fadeStart = 0.9f;
+		if(interpolatorAge >= fadeStart)
+		{
+			float fade = MapToRange(interpolatorAge, fadeStart, 1.0, 0.0, 1.0);
+			colorFinal.rgba *= (1.f - fade);
+		}
+		`;
     } else {
         return ``;
     }
@@ -586,15 +599,28 @@ function scFlameSpecificShading(bUsesTexture: boolean, artificialFlameAmount: nu
     );
 }
 
-function scSmokeSpecificShading() {
+function scSmokeSpecificShading(alphaScale = 0.25) {
     return (
         scParticleSampleFlipbook(true) +
         /* glsl */ `
 
 		
 		//float alphaScale = 0.4f;
-		float alphaScale = 0.25f;
 		//colorFinal.a *= (alphaScale);
+		const float alphaScale = float(` +
+        alphaScale +
+        /* glsl */ `);
+
+		/* float t = mod(CurTime, 20.f) * 0.1;
+		if(t < 1.f)
+		{
+			alphaScale *= t;
+		}
+		else
+		{
+			alphaScale *= (2.f - t);
+		} */
+
 		colorFinal.a *= (alphaScale + colorFinal.r * 0.75);
 
 		#if 1
@@ -734,7 +760,12 @@ function scAshesSpecificShading() {
     );
 }
 
-function scGetBasedOnShadingMode(shadingMode: number, bUsesTexture: boolean, artificialFlameAmount: number) {
+function scGetBasedOnShadingMode(
+    shadingMode: number,
+    bUsesTexture: boolean,
+    alphaScale: number,
+    artificialFlameAmount: number,
+) {
     switch (shadingMode) {
         case EParticleShadingMode.Default:
             return scDefaultShading();
@@ -743,7 +774,7 @@ function scGetBasedOnShadingMode(shadingMode: number, bUsesTexture: boolean, art
         case EParticleShadingMode.Embers:
             return scEmbersSpecificShading();
         case EParticleShadingMode.Smoke:
-            return scSmokeSpecificShading();
+            return scSmokeSpecificShading(alphaScale);
         case EParticleShadingMode.Ashes:
             return scAshesSpecificShading();
     }
@@ -752,7 +783,8 @@ function scGetBasedOnShadingMode(shadingMode: number, bUsesTexture: boolean, art
 export function GetParticleRenderColorPS(
     eShadingMode: number,
     bUsesTexture: boolean,
-    bAlphaFadeEnabled: boolean,
+    EAlphaFadeEnabled: number, //0:disabled, 1:smooth, 2:fast
+    alphaScale: number,
     brightness = 1.0,
     artificialFlameAmount = 0.45,
 ) {
@@ -772,6 +804,7 @@ export function GetParticleRenderColorPS(
 		uniform sampler2D FlameColorLUT;
 		
 		uniform vec2 FlipbookSizeRC;
+		uniform float CurTime;
   
 		float CircularFadeIn(float x) 
 		{
@@ -801,12 +834,12 @@ export function GetParticleRenderColorPS(
 			//OutColor = vec4(0.5, 0.5, 0.5, 1); return;
 			vec4 colorFinal = vec4(1.f, 0.55f, 0.1f, 1.f);
 			` +
-        scGetBasedOnShadingMode(eShadingMode, bUsesTexture, artificialFlameAmount) +
+        scGetBasedOnShadingMode(eShadingMode, bUsesTexture, alphaScale, artificialFlameAmount) +
         /* glsl */ `
 
 		//fade in-out
 		` +
-        scAlphaFade(bAlphaFadeEnabled) +
+        scAlphaFade(EAlphaFadeEnabled) +
         /* glsl */ `
 
 		//initial brightness

@@ -286,6 +286,12 @@ export function RenderMain() {
     const FirePlaneSizePixels = { x: 512, y: 512 };
     const FirePlanePass = new RFirePlanePass(gl, FirePlaneSizePixels);
 
+    if (SceneDesc.bWideScreen) {
+        EmberParticlesDesc.inDownwardForceScale = 2.5;
+        AfterBurnAshesParticlesDesc.inDownwardForceScale = 2.5;
+        SmokeParticlesDesc.inDownwardForceScale = 2.5;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

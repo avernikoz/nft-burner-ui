@@ -114,10 +114,12 @@ export class ParticlesEmitter {
             inInitialVelocityScale = 0.0,
             inVelocityFieldForceScale = 0.0,
             inBuoyancyForceScale = 0.0,
+            inDownwardForceScale = 2.5,
             inBrightness = 1.0,
+            inAlphaScale = 0.25, //Currently smoke shading mode specific
             inbOriginAtCenter = true,
             inbMotionBasedTransform = false,
-            inbAlphaFade = false,
+            inEAlphaFade = 0,
             inESpecificShadingMode = EParticleShadingMode.Default,
         },
     ) {
@@ -276,6 +278,7 @@ export class ParticlesEmitter {
                     inInitialVelocityScale,
                     inVelocityFieldForceScale,
                     inBuoyancyForceScale,
+                    inDownwardForceScale,
                 ),
             );
             const shaderPS = CreateShader(gl, gl.FRAGMENT_SHADER, ParticleUpdatePS);
@@ -334,7 +337,14 @@ export class ParticlesEmitter {
                 inbOriginAtCenter,
                 inbMotionBasedTransform,
             ),
-            GetParticleRenderColorPS(inESpecificShadingMode, this.bUsesTexture, inbAlphaFade, inBrightness, 0.5),
+            GetParticleRenderColorPS(
+                inESpecificShadingMode,
+                this.bUsesTexture,
+                inEAlphaFade,
+                inAlphaScale,
+                inBrightness,
+                0.5,
+            ),
         );
 
         this.ParticleRenderUniformParametersLocationList = this.GetUniformParametersList(

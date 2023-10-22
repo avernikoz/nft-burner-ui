@@ -352,7 +352,7 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
         		lightPos.y = domainStart + float(lightIndex2D.y) * distanceBetweenLightsNDC;
 
 				float distance = length(lightPos - interpolatorViewSpacePos);
-				const float VirtualLightRadius = 1.0f;
+				const float VirtualLightRadius = 2.0f;
 				float attenuation = clamp(1.f - (distance / VirtualLightRadius), 0.f, 1.f);
 
 				lightIntensityFinal += curLightIntensity * attenuation;
@@ -360,7 +360,8 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 			}
 		}
 
-		lightIntensityFinal = min(lightIntensityFinal, 0.75f);
+		lightIntensityFinal = min(lightIntensityFinal, 0.5f);
+		//lightIntensityFinal *= 2.f;
 
 		#else
 

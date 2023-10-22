@@ -16,7 +16,7 @@ export const FlameParticlesDesc = {
     inVelocityFieldForceScale: 0.0,
     inBuoyancyForceScale: 0.0,
     inbOriginAtCenter: false,
-    inbAlphaFade: true,
+    inEAlphaFade: 1,
     inESpecificShadingMode: EParticleShadingMode.Flame,
 };
 
@@ -35,6 +35,7 @@ export const EmberParticlesDesc = {
     inInitialVelocityScale: 35.0,
     inVelocityFieldForceScale: 100.0,
     inBuoyancyForceScale: 5.0,
+    inDownwardForceScale: 1.0,
     inbOriginAtCenter: true,
     inbMotionBasedTransform: true,
     inESpecificShadingMode: EParticleShadingMode.Embers,
@@ -45,7 +46,7 @@ export const SmokeParticlesDesc = {
     inNumSpawners2D: 32,
     inNumParticlesPerSpawner: 2,
     inSpawnRange: { x: 0.9, y: 1000.0 },
-    inParticleLife: 2.5,
+    inParticleLife: 3.5,
     inNumLoops: 1.0,
     inTextureFileName: "assets/sprites/Explosion01-nofire_5x5.png",
     inFlipbookSizeRC: { x: 5.0, y: 5.0 },
@@ -55,7 +56,10 @@ export const SmokeParticlesDesc = {
     inInitialVelocityScale: 5.0,
     inVelocityFieldForceScale: 10.0,
     inBuoyancyForceScale: 10,
-    inbOriginAtCenter: false,
+    inDownwardForceScale: 0.25,
+    inAlphaScale: 0.25,
+    inEAlphaFade: 2,
+    inbOriginAtCenter: true,
     inESpecificShadingMode: EParticleShadingMode.Smoke,
 };
 
@@ -65,7 +69,7 @@ export const AfterBurnSmokeParticlesDesc = {
     inNumParticlesPerSpawner: 1,
     inSpawnRange: { x: 0.001, y: 0.1 },
     inParticleLife: 12.7,
-    inNumLoops: 3.0,
+    inNumLoops: 4.0,
     inTextureFileName: "assets/sprites/DiscSmoke01_16x4.png",
     inFlipbookSizeRC: { x: 16.0, y: 4.0 },
     inDefaultSize: { x: 2.0 * 0.2, y: 4.125 * 0.2 },
@@ -74,8 +78,10 @@ export const AfterBurnSmokeParticlesDesc = {
     inInitialVelocityScale: 0.01,
     inVelocityFieldForceScale: 0.0,
     inBuoyancyForceScale: 0,
+    inDownwardForceScale: 0.0,
     inbOriginAtCenter: false,
-    inbAlphaFade: true,
+    inEAlphaFade: 1,
+    inAlphaScale: 1.0,
     inBrightness: 0.0,
     inESpecificShadingMode: EParticleShadingMode.Smoke,
 };
@@ -96,6 +102,7 @@ export const AfterBurnAshesParticlesDesc = {
     inInitialVelocityScale: 10.0,
     inVelocityFieldForceScale: 50.0,
     inBuoyancyForceScale: 5.0,
+    inDownwardForceScale: 0.1,
     inbOriginAtCenter: true,
     inESpecificShadingMode: EParticleShadingMode.Ashes,
 };
