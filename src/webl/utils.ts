@@ -2,7 +2,6 @@ import { CGConstants } from "./systemValues";
 import { Vector2 } from "./types";
 
 export function getMousePosition(canvas: HTMLCanvasElement, event: MouseEvent | TouchEvent) {
-    // console.debug("[getMousePosition] call");
     const rect = canvas.getBoundingClientRect();
     let clientX, clientY;
 
