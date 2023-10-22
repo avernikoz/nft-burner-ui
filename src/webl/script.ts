@@ -21,7 +21,8 @@ import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./s
 import { CGConstants } from "./systemValues";
 
 import { Vector2 } from "./types";
-import { GetMousePosNDC, MathClamp, MathGetVectorLength, MathVectorNormalize, UpdateTime, showError } from "./utils";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { MathClamp, MathGetVectorLength, MathVectorNormalize, UpdateTime, getMousePosition, showError } from "./utils";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -203,17 +204,34 @@ export function RenderMain() {
     const canvas = getCanvas();
 
     let bMouseDown: boolean;
-    canvas.addEventListener("mousedown", () => {
+
+    canvas.addEventListener("mousemove", (e) => {
+        e.preventDefault(); // Prevent default touchmove behavior, like scrolling
+        getMousePosition(canvas, e);
+    });
+
+    canvas.addEventListener("touchmove", (e) => {
+        e.preventDefault(); // Prevent default touchmove behavior, like scrolling
+        getMousePosition(canvas, e);
+    });
+
+    canvas.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        getMousePosition(canvas, e);
         bMouseDown = true;
     });
-    canvas.addEventListener("mouseup", () => {
+    canvas.addEventListener("mouseup", (e) => {
+        e.preventDefault();
         bMouseDown = false;
     });
 
-    canvas.addEventListener("touchstart", () => {
+    canvas.addEventListener("touchstart", (e) => {
+        getMousePosition(canvas, e);
+        e.preventDefault();
         bMouseDown = true;
     });
-    canvas.addEventListener("touchend", () => {
+    canvas.addEventListener("touchend", (e) => {
+        e.preventDefault();
         bMouseDown = false;
     });
 
@@ -276,8 +294,6 @@ export function RenderMain() {
     if (APP_ENVIRONMENT === "development") {
         DrawUI(GSettings);
     }
-
-    GetMousePosNDC(canvas);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const BackGroundRenderPass = new RBackgroundRenderPass(gl);
@@ -433,10 +449,4 @@ export function RenderMain() {
     if (gl !== null) {
         RenderLoop();
     }
-}
-
-try {
-    RenderMain();
-} catch (e) {
-    showError(`JS Exception: ${e}`);
 }
