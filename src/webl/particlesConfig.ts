@@ -4,7 +4,7 @@ export const FlameParticlesDesc = {
     inName: "Flame Particles",
     inNumSpawners2D: 64,
     inNumParticlesPerSpawner: 1,
-    inSpawnRange: { x: 0.99, y: 1000.0 },
+    inSpawnRange: { x: 2.99, y: 1000.0 }, //TODO:depends on temperature
     inParticleLife: 2.4,
     inNumLoops: 3.0,
     inTextureFileName: "assets/sprites/Flame02_16x4.png",

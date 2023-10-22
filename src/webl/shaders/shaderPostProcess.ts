@@ -346,24 +346,19 @@ export function GetShaderSourceCombinerPassPS() {
 
 			#if 1
 			float time = mod(Time, 12.4f);
-			if(time < 1.3f)
+			if(time < 1.15f)
 			{
 				vec2 lightFlickerUV;
-				lightFlickerUV.y = 0.1f;
-				//const float flickScale = 0.2f;
-				//const float flickScale = 0.02f;
-				float flickScale = mix(0.01, 0.2, mod(Time, 20.f) * 0.05);
+				lightFlickerUV.y = Time * 0.001f;
+				float flickScale = 0.02;
 				lightFlickerUV.x = Time * flickScale;
 				float flickerNoise = textureLod(NoiseTexture, lightFlickerUV.xy, 0.f).r;
-				flickerNoise = min(1.0, flickerNoise + 0.35f);
-				/* if(flickerNoise > 0.5)
+				flickerNoise = MapToRange(flickerNoise, 0.2, 0.8, 0.0, 1.0);
+				flickerNoise = min(1.0, flickerNoise + 0.4f);
+				if(flickerNoise < 0.75)
 				{
-					flickerNoise = 1.f;
+					flickerNoise *= 0.5f;
 				}
-				else
-				{
-					flickerNoise = 0.0f;
-				} */
 				light *= clamp(abs(flickerNoise) , 0.0, 1.0);
 			}
 			#endif
