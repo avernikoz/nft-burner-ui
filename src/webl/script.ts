@@ -21,7 +21,8 @@ import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./s
 import { CGConstants } from "./systemValues";
 
 import { Vector2 } from "./types";
-import { GetMousePosNDC, MathClamp, MathGetVectorLength, MathVectorNormalize, UpdateTime, showError } from "./utils";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { MathClamp, MathGetVectorLength, MathVectorNormalize, UpdateTime, getMousePosition, showError } from "./utils";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -203,17 +204,37 @@ export function RenderMain() {
     const canvas = getCanvas();
 
     let bMouseDown: boolean;
-    canvas.addEventListener("mousedown", () => {
+
+    canvas.addEventListener("mousemove", (e) => {
+        console.debug("canvas.addEventListener mousemove");
+        e.preventDefault(); // Prevent default touchmove behavior, like scrolling
+        getMousePosition(canvas, e);
+    });
+
+    canvas.addEventListener("touchmove", (e) => {
+        console.debug("canvas.addEventListener touchmove");
+        e.preventDefault(); // Prevent default touchmove behavior, like scrolling
+        getMousePosition(canvas, e);
+    });
+
+    canvas.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        getMousePosition(canvas, e);
+        console.log("e: ", e);
         bMouseDown = true;
     });
-    canvas.addEventListener("mouseup", () => {
+    canvas.addEventListener("mouseup", (e) => {
+        e.preventDefault();
         bMouseDown = false;
     });
 
-    canvas.addEventListener("touchstart", () => {
+    canvas.addEventListener("touchstart", (e) => {
+        getMousePosition(canvas, e);
+        e.preventDefault();
         bMouseDown = true;
     });
-    canvas.addEventListener("touchend", () => {
+    canvas.addEventListener("touchend", (e) => {
+        e.preventDefault();
         bMouseDown = false;
     });
 
@@ -277,8 +298,6 @@ export function RenderMain() {
         DrawUI(GSettings);
     }
 
-    GetMousePosNDC(canvas);
-
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const BackGroundRenderPass = new RBackgroundRenderPass(gl);
 
@@ -332,6 +351,8 @@ export function RenderMain() {
                     } else {
                         applierSize = MathClamp(mouseDirLength * 0.5, 0.001, 0.05);
                     }
+                    // console.debug("[MousePosNDCPlaneRange]", MousePosNDCPlaneRange);
+                    // console.debug("[CGConstants.MousePosNDC]", CGConstants.MousePosNDC);
                     FirePlanePass.ApplyFire(gl, MousePosNDCPlaneRange, applierSize, MathVectorNormalize(curMouseDir));
                 }
             }
@@ -427,10 +448,4 @@ export function RenderMain() {
     if (gl !== null) {
         RenderLoop();
     }
-}
-
-try {
-    RenderMain();
-} catch (e) {
-    showError(`JS Exception: ${e}`);
 }
