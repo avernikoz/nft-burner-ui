@@ -15,7 +15,6 @@ export function getMousePosition(canvas: HTMLCanvasElement, event: MouseEvent | 
         clientY = event.touches[0].clientY;
     }
 
-    // if (clientX !== undefined && clientY !== undefined) {
     if (clientX !== undefined && clientY !== undefined) {
         const mouseX = ((clientX - rect.left) / canvas.clientWidth) * 2 - 1;
         const mouseY = (1.0 - (clientY - rect.top) / canvas.clientHeight) * 2 - 1;
