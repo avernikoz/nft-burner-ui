@@ -206,13 +206,11 @@ export function RenderMain() {
     let bMouseDown: boolean;
 
     canvas.addEventListener("mousemove", (e) => {
-        console.debug("canvas.addEventListener mousemove");
         e.preventDefault(); // Prevent default touchmove behavior, like scrolling
         getMousePosition(canvas, e);
     });
 
     canvas.addEventListener("touchmove", (e) => {
-        console.debug("canvas.addEventListener touchmove");
         e.preventDefault(); // Prevent default touchmove behavior, like scrolling
         getMousePosition(canvas, e);
     });
@@ -220,7 +218,6 @@ export function RenderMain() {
     canvas.addEventListener("mousedown", (e) => {
         e.preventDefault();
         getMousePosition(canvas, e);
-        console.log("e: ", e);
         bMouseDown = true;
     });
     canvas.addEventListener("mouseup", (e) => {
@@ -351,8 +348,6 @@ export function RenderMain() {
                     } else {
                         applierSize = MathClamp(mouseDirLength * 0.5, 0.001, 0.05);
                     }
-                    // console.debug("[MousePosNDCPlaneRange]", MousePosNDCPlaneRange);
-                    // console.debug("[CGConstants.MousePosNDC]", CGConstants.MousePosNDC);
                     FirePlanePass.ApplyFire(gl, MousePosNDCPlaneRange, applierSize, MathVectorNormalize(curMouseDir));
                 }
             }
