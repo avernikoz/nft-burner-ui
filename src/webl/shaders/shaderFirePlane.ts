@@ -277,6 +277,8 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 	uniform sampler2D NoiseTexture;
 	uniform sampler2D NoiseTextureLQ;
 	uniform sampler2D PointLightsTexture;
+	uniform sampler2D RoughnessTexture;
+	uniform sampler2D SurfaceMaterialColorTexture;
 
 	in vec2 vsOutTexCoords;
 
@@ -284,6 +286,11 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 	{
 		///Translate to origin, scale by ranges ratio, translate to new position
 		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
+
+	float Contrast(float color, float contrast)
+	{
+		return max(float(0.f), contrast * (color - 0.5f) + 0.5f);
 	}
 
 	void main()
@@ -296,11 +303,29 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
 		const float imageBrightness = 0.5f;
 		vec3 imageColor = texture(ImageTexture, flippedUVs.xy).rgb * imageBrightness;
-
-		const float ashesBrightness = 0.5f;
-		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * ashesBrightness;
-		float afterBurnNoise = texture(AfterBurnTexture, vsOutTexCoords.xy).r;
+		vec3 surfaceMaterialColor = texture(SurfaceMaterialColorTexture, flippedUVs.xy).rgb * imageBrightness;
 		
+		float roughness = texture(RoughnessTexture, flippedUVs.xy).r;
+		roughness = min(1.f, Contrast(roughness, 5.f));
+		roughness = 1.f - roughness;
+		roughness = roughness * length(vsOutTexCoords.xy - vec2(0.5) * 1.f);
+		imageColor.rgb = mix(imageColor.rgb, surfaceMaterialColor.rgb, roughness);
+
+		float vignette = 1.f - min(1.f, length(vec2((vsOutTexCoords.x - 0.5) * 1.5f + 0.5, vsOutTexCoords.y) - vec2(0.5)));
+		vignette = min(1.f, vignette * 1.75f);
+		imageColor *= vignette;
+
+		const float specFadeThres = 0.995;
+		const float specFadeBrightness = 3.f;
+		if(vsOutTexCoords.y > specFadeThres)
+		{
+			imageColor *= max(1.f, specFadeBrightness * MapToRange(vsOutTexCoords.y, specFadeThres, 1.0, 0.0, 1.0));
+		}
+
+		const float ashesBrightness = 1.0f;
+		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * ashesBrightness * vignette;
+		float afterBurnNoise = texture(AfterBurnTexture, vsOutTexCoords.xy).r;
+		//afterBurnNoise = 1.f - afterBurnNoise;
 		vec3 embersColor = vec3(afterBurnNoise, afterBurnNoise * 0.2, afterBurnNoise * 0.1);
 		float emberScale = 1.f;
 	#if 1 //NOISE EMBERS SCALE
@@ -322,8 +347,29 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 		emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.f, 2.f);
 	#endif
 
-	#if 1 //VIRTUAL POINT LIGHTS
+		ashesColor.rgb += embersColor * 15.f * emberScale;
+		ashesColor.b += (1.f - emberScale) * 0.05f;
 
+	#if 1 //BURNED IMAGE
+		vec3 burnedImageTexture = vec3(0.f);
+		const float BurnedImageSharpness = 0.05f;
+		float h = BurnedImageSharpness * 0.1;
+		vec3 n = textureLod(ImageTexture, flippedUVs + vec2(0, h), 0.f).rgb;
+		vec3 e = textureLod(ImageTexture, flippedUVs + vec2(h, 0), 0.f).rgb;
+		vec3 s = textureLod(ImageTexture, flippedUVs + vec2(0, -h), 0.f).rgb;
+		vec3 w = textureLod(ImageTexture, flippedUVs + vec2(-h, 0), 0.f).rgb;
+
+		vec3 dy = (n - s)*.5;
+		vec3 dx = (e - w)*.5;
+
+		vec3 edge = sqrt(dx*dx + dy*dy);
+		float luminance = dot( edge.rgb, vec3( 0.299f, 0.587f, 0.114f ) );
+		burnedImageTexture = luminance * 10.0 * vec3(1, 0.2, 0.1);
+		//ashesColor.rgb += burnedImageTexture * emberScale;
+		ashesColor.rgb = max(ashesColor.rgb, burnedImageTexture * 1.75f * emberScale);
+	#endif
+
+	#if 1 //VIRTUAL POINT LIGHTS
 		#if 1 //HQ
 		vec2 interpolatorViewSpacePos = vsOutTexCoords * 2.f - 1.f;
 
@@ -336,9 +382,7 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 
 		float lightIntensityFinal = 0.f;
 
-		vec3 lightColor1 = vec3(1.f, 0.5f, 0.1f);
-
-		vec3 lightColorFinal = vec3(0.f);
+		vec3 virtualPointLightsColor = vec3(1.f, 0.5f, 0.1f);
 
 		for(int y = 0; y < NumLights2D; y++)
 		{
@@ -360,39 +404,23 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 			}
 		}
 
-		lightIntensityFinal = min(lightIntensityFinal, 0.5f);
+		lightIntensityFinal = min(sqrt(lightIntensityFinal), (1.f - imageBrightness - 0.05));
+		if(vsOutTexCoords.y > specFadeThres)
+		{
+			lightIntensityFinal *= 0.75;
+		}
+		virtualPointLightsColor *= lightIntensityFinal;
 		//lightIntensityFinal *= 2.f;
 
 		#else
 
-		vec3 lightColor1 = vec3(1.f, 0.5f, 0.1f);
+		vec3 virtualPointLightsColor = vec3(1.f, 0.5f, 0.1f);
 		float lightIntensityFinal = texture(PointLightsTexture, vsOutTexCoords.xy).r;
+		virtualPointLightsColor *= lightIntensityFinal;
 
 		#endif //HQ
 
 	#endif////VIRTUAL POINT LIGHTS
-
-		ashesColor.rgb += embersColor * 10.f * emberScale;
-		ashesColor.b += (1.f - emberScale) * 0.05f;
-
-	#if 1 //BURNED IMAGE
-		vec3 burnedImageTexture = vec3(0.f);
-		const float BurnedImageSharpness = 0.1f;
-		float h = BurnedImageSharpness * 0.1;
-		vec3 n = textureLod(ImageTexture, flippedUVs + vec2(0, h), 0.f).rgb;
-		vec3 e = textureLod(ImageTexture, flippedUVs + vec2(h, 0), 0.f).rgb;
-		vec3 s = textureLod(ImageTexture, flippedUVs + vec2(0, -h), 0.f).rgb;
-		vec3 w = textureLod(ImageTexture, flippedUVs + vec2(-h, 0), 0.f).rgb;
-
-		vec3 dy = (n - s)*.5;
-		vec3 dx = (e - w)*.5;
-
-		vec3 edge = sqrt(dx*dx + dy*dy);
-		float luminance = dot( edge.rgb, vec3( 0.299f, 0.587f, 0.114f ) );
-		burnedImageTexture = luminance * 10.0 * vec3(1, 0.2, 0.1);
-		//ashesColor.rgb += burnedImageTexture * emberScale;
-		ashesColor.rgb = max(ashesColor.rgb, burnedImageTexture * emberScale);
-	#endif
 
 		vec3 paperColor = ashesColor;
 
@@ -400,7 +428,22 @@ export const ShaderSourceFireVisualizerPS = /* glsl */ `#version 300 es
 		{
 			paperColor = mix(ashesColor, imageColor, /* saturate */(curFuel));
 
-			paperColor += lightColor1 * lightIntensityFinal;
+			paperColor += virtualPointLightsColor;
+		}
+
+		const float shadowFadeThres = 0.01;
+		if(vsOutTexCoords.y < shadowFadeThres)
+		{
+			paperColor *= MapToRange(vsOutTexCoords.y, shadowFadeThres, 0.0, 1.0, 0.0);
+		}
+
+		float rectCircleLength = pow(vsOutTexCoords.x * 2.f - 1.f, 4.f) + pow(vsOutTexCoords.y * 2.f - 1.f, 4.f);
+		const float rectCircleFadeStart = 1.75f;
+		if(rectCircleLength > rectCircleFadeStart)
+		{
+			float s = MapToRange(rectCircleLength, rectCircleFadeStart, 2.0, 0.0, 1.0);
+			s = 1.f - s;
+			paperColor *= s * s;
 		}
 
 		vec3 fireColor;

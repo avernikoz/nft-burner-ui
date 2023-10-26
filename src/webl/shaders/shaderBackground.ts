@@ -144,6 +144,9 @@ export function GetShaderSourceBackgroundFloorRenderVS(sizeScale: number, viewSi
         /* glsl */ `), float(` +
         viewSize.y +
         /* glsl */ `));
+		const float kSizeScale = float(` +
+        sizeScale +
+        /* glsl */ `);
 
 			vec3 pos = vec3(VertexBuffer.xy, 0.0f);
 
@@ -174,12 +177,18 @@ export function GetShaderSourceBackgroundFloorRenderVS(sizeScale: number, viewSi
 			pos.y += FloorOffset;
 			
 			
-			pos.x /= float(` +
-        viewSize.x +
-        /* glsl */ `);
-		pos.y /= float(` +
-        viewSize.y +
-        /* glsl */ `);
+			pos.xy /= kViewSize;
+
+			if(kViewSize.x > 1.f)//widescreen
+			{
+				pos.xy *= min(1.f, kSizeScale + 0.15);
+			}
+
+			
+
+			/* pos.xy *= float(` +
+        sizeScale +
+        /* glsl */ `); */
 			
 			/* float w = 1.0f + (pos.z);
 			gl_Position = vec4(pos.xy, w, w); */
@@ -255,7 +264,7 @@ export const ShaderSourceBackgroundFloorRenderPS = /* glsl */ `#version 300 es
 			}
 		}
 
-		lightIntensityFinal *= 2.5f;
+		lightIntensityFinal = min(2.f, lightIntensityFinal * 2.5f);
 
 
 		//float distFromPaintCenter = length(interpolatorViewSpacePos.xyz - vec3(0.0, 0.0, 2.0)) * 0.5f;

@@ -393,8 +393,6 @@ export function GetShaderSourceCombinerPassPS() {
 			smoke.rgba = smoke.rgba * 1.f + vec4(vec3(smokeNoise.r) * 0.15, smokeNoise.r * 0.15) * clamp(1.f - smoke.a, 0.0, 1.f);
 
 			smoke.rgb *= 0.75f;
-
-			//light
 			smoke.rgb *= 0.25f;
 
 			const float BloomStrength = 5.0f;
@@ -425,18 +423,19 @@ export function GetShaderSourceCombinerPassPS() {
 
 			float smokeScale = 1.f;
 			//smokeScale *= (texCoords.y * kViewSize.y * (kSizeScale));
-			smokeScale *= clamp(length((texCoords.xy * kViewSize.xy * (2.0 - kSizeScale)) - vec2(0.5) * kViewSize.xy * (2.0 - kSizeScale)), 0.f, 1.f);
+			smokeScale *= clamp(length((texCoords.xy * kViewSize.xy * (2.0 - kSizeScale)) - vec2(0.5) * kViewSize.xy * (2.0 - kSizeScale)), 0.25f, 1.f);
 			smokeScale *= 2.0f;
-			smokeScale = min(1.5f, smokeScale);
+			//smokeScale = min(1.5f, smokeScale);
 
 			smoke.a *= smokeScale;
-			smoke.rgb *= clamp(smokeScale, 0.5f, 1.f);
+			//smoke.rgb *= clamp(smokeScale, 0.5f, 1.f);
 
 			//lit plane with spotlight
-			if(firePlane.r < 1.0)
+			if(firePlane.r < 1.0 /* && dot(firePlane.rgb, vec3(0.333)) < 1.f */)
 			{
-				const float ambientLight = 0.15f;
-				firePlane.rgb *= min(1.f, light + ambientLight);
+				const float ambientLight = 0.0f;
+				const float lightScale = 5.0f;
+				firePlane.rgb *= min(1.f, light * lightScale + ambientLight);
 			}
 
 			firePlane.rgb = smoke.rgb * 1.f + firePlane.rgb * clamp(1.f - smoke.a, 0.0, 1.f);
@@ -460,16 +459,18 @@ export function GetShaderSourceCombinerPassPS() {
 			const float exposure = 1.f;
 			final.rgb *= exposure;
 
-			if(texCoords.x <= 0.2 && texCoords.y <= 0.1)
+			const float logoStart = 0.15f;
+			if(texCoords.x <= logoStart && texCoords.y <= logoStart)
 			{
 				vec2 logoUV;
-				logoUV.x = MapToRange(texCoords.x, 0.2, 0.01, 0.f, 1.f);
+				logoUV.x = MapToRange(texCoords.x, logoStart, 0.0, 0.f, 1.f);
 				logoUV.x = 1.f - logoUV.x;	
-				logoUV.y = MapToRange(texCoords.y, 0.1, 0.00, 0.f, 1.f);
+				logoUV.y = MapToRange(texCoords.y, logoStart, 0.00, 0.f, 1.f);
 
 				logoUV *= kViewSize;
 				if(logoUV.x >= 0.f && logoUV.x <= 1.f && logoUV.y >= 0.f && logoUV.y <= 1.f)
 				{
+					//logoUV.y -= 0.25f;
 					vec4 logo = textureLod(LogoImageTexture, logoUV.xy, 0.f);
 					final.rgb = logo.rgb * logo.a + final.rgb * clamp(1.f - logo.a, 0.0, 1.f);
 				}

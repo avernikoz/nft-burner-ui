@@ -54,8 +54,8 @@ export const SmokeParticlesDesc = {
     inSizeRangeMinMax: { x: 0.7, y: 1.0 },
     inSizeClampMax: { x: 0.7, y: 0.7 },
     inInitialVelocityScale: 5.0,
-    inVelocityFieldForceScale: 10.0,
-    inBuoyancyForceScale: 10,
+    inVelocityFieldForceScale: 20.0,
+    inBuoyancyForceScale: 15, //TODO:Increase dynamically when overall temperature is high
     inDownwardForceScale: 0.25,
     inAlphaScale: 0.25,
     inEAlphaFade: 2,
@@ -81,7 +81,7 @@ export const AfterBurnSmokeParticlesDesc = {
     inDownwardForceScale: 0.0,
     inbOriginAtCenter: false,
     inEAlphaFade: 1,
-    inAlphaScale: 1.0,
+    inAlphaScale: 0.5,
     inBrightness: 0.0,
     inESpecificShadingMode: EParticleShadingMode.Smoke,
 };

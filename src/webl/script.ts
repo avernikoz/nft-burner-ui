@@ -244,6 +244,9 @@ export function RenderMain() {
         SceneDesc.ViewportMin = Math.min(window.innerWidth, window.innerHeight);
         SceneDesc.ScreenRatio = window.innerWidth / window.innerHeight;
         SceneDesc.bWideScreen = SceneDesc.ScreenRatio > 1.0;
+        if (SceneDesc.bWideScreen) {
+            SceneDesc.FirePlaneSizeScaleNDC = 0.5;
+        }
         SceneDesc.ViewRatioXY = { x: 1.0, y: 1.0 };
         if (SceneDesc.bWideScreen) {
             SceneDesc.ViewRatioXY.x = window.innerWidth / window.innerHeight;

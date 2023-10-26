@@ -295,9 +295,9 @@ export class RCombinerPass {
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
 
         this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
-        this.SpotlightTexture = CreateTexture(gl, 4, "assets/spotlightCut2.png");
+        this.SpotlightTexture = CreateTexture(gl, 4, "assets/spotlightCut4.png");
         this.SmokeNoiseTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg");
-        this.LogoImageTexture = CreateTexture(gl, 4, "assets/background/logo.png");
+        this.LogoImageTexture = CreateTexture(gl, 4, "assets/background/logoNew.png");
         this.LensTexture = CreateTexture(gl, 4, "assets/lensDirt6Edit.jpg");
     }
 

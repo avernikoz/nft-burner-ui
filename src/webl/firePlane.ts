@@ -31,6 +31,8 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
         NoiseTextureLQ: gl.getUniformLocation(shaderProgram, "NoiseTextureLQ"),
         PointLightsTexture: gl.getUniformLocation(shaderProgram, "PointLightsTexture"),
+        RoughnessTexture: gl.getUniformLocation(shaderProgram, "RoughnessTexture"),
+        SurfaceMaterialColorTexture: gl.getUniformLocation(shaderProgram, "SurfaceMaterialColorTexture"),
     };
     return params;
 }
@@ -113,6 +115,10 @@ export class RFirePlanePass {
     VisualizerImageTexture: WebGLTexture;
 
     VisualizerAshTexture: WebGLTexture;
+
+    RoughnessTexture: WebGLTexture;
+
+    SurfaceMaterialColorTexture: WebGLTexture;
 
     VisualizerAfterBurnNoiseTexture: WebGLTexture;
 
@@ -197,10 +203,13 @@ export class RFirePlanePass {
         this.VisualizerUniformParametersLocationList = GetUniformParametersList(gl, this.VisualizerShaderProgram);
 
         this.VisualizerFlameColorLUT = CreateTexture(gl, 4, "assets/flameColorLUT5.png");
-        this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/example.jpg");
+        this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/apeBlue.png");
         this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg");
         this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
+        //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/cracksNoise.png");
         this.VisualizerFirePlaneNoiseTexture = CreateTexture(gl, 7, "assets/fireNoise.png");
+        this.RoughnessTexture = CreateTexture(gl, 7, "assets/grainNoise3.png");
+        this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/marbleYellow.png");
     }
 
     bFirstBoot = true;
@@ -316,6 +325,14 @@ export class RFirePlanePass {
         gl.activeTexture(gl.TEXTURE0 + 10);
         gl.bindTexture(gl.TEXTURE_2D, pointLightsTexture);
         gl.uniform1i(this.VisualizerUniformParametersLocationList.PointLightsTexture, 10);
+
+        gl.activeTexture(gl.TEXTURE0 + 11);
+        gl.bindTexture(gl.TEXTURE_2D, this.RoughnessTexture);
+        gl.uniform1i(this.VisualizerUniformParametersLocationList.RoughnessTexture, 11);
+
+        gl.activeTexture(gl.TEXTURE0 + 12);
+        gl.bindTexture(gl.TEXTURE_2D, this.SurfaceMaterialColorTexture);
+        gl.uniform1i(this.VisualizerUniformParametersLocationList.SurfaceMaterialColorTexture, 12);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
