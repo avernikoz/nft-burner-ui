@@ -22,7 +22,13 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         TextureSize: gl.getUniformLocation(shaderProgram, "TextureSize"),
         SourceTexture: gl.getUniformLocation(shaderProgram, "SourceTexture"),
         FlameTexture: gl.getUniformLocation(shaderProgram, "FlameTexture"),
+        SmokeTexture: gl.getUniformLocation(shaderProgram, "SmokeTexture"),
+        SmokeNoiseTexture: gl.getUniformLocation(shaderProgram, "SmokeNoiseTexture"),
         FirePlaneTexture: gl.getUniformLocation(shaderProgram, "FirePlaneTexture"),
+        SpotlightTexture: gl.getUniformLocation(shaderProgram, "SpotlightTexture"),
+        PointLightsTexture: gl.getUniformLocation(shaderProgram, "PointLightsTexture"),
+        LogoImageTexture: gl.getUniformLocation(shaderProgram, "LogoImageTexture"),
+        LensTexture: gl.getUniformLocation(shaderProgram, "LensTexture"),
         BloomTexture: gl.getUniformLocation(shaderProgram, "BloomTexture"),
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
         FlameNoiseTexture: gl.getUniformLocation(shaderProgram, "FlameNoiseTexture"),
@@ -273,6 +279,14 @@ export class RCombinerPass {
 
     NoiseTexture: WebGLTexture;
 
+    SpotlightTexture: WebGLTexture;
+
+    SmokeNoiseTexture: WebGLTexture;
+
+    LogoImageTexture: WebGLTexture;
+
+    LensTexture: WebGLTexture;
+
     constructor(gl: WebGL2RenderingContext) {
         //Create Shader Program
         this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceFullscreenPassVS, GetShaderSourceCombinerPassPS());
@@ -281,6 +295,10 @@ export class RCombinerPass {
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
 
         this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
+        this.SpotlightTexture = CreateTexture(gl, 4, "assets/spotlightCut4.png");
+        this.SmokeNoiseTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg");
+        this.LogoImageTexture = CreateTexture(gl, 4, "assets/background/logoNew.png");
+        this.LensTexture = CreateTexture(gl, 4, "assets/lensDirt6Edit.jpg");
     }
 
     Execute(
@@ -288,6 +306,8 @@ export class RCombinerPass {
         firePlaneTexture: WebGLTexture,
         flameTexture: WebGLTexture,
         bloomTexture: WebGLTexture,
+        smokeTexture: WebGLTexture,
+        pointLightsTexture: WebGLTexture,
         destFramebuffer: WebGLFramebuffer | null,
         destSize: Vector2,
     ) {
@@ -317,6 +337,30 @@ export class RCombinerPass {
         gl.activeTexture(gl.TEXTURE0 + 4);
         gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
         gl.uniform1i(this.UniformParametersLocationList.NoiseTexture, 4);
+
+        gl.activeTexture(gl.TEXTURE0 + 5);
+        gl.bindTexture(gl.TEXTURE_2D, smokeTexture);
+        gl.uniform1i(this.UniformParametersLocationList.SmokeTexture, 5);
+
+        gl.activeTexture(gl.TEXTURE0 + 6);
+        gl.bindTexture(gl.TEXTURE_2D, this.SpotlightTexture);
+        gl.uniform1i(this.UniformParametersLocationList.SpotlightTexture, 6);
+
+        gl.activeTexture(gl.TEXTURE0 + 7);
+        gl.bindTexture(gl.TEXTURE_2D, this.SmokeNoiseTexture);
+        gl.uniform1i(this.UniformParametersLocationList.SmokeNoiseTexture, 7);
+
+        gl.activeTexture(gl.TEXTURE0 + 8);
+        gl.bindTexture(gl.TEXTURE_2D, pointLightsTexture);
+        gl.uniform1i(this.UniformParametersLocationList.PointLightsTexture, 8);
+
+        gl.activeTexture(gl.TEXTURE0 + 9);
+        gl.bindTexture(gl.TEXTURE_2D, this.LensTexture);
+        gl.uniform1i(this.UniformParametersLocationList.LensTexture, 9);
+
+        gl.activeTexture(gl.TEXTURE0 + 10);
+        gl.bindTexture(gl.TEXTURE_2D, this.LogoImageTexture);
+        gl.uniform1i(this.UniformParametersLocationList.LogoImageTexture, 10);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }

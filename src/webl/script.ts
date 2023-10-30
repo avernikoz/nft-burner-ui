@@ -1,10 +1,18 @@
 import { APP_ENVIRONMENT } from "../config/config";
+import { RBackgroundRenderPass } from "./backgroundScene";
 import { RFirePlanePass } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUI, DrawUISingleton } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
-import { EmberParticlesDesc, FlameParticlesDesc } from "./particlesConfig";
+import {
+    AfterBurnAshesParticlesDesc,
+    AfterBurnSmokeParticlesDesc,
+    EmberParticlesDesc,
+    FlameParticlesDesc,
+    SmokeParticlesDesc,
+} from "./particlesConfig";
 import { RBloomPass, RBlurPass, RCombinerPass, RFlamePostProcessPass, RPresentPass } from "./postprocess";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { BindRenderTarget, CreateFramebufferWithAttachment, CreateTextureRT } from "./resourcesUtils";
 import { SceneDesc } from "./scene";
 import { CheckGL } from "./shaderUtils";
@@ -13,7 +21,8 @@ import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./s
 import { CGConstants } from "./systemValues";
 
 import { Vector2 } from "./types";
-import { GetMousePosNDC, MathClamp, MathGetVectorLength, MathVectorNormalize, UpdateTime, showError } from "./utils";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { MathClamp, MathGetVectorLength, MathVectorNormalize, UpdateTime, getMousePosition, showError } from "./utils";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -147,6 +156,8 @@ const GRenderTargets: {
     FlameTexture2: WebGLTexture | null;
     FlameFramebuffer: WebGLFramebuffer | null;
     FlameFramebuffer2: WebGLFramebuffer | null;
+    SmokeTexture: WebGLTexture | null;
+    SmokeFramebuffer: WebGLFramebuffer | null;
 } = {
     FirePlaneTexture: null,
     FirePlaneFramebuffer: null,
@@ -154,6 +165,8 @@ const GRenderTargets: {
     FlameFramebuffer: null,
     FlameTexture2: null,
     FlameFramebuffer2: null,
+    SmokeTexture: null,
+    SmokeFramebuffer: null,
 };
 
 function AllocateMainRenderTargets(gl: WebGL2RenderingContext, size: Vector2) {
@@ -181,23 +194,44 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext, size: Vector2) {
     GRenderTargets.FlameFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture!);
     GRenderTargets.FlameTexture2 = CreateTextureRT(gl, size, textureInternalFormat, textureFormat, textureType, true);
     GRenderTargets.FlameFramebuffer2 = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture2!);
+
+    //Smoke
+    GRenderTargets.SmokeTexture = CreateTextureRT(gl, size, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
+    GRenderTargets.SmokeFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.SmokeTexture!);
 }
 
 export function RenderMain() {
     const canvas = getCanvas();
 
     let bMouseDown: boolean;
-    canvas.addEventListener("mousedown", () => {
+
+    canvas.addEventListener("mousemove", (e) => {
+        e.preventDefault(); // Prevent default touchmove behavior, like scrolling
+        getMousePosition(canvas, e);
+    });
+
+    canvas.addEventListener("touchmove", (e) => {
+        e.preventDefault(); // Prevent default touchmove behavior, like scrolling
+        getMousePosition(canvas, e);
+    });
+
+    canvas.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        getMousePosition(canvas, e);
         bMouseDown = true;
     });
-    canvas.addEventListener("mouseup", () => {
+    canvas.addEventListener("mouseup", (e) => {
+        e.preventDefault();
         bMouseDown = false;
     });
 
-    canvas.addEventListener("touchstart", () => {
+    canvas.addEventListener("touchstart", (e) => {
+        getMousePosition(canvas, e);
+        e.preventDefault();
         bMouseDown = true;
     });
-    canvas.addEventListener("touchend", () => {
+    canvas.addEventListener("touchend", (e) => {
+        e.preventDefault();
         bMouseDown = false;
     });
 
@@ -210,6 +244,9 @@ export function RenderMain() {
         SceneDesc.ViewportMin = Math.min(window.innerWidth, window.innerHeight);
         SceneDesc.ScreenRatio = window.innerWidth / window.innerHeight;
         SceneDesc.bWideScreen = SceneDesc.ScreenRatio > 1.0;
+        if (SceneDesc.bWideScreen) {
+            SceneDesc.FirePlaneSizeScaleNDC = 0.5;
+        }
         SceneDesc.ViewRatioXY = { x: 1.0, y: 1.0 };
         if (SceneDesc.bWideScreen) {
             SceneDesc.ViewRatioXY.x = window.innerWidth / window.innerHeight;
@@ -261,15 +298,29 @@ export function RenderMain() {
         DrawUI(GSettings);
     }
 
-    GetMousePosNDC(canvas);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const BackGroundRenderPass = new RBackgroundRenderPass(gl);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const FirePlanePass = new RFirePlanePass(gl);
+    const FirePlaneSizePixels = { x: 512, y: 512 };
+    const FirePlanePass = new RFirePlanePass(gl, FirePlaneSizePixels);
+
+    if (SceneDesc.bWideScreen) {
+        EmberParticlesDesc.inDownwardForceScale = 2.5;
+        AfterBurnAshesParticlesDesc.inDownwardForceScale = 2.5;
+        SmokeParticlesDesc.inDownwardForceScale = 2.5;
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const AfterBurnSmokeParticles = new ParticlesEmitter(gl, AfterBurnSmokeParticlesDesc);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const AshesParticles = new ParticlesEmitter(gl, AfterBurnAshesParticlesDesc);
 
     //generate intermediate texture for Blur
     //TODO: Specify target MIP resolution instead, and deduce MIP Index from it
@@ -311,20 +362,35 @@ export function RenderMain() {
             }
 
             FirePlanePass.UpdateFire(gl);
+            BackGroundRenderPass.PointLights.Update(gl, FirePlanePass.GetCurFireTexture()!);
+
+            /* GPostProcessPasses.CopyPresemt.Execute(
+                gl,
+                canvas,
+                BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
+                0,
+                null,
+                {
+                    x: canvas.width,
+                    y: canvas.height,
+                },
+            ); */
 
             FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
             EmberParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+            AshesParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+            SmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+            AfterBurnSmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
             BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, RenderTargetSize, true);
-            FirePlanePass.VisualizeFirePlane(gl);
 
-            /* GPostProcessPasses.CopyPresemt.Execute(gl, canvas, GRenderTargets.FirePlaneTexture!, 0, null, {
-                x: canvas.width,
-                y: canvas.height,
-            }); */
+            //BackGroundRenderPass.RenderSpotlight(gl);
+            BackGroundRenderPass.RenderFloor(gl);
+
+            FirePlanePass.VisualizeFirePlane(gl, BackGroundRenderPass.PointLights.LightsBufferTextureGPU!);
 
             BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, RenderTargetSize, true);
-            FlameParticles.Render(gl, gl.MAX);
+            FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
 
             GPostProcessPasses.FlamePostProcess!.Execute(
                 gl,
@@ -334,7 +400,7 @@ export function RenderMain() {
             );
             const flameSourceTextureRef = GRenderTargets.FlameTexture2;
 
-            EmberParticles.Render(gl, gl.FUNC_ADD);
+            EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
 
             if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
                 //Downsample Source
@@ -348,19 +414,28 @@ export function RenderMain() {
                 for (let i = 0; i < GPostProcessPasses.BloomNumBlurPasses; i++) {
                     GPostProcessPasses.Bloom!.Blur(gl, GPostProcessPasses.Blur!);
                 }
-
-                GPostProcessPasses.Combiner!.Execute(
-                    gl,
-                    GRenderTargets.FirePlaneTexture!,
-                    flameSourceTextureRef!,
-                    GPostProcessPasses.Bloom!.BloomTexture,
-                    null,
-                    {
-                        x: canvas.width,
-                        y: canvas.height,
-                    },
-                );
             }
+
+            //Render Smoke
+            BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, RenderTargetSize, true);
+            SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+            //Combine results
+            GPostProcessPasses.Combiner!.Execute(
+                gl,
+                GRenderTargets.FirePlaneTexture!,
+                flameSourceTextureRef!,
+                GPostProcessPasses.Bloom!.BloomTexture!,
+                GRenderTargets.SmokeTexture!,
+                BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
+                null,
+                {
+                    x: canvas.width,
+                    y: canvas.height,
+                },
+            );
 
             CGConstants.bMouseMoved = false;
 
@@ -377,10 +452,4 @@ export function RenderMain() {
     if (gl !== null) {
         RenderLoop();
     }
-}
-
-try {
-    RenderMain();
-} catch (e) {
-    showError(`JS Exception: ${e}`);
 }

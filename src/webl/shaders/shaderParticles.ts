@@ -5,7 +5,7 @@ import { Vector2 } from "../types";
 //SC - Shader Code
 function scTranslateToBaseAtOrigin(condition: boolean) {
     if (condition) {
-        return `const float scaleOffsetAmount = 0.9f;
+        return /* glsl */ `const float scaleOffsetAmount = 0.9f;
 			pos.y += (scale / kViewSize.y) * scaleOffsetAmount;`;
     } else {
         return ``;
@@ -30,6 +30,7 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
 			outVelocity.y *= 0.25f;
 		} */
 		outVelocity.y += InitialVelocityScale * 0.25f;
+		//outVelocity.y += abs(outVelocity.y) * 0.75f;
 		`
         );
     } else {
@@ -65,17 +66,34 @@ function scGetVectorFieldForce(scale: number) {
 
 function scParticleSampleFlipbook(condition: boolean) {
     if (condition) {
-        return /* glsl */ `uint flipBookIndex1D = uint(floor(interpolatorFrameIndex));
+        return /* glsl */ `
+		vec2 frameSize = 1.f / (FlipbookSizeRC);
+		vec2 uv = interpolatorTexCoords * frameSize;
+
+		uint flipBookIndex1D = uint(floor(interpolatorFrameIndex));
 		uvec2 FlipBookIndex2D;
 		FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
 		FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
 
-		vec2 frameSize = 1.f / (FlipbookSizeRC);
-		vec2 uv = interpolatorTexCoords * frameSize;
 		uv.x += (frameSize.x * float(FlipBookIndex2D.x));
 		uv.y += (frameSize.y * float(FlipBookIndex2D.y));
 		
-		colorFinal = texture(ColorTexture, uv).rgba;`;
+		colorFinal = texture(ColorTexture, uv).rgba;
+
+		#if 1//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
+		if(ceil(interpolatorFrameIndex) < float(FlipbookSizeRC.x * FlipbookSizeRC.y))
+		{
+			flipBookIndex1D = uint(ceil(interpolatorFrameIndex));
+			FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
+			FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
+			uv = interpolatorTexCoords * frameSize;
+			uv.x += (frameSize.x * float(FlipBookIndex2D.x));
+			uv.y += (frameSize.y * float(FlipBookIndex2D.y));
+			vec4 color2 = texture(ColorTexture, uv).rgba;
+			colorFinal = mix(colorFinal, color2, fract(interpolatorFrameIndex));
+		}
+		#endif
+		`;
     } else {
         return ``;
     }
@@ -86,6 +104,7 @@ export function GetParticleUpdateShaderVS(
     initialVelocityScale: number,
     velocityFieldForceScale: number,
     buoyancyForceScale: number,
+    downwardForceScale: number,
 ) {
     return (
         /* glsl */ `#version 300 es
@@ -144,11 +163,15 @@ export function GetParticleUpdateShaderVS(
 			  vec2 fireUV = (inDefaultPosition + 1.f) * 0.5f;
 			  float curFire = texture(FireTexture, fireUV.xy).r;
 			
-			  const vec2 kSpawnRange = vec2(float(` +
+			  vec2 kSpawnRange = vec2(float(` +
         spawnFireRange.x +
         /* glsl */ `), float(` +
         spawnFireRange.y +
         /* glsl */ `));
+			  /* if(gl_VertexID % 400 == 0)
+			  {
+				kSpawnRange.x = 0.001f;
+			  } */
 			  bool bIsInSpawnRange = ((curFire >= kSpawnRange.x) && (curFire <= kSpawnRange.y ));
 			  bool bAllowNewSpawn = false;
 			  bool bAllowUpdate = false;
@@ -232,10 +255,13 @@ export function GetParticleUpdateShaderVS(
 				  float posYNorm = (inPosition.y + 1.f) * 0.5f;
 				  curVel.y += buoyancyForce * DeltaTime * temperature;
 
-				  float downwardForce = /* ageNorm * */ (posYNorm /* * posYNorm */) * buoyancyForce * 1.f;
+				  const float downwardForceScale = float(` +
+        downwardForceScale +
+        /* glsl */ `);
+				  float downwardForce = /* ageNorm * */ (posYNorm /* * posYNorm */) /* * buoyancyForce */ * downwardForceScale;
 				  if(curVel.y > 0.f)
 				  {
-					curVel.y -= downwardForce * DeltaTime * curVel.y * 0.2f;
+					curVel.y -= downwardForce * DeltaTime * curVel.y;
 				  }
   
 				  const float Damping = 0.99f;
@@ -261,7 +287,72 @@ export const ParticleUpdatePS = /* glsl */ `#version 300 es
 	  void main()
 	  {}`;
 
-export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize: Vector2, bOriginAtCenter = true) {
+function scTransformBasedOnMotion(condition: boolean) {
+    if (condition) {
+        return /* glsl */ `vec2 curVelocity = inVelocity;
+			float velLength = length(curVelocity) * 0.1;
+			if(velLength > 0.f)
+			{
+				pos.y *= clamp(1.f - velLength, 0.15f, 0.35f);
+				pos.x *= (1.f + velLength);
+				
+				// Calculate the angle between the initial direction (1, 0) and the desired direction
+				float angle = atan(curVelocity.y, curVelocity.x);
+
+				// Rotate the stretched position
+				float cosAngle = cos(angle);
+				float sinAngle = sin(angle);
+				vec2 rotatedPosition = vec2(
+					pos.x * cosAngle - pos.y * sinAngle,
+					pos.x * sinAngle + pos.y * cosAngle
+				);
+				
+				pos = rotatedPosition;
+			}`;
+    } else {
+        return ``;
+    }
+}
+
+function scFadeInOutTransform(condition: boolean) {
+    if (condition) {
+        return /* glsl */ `
+		#if 1 //SINGLE CURVE SCALE FADE OUT
+
+		float velLength = length(inVelocity);//TODO Optimization : Replace with compile time const
+		if(ageNorm < 0.333f)
+		{
+			ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
+			pos.x *= clamp(ageNorm, 0.2, 1.f);
+			pos.y *= clamp(ageNorm, 0.05, 1.f);
+		}
+		else if((velLength < 0.01))
+		{
+			ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
+			pos.x *= clamp(ageNorm, 0.5, 1.f);
+			pos.y *= clamp(ageNorm, 0.0, 1.f);
+		}
+	  #else
+		float normAgeFadeInPow = sqrt(1.f - pow(1.f - ageNorm, 8.f));
+		pos.xy *= normAgeFadeInPow;
+
+		float normAgeFadeOutPow = 1.f - clamp(pow(ageNorm, 4.f), 0.f, 1.f);
+		pos.xy *= normAgeFadeOutPow;
+	  #endif
+	  `;
+    } else {
+        return ``;
+    }
+}
+
+export function GetParticleRenderInstancedVS(
+    bUsesTexture: boolean,
+    defaultSize: Vector2,
+    sizeRangeMinMax: Vector2,
+    sizeClampMax: Vector2,
+    bOriginAtCenter = true,
+    bMotionBasedTransform = false,
+) {
     const sizeScale = SceneDesc.FirePlaneSizeScaleNDC;
     const viewSize = SceneDesc.ViewRatioXY;
     return (
@@ -286,6 +377,7 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
 		flat out float interpolatorAge;
 		flat out float interpolatorFrameIndex;
 		out vec2 interpolatorTexCoords;
+		flat out int interpolatorInstanceId;
 	
 		//check if particle should never be drawn again
 		bool IsParticleDead()
@@ -307,7 +399,9 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
 			}
 			else
 			{	
-	
+				
+				interpolatorInstanceId = gl_InstanceID;
+
 				vec2 uvLocal = vec2(TexCoordsBuffer.x, 1.f - TexCoordsBuffer.y);
 			#if 1//flip uv's
 				if(gl_InstanceID % 3 == 0)
@@ -317,14 +411,17 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
 			#endif
   
 				interpolatorTexCoords = uvLocal;
-				float ageNorm = inAge / ParticleLife;
+				float ageNorm = min(0.999f, inAge / ParticleLife);
+				//float ageNorm = min(inAge, ParticleLife) / ParticleLife;
 				interpolatorAge = ageNorm;
   
 
 				float animationParameterNorm = ageNorm;
 				if(NumLoops > 1.f)
 				{
-				  animationParameterNorm = fract(inAge / (ParticleLife / NumLoops));
+				  //animationParameterNorm = fract((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops));
+				  animationParameterNorm = mod((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops), 1.f);
+				  //animationParameterNorm = fract((inAge) / (ParticleLife / NumLoops));
 				}
 				float TotalFlipFrames = FlipbookSizeRC.x * FlipbookSizeRC.y;
 				interpolatorFrameIndex = (animationParameterNorm * TotalFlipFrames);
@@ -343,12 +440,32 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
 				pos /= kViewSize;
   
 				//scale
-				float scale = 1.f;
+				float scale = 1.0f;
 			  #if 1 //NOISE-DRIVEN SIZE
-				float particleDiffScale = 0.01f;
-				vec2 noiseUV = vec2(CurTime * 0.0017f + 0.23f * float(gl_InstanceID) * particleDiffScale, CurTime * 0.09 + 0.17 * float(gl_InstanceID) * particleDiffScale);
+				vec2 noiseUV = vec2((inPosition.x + 1.f) * 0.5f, (inPosition.y + 1.f) * 0.5f);
+				noiseUV *= 0.25f;
+				//noiseUV.x += CurTime * 0.017f;
+				noiseUV.y += CurTime * 0.033f;
 				vec2 noise = textureLod(NoiseTexture, noiseUV.xy, 0.f).rg;
 
+				const vec2 kSizeRangeMinMax = vec2(float(` +
+        sizeRangeMinMax.x +
+        /* glsl */ `), float(` +
+        sizeRangeMinMax.y +
+        /* glsl */ `));
+				const vec2 kSizeClampMax = vec2(float(` +
+        sizeClampMax.x +
+        /* glsl */ `), float(` +
+        sizeClampMax.y +
+        /* glsl */ `));
+
+				scale = clamp(MapToRange(noise.r, 0.35, 0.65, kSizeRangeMinMax.x, kSizeRangeMinMax.y), kSizeRangeMinMax.x, kSizeRangeMinMax.y);
+
+				
+				float particleDiffScale = 0.17f;
+				float sizeChangeSpeed = 0.77;
+				noiseUV = vec2(CurTime * 0.0017f + 0.23f * float(gl_InstanceID) * particleDiffScale, CurTime * sizeChangeSpeed * 0.1f + 0.17 * float(gl_InstanceID) * particleDiffScale);
+				noise = textureLod(NoiseTexture, noiseUV.xy, 0.f).rg;
 				float t = mod(CurTime, 2.f);
 				if(t < 1.f)
 				{
@@ -359,20 +476,23 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
 					noise.r = mix(noise.g, noise.r, t - 1.f);
 				}
 
-				noise.r = clamp(MapToRange(noise.r, 0.3, 0.65, 0.2f, 1.f), 0.f, 2.f);
+				float scale2 = clamp(MapToRange(noise.r, 0.35, 0.65, kSizeRangeMinMax.x, kSizeRangeMinMax.y), kSizeRangeMinMax.x, kSizeRangeMinMax.y);
 
-				const float scaleAmount = 0.2f;
-				scale = noise.r * scaleAmount;
-  
-				if(scale < 0.3 * scaleAmount)
+				scale = scale * scale2;
+				//scale = scale2;
+
+				if(scale < 0.2f)
 				{
 				  gl_Position = vec4(-10, -10, -10, 1.0);
 				  return;
 				}
-			  #endif
-				
+
 				scale *= kSizeScale;
-				pos.xy *= scale;
+				pos.x *= max(kSizeClampMax.x, scale);
+				pos.y *= max(kSizeClampMax.y, scale);
+
+				
+				#endif//NOISE DRIVEN SIZE
 
 				//offset to origin
 				` +
@@ -387,42 +507,16 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
         defaultSize.y +
         /* glsl */ `);
 
-			#if 1//Rotate based on velocity
-				vec2 curVelocity = inVelocity;
-				float velLength = length(curVelocity) * 0.1;
-				if(velLength > 0.f)
-				{
-					pos.y *= clamp(1.f - velLength, 0.f, 1.f);
-					pos.x *= (1.f + velLength);
-					
-					// Calculate the angle between the initial direction (1, 0) and the desired direction
-					float angle = atan(curVelocity.y, curVelocity.x);
 
-					// Rotate the stretched position
-					float cosAngle = cos(angle);
-					float sinAngle = sin(angle);
-					vec2 rotatedPosition = vec2(
-						pos.x * cosAngle - pos.y * sinAngle,
-						pos.x * sinAngle + pos.y * cosAngle
-					);
-					
-					pos = rotatedPosition;
-				}
-				
-			#endif
-  
-				//fade in-out
-			  #if 1 //SINGLE CURVE SCALE FADE OUT
-				ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
-				pos.x *= clamp(ageNorm, 0.1, 1.f);
-				pos.y *= clamp(ageNorm, 0.0, 1.f);
-			  #else
-				float normAgeFadeInPow = sqrt(1.f - pow(1.f - ageNorm, 8.f));
-				pos.xy *= normAgeFadeInPow;
-  
-				float normAgeFadeOutPow = 1.f - clamp(pow(ageNorm, 4.f), 0.f, 1.f);
-				pos.xy *= normAgeFadeOutPow;
-			  #endif
+			//Rotate based on velocity
+			` +
+        scTransformBasedOnMotion(bMotionBasedTransform) +
+        /* glsl */ `
+
+			//fade in-out
+		` +
+        scFadeInOutTransform(bUsesTexture) +
+        /* glsl */ `
   
 				//translate
 				vec2 translation = inPosition;
@@ -441,6 +535,32 @@ export function GetParticleRenderInstancedVS(bUsesTexture: boolean, defaultSize:
 			
 		}`
     );
+}
+
+function scAlphaFade(condition: number) {
+    if (condition == 1) {
+        return /* glsl */ `float ageNorm = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
+		colorFinal.rgba *= ageNorm;`;
+    } else if (condition == 2) {
+        return /* glsl */ `
+		const float fadeStart = 0.9f;
+		if(interpolatorAge >= fadeStart)
+		{
+			float fade = MapToRange(interpolatorAge, fadeStart, 1.0, 0.0, 1.0);
+			colorFinal.rgba *= (1.f - fade);
+		}
+		`;
+    } else {
+        return ``;
+    }
+}
+
+function scApplyBrightness(value: number) {
+    if (value != 1.0) {
+        return /* glsl */ `colorFinal.rgb *= float(` + value + /* glsl */ `);`;
+    } else {
+        return ``;
+    }
 }
 
 function scDefaultShading() {
@@ -468,10 +588,64 @@ function scFlameSpecificShading(bUsesTexture: boolean, artificialFlameAmount: nu
         /* glsl */ `);
 
 		colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 5.0f, t);
+
+		//colorFinal.rgb *= CircularFadeOut(interpolatorTexCoords.y);
+
 	  #endif
 		
 		//float ageNormalized = interpolatorAge * (1.0 - interpolatorAge) * (1.0 - interpolatorAge) * 6.74;
 		//colorFinal.rgb *= (1.f - interpolatorAge);
+		`
+    );
+}
+
+function scSmokeSpecificShading(alphaScale = 0.25) {
+    return (
+        scParticleSampleFlipbook(true) +
+        /* glsl */ `
+
+		
+		//float alphaScale = 0.4f;
+		//colorFinal.a *= (alphaScale);
+		const float alphaScale = float(` +
+        alphaScale +
+        /* glsl */ `);
+
+		/* float t = mod(CurTime, 20.f) * 0.1;
+		if(t < 1.f)
+		{
+			alphaScale *= t;
+		}
+		else
+		{
+			alphaScale *= (2.f - t);
+		} */
+
+		colorFinal.a *= (alphaScale + colorFinal.r * 0.75);
+
+		#if 1
+		float radialDistanceScale = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		//radialDistanceScale *= 2.f;
+		/* if(radialDistanceScale > 0.5f)
+		{
+			radialDistanceScale = 1.f;
+		}
+		else
+		{
+			radialDistanceScale = 0.f;
+		} */
+		radialDistanceScale = (1.f - clamp(radialDistanceScale, 0.f, 1.f));
+
+		colorFinal.a *= radialDistanceScale;
+		#endif
+
+		
+		float brightness = mix(0.35, 0.15, interpolatorAge);
+		colorFinal.rgb *= brightness;
+		
+		colorFinal.rgb *= colorFinal.a;
+
+		
 		`
     );
 }
@@ -517,7 +691,81 @@ function scEmbersSpecificShading() {
 		`;
 }
 
-function scGetBasedOnShadingMode(shadingMode: number, bUsesTexture: boolean, artificialFlameAmount: number) {
+function scAshesSpecificShading() {
+    return (
+        //scParticleSampleFlipbook(true) +
+        /* glsl */ `
+		
+		vec2 uv = interpolatorTexCoords * 0.05f;
+		float instanceId = float(interpolatorInstanceId);
+		uv.x += instanceId * 0.073f;
+		uv.y += instanceId * 0.177f;
+		uv.y += interpolatorFrameIndex * 0.0037f;
+		uv.x += interpolatorFrameIndex * 0.0053f;
+		float noise = texture(ColorTexture, uv).r;
+		noise = clamp(MapToRange(noise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
+		
+		const vec3 colorEmber = vec3(0.5, 0.4, 0.4);
+		const vec3 colorEmber2 = vec3(0.9, 0.4, 0.1f) * 10.f;
+		const vec3 colorAsh  = vec3(0.1, 0.1, 0.1);
+		vec3 colorEmberFinal = mix(colorEmber2, colorEmber, noise);
+		vec3 color = mix(colorEmberFinal, colorAsh, min(1.f, 3.5f * interpolatorAge));
+		
+		if(noise <= clamp((interpolatorAge) + 0.25, 0.0, 0.9))
+		{
+			noise = 0.0f;
+		}
+		else
+		{
+			noise = 1.0f;
+		}
+
+		noise = clamp(noise, 0.f, 1.f);
+
+		float radialDistanceScale = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		radialDistanceScale *= 2.f;
+		if(radialDistanceScale > 0.5f)
+		{
+			radialDistanceScale = 1.f;
+		}
+		else
+		{
+			radialDistanceScale = 0.f;
+		}
+		radialDistanceScale = (1.f - clamp(radialDistanceScale, 0.f, 1.f));
+
+		noise *= radialDistanceScale;
+
+		
+
+		color *= noise;
+
+		float dx = abs(dFdx(noise));
+		float dy = abs(dFdy(noise));
+
+		//color += colorEmber * (dx + dy) * 0.5f;
+
+		const float thres = 0.04f;
+
+		colorFinal.rgb = color;
+		colorFinal.a = noise;
+
+		if(interpolatorAge >= 0.8f)
+		{
+			float s = MapToRange(interpolatorAge, 0.8, 1.0, 1.0, 0.0);
+			colorFinal.rgba *= s;
+		}
+
+		`
+    );
+}
+
+function scGetBasedOnShadingMode(
+    shadingMode: number,
+    bUsesTexture: boolean,
+    alphaScale: number,
+    artificialFlameAmount: number,
+) {
     switch (shadingMode) {
         case EParticleShadingMode.Default:
             return scDefaultShading();
@@ -525,10 +773,21 @@ function scGetBasedOnShadingMode(shadingMode: number, bUsesTexture: boolean, art
             return scFlameSpecificShading(bUsesTexture, artificialFlameAmount);
         case EParticleShadingMode.Embers:
             return scEmbersSpecificShading();
+        case EParticleShadingMode.Smoke:
+            return scSmokeSpecificShading(alphaScale);
+        case EParticleShadingMode.Ashes:
+            return scAshesSpecificShading();
     }
 }
 
-export function GetParticleRenderColorPS(eShadingMode: number, bUsesTexture: boolean, artificialFlameAmount = 0.45) {
+export function GetParticleRenderColorPS(
+    eShadingMode: number,
+    bUsesTexture: boolean,
+    EAlphaFadeEnabled: number, //0:disabled, 1:smooth, 2:fast
+    alphaScale: number,
+    brightness = 1.0,
+    artificialFlameAmount = 0.45,
+) {
     return (
         /* glsl */ `#version 300 es
 	  
@@ -539,11 +798,13 @@ export function GetParticleRenderColorPS(eShadingMode: number, bUsesTexture: boo
 		flat in float interpolatorAge;
 		flat in float interpolatorFrameIndex;
 		in vec2 interpolatorTexCoords;
+		flat in int interpolatorInstanceId;
 
 		uniform sampler2D ColorTexture;
 		uniform sampler2D FlameColorLUT;
 		
 		uniform vec2 FlipbookSizeRC;
+		uniform float CurTime;
   
 		float CircularFadeIn(float x) 
 		{
@@ -573,8 +834,19 @@ export function GetParticleRenderColorPS(eShadingMode: number, bUsesTexture: boo
 			//OutColor = vec4(0.5, 0.5, 0.5, 1); return;
 			vec4 colorFinal = vec4(1.f, 0.55f, 0.1f, 1.f);
 			` +
-        scGetBasedOnShadingMode(eShadingMode, bUsesTexture, artificialFlameAmount) +
+        scGetBasedOnShadingMode(eShadingMode, bUsesTexture, alphaScale, artificialFlameAmount) +
         /* glsl */ `
+
+		//fade in-out
+		` +
+        scAlphaFade(EAlphaFadeEnabled) +
+        /* glsl */ `
+
+		//initial brightness
+		` +
+        scApplyBrightness(brightness) +
+        /* glsl */ `
+
 			OutColor = colorFinal;
 		}`
     );
