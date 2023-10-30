@@ -14,7 +14,7 @@
         "resolveJsonModule": true,
         "isolatedModules": true,
         "noEmit": true,
-        "jsx": "react"
+        "jsx": "react-jsx"
     },
     "include": ["src", ".eslintrc.js", "craco.config.ts", "jest.config.ts"]
 }

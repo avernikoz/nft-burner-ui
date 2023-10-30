@@ -3,12 +3,18 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./pages/App/App";
 import reportWebVitals from "./utils/reportWebVitals";
+import {PrimeReactProvider} from 'primereact/api';
+import 'primeicons/primeicons.css';
+import "primereact/resources/themes/lara-light-indigo/theme.css";
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
     // TODO: Return it back, but only in dev mode
     // <React.StrictMode>
-    <App />,
+
+    <PrimeReactProvider>
+        <App/>,
+    </PrimeReactProvider>
     // </React.StrictMode>,
 );
 
