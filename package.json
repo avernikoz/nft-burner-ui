@@ -18,6 +18,10 @@
         "lint": "tsc --noEmit && eslint src/**/*.ts{,x}",
         "eject": "react-scripts eject"
     },
+    "resolutions": {
+        "crypto-js": "4.2.0",
+        "@babel/traverse": "7.23.2"
+    },
     "dependencies": {
         "dat.gui": "^0.7.9",
         "normalize.css": "^8.0.1",
