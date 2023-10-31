@@ -7,6 +7,7 @@ export function CreateTexture(
     inUnitIndex: number,
     inImageSrc: string | null,
     bGenerateMips = false,
+    bUseTrilinearFilter = false,
 ): WebGLTexture {
     const texture = gl.createTexture();
 
@@ -36,7 +37,11 @@ export function CreateTexture(
 
         gl.bindTexture(gl.TEXTURE_2D, texture);
         if (bGenerateMips) {
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+            if (bUseTrilinearFilter) {
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+            } else {
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+            }
         } else {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
@@ -99,7 +104,7 @@ export function BindRenderTarget(
     gl.viewport(0.0, 0.0, viewportSize.x, viewportSize.y);
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
     if (bClear) {
-        gl.clearColor(0.0, 0.0, 0.0, 1);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 }

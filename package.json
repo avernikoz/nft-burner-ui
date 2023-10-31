@@ -18,6 +18,11 @@
         "lint": "tsc --noEmit && eslint src/**/*.ts{,x}",
         "eject": "react-scripts eject"
     },
+    "resolutions": {
+        "crypto-js": "4.2.0",
+        "@babel/traverse": "7.23.2",
+        "browserify-sign": "4.2.2"
+    },
     "dependencies": {
         "@rainbow-me/rainbowkit": "^1.1.1",
         "@solana/wallet-adapter-base": "^0.9.23",
