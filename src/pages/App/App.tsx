@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+import React from "react";
 
 import "./App.css";
-import { RenderMain } from "../../webl/script";
+// import { RenderMain } from "../../webl/script";
 // import { SolanaWalletContext } from "../../context/SolanaWalletContext";
 // import { SuiWalletContext } from "../../context/SuiWalletContext";
 // import { EVMWalletContext } from "../../context/EVMWalletContext";
@@ -10,9 +10,9 @@ import FullScreenButton from "../../components/fullscreen-button/FullscreenButto
 import Wallets from "../../components/wallets/Wallets";
 
 function App() {
-    useEffect(() => {
-        RenderMain();
-    }, []);
+    // useEffect(() => {
+    //     RenderMain();
+    // }, []);
 
     return (
         // <SolanaWalletContext>
@@ -23,9 +23,9 @@ function App() {
                 <Wallets></Wallets>
             </div>
             <div>
-                <canvas id="demo-canvas">
+                {/* <canvas id="demo-canvas">
                     Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
-                </canvas>
+                </canvas> */}
             </div>
             <Footer>
                 <FullScreenButton />
