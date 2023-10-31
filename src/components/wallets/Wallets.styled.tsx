@@ -1,5 +1,5 @@
 import { Sidebar } from "primereact/sidebar";
-import styled from "styled-components";
+import { styled } from "styled-components";
 
 export const StyledSidebar = styled(Sidebar)`
     .button-control {
