@@ -387,7 +387,11 @@ export function RenderMain() {
             //BackGroundRenderPass.RenderSpotlight(gl);
             BackGroundRenderPass.RenderFloor(gl);
 
-            FirePlanePass.VisualizeFirePlane(gl, BackGroundRenderPass.PointLights.LightsBufferTextureGPU!);
+            FirePlanePass.VisualizeFirePlane(
+                gl,
+                BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
+                GPostProcessPasses.Combiner!.SpotlightTexture,
+            );
 
             BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, RenderTargetSize, true);
             FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);

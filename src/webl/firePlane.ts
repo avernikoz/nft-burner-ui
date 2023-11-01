@@ -1,3 +1,4 @@
+import { DrawUISingleton } from "./helpers/gui";
 import { CreateTexture, CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
 import { SceneDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
@@ -7,7 +8,7 @@ import {
     ShaderSourceApplyFirePS,
     ShaderSourceApplyFireVS,
     ShaderSourceFireUpdatePS,
-    ShaderSourceFireVisualizerPS,
+    GetShaderSourceFireVisualizerPS,
 } from "./shaders/shaderFirePlane";
 import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
 import { Vector2 } from "./types";
@@ -30,8 +31,15 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         NoiseTextureInterpolator: gl.getUniformLocation(shaderProgram, "NoiseTextureInterpolator"),
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
         NoiseTextureLQ: gl.getUniformLocation(shaderProgram, "NoiseTextureLQ"),
+        SpotlightTexture: gl.getUniformLocation(shaderProgram, "SpotlightTexture"),
         PointLightsTexture: gl.getUniformLocation(shaderProgram, "PointLightsTexture"),
         RoughnessTexture: gl.getUniformLocation(shaderProgram, "RoughnessTexture"),
+        NormalsTexture: gl.getUniformLocation(shaderProgram, "NormalsTexture"),
+        LightPosNDC: gl.getUniformLocation(shaderProgram, "LightPosNDC"),
+        MaterialUVOffset: gl.getUniformLocation(shaderProgram, "MaterialUVOffset"),
+        SpecularIntensityAndPower: gl.getUniformLocation(shaderProgram, "SpecularIntensityAndPower"),
+        DiffuseIntensity: gl.getUniformLocation(shaderProgram, "DiffuseIntensity"),
+        RoughnessScaleAddContrastMin: gl.getUniformLocation(shaderProgram, "RoughnessScaleAddContrastMin"),
         SurfaceMaterialColorTexture: gl.getUniformLocation(shaderProgram, "SurfaceMaterialColorTexture"),
     };
     return params;
@@ -118,11 +126,22 @@ export class RFirePlanePass {
 
     RoughnessTexture: WebGLTexture;
 
+    NormalsTexture: WebGLTexture;
+
     SurfaceMaterialColorTexture: WebGLTexture;
 
     VisualizerAfterBurnNoiseTexture: WebGLTexture;
 
     VisualizerFirePlaneNoiseTexture: WebGLTexture;
+
+    //Paper
+    LightPosNDC = { x: 0.0, y: 5.5, z: -2.5 };
+
+    RoughnessParams = { Scale: 1.0, Add: 0.0, Contrast: 1.0, Min: 0.0 }; //Use variadic contrast [from 1 to 2]
+
+    ShadingParams = { SpecularIntensity: 0.9, SpecularPower: 2.0, DiffuseIntensity: 1.0 };
+
+    MaterialUVOffset = { x: 0.0, y: 0.0 };
 
     constructor(gl: WebGL2RenderingContext, inRenderTargetSize = { x: 512, y: 512 }) {
         this.RenderTargetSize = inRenderTargetSize;
@@ -196,20 +215,85 @@ export class RFirePlanePass {
         this.VisualizerShaderProgram = CreateShaderProgramVSPS(
             gl,
             GetShaderSourceFireVisualizerVS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
-            ShaderSourceFireVisualizerPS,
+            GetShaderSourceFireVisualizerPS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
         );
 
         //Shader Parameters
         this.VisualizerUniformParametersLocationList = GetUniformParametersList(gl, this.VisualizerShaderProgram);
 
         this.VisualizerFlameColorLUT = CreateTexture(gl, 4, "assets/flameColorLUT5.png");
+        //this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/example.jpg");
         this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/apeBlue.png");
+        this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/example2.png");
         this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg");
         this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/cracksNoise.png");
         this.VisualizerFirePlaneNoiseTexture = CreateTexture(gl, 7, "assets/fireNoise.png");
-        this.RoughnessTexture = CreateTexture(gl, 7, "assets/grainNoise3.png");
-        this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/marbleYellow.png");
+
+        const matName = `copper`;
+        const fileFormat = `.png`;
+
+        /* this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/marbleYellow.png");
+        this.NormalsTexture = CreateTexture(gl, 7, "assets/grainNoise3.png");
+        this.RoughnessTexture = CreateTexture(gl, 7, "assets/grainNoise3.png"); */
+
+        /* this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/greenWoodDFS.jpg");
+        this.NormalsTexture = CreateTexture(gl, 7, "assets/background/greenWoodNRM.jpg");
+        this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/greenWoodRGH.jpg"); */
+
+        /* this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/blueWoodDFS.jpg");
+        this.NormalsTexture = CreateTexture(gl, 7, "assets/background/blueWoodNRM.jpg");
+        this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/blueWoodRGH.jpg"); */
+
+        /* this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/blueWoodDFS2.jpg");
+        this.NormalsTexture = CreateTexture(gl, 7, "assets/background/blueWoodNRM2.jpg");
+        this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/blueWoodRGH2.jpg"); */
+
+        this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, `assets/background/` + matName + `DFS` + fileFormat);
+        this.NormalsTexture = CreateTexture(gl, 7, `assets/background/` + matName + `NRM` + fileFormat);
+        this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/` + matName + `RGH` + fileFormat);
+
+        //this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/oxidCopperRGH.png");
+
+        //this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/redMetalRGH.png");
+
+        //this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/foil2RGH.png");
+
+        const roughnessTextureId = Math.floor(Math.random() * 4);
+        this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/cdCoverRGH` + roughnessTextureId + `.png`);
+        this.RoughnessParams.Contrast = 1.0 + Math.random();
+
+        this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/oxidCopperRGH.png");
+
+        const matOffsetSign = { x: 1, y: 1 };
+        if (Math.random() < 0.25) {
+            matOffsetSign.x = -1;
+        }
+        if (Math.random() < 0.25) {
+            matOffsetSign.y = -1;
+        }
+        this.MaterialUVOffset.x = Math.random() * matOffsetSign.x;
+        this.MaterialUVOffset.y = Math.random() * matOffsetSign.y;
+
+        this.DrawUI();
+    }
+
+    DrawUI() {
+        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
+        const folder = GDatGUI.addFolder("Shading");
+        folder.open();
+        folder.add(this.LightPosNDC, "x", -2, 2).name("LightPosX").step(0.01);
+        folder.add(this.LightPosNDC, "y", -3, 10).name("LightPosY").step(0.01);
+        folder.add(this.LightPosNDC, "z", -10, 2).name("LightPosZ").step(0.01);
+
+        folder.add(this.RoughnessParams, "Scale", 0, 20).name("RGHScale").step(0.01);
+        folder.add(this.RoughnessParams, "Add", 0, 1).name("RGHAdd").step(0.01);
+        folder.add(this.RoughnessParams, "Contrast", 0, 20).name("RGHContrast").step(0.01);
+        folder.add(this.RoughnessParams, "Min", 0, 1).name("RGHMin").step(0.01);
+
+        folder.add(this.ShadingParams, "DiffuseIntensity", 0.75, 1.25).name("DFSIntensity").step(0.01);
+        folder.add(this.ShadingParams, "SpecularIntensity", 0, 2).name("SPCIntensity").step(0.01);
+        folder.add(this.ShadingParams, "SpecularPower", 0, 64).name("SPCPower").step(2.0);
     }
 
     bFirstBoot = true;
@@ -275,7 +359,7 @@ export class RFirePlanePass {
         this.CurrentFuelTextureIndex = 1 - this.CurrentFuelTextureIndex;
     }
 
-    VisualizeFirePlane(gl: WebGL2RenderingContext, pointLightsTexture: WebGLTexture) {
+    VisualizeFirePlane(gl: WebGL2RenderingContext, pointLightsTexture: WebGLTexture, spotlightTexture: WebGLTexture) {
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
         gl.useProgram(this.VisualizerShaderProgram);
@@ -287,6 +371,36 @@ export class RFirePlanePass {
         );
 
         gl.uniform1f(this.VisualizerUniformParametersLocationList.Time, GTime.Cur);
+
+        gl.uniform3f(
+            this.VisualizerUniformParametersLocationList.LightPosNDC,
+            this.LightPosNDC.x,
+            this.LightPosNDC.y,
+            this.LightPosNDC.z,
+        );
+        gl.uniform4f(
+            this.VisualizerUniformParametersLocationList.RoughnessScaleAddContrastMin,
+            this.RoughnessParams.Scale,
+            this.RoughnessParams.Add,
+            this.RoughnessParams.Contrast,
+            this.RoughnessParams.Min,
+        );
+
+        gl.uniform2f(
+            this.VisualizerUniformParametersLocationList.SpecularIntensityAndPower,
+            this.ShadingParams.SpecularIntensity,
+            this.ShadingParams.SpecularPower,
+        );
+        gl.uniform2f(
+            this.VisualizerUniformParametersLocationList.MaterialUVOffset,
+            this.MaterialUVOffset.x,
+            this.MaterialUVOffset.y,
+        );
+
+        gl.uniform1f(
+            this.VisualizerUniformParametersLocationList.DiffuseIntensity,
+            this.ShadingParams.DiffuseIntensity,
+        );
 
         //Textures
         const curSourceIndex = this.CurrentFireTextureIndex;
@@ -333,6 +447,14 @@ export class RFirePlanePass {
         gl.activeTexture(gl.TEXTURE0 + 12);
         gl.bindTexture(gl.TEXTURE_2D, this.SurfaceMaterialColorTexture);
         gl.uniform1i(this.VisualizerUniformParametersLocationList.SurfaceMaterialColorTexture, 12);
+
+        gl.activeTexture(gl.TEXTURE0 + 13);
+        gl.bindTexture(gl.TEXTURE_2D, this.NormalsTexture);
+        gl.uniform1i(this.VisualizerUniformParametersLocationList.NormalsTexture, 13);
+
+        gl.activeTexture(gl.TEXTURE0 + 14);
+        gl.bindTexture(gl.TEXTURE_2D, spotlightTexture);
+        gl.uniform1i(this.VisualizerUniformParametersLocationList.SpotlightTexture, 14);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }

@@ -1,5 +1,25 @@
 import { SceneDesc } from "../scene";
 
+export function scSpotlightFlicker() {
+    return /* glsl */ `
+	float time = mod(Time, 12.4f);
+	if(time < 1.15f)
+	{
+		vec2 lightFlickerUV;
+		lightFlickerUV.y = Time * 0.001f;
+		float flickScale = 0.02;
+		lightFlickerUV.x = Time * flickScale;
+		float flickerNoise = textureLod(NoiseTexture, lightFlickerUV.xy, 0.f).r;
+		flickerNoise = MapToRange(flickerNoise, 0.2, 0.8, 0.0, 1.0);
+		flickerNoise = min(1.0, flickerNoise + 0.4f);
+		if(flickerNoise < 0.75)
+		{
+			flickerNoise *= 0.5f;
+		}
+		light *= clamp(abs(flickerNoise) , 0.0, 1.0);
+	}`;
+}
+
 export const ShaderSourceFullscreenPassVS = /* glsl */ `#version 300 es
 
 	precision highp float;
@@ -344,24 +364,9 @@ export function GetShaderSourceCombinerPassPS() {
 
 			float light = textureLod(SpotlightTexture, vec2(texCoords.x, 1.f - texCoords.y), 0.f).r;
 
-			#if 1
-			float time = mod(Time, 12.4f);
-			if(time < 1.15f)
-			{
-				vec2 lightFlickerUV;
-				lightFlickerUV.y = Time * 0.001f;
-				float flickScale = 0.02;
-				lightFlickerUV.x = Time * flickScale;
-				float flickerNoise = textureLod(NoiseTexture, lightFlickerUV.xy, 0.f).r;
-				flickerNoise = MapToRange(flickerNoise, 0.2, 0.8, 0.0, 1.0);
-				flickerNoise = min(1.0, flickerNoise + 0.4f);
-				if(flickerNoise < 0.75)
-				{
-					flickerNoise *= 0.5f;
-				}
-				light *= clamp(abs(flickerNoise) , 0.0, 1.0);
-			}
-			#endif
+			` +
+        scSpotlightFlicker() +
+        /* glsl */ `
 			
 			vec4 smoke = textureLod(SmokeTexture, texCoords.xy, 0.f);
 
@@ -435,7 +440,7 @@ export function GetShaderSourceCombinerPassPS() {
 			{
 				const float ambientLight = 0.0f;
 				const float lightScale = 5.0f;
-				firePlane.rgb *= min(1.f, light * lightScale + ambientLight);
+				//firePlane.rgb *= min(1.f, light * lightScale + ambientLight);
 			}
 
 			firePlane.rgb = smoke.rgb * 1.f + firePlane.rgb * clamp(1.f - smoke.a, 0.0, 1.f);

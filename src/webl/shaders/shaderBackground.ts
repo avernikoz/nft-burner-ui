@@ -264,7 +264,7 @@ export const ShaderSourceBackgroundFloorRenderPS = /* glsl */ `#version 300 es
 			}
 		}
 
-		lightIntensityFinal = min(2.f, lightIntensityFinal * 2.5f);
+		lightIntensityFinal = min(2.f, lightIntensityFinal);
 
 
 		//float distFromPaintCenter = length(interpolatorViewSpacePos.xyz - vec3(0.0, 0.0, 2.0)) * 0.5f;
@@ -280,13 +280,14 @@ export const ShaderSourceBackgroundFloorRenderPS = /* glsl */ `#version 300 es
 			vec2 spotlightUV;
 			//spotlightUV.x = (interpolatorViewSpacePos.x * 0.1 + 0.5f);
 			float s = interpolatorViewSpacePos.x;
-			s *= 0.25f;
+			s *= 0.45f;
 			s += 0.01f;
 			spotlightUV.x = (s + 1.f) * 0.5f;
 			spotlightUV.y = MapToRange(interpolatorViewSpacePos.z, spotlightStartViewSpace, spotlightEndViewSpace, 0.0, 1.0);
 			spotlightUV.y *= 1.2f;
 			spotlightUV.y -= 0.3f;
 			spotlghtColor = texture(SpotlightTexture, spotlightUV.xy).rgb;
+			//spotlghtColor.rgb *= spotlghtColor.rgb;
 
 			//fade
 			const float spotVertFadeEnd = 1.0f;
@@ -294,7 +295,7 @@ export const ShaderSourceBackgroundFloorRenderPS = /* glsl */ `#version 300 es
 			if(interpolatorViewSpacePos.z <= spotVertFadeEnd)
 			{
 				float t = MapToRange(interpolatorViewSpacePos.z, spotlightStartViewSpace, spotVertFadeEnd, 0.0, 1.0);
-				spotlghtColor *= (t);
+				spotlghtColor *= (t*t);
 			}
 			else if(interpolatorViewSpacePos.z >= spotVertFadeStart)
 			{
@@ -305,12 +306,11 @@ export const ShaderSourceBackgroundFloorRenderPS = /* glsl */ `#version 300 es
 
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
 		vec3 imageColor = texture(ColorTexture, flippedUVs.xy).rgb;
-		/* imageColor.r = pow(imageColor.r, 2.2f);
-		imageColor.g = pow(imageColor.g, 2.2f);
-		imageColor.b = pow(imageColor.b, 2.2f); */
+		imageColor *= 5.0f;
+		//imageColor = vec3(0.2);
 
 		vec3 finalColor = vec3(0.f); 
-		finalColor += imageColor * spotlghtColor;
+		finalColor += imageColor * spotlghtColor * 0.4;
 		finalColor += imageColor * lightColor1 * lightIntensityFinal;
 		finalColor *= FloorBrightness;
 
@@ -399,7 +399,7 @@ export function GetLightsUpdateShaderVS() {
 
 			float lightIntensity = 0.0f;
 
-			//curFire = 1.f;
+			//curFire = 0.1f;
 			
 			if(curFire > 0.f)
 			{

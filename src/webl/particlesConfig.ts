@@ -55,7 +55,7 @@ export const SmokeParticlesDesc = {
     inSizeClampMax: { x: 0.7, y: 0.7 },
     inInitialVelocityScale: 5.0,
     inVelocityFieldForceScale: 20.0,
-    inBuoyancyForceScale: 15, //TODO:Increase dynamically when overall temperature is high
+    inBuoyancyForceScale: 10, //TODO:Increase dynamically when overall temperature is high
     inDownwardForceScale: 0.25,
     inAlphaScale: 0.25,
     inEAlphaFade: 2,

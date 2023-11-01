@@ -115,7 +115,7 @@ export class RBackgroundRenderPass {
         Scale: { x: 1.0, y: 1.0 },
         FloorTexScale: 1.0,
         LightTexScale: { x: 1.5, y: 8.0 },
-        FloorBrightness: 1.5,
+        FloorBrightness: 1.0,
     };
 
     constructor(gl: WebGL2RenderingContext) {
@@ -139,7 +139,15 @@ export class RBackgroundRenderPass {
         this.UniformParametersLocationListFloor = GetUniformParametersList(gl, this.ShaderProgramFloor);
 
         this.SpotlightTexture = CreateTexture(gl, 4, "assets/background/floorLight.jpg", true, true);
-        this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleBlack1024.png", true, true);
+        //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleBlack1024.png", true, true);
+        //this.ColorTexture = CreateTexture(gl, 5, "assets/background/hexTilesDFS.jpg", true, true);
+        //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleTiles.png", true, true);
+        //this.ColorTexture = CreateTexture(gl, 5, "assets/background/redConcreteDFS.jpg", true, true);
+        //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleWhiteDFS.jpg", true, true);
+        //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleGreenDFS.jpg", true, true);
+        this.ColorTexture = CreateTexture(gl, 5, "assets/background/foil2RGH.png", true, true);
+        /* this.ColorTexture = CreateTexture(gl, 5, "assets/background/copperRGH.png", true, true);
+        this.ColorTexture = CreateTexture(gl, 5, "assets/background/goldRGH.png", true, true); */
 
         this.PointLights = new SceneLights(gl);
 
@@ -149,7 +157,7 @@ export class RBackgroundRenderPass {
     DrawUI() {
         const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
         const folder = GDatGUI.addFolder("Plane Transform");
-        folder.open();
+        //folder.open();
         folder.add(this.FloorTransform, "Rotation", 0, 3.14).step(0.001);
         folder.add(this.FloorTransform, "Translation", -1, 1).step(0.001);
         folder.add(this.FloorTransform.Scale, "x", 0.01, 5).name("FloorScaleX").step(0.01);
