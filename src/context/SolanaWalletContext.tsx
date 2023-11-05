@@ -28,9 +28,9 @@ export const SolanaWalletContext: FC<PropsWithChildren> = (props) => {
             /**
              * Wallets that implement either of these standards will be available automatically.
              *
-             *   - Solana Mobile Stack Mobile Wallet Adapter Protocol
+             *   - Solana Mobile Stack Mobile IWallet Adapter Protocol
              *     (https://github.com/solana-mobile/mobile-wallet-adapter)
-             *   - Solana Wallet Standard
+             *   - Solana IWallet Standard
              *     (https://github.com/solana-labs/wallet-standard)
              *
              * If you wish to support a wallet that supports neither of those standards,

@@ -1,102 +1,99 @@
-import {ConnectModal} from "@suiet/wallet-kit";
-import {Button} from "primereact/button";
-import React, {useRef, useState} from "react";
-import {useConnectModal} from "@rainbow-me/rainbowkit";
-import {EVMWalletContext} from "../../context/EVMWalletContext";
-import {SuiWalletContext} from "../../context/SuiWalletContext";
-import {SolanaWalletContext} from "../../context/SolanaWalletContext";
-import {Menu} from "primereact/menu";
+import { Button } from "primereact/button";
+import React, { useState } from "react";
 // eslint-disable-next-line import/no-unresolved
-import {MenuItem} from "primereact/menuitem";
-import {ReactComponent as SuietLogo} from './suietLogo.svg';
-import {ReactComponent as SolanaLogo} from './solana.svg';
-import {ReactComponent as RainbowLogo} from './rainbow.svg';
-import {PanelMenu} from "primereact/panelmenu";
+import { ReactComponent as SuietLogo } from "./assets/suietLogo.svg";
+import { ReactComponent as SolanaLogo } from "./assets/solana.svg";
+import { ReactComponent as RainbowLogo } from "./assets/rainbow.svg";
+import { TabMenu } from "primereact/tabmenu";
+import RainbowWalletList from "./components/rainbowWalletList/RainbowWalletList";
+import SuietWalletLIst from "./components/suietWalletList/SuietWalletLIst";
+import SolanaWalletList from "./components/solanaWalletList/SolanaWalletList";
+import { SuiWalletContext } from "../../context/SuiWalletContext";
+import { SolanaWalletContext } from "../../context/SolanaWalletContext";
+// eslint-disable-next-line import/no-unresolved
+import { MenuItem } from "primereact/menuitem";
+import { PanelMenu } from "primereact/panelmenu";
+import {ButtonContainer, ProfileLabel, StyledDialog} from "./Wallets.styled";
 
 function Wallets() {
-    const menuRight = useRef<Menu>(null);
-    const [showModal, setShowModal] = useState(false)
-
-    const {openConnectModal} = useConnectModal();
-
-    const items: MenuItem[] = [
+    const [visible, setVisible] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const items = [
         {
-            label: "Choose wallet",
-            icon: "pi pi-wallet",
-            style:{
-                backgroundColor:"primary",
-                color:"white"
+            label: "Suiet",
+            icon: <SuietLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            command: () => {
+                setActiveIndex(0);
             },
-            items: [
-                {
-                    label: "Suiet",
-                    icon: <SuietLogo width={30} height={30} style={{marginRight: '5px'}}/>,
-                    command: () => {
-                        setShowModal(true);
-                    },
+            list: <SuietWalletLIst />,
+        },
+        {
+            label: "Rainbow",
+            icon: <RainbowLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            command: () => {
+                setActiveIndex(1);
+            },
+            list: <RainbowWalletList />,
+        },
+        {
+            label: "Solana",
+            icon: <SolanaLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            command: () => {
+                setActiveIndex(2);
+            },
+            list: <SolanaWalletList />,
+        },
+    ];
 
-                },
-                {
-                    label: "Rainbow",
-                    icon: <RainbowLogo width={30} height={30} style={{marginRight: '5px'}}/>,
-                    command: () => {
-                        if (openConnectModal) {
-                            openConnectModal()
-                        }
-                    },
-
-                },
-                {
-                    label: "Solana",
-                    icon: <SolanaLogo width={30} height={30} style={{marginRight: '5px'}}/>,
-                    command: () => {
-                    },
-                },
-            ],
+    const menuItems: MenuItem[] = [
+        {
+            label: "Choose connection",
+            icon: "pi pi-spin pi-compass",
+            style: {
+                backgroundColor: "primary",
+                color: "white",
+            },
+            items: items,
         },
     ];
 
     return (
         <div className="wallet">
-            <p>
-                <SolanaWalletContext>
-                    <SuiWalletContext>
-                        <EVMWalletContext>
-                            {/*<div className="button-control">*/}
-                            {/*    <label>Solana</label>*/}
-                            {/*    <WalletMultiButton/>*/}
-                            {/*    <WalletDisconnectButton/>*/}
-                            {/*    <label>Rainbow</label>*/}
-                            {/*    <RainbowConnectButton/>*/}
-                            {/*</div>*/}
-                            <div className="card flex justify-content-center">
-                                <Menu
-                                    model={items}
-                                    popup
-                                    ref={menuRight}
-                                    id="popup_menu_right"
-                                    popupAlignment="right"
-                                />
-                                <Button
-                                    label="Choose your wallet"
-                                    icon="pi pi-wallet"
-                                    className="mr-2"
-                                    onClick={(event) => menuRight.current?.toggle(event)}
-                                    aria-controls="popup_menu_right"
-                                    aria-haspopup
-                                />
+            <SolanaWalletContext>
+                <SuiWalletContext>
+                    <ButtonContainer>
+                        <div>{items[activeIndex].icon}</div>
+                        <PanelMenu model={menuItems} className="w-full md:w-25rem" color={"primary"} />
+                        <Button
+                            aria-label="Choose your wallet"
+                            rounded
+                            icon="pi pi-wallet"
+                            onClick={() => setVisible(true)}
+                        />
+                        <ProfileLabel className="label">
+                            <RainbowLogo className='icon'/>
+                            <div className="content">
+                                <span className="balance">256$</span>
+                                <span className="chain-id">488x5sf4a9wd5a6s</span>
                             </div>
-                            <PanelMenu model={items} className="w-full md:w-25rem" color={"primary"}/>
-                            <ConnectModal
-                                open={showModal}
-                                onOpenChange={(open) => setShowModal(open)}
-                            >
-                            </ConnectModal>
-                        </EVMWalletContext>
-                    </SuiWalletContext>
-                </SolanaWalletContext>
-                `
-            </p>
+                        </ProfileLabel>
+                    </ButtonContainer>
+                    <StyledDialog
+                        header="Choose your wallet"
+                        visible={visible}
+                        style={{ width: "30vw", height: "500px" }}
+                        onHide={() => setVisible(false)}
+                    >
+                        <TabMenu
+                            model={items}
+                            activeIndex={activeIndex}
+                            style={{ width: "90%", margin: "0 auto" }}
+                            onTabChange={(e) => setActiveIndex(e.index)}
+                        />
+                        <div>{items[activeIndex].list}</div>
+                    </StyledDialog>
+                </SuiWalletContext>
+            </SolanaWalletContext>
         </div>
     );
 }
