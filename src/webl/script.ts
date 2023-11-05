@@ -215,7 +215,7 @@ export function RenderMain() {
         // Check if the Vibration API is supported by the browser
         if ("vibrate" in navigator) {
             // Vibrate the device for 200 milliseconds
-            navigator.vibrate([4]);
+            navigator.vibrate([10]);
         } else {
             // The Vibration API is not supported
             console.log("Vibration API is not supported in this browser.");
