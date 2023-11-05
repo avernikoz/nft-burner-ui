@@ -1,30 +1,26 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ListBox } from "primereact/listbox";
-import { useWallet, Wallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet, Wallet } from "@solana/wallet-adapter-react";
 import SVGTemplate from "../../../SVGTemplate/SVGTemplate";
 import { Item } from "../rainbowWalletList/RainbowWalletList.styled";
 import { Toast } from "primereact/toast";
-import {WalletReadyState} from "@solana/wallet-adapter-base";
+import { WalletReadyState } from "@solana/wallet-adapter-base";
+import { IAccount } from "../../models";
 
-function SolanaWalletList(): JSX.Element {
+function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<Wallet | null>(null);
-    const { wallets, connected } = useWallet();
+    const { wallets, connected, select, publicKey, wallet } = useWallet();
     const toast = useRef<Toast>(null);
-    //
-    // const walletss = [
-    //     {
-    //         wallet: PhantomWalletAdapter,
-    //         icon: <Phantom width={30} height={30} style={{ marginRight: "5px" }} />,
-    //     },
-    //     {
-    //         wallet: CoinbaseWalletAdapter,
-    //         icon: <Phantom width={30} height={30} style={{ marginRight: "5px" }} />,
-    //     },
-    // ];
+    const { connection } = useConnection();
 
-    useEffect(()=>{
-        console.log(connected)
-    },[connected])
+    useEffect(() => {
+        console.log(connected, publicKey);
+        if (connected && publicKey) {
+            const balance = connection.getBalance(publicKey, "confirmed");
+            const icon = wallet?.adapter.icon;
+            props.connect({ id: publicKey.toString(), balance: balance.toString(), walletIcon: icon });
+        }
+    }, [connected]);
 
     const itemTemplate = (item: Wallet) => {
         return (
@@ -34,47 +30,47 @@ function SolanaWalletList(): JSX.Element {
             </Item>
         );
     };
+
+    const showError = (message: string) => {
+        toast.current?.show({
+            severity: "error",
+            summary: "Error",
+            detail: message,
+        });
+    };
+
     return (
         <>
             <Toast ref={toast} position="top-left" />
             <ListBox
                 value={selectedOption}
                 itemTemplate={itemTemplate}
-
                 onChange={async (e) => {
                     try {
-                        console.log(e.value)
-                        if (!e.value){
-                            return
+                        console.log(e.value);
+                        if (!e.value) {
+                            return;
                         }
                         if (e.value.readyState == WalletReadyState.NotDetected) {
-                            toast.current?.show({
-                                severity: "error",
-                                summary: "Error",
-                                detail: "Wallet is not not detected: ",
-                            });
+                            showError("Wallet is not not detected: ");
                         }
                         if (e.value.readyState == WalletReadyState.Unsupported) {
-                            toast.current?.show({
-                                severity: "error",
-                                summary: "Error",
-                                detail: "Wallet is not unsupported: ",
-                            });
+                            showError("Wallet is not unsupported: ");
                         }
                         toast.current?.show({
                             severity: "info",
                             summary: "Connecting",
                             detail: "Please waiting",
-                            icon: <i className="pi pi-spin pi-cog"></i>
+                            icon: <i className="pi pi-spin pi-cog"></i>,
                         });
-                        await e.value.adapter.connect();
+                        await select(e.value.adapter.name);
                         setSelectedOption(e.value);
-                    }catch (error) {
-                        console.error('Failed to connect:', error);
+                    } catch (error) {
+                        console.error("Failed to connect:", error);
                         if (error instanceof Error) {
-                            toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to connect: ' + error.message });
+                            showError("Failed to connect: " + error.message);
                         } else {
-                            toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to connect: ' + error });
+                            showError("Failed to connect: " + error);
                         }
                     }
                 }}

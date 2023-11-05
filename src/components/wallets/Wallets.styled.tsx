@@ -3,7 +3,7 @@ import { Dialog } from "primereact/dialog";
 
 export const StyledDialog = styled(Dialog)`
     .p-menuitem-link {
-      padding: .75rem;
+        padding: 0.75rem;
     }
 `;
 
@@ -21,31 +21,35 @@ export const ButtonContainer = styled.div`
     }
 `;
 
-export const ProfileLabel  = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  border: 2px solid #333;
-  border-radius: 8px;
-  background-color: #f0f0f0;
-  font-family: Arial, sans-serif;
-  font-size: 18px;
-  color: #333;
-
-  .icon {
-    width: 24px;
-    height: 24px;
-    margin-right: 8px;
-  }
-
-  .content {
+export const ProfileLabel = styled.div`
     display: flex;
-    flex-direction: column;
-  }
+    align-items: center;
+    padding: 10px;
+    border: 2px solid #ffffff;
+    border-radius: 8px;
+    background-color: #4f46e5;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    color: #ffffff;
+    width: 200px;
 
-  .balance {
-    font-weight: bold;
-  }
-}
+    .icon {
+        margin-right: 8px;
+    }
 
+    .content {
+        display: flex;
+        flex-direction: column;
+        width: 80%;
+    }
+
+    .chain-id {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .balance {
+        font-weight: bold;
+    }
 `;

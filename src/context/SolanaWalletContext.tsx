@@ -46,7 +46,6 @@ export const SolanaWalletContext: FC<PropsWithChildren> = (props) => {
             new Coin98WalletAdapter(),
             new UnsafeBurnerWalletAdapter(),
         ],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [network],
     );
 

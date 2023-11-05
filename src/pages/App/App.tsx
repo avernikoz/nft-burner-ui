@@ -1,39 +1,40 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import "./App.css";
-// import { RenderMain } from "../../webl/script";
-// import { SolanaWalletContext } from "../../context/SolanaWalletContext";
+import { RenderMain } from "../../webl/script";
+import { SolanaWalletContext } from "../../context/SolanaWalletContext";
 // import { SuiWalletContext } from "../../context/SuiWalletContext";
-// import { EVMWalletContext } from "../../context/EVMWalletContext";
+import { EVMWalletContext } from "../../context/EVMWalletContext";
 import { Footer } from "./app.styled";
 import FullScreenButton from "../../components/fullscreen-button/FullscreenButton";
 import Wallets from "../../components/wallets/Wallets";
+import { SuiWalletContext } from "../../context/SuiWalletContext";
 
 function App() {
-    // useEffect(() => {
-    //     RenderMain();
-    // }, []);
+    useEffect(() => {
+        RenderMain();
+    }, []);
 
     return (
-        // <SolanaWalletContext>
-        //     <SuiWalletContext>
-        //         <EVMWalletContext>
         <div className="App">
             <div className="WalletConnectionHeader">
-                <Wallets></Wallets>
+                <SolanaWalletContext>
+                    <EVMWalletContext>
+                        <SuiWalletContext>
+                            <Wallets></Wallets>
+                        </SuiWalletContext>
+                    </EVMWalletContext>
+                </SolanaWalletContext>
             </div>
             <div>
-                {/* <canvas id="demo-canvas">
+                <canvas id="demo-canvas">
                     Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
-                </canvas> */}
+                </canvas>
             </div>
             <Footer>
                 <FullScreenButton />
             </Footer>
         </div>
-        //         </EVMWalletContext>
-        //     </SuiWalletContext>
-        // </SolanaWalletContext>
     );
 }
 
