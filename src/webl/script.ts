@@ -212,6 +212,14 @@ export function RenderMain() {
 
     canvas.addEventListener("touchmove", (e) => {
         e.preventDefault(); // Prevent default touchmove behavior, like scrolling
+        // Check if the Vibration API is supported by the browser
+        if ("vibrate" in navigator) {
+            // Vibrate the device for 200 milliseconds
+            navigator.vibrate([4]);
+        } else {
+            // The Vibration API is not supported
+            console.log("Vibration API is not supported in this browser.");
+        }
         getMousePosition(canvas, e);
     });
 
@@ -228,15 +236,6 @@ export function RenderMain() {
     canvas.addEventListener("touchstart", (e) => {
         getMousePosition(canvas, e);
         e.preventDefault();
-        // Check if the Vibration API is supported by the browser
-        if ("vibrate" in navigator) {
-            // Vibrate the device for 200 milliseconds
-            navigator.vibrate([400, 200, 400]);
-        } else {
-            // The Vibration API is not supported
-            console.log("Vibration API is not supported in this browser.");
-        }
-
         bMouseDown = true;
     });
     canvas.addEventListener("touchend", (e) => {
