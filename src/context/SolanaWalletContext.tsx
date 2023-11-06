@@ -11,7 +11,6 @@ import {
     UnsafeBurnerWalletAdapter,
     WalletConnectWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import { clusterApiUrl } from "@solana/web3.js";
 import React, { FC, PropsWithChildren, useMemo } from "react";
 
 // Default styles that can be overridden by your app
