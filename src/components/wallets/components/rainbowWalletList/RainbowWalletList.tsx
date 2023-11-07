@@ -1,15 +1,16 @@
 import { ReactComponent as Metamask } from "../../assets/metamask.svg";
 import { ReactComponent as CoinBase } from "../../assets/coinbase.svg";
 import { ReactComponent as Phantom } from "../../assets/phantom.svg";
-import React, { JSX, useEffect, useRef, useState } from "react";
+import React, { JSX, useRef, useState } from "react";
 import { ListBox } from "primereact/listbox";
 import { Item } from "./RainbowWalletList.styled";
-import { coinbaseWallet, metaMaskWallet, phantomWallet } from "@rainbow-me/rainbowkit/wallets";
-import { Connector, useBalance } from "wagmi";
+import { coinbaseWallet, metaMaskWallet, phantomWallet, walletConnectWallet } from "@rainbow-me/rainbowkit/wallets";
+import { Connector } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { connectorsForWallets } from "@rainbow-me/rainbowkit";
 import { Toast } from "primereact/toast";
 import { IAccount } from "../../models";
+import { fetchBalance } from "@wagmi/core";
 
 interface IWallet {
     logo: JSX.Element;
@@ -17,27 +18,21 @@ interface IWallet {
     wallet: Connector;
 }
 
-function RainbowWalletList(props: { connect: (account: IAccount) => void }): JSX.Element {
+function RainbowWalletList(props: {
+    connect: (account: IAccount) => void;
+    setActiveConnector: (conn: Connector) => void;
+}): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<IWallet>();
     const toast = useRef<Toast>(null);
     let address: `0x${string}` | undefined;
-    const { data, isError, isLoading } = useBalance({
-        address,
-    });
     const chains = [mainnet];
     const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID;
-
-    useEffect(() => {
-        if (data && !isLoading && !isError) {
-            props.connect({ id: address, balance: data?.formatted + data?.symbol, walletIcon: selectedOption?.logo });
-        }
-    }, [data, isLoading]);
 
     const show = () => {
         toast.current?.show({
             severity: "info",
             summary: "Connecting",
-            detail: "Please accept connection in wallet",
+            detail: "Please waiting",
             icon: <i className="pi pi-spin pi-cog"></i>,
         });
     };
@@ -53,6 +48,7 @@ function RainbowWalletList(props: { connect: (account: IAccount) => void }): JSX
                 metaMaskWallet({ projectId, chains }),
                 coinbaseWallet({ appName: "My RainbowKit App", chains }),
                 phantomWallet({ chains }),
+                walletConnectWallet({ chains, projectId }),
             ],
         },
     ]);
@@ -82,6 +78,15 @@ function RainbowWalletList(props: { connect: (account: IAccount) => void }): JSX
             show();
             await wallet.wallet.connect();
             address = await wallet.wallet.getAccount();
+            const balance = await fetchBalance({
+                address,
+            });
+            props.connect({
+                id: address,
+                balance: balance.formatted + balance.symbol,
+                walletIcon: selectedOption?.logo,
+            });
+            props.setActiveConnector(wallet.wallet);
             setSelectedOption(wallet);
         } catch (error) {
             console.error("Failed to connect:", error);

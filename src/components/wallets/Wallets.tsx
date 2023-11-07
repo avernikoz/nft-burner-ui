@@ -1,75 +1,53 @@
 import { Button } from "primereact/button";
-import React, { useState } from "react";
-import { ReactComponent as SuietLogo } from "./assets/suietLogo.svg";
-import { ReactComponent as SolanaLogo } from "./assets/solana.svg";
-import { ReactComponent as RainbowLogo } from "./assets/rainbow.svg";
-import { TabMenu } from "primereact/tabmenu";
-import RainbowWalletList from "./components/rainbowWalletList/RainbowWalletList";
-import SuietWalletLIst from "./components/suietWalletList/SuietWalletLIst";
-import SolanaWalletList from "./components/solanaWalletList/SolanaWalletList";
-
+import React, { useRef, useState } from "react";
 // eslint-disable-next-line import/no-unresolved
 import { MenuItem } from "primereact/menuitem";
 import { PanelMenu } from "primereact/panelmenu";
+import { TabMenu } from "primereact/tabmenu";
+import { Menu } from "primereact/menu";
+import { Toast } from "primereact/toast";
+// eslint-disable-next-line import/no-unresolved
 import { ButtonContainer, ProfileLabel, StyledDialog } from "./Wallets.styled";
-
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { disconnect as wagmiDisconnect } from "@wagmi/core";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
+import { Connector, mainnet } from "wagmi";
+import { fetchBalance } from "@wagmi/core";
+
+import { ReactComponent as SuietLogo } from "./assets/suietLogo.svg";
+import { ReactComponent as SolanaLogo } from "./assets/solana.svg";
+import { ReactComponent as EthereumLogo } from "./assets/ethereum-logo.svg";
+import { ReactComponent as OptimismLogo } from "./assets/optimism-logo.svg";
+import { ReactComponent as ArbitrumLogo } from "./assets/arbitrum-logo.svg";
+import { ReactComponent as PolygonLogo } from "./assets/polygonLogo.svg";
+import RainbowWalletList from "./components/rainbowWalletList/RainbowWalletList";
+import SuietWalletLIst from "./components/suietWalletList/SuietWalletLIst";
+import SolanaWalletList from "./components/solanaWalletList/SolanaWalletList";
 import SVGTemplate from "../SVGTemplate/SVGTemplate";
 import { IAccount } from "./models";
+import { arbitrum, optimism, polygon } from "viem/chains";
 
 function Wallets() {
     const [visible, setVisible] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [activeRainConnector, setActiveRainConnector] = useState<Connector | null>(null);
     const [account, setAccount] = useState<IAccount | null>(null);
+    const profileMenu = useRef<Menu>(null);
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
+    const toast = useRef<Toast>(null);
+
+    const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID;
+
+    if (typeof projectId !== "string" || projectId.length === 0) {
+        throw new Error("Empty REACT_APP_WALLET_CONNECT_PROJECT_ID");
+    }
 
     function connect(acc: IAccount) {
         setVisible(false);
         setAccount(acc);
     }
-
-    const items = [
-        {
-            label: "Suiet",
-            icon: <SuietLogo width={30} height={30} style={{ marginRight: "5px" }} />,
-            command: () => {
-                setActiveIndex(0);
-            },
-            list: <SuietWalletLIst connect={connect} />,
-        },
-        {
-            label: "Rainbow",
-            icon: <RainbowLogo width={30} height={30} style={{ marginRight: "5px" }} />,
-            command: () => {
-                setActiveIndex(1);
-            },
-            list: <RainbowWalletList connect={connect} />,
-        },
-        {
-            label: "Solana",
-            icon: <SolanaLogo width={30} height={30} style={{ marginRight: "5px" }} />,
-            command: () => {
-                setActiveIndex(2);
-            },
-            list: <SolanaWalletList connect={connect} />,
-        },
-    ];
-
-    const menuItems: MenuItem[] = [
-        {
-            label: "Choose connection",
-            icon: "pi pi-spin pi-compass",
-            style: {
-                backgroundColor: "primary",
-                color: "white",
-            },
-            items: items,
-        },
-    ];
 
     async function disconnect() {
         await wagmiDisconnect();
@@ -82,35 +60,188 @@ function Wallets() {
         setAccount(null);
     }
 
+    async function switchChain(index: number, chainId: number) {
+        console.log(activeRainConnector);
+
+        if (activeIndex !== index) {
+            if (activeIndex < 4 && activeRainConnector != undefined) {
+                if (!activeRainConnector.switchChain) {
+                    return;
+                }
+                await activeRainConnector?.switchChain(chainId);
+                const address = await activeRainConnector?.getAccount();
+                if (!address) {
+                    return;
+                }
+                const balance = await fetchBalance({
+                    address,
+                });
+                connect({
+                    id: address,
+                    balance: balance.formatted + balance.symbol,
+                });
+            } else {
+                disconnect();
+                setActiveIndex(index);
+            }
+        }
+    }
+
+    const items = [
+        {
+            label: "Ethereum",
+            icon: <EthereumLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            command: () => {
+                switchChain(0, mainnet.id);
+            },
+            list: (
+                <RainbowWalletList
+                    connect={connect}
+                    setActiveConnector={(conn: Connector) => {
+                        setActiveRainConnector(conn);
+                    }}
+                />
+            ),
+        },
+        {
+            label: "Polygon",
+            icon: <PolygonLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            command: () => {
+                switchChain(1, polygon.id);
+            },
+            list: (
+                <RainbowWalletList
+                    connect={connect}
+                    setActiveConnector={(conn: Connector) => {
+                        setActiveRainConnector(conn);
+                    }}
+                />
+            ),
+        },
+        {
+            label: "Arbitrum",
+            icon: <ArbitrumLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            command: () => {
+                switchChain(2, arbitrum.id);
+            },
+            list: (
+                <RainbowWalletList
+                    connect={connect}
+                    setActiveConnector={(conn: Connector) => {
+                        setActiveRainConnector(conn);
+                    }}
+                />
+            ),
+        },
+        {
+            label: "Optimism",
+            icon: <OptimismLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            command: () => {
+                switchChain(3, optimism.id);
+            },
+            list: (
+                <RainbowWalletList
+                    connect={connect}
+                    setActiveConnector={(conn: Connector) => {
+                        setActiveRainConnector(conn);
+                    }}
+                />
+            ),
+        },
+        {
+            label: "Sui",
+            icon: <SuietLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            command: () => {
+                if (activeIndex !== 4) {
+                    disconnect();
+                    setActiveIndex(4);
+                }
+            },
+            list: <SuietWalletLIst connect={connect} />,
+        },
+        {
+            label: "Solana",
+            icon: <SolanaLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            command: () => {
+                if (activeIndex !== 5) {
+                    disconnect();
+                    setActiveIndex(5);
+                }
+            },
+            list: <SolanaWalletList connect={connect} />,
+        },
+    ];
+
+    const menuItems: MenuItem[] = [
+        {
+            label: items[activeIndex].label,
+            icon: items[activeIndex].icon,
+            style: {
+                backgroundColor: "primary",
+                color: "white",
+            },
+            items: items,
+        },
+    ];
+
+    const profileItems: MenuItem[] = [
+        {
+            label: "Copy to clickBoard",
+            icon: "pi pi-copy",
+            command: () => {
+                toast.current?.show({ severity: "success", summary: "Success", detail: "Copy to Clipboard" });
+            },
+        },
+        {
+            label: "Disconnect",
+            icon: "pi pi-power-off",
+            command: () => {
+                disconnect();
+            },
+        },
+    ];
+
     return (
         <div className="wallet">
+            <Toast ref={toast} position="top-left" />
             <ButtonContainer>
-                <div>{items[activeIndex].icon}</div>
                 <PanelMenu model={menuItems} className="w-full md:w-25rem" color={"primary"} />
-                {!account ? (
+                {!account && (
                     <Button
                         aria-label="Choose your wallet"
                         rounded
                         icon="pi pi-wallet"
                         onClick={() => setVisible(true)}
                     />
-                ) : (
-                    <Button icon="pi pi-times" rounded severity="danger" aria-label="Cancel" onClick={disconnect} />
                 )}
                 {account && (
-                    <ProfileLabel className="label">
-                        <div className="icon">
-                            {typeof account.walletIcon === "string" ? (
-                                <SVGTemplate svgString={account.walletIcon} />
-                            ) : (
-                                account.walletIcon
-                            )}
-                        </div>
-                        <div className="content">
-                            <span className="balance">{account.balance}</span>
-                            <span className="chain-id">{account.id}</span>
-                        </div>
-                    </ProfileLabel>
+                    <>
+                        <Menu
+                            model={profileItems}
+                            popup
+                            ref={profileMenu}
+                            id="popup_menu_right"
+                            popupAlignment="right"
+                        />
+                        <ProfileLabel
+                            className="label"
+                            onClick={(event) => profileMenu.current?.toggle(event)}
+                            aria-controls="popup_menu_right"
+                            aria-haspopup
+                        >
+                            <div className="icon">
+                                {typeof account.walletIcon === "string" ? (
+                                    <SVGTemplate svgString={account.walletIcon} />
+                                ) : (
+                                    account.walletIcon
+                                )}
+                            </div>
+                            <div className="content">
+                                <span className="balance">{account.balance}</span>
+                                <span className="chain-id">{account.id}</span>
+                            </div>
+                        </ProfileLabel>
+                    </>
                 )}
             </ButtonContainer>
             <StyledDialog
