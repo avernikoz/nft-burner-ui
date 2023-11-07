@@ -308,12 +308,18 @@ export function GetShaderSourceCombinerPassPS() {
 			///Translate to origin, scale by ranges ratio, translate to new position
 			return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
 		}
+
+		float Contrast(float color, float contrast)
+		{
+			return max(float(0.f), contrast * (color - 0.5f) + 0.5f);
+		}
 	
 		void main()
 		{
 			const float kSizeScale = float(` +
         SizeScale +
         /* glsl */ `);
+			const float kSizeScaleRcp = 1.f / kSizeScale;
 			const vec2 kViewSize = vec2(float(` +
         ViewSize.x +
         /* glsl */ `), float(` +
@@ -330,7 +336,8 @@ export function GetShaderSourceCombinerPassPS() {
 			distortionUV.x *= 2.5;
 			distortionUV.y *= 0.5;
 			distortionUV *= 0.4f;
-			distortionUV *= (2.0 - kSizeScale);
+			//distortionUV *= (2.0 - kSizeScale);
+			distortionUV *= kSizeScaleRcp;
 			distortionUV *= kViewSize;
 			vec3 distortionNoise = textureLod(NoiseTexture, distortionUV.xy, 0.f).rgb;
 			distortionNoise = (distortionNoise * 2.f) - 1.f;
@@ -362,7 +369,35 @@ export function GetShaderSourceCombinerPassPS() {
 
 			float pointLights = textureLod(PointLightsTexture, texCoords.xy, 0.f).r; 
 
-			float light = textureLod(SpotlightTexture, vec2(texCoords.x, 1.f - texCoords.y), 0.f).r;
+			vec2 spotlightSamplingUV = vec2(texCoords.x, 1.f - texCoords.y);
+
+			if(kViewSize.x > 1.0)
+			{
+				const vec2 centerUV = vec2(0.5);
+
+				spotlightSamplingUV.x -= centerUV.x;
+    			spotlightSamplingUV.y -= centerUV.y;
+
+    			// Apply clockwise rotation
+				const float angle = -0.7f;
+    			spotlightSamplingUV.x = spotlightSamplingUV.x * cos(angle) + spotlightSamplingUV.y * (-sin(angle));
+    			spotlightSamplingUV.y = spotlightSamplingUV.x * sin(angle) + spotlightSamplingUV.y * cos(angle);
+
+    			// Translate back to the original position
+    			spotlightSamplingUV.x += centerUV.x;
+    			spotlightSamplingUV.y += centerUV.y;
+			}
+			
+
+			float light = textureLod(SpotlightTexture, spotlightSamplingUV , 0.f).r;
+			float lightInitial = light;
+			//light *= light;
+			//light = Contrast(light, 1.05);
+			light += 0.05; 
+			light = light * 2.5f;
+
+			//light = min(2.f, (light + 0.0) * 4.5f);
+			//light = min(1.0f, light * light + 0.01);
 
 			` +
         scSpotlightFlicker() +
@@ -371,7 +406,8 @@ export function GetShaderSourceCombinerPassPS() {
 			vec4 smoke = textureLod(SmokeTexture, texCoords.xy, 0.f);
 
 			vec2 noiseUV = texCoords;
-			noiseUV *= (2.0 - kSizeScale);
+			//noiseUV *= (2.0 - kSizeScale);
+			noiseUV *= kSizeScaleRcp;
 			noiseUV *= kViewSize;
 			noiseUV.x -= Time * 0.0043f;
 			noiseUV.y -= Time * 0.0093f;
@@ -393,7 +429,7 @@ export function GetShaderSourceCombinerPassPS() {
 				}
 			}
 
-			//smoke = max(smoke, vec4(vec3(smokeNoise.r), 1.f));
+			smokeNoise.r = Contrast(smokeNoise.r, mix(0.05, 0.25, 1.f - lightInitial)) * 2.f;
 			smokeNoise.r *= min(1.f, texCoords.y + 0.3f);
 			smoke.rgba = smoke.rgba * 1.f + vec4(vec3(smokeNoise.r) * 0.15, smokeNoise.r * 0.15) * clamp(1.f - smoke.a, 0.0, 1.f);
 
@@ -409,7 +445,7 @@ export function GetShaderSourceCombinerPassPS() {
 			;
 
 			const float SmokeSpotlightStrength = 1.0f;
-			float smokeLightFromSpotlight = min(1.f, light + 0.05)
+			float smokeLightFromSpotlight = light
 			* SmokeSpotlightStrength
 			* clamp(1.f + clamp(smoke.r, SmokeBloomColorClampMinMax.x, SmokeBloomColorClampMinMax.y) - clamp(smoke.a, SmokeBloomAlphaClampMinMax.x, SmokeBloomAlphaClampMinMax.y), 0.f, 1.f) * clamp(smoke.a, 0.f, 1.f)
 			;
@@ -434,14 +470,6 @@ export function GetShaderSourceCombinerPassPS() {
 
 			smoke.a *= smokeScale;
 			//smoke.rgb *= clamp(smokeScale, 0.5f, 1.f);
-
-			//lit plane with spotlight
-			if(firePlane.r < 1.0 /* && dot(firePlane.rgb, vec3(0.333)) < 1.f */)
-			{
-				const float ambientLight = 0.0f;
-				const float lightScale = 5.0f;
-				//firePlane.rgb *= min(1.f, light * lightScale + ambientLight);
-			}
 
 			firePlane.rgb = smoke.rgb * 1.f + firePlane.rgb * clamp(1.f - smoke.a, 0.0, 1.f);
 
@@ -483,6 +511,34 @@ export function GetShaderSourceCombinerPassPS() {
 			}
 
 			//final.rgb = pow(final.rgb, vec3(1.f/2.2f));
+			vec3 colorFilter1 = vec3(0.3, 0.52, 1.0);
+			float luma = clamp(dot(final.rgb, vec3(0.33)), 0.0, 1.0);
+			vec3 colorFilter2 = vec3(1.0, 1.0, 0.75);
+			colorFilter1 = mix(colorFilter1, colorFilter2, luma);
+			//float luma = dot(final.rgb, vec3(0.2126, 0.7152, 0.0722)); // Using proper luminance values
+			float gradParam = luma;
+			
+			const float gradThres = 0.15;
+			if(gradParam < gradThres)
+			{
+				/* float mapped = MapToRange(gradParam, 0.0, gradThres, 0.0, 1.0);
+				mapped = pow(mapped, 1.0 / 4.0);
+				gradParam = MapToRange(mapped, 0.0, 1.0, 0.0, gradThres); */
+				//gradParam = gradThres;
+			}
+			else
+			{
+				float mapped = MapToRange(gradParam, gradThres, 1.0, 0.0, 1.0);
+				mapped = pow(mapped, 1.0 / 2.0);
+				gradParam = MapToRange(mapped, 0.0, 1.0, gradThres, 1.0);
+			}
+			gradParam = clamp(gradParam, 0.0, 1.0);
+			colorFilter1 = mix(colorFilter1, vec3(1.0), 0.25);
+			final.rgb = mix(colorFilter1 * final.rgb, final.rgb, 1.f - clamp(gradParam, 0.0, 1.0));
+
+			/* colorFilter1 = mix(colorFilter1 * final.rgb, final.rgb, gradParam);
+			final.rgb = mix(colorFilter1, final.rgb, 1.f - (gradParam * 0.5)); */
+			final.b = max(0.025, final.b);
 
 			OutColor = vec4(final.rgb, 1);
 		}`

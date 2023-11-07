@@ -223,11 +223,14 @@ export class RFirePlanePass {
 
         this.VisualizerFlameColorLUT = CreateTexture(gl, 4, "assets/flameColorLUT5.png");
         //this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/example.jpg");
-        this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/apeBlue.png");
+        //this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/apeBlue.png");
         this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/example2.png");
         this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg");
-        this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
+
+        //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
+        this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise128.png");
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/cracksNoise.png");
+
         this.VisualizerFirePlaneNoiseTexture = CreateTexture(gl, 7, "assets/fireNoise.png");
 
         const matName = `copper`;
@@ -264,6 +267,7 @@ export class RFirePlanePass {
         this.RoughnessParams.Contrast = 1.0 + Math.random();
 
         this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/oxidCopperRGH.png");
+        //this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/paperRGH.png");
 
         const matOffsetSign = { x: 1, y: 1 };
         if (Math.random() < 0.25) {
@@ -282,8 +286,8 @@ export class RFirePlanePass {
         const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
         const folder = GDatGUI.addFolder("Shading");
         folder.open();
-        folder.add(this.LightPosNDC, "x", -2, 2).name("LightPosX").step(0.01);
-        folder.add(this.LightPosNDC, "y", -3, 10).name("LightPosY").step(0.01);
+        folder.add(this.LightPosNDC, "x", -2, 5).name("LightPosX").step(0.01).listen();
+        folder.add(this.LightPosNDC, "y", -3, 10).name("LightPosY").step(0.01).listen();
         folder.add(this.LightPosNDC, "z", -10, 2).name("LightPosZ").step(0.01);
 
         folder.add(this.RoughnessParams, "Scale", 0, 20).name("RGHScale").step(0.01);
@@ -360,6 +364,12 @@ export class RFirePlanePass {
     }
 
     VisualizeFirePlane(gl: WebGL2RenderingContext, pointLightsTexture: WebGLTexture, spotlightTexture: WebGLTexture) {
+        let spotlightHeight = this.LightPosNDC.y;
+        if (SceneDesc.ViewRatioXY.x > 1.0) {
+            this.LightPosNDC.x = SceneDesc.ViewRatioXY.x * 2.5;
+            spotlightHeight = this.LightPosNDC.y - this.LightPosNDC.x * 0.5;
+        }
+
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
         gl.useProgram(this.VisualizerShaderProgram);
@@ -375,7 +385,7 @@ export class RFirePlanePass {
         gl.uniform3f(
             this.VisualizerUniformParametersLocationList.LightPosNDC,
             this.LightPosNDC.x,
-            this.LightPosNDC.y,
+            spotlightHeight /* this.LightPosNDC.y */,
             this.LightPosNDC.z,
         );
         gl.uniform4f(

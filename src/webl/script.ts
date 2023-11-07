@@ -7,6 +7,7 @@ import { ParticlesEmitter } from "./particles";
 import {
     AfterBurnAshesParticlesDesc,
     AfterBurnSmokeParticlesDesc,
+    DustParticlesDesc,
     EmberParticlesDesc,
     FlameParticlesDesc,
     SmokeParticlesDesc,
@@ -244,14 +245,16 @@ export function RenderMain() {
         SceneDesc.ViewportMin = Math.min(window.innerWidth, window.innerHeight);
         SceneDesc.ScreenRatio = window.innerWidth / window.innerHeight;
         SceneDesc.bWideScreen = SceneDesc.ScreenRatio > 1.0;
-        if (SceneDesc.bWideScreen) {
-            SceneDesc.FirePlaneSizeScaleNDC = 0.5;
-        }
         SceneDesc.ViewRatioXY = { x: 1.0, y: 1.0 };
         if (SceneDesc.bWideScreen) {
             SceneDesc.ViewRatioXY.x = window.innerWidth / window.innerHeight;
         } else {
             SceneDesc.ViewRatioXY.y = window.innerHeight / window.innerWidth;
+        }
+        {
+            //Additional scale for square and wide screens
+            const addScale = MathClamp(-0.25 * (SceneDesc.ViewRatioXY.y - 1.0) + 0.25, 0.0, 0.25);
+            SceneDesc.FirePlaneSizeScaleNDC = SceneDesc.FirePlaneSizeScaleNDC - addScale;
         }
     }
 
@@ -311,6 +314,31 @@ export function RenderMain() {
         SmokeParticlesDesc.inDownwardForceScale = 2.5;
     }
 
+    const bPaperMaterial = true;
+    const bAshesInEmbersPass = 0 && bPaperMaterial;
+    if (bPaperMaterial) {
+        //FlameParticlesDesc.inDefaultSize.y *= 0.9;
+        FlameParticlesDesc.inRandomSpawnThres = 0.5;
+        FlameParticlesDesc.inSpawnRange.x = 500.0;
+        SmokeParticlesDesc.inSpawnRange.x = 5000.0;
+        SmokeParticlesDesc.inAlphaScale = 0.75;
+        SmokeParticlesDesc.inEAlphaFade = 1;
+        //SmokeParticlesDesc.inBrightness = 0.0;
+        AfterBurnSmokeParticlesDesc.inSpawnRange.x = 0.1;
+
+        AfterBurnAshesParticlesDesc.inSpawnRange.x = 0.05;
+        AfterBurnAshesParticlesDesc.inSpawnRange.y = 10.05;
+        AfterBurnAshesParticlesDesc.inNumSpawners2D = 64;
+        AfterBurnAshesParticlesDesc.inVelocityFieldForceScale = 50;
+        AfterBurnAshesParticlesDesc.inInitialVelocityScale = 1.0;
+        EmberParticlesDesc.inVelocityFieldForceScale = 50;
+        SmokeParticlesDesc.inVelocityFieldForceScale = 30;
+
+        //DustParticlesDesc.inVelocityFieldForceScale = 50;
+
+        //BackGroundRenderPass.FloorTransform.Translation = -0.35;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -321,6 +349,8 @@ export function RenderMain() {
     const AfterBurnSmokeParticles = new ParticlesEmitter(gl, AfterBurnSmokeParticlesDesc);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const AshesParticles = new ParticlesEmitter(gl, AfterBurnAshesParticlesDesc);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const DustParticles = new ParticlesEmitter(gl, DustParticlesDesc);
 
     //generate intermediate texture for Blur
     //TODO: Specify target MIP resolution instead, and deduce MIP Index from it
@@ -341,9 +371,9 @@ export function RenderMain() {
                 //If we are in Plane range -> apply fire
                 const MousePosNDCPlaneRange = { x: 0, y: 0 };
                 MousePosNDCPlaneRange.x =
-                    CGConstants.MousePosNDC.x * SceneDesc.ViewRatioXY.x * (2.0 - SceneDesc.FirePlaneSizeScaleNDC);
+                    (CGConstants.MousePosNDC.x * SceneDesc.ViewRatioXY.x) / SceneDesc.FirePlaneSizeScaleNDC;
                 MousePosNDCPlaneRange.y =
-                    CGConstants.MousePosNDC.y * SceneDesc.ViewRatioXY.y * (2.0 - SceneDesc.FirePlaneSizeScaleNDC);
+                    (CGConstants.MousePosNDC.y * SceneDesc.ViewRatioXY.y) / SceneDesc.FirePlaneSizeScaleNDC;
                 if (Math.abs(MousePosNDCPlaneRange.x) < 1.0 && Math.abs(MousePosNDCPlaneRange.y) < 1.0) {
                     const curMouseDir = { x: 0, y: 0 };
                     curMouseDir.x = CGConstants.MousePosNDC.x - CGConstants.PrevMousePosNDC.x;
@@ -381,17 +411,31 @@ export function RenderMain() {
             AshesParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
             SmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
             AfterBurnSmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+            DustParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
             BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, RenderTargetSize, true);
 
             //BackGroundRenderPass.RenderSpotlight(gl);
-            BackGroundRenderPass.RenderFloor(gl);
+            if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
+                BackGroundRenderPass.RenderFloor(
+                    gl,
+                    GPostProcessPasses.Bloom!.BloomTexture,
+                    GPostProcessPasses.Combiner!.SmokeNoiseTexture,
+                );
+            }
 
-            FirePlanePass.VisualizeFirePlane(
-                gl,
-                BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
-                GPostProcessPasses.Combiner!.SpotlightTexture,
-            );
+            {
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.ONE, gl.ONE);
+                gl.blendEquation(gl.FUNC_ADD);
+
+                FirePlanePass.VisualizeFirePlane(
+                    gl,
+                    BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
+                    GPostProcessPasses.Combiner!.SpotlightTexture,
+                );
+                gl.disable(gl.BLEND);
+            }
 
             BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, RenderTargetSize, true);
             FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
@@ -405,6 +449,9 @@ export function RenderMain() {
             const flameSourceTextureRef = GRenderTargets.FlameTexture2;
 
             EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+            if (bAshesInEmbersPass) {
+                AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            }
 
             if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
                 //Downsample Source
@@ -422,9 +469,12 @@ export function RenderMain() {
 
             //Render Smoke
             BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, RenderTargetSize, true);
-            SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            DustParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
             AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-            AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            if (!bAshesInEmbersPass) {
+                AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+            }
 
             //Combine results
             GPostProcessPasses.Combiner!.Execute(

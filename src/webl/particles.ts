@@ -41,6 +41,7 @@ export const EParticleShadingMode = {
     Embers: 2,
     Smoke: 3,
     Ashes: 4,
+    Dust: 5,
 };
 
 export class ParticlesEmitter {
@@ -111,15 +112,19 @@ export class ParticlesEmitter {
             inDefaultSize = { x: 1.0, y: 1.0 },
             inSizeRangeMinMax = { x: 1.0, y: 1.0 },
             inSizeClampMax = { x: 1.0, y: 1.0 },
+            inRandomSizeChangeSpeed = 1.0,
             inInitialVelocityScale = 0.0,
             inVelocityFieldForceScale = 0.0,
             inBuoyancyForceScale = 0.0,
             inDownwardForceScale = 2.5,
             inBrightness = 1.0,
             inAlphaScale = 0.25, //Currently smoke shading mode specific
-            inbOriginAtCenter = true,
+            inInitialTranslate = { x: 0.0, y: 0.0 },
             inbMotionBasedTransform = false,
-            inEAlphaFade = 0,
+            inbRandomInitialPosition = false,
+            inRandomSpawnThres = 1.0,
+            inEAlphaFade = 0, //0:disabled, 1:smooth, 2:fast
+            inEFadeInOutMode = 1, //0-disabled //1-fadeIn only //2-fadeOut only 3-enable all
             inESpecificShadingMode = EParticleShadingMode.Default,
         },
     ) {
@@ -279,6 +284,8 @@ export class ParticlesEmitter {
                     inVelocityFieldForceScale,
                     inBuoyancyForceScale,
                     inDownwardForceScale,
+                    inbRandomInitialPosition,
+                    inRandomSpawnThres,
                 ),
             );
             const shaderPS = CreateShader(gl, gl.FRAGMENT_SHADER, ParticleUpdatePS);
@@ -332,10 +339,12 @@ export class ParticlesEmitter {
             GetParticleRenderInstancedVS(
                 this.bUsesTexture,
                 inDefaultSize,
+                inEFadeInOutMode,
                 inSizeRangeMinMax,
                 inSizeClampMax,
-                inbOriginAtCenter,
+                inInitialTranslate,
                 inbMotionBasedTransform,
+                inRandomSizeChangeSpeed,
             ),
             GetParticleRenderColorPS(
                 inESpecificShadingMode,

@@ -7,7 +7,7 @@ import {
     GetShaderSourceBackgroundFloorRenderVS,
     GetShaderSourceBackgroundSpotlightRenderVS,
     LightsUpdatePS,
-    ShaderSourceBackgroundFloorRenderPS,
+    GetShaderSourceBackgroundFloorRenderPS,
     ShaderSourceBackgroundSpotlightRenderPS,
 } from "./shaders/shaderBackground";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
@@ -17,6 +17,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
     const params = {
         ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
         SpotlightTexture: gl.getUniformLocation(shaderProgram, "SpotlightTexture"),
+        SmokeNoiseTexture: gl.getUniformLocation(shaderProgram, "SmokeNoiseTexture"),
 
         FloorRotation: gl.getUniformLocation(shaderProgram, "FloorRotation"),
         FloorScale: gl.getUniformLocation(shaderProgram, "FloorScale"),
@@ -24,11 +25,14 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         SpotlightTexScale: gl.getUniformLocation(shaderProgram, "SpotlightTexScale"),
         FloorTexScale: gl.getUniformLocation(shaderProgram, "FloorTexScale"),
         FloorBrightness: gl.getUniformLocation(shaderProgram, "FloorBrightness"),
-        NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
         Time: gl.getUniformLocation(shaderProgram, "Time"),
+        NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
+        BloomTexture: gl.getUniformLocation(shaderProgram, "BloomTexture"),
         //Lights
         FireTextureDownsampled: gl.getUniformLocation(shaderProgram, "FireTextureDownsampled"),
         PointLightsTexture: gl.getUniformLocation(shaderProgram, "PointLightsTexture"),
+        PuddleTexture: gl.getUniformLocation(shaderProgram, "PuddleTexture"),
+        OilTexture: gl.getUniformLocation(shaderProgram, "OilTexture"),
     };
     return params;
 }
@@ -107,6 +111,10 @@ export class RBackgroundRenderPass {
 
     ColorTexture: WebGLTexture;
 
+    PuddleTexture: WebGLTexture;
+
+    OilTexture: WebGLTexture;
+
     PointLights: SceneLights;
 
     FloorTransform = {
@@ -114,7 +122,7 @@ export class RBackgroundRenderPass {
         Translation: 0.0,
         Scale: { x: 1.0, y: 1.0 },
         FloorTexScale: 1.0,
-        LightTexScale: { x: 1.5, y: 8.0 },
+        LightTexScale: { x: 1.0, y: 2.4 },
         FloorBrightness: 1.0,
     };
 
@@ -131,7 +139,7 @@ export class RBackgroundRenderPass {
         this.ShaderProgramFloor = CreateShaderProgramVSPS(
             gl,
             GetShaderSourceBackgroundFloorRenderVS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
-            ShaderSourceBackgroundFloorRenderPS,
+            GetShaderSourceBackgroundFloorRenderPS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
         );
 
         //Shader Parameters
@@ -145,7 +153,12 @@ export class RBackgroundRenderPass {
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/redConcreteDFS.jpg", true, true);
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleWhiteDFS.jpg", true, true);
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleGreenDFS.jpg", true, true);
+
         this.ColorTexture = CreateTexture(gl, 5, "assets/background/foil2RGH.png", true, true);
+        this.PuddleTexture = CreateTexture(gl, 5, "assets/background/floorAsphaltHeight.jpg", true, true);
+        //this.PuddleTexture = CreateTexture(gl, 5, "assets/background/floorAsphaltRGH.jpg", true, true);
+        this.OilTexture = CreateTexture(gl, 5, "assets/background/oil/oil4.jpeg", true, true);
+
         /* this.ColorTexture = CreateTexture(gl, 5, "assets/background/copperRGH.png", true, true);
         this.ColorTexture = CreateTexture(gl, 5, "assets/background/goldRGH.png", true, true); */
 
@@ -183,7 +196,7 @@ export class RBackgroundRenderPass {
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
-    RenderFloor(gl: WebGL2RenderingContext) {
+    RenderFloor(gl: WebGL2RenderingContext, bloomTexture: WebGLTexture, smokeNoiseTexture: WebGLTexture) {
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
         gl.useProgram(this.ShaderProgramFloor);
@@ -203,6 +216,7 @@ export class RBackgroundRenderPass {
         );
         gl.uniform1f(this.UniformParametersLocationListFloor.FloorTexScale, this.FloorTransform.FloorTexScale);
         gl.uniform1f(this.UniformParametersLocationListFloor.FloorBrightness, this.FloorTransform.FloorBrightness);
+        gl.uniform1f(this.UniformParametersLocationListFloor.Time, GTime.Cur);
 
         //Textures
 
@@ -217,6 +231,22 @@ export class RBackgroundRenderPass {
         gl.activeTexture(gl.TEXTURE0 + 3);
         gl.bindTexture(gl.TEXTURE_2D, this.PointLights.LightsBufferTextureGPU);
         gl.uniform1i(this.UniformParametersLocationListFloor.PointLightsTexture, 3);
+
+        gl.activeTexture(gl.TEXTURE0 + 4);
+        gl.bindTexture(gl.TEXTURE_2D, bloomTexture);
+        gl.uniform1i(this.UniformParametersLocationListFloor.BloomTexture, 4);
+
+        gl.activeTexture(gl.TEXTURE0 + 5);
+        gl.bindTexture(gl.TEXTURE_2D, smokeNoiseTexture);
+        gl.uniform1i(this.UniformParametersLocationListFloor.SmokeNoiseTexture, 5);
+
+        gl.activeTexture(gl.TEXTURE0 + 6);
+        gl.bindTexture(gl.TEXTURE_2D, this.PuddleTexture);
+        gl.uniform1i(this.UniformParametersLocationListFloor.PuddleTexture, 6);
+
+        gl.activeTexture(gl.TEXTURE0 + 7);
+        gl.bindTexture(gl.TEXTURE_2D, this.OilTexture);
+        gl.uniform1i(this.UniformParametersLocationListFloor.OilTexture, 7);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
