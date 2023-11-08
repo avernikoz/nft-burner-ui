@@ -55,29 +55,42 @@ function Wallets() {
 
     async function switchChain(index: number, chainId: number) {
         console.log("hello: ", activeRainConnector);
+        try {
+            if (activeIndex !== index) {
+                if (activeIndex < 4 && activeRainConnector !== null) {
+                    // if (!activeRainConnector.switchChain) {
+                    //     return;
+                    // }
+                    //await activeRainConnector?.switchChain(chainId);
+                    const address = await activeRainConnector?.getAccount();
+                    if (!address) {
+                        return;
+                    }
+                    const balance = await fetchBalance({
+                        address,
+                        chainId,
+                    });
+                    console.log(balance, address);
 
-        if (activeIndex !== index) {
-            if (activeIndex < 4 && activeRainConnector != null) {
-                if (!activeRainConnector.switchChain) {
-                    return;
-                }
-                await activeRainConnector?.switchChain(chainId);
-                const address = await activeRainConnector?.getAccount();
-                if (!address) {
-                    return;
-                }
-                const balance = await fetchBalance({
-                    address,
-                });
-                connect({
-                    id: address,
-                    balance: balance.formatted + balance.symbol,
-                });
-            } else {
-                if (activeRainConnector != null) {
+                    connect({
+                        id: address,
+                        balance: balance.formatted + balance.symbol,
+                    });
+                } else {
                     disconnect();
                 }
                 setActiveIndex(index);
+            }
+        } catch (error) {
+            console.error("Failed to connect:", error);
+            if (error instanceof Error) {
+                toast.current?.show({
+                    severity: "error",
+                    summary: "Error",
+                    detail: "Failed to connect: " + error.message,
+                });
+            } else {
+                toast.current?.show({ severity: "error", summary: "Error", detail: "Failed to connect: " + error });
             }
         }
     }
@@ -95,7 +108,7 @@ function Wallets() {
                     setActiveConnector={(conn: Connector) => {
                         setActiveRainConnector(conn);
                     }}
-                    chain={mainnet}
+                    chain={mainnet.id}
                 />
             ),
         },
@@ -111,7 +124,7 @@ function Wallets() {
                     setActiveConnector={(conn: Connector) => {
                         setActiveRainConnector(conn);
                     }}
-                    chain={polygon}
+                    chain={polygon.id}
                 />
             ),
         },
@@ -127,7 +140,7 @@ function Wallets() {
                     setActiveConnector={(conn: Connector) => {
                         setActiveRainConnector(conn);
                     }}
-                    chain={arbitrum}
+                    chain={arbitrum.id}
                 />
             ),
         },
@@ -143,7 +156,7 @@ function Wallets() {
                     setActiveConnector={(conn: Connector) => {
                         setActiveRainConnector(conn);
                     }}
-                    chain={optimism}
+                    chain={optimism.id}
                 />
             ),
         },

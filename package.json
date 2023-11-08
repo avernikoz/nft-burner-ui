@@ -36,7 +36,7 @@
         "react-dom": "^18.2.0",
         "styled-components": "^6.1.0",
         "viem": "^1.18.9",
-        "wagmi": "^1.4.5",
+        "wagmi": "^1.4.6",
         "web-vitals": "^2.1.4"
     },
     "devDependencies": {
