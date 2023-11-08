@@ -6,7 +6,6 @@ import { ListBox } from "primereact/listbox";
 import { Item } from "./RainbowWalletList.styled";
 import { coinbaseWallet, metaMaskWallet, phantomWallet, walletConnectWallet } from "@rainbow-me/rainbowkit/wallets";
 import { Chain, Connector } from "wagmi";
-import { mainnet } from "wagmi/chains";
 import { connectorsForWallets } from "@rainbow-me/rainbowkit";
 import { Toast } from "primereact/toast";
 import { IAccount } from "../../models";
@@ -27,9 +26,7 @@ function RainbowWalletList(props: {
     const toast = useRef<Toast>(null);
     let address: `0x${string}` | undefined;
     const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID;
-    if (!props.chain) {
-        props.chain = mainnet;
-    }
+
     const show = () => {
         toast.current?.show({
             severity: "info",
@@ -78,6 +75,8 @@ function RainbowWalletList(props: {
     async function connect(wallet: IWallet) {
         try {
             show();
+            console.log(props.chain);
+
             await wallet.wallet.connect();
             address = await wallet.wallet.getAccount();
             const balance = await fetchBalance({

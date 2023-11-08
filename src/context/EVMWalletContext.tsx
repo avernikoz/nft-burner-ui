@@ -3,7 +3,7 @@ import "@rainbow-me/rainbowkit/styles.css";
 import React, { FC, PropsWithChildren } from "react";
 import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { configureChains, createConfig, WagmiConfig } from "wagmi";
-import { arbitrum, base, mainnet, optimism, polygon, zora } from "wagmi/chains";
+import { mainnet, polygon, optimism, arbitrum } from "wagmi/chains";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
 
@@ -19,7 +19,7 @@ if (
 }
 
 const { chains, publicClient } = configureChains(
-    [mainnet, polygon, optimism, arbitrum, base, zora],
+    [mainnet, polygon, optimism, arbitrum],
     [alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_ID }), publicProvider()],
 );
 
@@ -28,12 +28,6 @@ const { connectors } = getDefaultWallets({
     projectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID,
     chains,
 });
-
-connectors()[0]
-    .connect()
-    .then(() => {
-        console.log();
-    });
 
 const wagmiConfig = createConfig({
     autoConnect: true,

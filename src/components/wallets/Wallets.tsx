@@ -11,7 +11,7 @@ import { ButtonContainer, ProfileLabel, StyledDialog } from "./Wallets.styled";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
-import { Connector, mainnet } from "wagmi";
+import { Connector } from "wagmi";
 import { fetchBalance, disconnect as wagmiDisconnect } from "@wagmi/core";
 
 import { ReactComponent as SuietLogo } from "./assets/suietLogo.svg";
@@ -25,7 +25,7 @@ import SuietWalletLIst from "./components/suietWalletList/SuietWalletLIst";
 import SolanaWalletList from "./components/solanaWalletList/SolanaWalletList";
 import SVGTemplate from "../SVGTemplate/SVGTemplate";
 import { IAccount } from "./models";
-import { arbitrum, optimism, polygon } from "viem/chains";
+import { arbitrum, optimism, polygon, mainnet } from "wagmi/chains";
 
 function Wallets() {
     const [visible, setVisible] = useState(false);
@@ -58,7 +58,6 @@ function Wallets() {
 
         if (activeIndex !== index) {
             if (activeIndex < 4 && activeRainConnector != null) {
-                console.log("1");
                 if (!activeRainConnector.switchChain) {
                     return;
                 }
