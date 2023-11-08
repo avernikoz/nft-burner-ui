@@ -5,7 +5,7 @@ import { useAccountBalance, useWallet } from "@suiet/wallet-kit";
 import { IWallet } from "@suiet/wallet-kit/dist/types/wallet";
 import { Toast } from "primereact/toast";
 import { IAccount } from "../../models";
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
 
 function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<IWallet | null>(null);
@@ -31,20 +31,20 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
         if (balance === undefined) {
             return;
         }
-        if (wallet.connected && !loading && error == null && balance.toString() == '0' && retry < 5) {
-            console.log(balance.toString(),retry)
+        if (wallet.connected && !loading && error == null && balance.toString() == "0" && retry < 5) {
+            console.log(balance.toString(), retry);
             setRetry(retry + 1);
-            return
+            return;
         }
         if (wallet.connected && !loading && error == null) {
             const balanceInSUI = ethers.formatUnits(balance, 9);
             props.connect({
                 id: wallet.account?.address,
-                balance: balanceInSUI + ' SUI',
+                balance: balanceInSUI + " SUI",
                 walletIcon: wallet.adapter?.icon,
             });
         }
-    }, [wallet.connected, balance,retry]);
+    }, [wallet.connected, balance, retry]);
 
     async function connect(chosenWallet: IWallet) {
         try {

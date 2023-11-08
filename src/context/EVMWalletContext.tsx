@@ -28,6 +28,7 @@ const { connectors } = getDefaultWallets({
     projectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID,
     chains,
 });
+
 connectors()[0]
     .connect()
     .then(() => {

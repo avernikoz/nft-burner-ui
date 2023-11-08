@@ -6,7 +6,7 @@ import { Item } from "../rainbowWalletList/RainbowWalletList.styled";
 import { Toast } from "primereact/toast";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { IAccount } from "../../models";
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
 
 function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<Wallet | null>(null);
@@ -16,10 +16,10 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
 
     useEffect(() => {
         if (connected && publicKey) {
-            connection.getBalanceAndContext(publicKey).then((balance)=>{
+            connection.getBalanceAndContext(publicKey).then((balance) => {
                 const icon = wallet?.adapter.icon;
                 const balanceInSUI = ethers.formatUnits(balance.value, 9);
-                props.connect({ id: publicKey.toString(), balance:balanceInSUI, walletIcon: icon });
+                props.connect({ id: publicKey.toString(), balance: balanceInSUI, walletIcon: icon });
             });
         }
     }, [connected]);

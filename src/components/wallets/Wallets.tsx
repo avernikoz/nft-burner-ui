@@ -9,11 +9,10 @@ import { Toast } from "primereact/toast";
 // eslint-disable-next-line import/no-unresolved
 import { ButtonContainer, ProfileLabel, StyledDialog } from "./Wallets.styled";
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { disconnect as wagmiDisconnect } from "@wagmi/core";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { Connector, mainnet } from "wagmi";
-import { fetchBalance } from "@wagmi/core";
+import { fetchBalance, disconnect as wagmiDisconnect } from "@wagmi/core";
 
 import { ReactComponent as SuietLogo } from "./assets/suietLogo.svg";
 import { ReactComponent as SolanaLogo } from "./assets/solana.svg";
@@ -38,12 +37,6 @@ function Wallets() {
     const solanaWallet = solanaUseWallet();
     const toast = useRef<Toast>(null);
 
-    const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID;
-
-    if (typeof projectId !== "string" || projectId.length === 0) {
-        throw new Error("Empty REACT_APP_WALLET_CONNECT_PROJECT_ID");
-    }
-
     function connect(acc: IAccount) {
         setVisible(false);
         setAccount(acc);
@@ -61,10 +54,11 @@ function Wallets() {
     }
 
     async function switchChain(index: number, chainId: number) {
-        console.log(activeRainConnector);
+        console.log("hello: ", activeRainConnector);
 
         if (activeIndex !== index) {
-            if (activeIndex < 4 && activeRainConnector != undefined) {
+            if (activeIndex < 4 && activeRainConnector != null) {
+                console.log("1");
                 if (!activeRainConnector.switchChain) {
                     return;
                 }
@@ -81,7 +75,9 @@ function Wallets() {
                     balance: balance.formatted + balance.symbol,
                 });
             } else {
-                disconnect();
+                if (activeRainConnector != null) {
+                    disconnect();
+                }
                 setActiveIndex(index);
             }
         }
@@ -100,6 +96,7 @@ function Wallets() {
                     setActiveConnector={(conn: Connector) => {
                         setActiveRainConnector(conn);
                     }}
+                    chain={mainnet}
                 />
             ),
         },
@@ -115,6 +112,7 @@ function Wallets() {
                     setActiveConnector={(conn: Connector) => {
                         setActiveRainConnector(conn);
                     }}
+                    chain={polygon}
                 />
             ),
         },
@@ -130,6 +128,7 @@ function Wallets() {
                     setActiveConnector={(conn: Connector) => {
                         setActiveRainConnector(conn);
                     }}
+                    chain={arbitrum}
                 />
             ),
         },
@@ -145,6 +144,7 @@ function Wallets() {
                     setActiveConnector={(conn: Connector) => {
                         setActiveRainConnector(conn);
                     }}
+                    chain={optimism}
                 />
             ),
         },

@@ -5,7 +5,7 @@ import React, { JSX, useRef, useState } from "react";
 import { ListBox } from "primereact/listbox";
 import { Item } from "./RainbowWalletList.styled";
 import { coinbaseWallet, metaMaskWallet, phantomWallet, walletConnectWallet } from "@rainbow-me/rainbowkit/wallets";
-import { Connector } from "wagmi";
+import { Chain, Connector } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { connectorsForWallets } from "@rainbow-me/rainbowkit";
 import { Toast } from "primereact/toast";
@@ -21,13 +21,15 @@ interface IWallet {
 function RainbowWalletList(props: {
     connect: (account: IAccount) => void;
     setActiveConnector: (conn: Connector) => void;
+    chain: Chain;
 }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<IWallet>();
     const toast = useRef<Toast>(null);
     let address: `0x${string}` | undefined;
-    const chains = [mainnet];
     const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID;
-
+    if (!props.chain) {
+        props.chain = mainnet;
+    }
     const show = () => {
         toast.current?.show({
             severity: "info",
@@ -45,10 +47,10 @@ function RainbowWalletList(props: {
         {
             groupName: "My Wallets",
             wallets: [
-                metaMaskWallet({ projectId, chains }),
-                coinbaseWallet({ appName: "My RainbowKit App", chains }),
-                phantomWallet({ chains }),
-                walletConnectWallet({ chains, projectId }),
+                metaMaskWallet({ projectId, chains: [props.chain] }),
+                coinbaseWallet({ appName: "My RainbowKit App", chains: [props.chain] }),
+                phantomWallet({ chains: [props.chain] }),
+                walletConnectWallet({ chains: [props.chain], projectId }),
             ],
         },
     ]);
