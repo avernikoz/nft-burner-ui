@@ -44,7 +44,7 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
                 walletIcon: wallet.adapter?.icon,
             });
         }
-    }, [wallet.connected, balance, retry]);
+    }, [wallet.connected, balance, retry, wallet.account?.address, wallet.adapter?.icon, loading, error, props]);
 
     async function connect(chosenWallet: IWallet) {
         try {

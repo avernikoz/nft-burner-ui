@@ -22,7 +22,7 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                 props.connect({ id: publicKey.toString(), balance: balanceInSUI, walletIcon: icon });
             });
         }
-    }, [connected]);
+    }, [connected, connection, props, publicKey, wallet?.adapter.icon]);
 
     const itemTemplate = (item: Wallet) => {
         return (
