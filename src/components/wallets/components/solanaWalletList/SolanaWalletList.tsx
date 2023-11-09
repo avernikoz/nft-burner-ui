@@ -1,15 +1,19 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ListBox } from "primereact/listbox";
-import { useWallet, Wallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet, Wallet } from "@solana/wallet-adapter-react";
 import IconTemplate from "../../../IconTemplate/IconTemplate";
 import { Item } from "../rainbowWalletList/RainbowWalletList.styled";
 import { Toast } from "primereact/toast";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
+import { IAccount } from "../../models";
+import { ethers } from "ethers";
+import { PublicKey } from "@solana/web3.js";
 
-function SolanaWalletList(): JSX.Element {
+function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<Wallet | null>(null);
-    const { wallets, select } = useWallet();
+    const { wallets, connected, select, publicKey, wallet } = useWallet();
     const toast = useRef<Toast>(null);
+    const { connection } = useConnection();
 
     const itemTemplate = (item: Wallet) => {
         return (
@@ -19,6 +23,20 @@ function SolanaWalletList(): JSX.Element {
             </Item>
         );
     };
+
+    useEffect(() => {
+        console.log(connected, publicKey);
+        if (connected && publicKey) {
+            connection.getBalance(new PublicKey(publicKey)).then((balance) => {
+                const balanceInSUI = ethers.formatUnits(balance, 9).substring(0, 5);
+                props.connect({
+                    id: publicKey?.toString(),
+                    balance: balanceInSUI + " SOL",
+                    walletIcon: wallet?.adapter.icon,
+                });
+            });
+        }
+    }, [connected, connection, props, publicKey, wallet?.adapter.icon]);
 
     const showError = (message: string) => {
         toast.current?.show({

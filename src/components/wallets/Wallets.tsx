@@ -56,10 +56,14 @@ function Wallets() {
             await suietWallet.disconnect();
         }
         if (solanaWallet.connected) {
+            solanaWallet.publicKey = null;
+            solanaWallet.connected = false;
             solanaWallet.disconnect().catch((error) => {
                 console.error("Failed to disconnect from Solana Wallet:", error);
             });
         }
+        console.log(solanaWallet);
+
         setActiveRainConnector(null);
         setAccount(null);
     }, [suietWallet, solanaWallet, setAccount]);
@@ -204,7 +208,7 @@ function Wallets() {
                         setActiveIndex(5);
                     }
                 },
-                list: <SolanaWalletList />,
+                list: <SolanaWalletList connect={connect} />,
             },
         ],
         [activeIndex, connect, disconnect, switchChain],
@@ -249,7 +253,9 @@ function Wallets() {
     }, [activeIndex, tabItems, items]);
 
     useEffect(() => {
+        console.log(solanaWallet.publicKey, solanaWallet.connected);
         if (solanaWallet.publicKey && account !== null) {
+            console.log("hello");
             solanaConnection.connection.getBalance(new PublicKey(solanaWallet.publicKey)).then((balance) => {
                 const balanceInSUI = ethers.formatUnits(balance, 9).substring(0, 5);
                 connect({
@@ -259,7 +265,8 @@ function Wallets() {
                 });
             });
         }
-    }, [account, account?.walletIcon, connect, solanaConnection.connection, solanaWallet.publicKey]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [solanaWallet.publicKey]);
 
     const accountChainListener = useCallback(
         (data: ConnectorData) => {
