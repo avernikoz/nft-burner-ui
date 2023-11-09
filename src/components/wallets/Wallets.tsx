@@ -253,9 +253,7 @@ function Wallets() {
     }, [activeIndex, tabItems, items]);
 
     useEffect(() => {
-        console.log(solanaWallet.publicKey, solanaWallet.connected);
         if (solanaWallet.publicKey && account !== null) {
-            console.log("hello");
             solanaConnection.connection.getBalance(new PublicKey(solanaWallet.publicKey)).then((balance) => {
                 const balanceInSUI = ethers.formatUnits(balance, 9).substring(0, 5);
                 connect({
