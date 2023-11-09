@@ -9,7 +9,7 @@ import { Toast } from "primereact/toast";
 import { ButtonContainer, ProfileLabel, StyledDialog } from "./Wallets.styled";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
-import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
+import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
 import { ConnectorData, disconnect as wagmiDisconnect, fetchBalance } from "@wagmi/core";
 
@@ -27,7 +27,7 @@ import { IAccount, IMenuConnectionItem } from "./models";
 import { arbitrum, mainnet, optimism, polygon } from "wagmi/chains";
 import DialogWalletList from "./components/dialogWalletList/DialogWalletList";
 import { ethers } from "ethers";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 
 function Wallets() {
     const [visible, setVisible] = useState(false);
@@ -37,6 +37,7 @@ function Wallets() {
     const profileMenu = useRef<Menu>(null);
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
+    const solanaConnection = useConnection();
     const wagmiAccount = useWagmiAccount();
     const toast = useRef<Toast>(null);
 
@@ -55,8 +56,11 @@ function Wallets() {
             await suietWallet.disconnect();
         }
         if (solanaWallet.connected) {
-            await solanaWallet.disconnect();
+            solanaWallet.disconnect().catch((error) => {
+                console.error("Failed to disconnect from Solana Wallet:", error);
+            });
         }
+        setActiveRainConnector(null);
         setAccount(null);
     }, [suietWallet, solanaWallet, setAccount]);
 
@@ -87,7 +91,7 @@ function Wallets() {
 
                         connect({
                             id: address,
-                            balance: balance.formatted.substring(0, 5) + balance.symbol,
+                            balance: balance.formatted.substring(0, 5) + " " + balance.symbol,
                         });
                     } else {
                         disconnect();
@@ -245,9 +249,8 @@ function Wallets() {
     }, [activeIndex, tabItems, items]);
 
     useEffect(() => {
-        if (solanaWallet.publicKey) {
-            const connection = new Connection("https://solana-mainnet.rpc.extrnode.com");
-            connection.getBalance(new PublicKey(solanaWallet.publicKey)).then((balance) => {
+        if (solanaWallet.publicKey && account !== null) {
+            solanaConnection.connection.getBalance(new PublicKey(solanaWallet.publicKey)).then((balance) => {
                 const balanceInSUI = ethers.formatUnits(balance, 9).substring(0, 5);
                 connect({
                     id: solanaWallet.publicKey?.toString(),
@@ -256,7 +259,7 @@ function Wallets() {
                 });
             });
         }
-    }, [account?.walletIcon, connect, solanaWallet.publicKey]);
+    }, [account, account?.walletIcon, connect, solanaConnection.connection, solanaWallet.publicKey]);
 
     const accountChainListener = useCallback(
         (data: ConnectorData) => {
@@ -266,7 +269,7 @@ function Wallets() {
                 }).then((balance) => {
                     connect({
                         id: data.account,
-                        balance: balance.formatted.substring(0, 5) + balance.symbol,
+                        balance: balance.formatted.substring(0, 5) + " " + balance.symbol,
                         walletIcon: account?.walletIcon,
                     });
                 });

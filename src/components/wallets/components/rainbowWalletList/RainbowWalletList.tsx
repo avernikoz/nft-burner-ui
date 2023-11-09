@@ -89,7 +89,7 @@ function RainbowWalletList(props: {
             });
             props.connect({
                 id: address,
-                balance: balance.formatted.substring(0, 5) + balance.symbol,
+                balance: balance.formatted.substring(0, 5) + " " + balance.symbol,
                 walletIcon: selectedOption?.logo,
             });
             props.setActiveConnector(wallet.wallet);
