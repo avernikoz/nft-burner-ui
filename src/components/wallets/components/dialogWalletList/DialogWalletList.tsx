@@ -1,16 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { TabMenu } from "primereact/tabmenu";
 
-import { IMenuConnectionItem } from "../../Wallets";
+import { IMenuConnectionItem } from "../../models";
 
-function DialogWalletList(props: { tabs: IMenuConnectionItem[] }) {
-    const [tabs, setTabs] = useState<IMenuConnectionItem[]>(props.tabs);
-    const [activeTabIndex, setTabActiveIndex] = useState(0);
-    console.log(props.tabs);
-
-    useEffect(() => {
-        setTabs(props.tabs);
-    }, [props]);
+function DialogWalletList(props: { tabs: IMenuConnectionItem[]; activeTab: number }) {
+    const [activeTabIndex, setTabActiveIndex] = useState<number>(props.activeTab);
+    const { tabs } = props;
 
     return (
         <>

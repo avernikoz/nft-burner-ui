@@ -38,6 +38,7 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
         }
         if (wallet.connected && !loading && error == null) {
             const balanceInSUI = ethers.formatUnits(balance, 9);
+            console.log(wallet.account?.address);
             props.connect({
                 id: wallet.account?.address,
                 balance: balanceInSUI + " SUI",

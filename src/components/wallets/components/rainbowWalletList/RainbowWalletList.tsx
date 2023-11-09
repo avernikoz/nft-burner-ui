@@ -87,7 +87,6 @@ function RainbowWalletList(props: {
                 address,
                 chainId: props.chain,
             });
-            console.debug("[connect] balance: ", balance);
             props.connect({
                 id: address,
                 balance: balance.formatted + balance.symbol,

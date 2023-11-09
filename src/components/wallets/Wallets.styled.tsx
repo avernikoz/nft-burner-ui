@@ -9,15 +9,13 @@ export const StyledDialog = styled(Dialog)`
 
 export const ButtonContainer = styled.div`
     display: flex;
-    justify-content: center;
-    align-items: center;
 
     .p-panelmenu .p-panelmenu-panel {
         margin-bottom: 0;
     }
 
     button {
-        margin: 0 0.5rem;
+        margin: 0.8rem 0.5rem;
     }
 `;
 
@@ -33,6 +31,7 @@ export const ProfileLabel = styled.div`
     color: #ffffff;
     width: 200px;
     margin-left: 0.5rem;
+    height: min-content;
 
     .icon {
         margin-right: 8px;
