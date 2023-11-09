@@ -29,7 +29,7 @@ module.exports = {
     },
     rules: {
         "import/named": "off",
-        "no-console": ["error", { allow: ["debug", "warn"] }],
+        // "no-console": ["error", { allow: ["debug", "warn"] }],
         indent: "off",
         "linebreak-style": "off",
         "prettier/prettier": [
