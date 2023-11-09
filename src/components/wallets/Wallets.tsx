@@ -11,7 +11,7 @@ import { ButtonContainer, ProfileLabel, StyledDialog } from "./Wallets.styled";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
-import { fetchBalance, disconnect as wagmiDisconnect } from "@wagmi/core";
+import { ConnectorData, fetchBalance, disconnect as wagmiDisconnect } from "@wagmi/core";
 
 import { ReactComponent as SuietLogo } from "./assets/suietLogo.svg";
 import { ReactComponent as SolanaLogo } from "./assets/solana.svg";
@@ -267,35 +267,44 @@ function Wallets() {
         }
     }, [account?.walletIcon, connect, solanaWallet.publicKey]);
 
+    const accountChainListener = useCallback(
+        (data: ConnectorData) => {
+            if (data.account) {
+                fetchBalance({
+                    address: data.account,
+                }).then((balance) => {
+                    connect({
+                        id: data.account,
+                        balance: balance.formatted + balance.symbol,
+                        walletIcon: account?.walletIcon,
+                    });
+                });
+            }
+            if (data.chain) {
+                if (data.chain.unsupported) {
+                    toast.current?.show({ severity: "error", summary: "Error", detail: "Chain is unsuported" });
+                    return;
+                }
+                switchChain(
+                    items.findIndex((a) => a.chainId === data.chain?.id),
+                    data.chain.id,
+                );
+            }
+        },
+        [account?.walletIcon, connect, items, switchChain],
+    );
+
     useEffect(() => {
         console.log(activeRainConnector);
         if (activeRainConnector) {
-            activeRainConnector.on("change", (data) => {
-                if (data.account) {
-                    fetchBalance({
-                        address: data.account,
-                    }).then((balance) => {
-                        connect({
-                            id: data.account,
-                            balance: balance.formatted + balance.symbol,
-                            walletIcon: account?.walletIcon,
-                        });
-                    });
-                }
-                if (data.chain) {
-                    if (data.chain.unsupported) {
-                        toast.current?.show({ severity: "error", summary: "Error", detail: "Chain is unsuported" });
-                        return;
-                    }
-                    switchChain(
-                        items.findIndex((a) => a.chainId === data.chain?.id),
-                        data.chain.id,
-                    );
-                }
-            });
+            activeRainConnector.on("change", accountChainListener);
+            return () => {
+                activeRainConnector?.off("change", accountChainListener);
+            };
         }
     }, [
         account?.walletIcon,
+        accountChainListener,
         activeRainConnector,
         connect,
         items,
