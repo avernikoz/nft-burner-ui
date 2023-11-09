@@ -22,7 +22,7 @@ import { ReactComponent as PolygonLogo } from "./assets/polygonLogo.svg";
 import RainbowWalletList from "./components/rainbowWalletList/RainbowWalletList";
 import SuietWalletLIst from "./components/suietWalletList/SuietWalletLIst";
 import SolanaWalletList from "./components/solanaWalletList/SolanaWalletList";
-import SVGTemplate from "../SVGTemplate/SVGTemplate";
+import IconTemplate from "../IconTemplate/IconTemplate";
 import { IAccount } from "./models";
 import { arbitrum, optimism, polygon, mainnet } from "wagmi/chains";
 import DialogWalletList from "./components/dialogWalletList/DialogWalletList";
@@ -247,7 +247,7 @@ function Wallets() {
                         >
                             <div className="icon">
                                 {typeof account.walletIcon === "string" ? (
-                                    <SVGTemplate svgString={account.walletIcon} />
+                                    <IconTemplate svgString={account.walletIcon} />
                                 ) : (
                                     account.walletIcon
                                 )}

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ListBox } from "primereact/listbox";
 import { useConnection, useWallet, Wallet } from "@solana/wallet-adapter-react";
-import SVGTemplate from "../../../SVGTemplate/SVGTemplate";
+import IconTemplate from "../../../IconTemplate/IconTemplate";
 import { Item } from "../rainbowWalletList/RainbowWalletList.styled";
 import { Toast } from "primereact/toast";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
@@ -27,7 +27,7 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
     const itemTemplate = (item: Wallet) => {
         return (
             <Item className="flex align-items-center">
-                <SVGTemplate svgString={item.adapter.icon} />
+                <IconTemplate svgString={item.adapter.icon} />
                 <div>{item.adapter.name}</div>
             </Item>
         );
