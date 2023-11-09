@@ -1,9 +1,8 @@
 import { Button } from "primereact/button";
-import React, { useRef, useState } from "react";
+import React, { ReactNode, useRef, useState } from "react";
 // eslint-disable-next-line import/no-unresolved
 import { MenuItem } from "primereact/menuitem";
 import { PanelMenu } from "primereact/panelmenu";
-import { TabMenu } from "primereact/tabmenu";
 import { Menu } from "primereact/menu";
 import { Toast } from "primereact/toast";
 // eslint-disable-next-line import/no-unresolved
@@ -26,6 +25,11 @@ import SolanaWalletList from "./components/solanaWalletList/SolanaWalletList";
 import SVGTemplate from "../SVGTemplate/SVGTemplate";
 import { IAccount } from "./models";
 import { arbitrum, optimism, polygon, mainnet } from "wagmi/chains";
+import DialogWalletList from "./components/dialogWalletList/DialogWalletList";
+
+export interface IMenuConnectionItem extends MenuItem {
+    list: ReactNode;
+}
 
 function Wallets() {
     const [visible, setVisible] = useState(false);
@@ -95,7 +99,7 @@ function Wallets() {
         }
     }
 
-    const items = [
+    const items: IMenuConnectionItem[] = [
         {
             label: "Ethereum",
             icon: <EthereumLogo width={30} height={30} style={{ marginRight: "5px" }} />,
@@ -262,13 +266,7 @@ function Wallets() {
                 style={{ width: "30vw", height: "500px" }}
                 onHide={() => setVisible(false)}
             >
-                <TabMenu
-                    model={items}
-                    activeIndex={activeIndex}
-                    style={{ width: "90%", margin: "0 auto" }}
-                    onTabChange={(e) => setActiveIndex(e.index)}
-                />
-                <div>{items[activeIndex].list}</div>
+                <DialogWalletList tabs={[items[activeIndex], items[4], items[5]]}></DialogWalletList>
             </StyledDialog>
         </div>
     );
