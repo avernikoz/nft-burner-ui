@@ -20,7 +20,7 @@ export const ShaderSourcePresentPassPS = /* glsl */ `#version 300 es
 
 	out vec4 OutColor;
 
-	uniform sampler2D SourceTexture;
+	uniform highp sampler2D SourceTexture;
 	uniform float MipLevel;
 
 	in vec2 vsOutTexCoords;
@@ -38,7 +38,7 @@ export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 
 	out vec4 OutColor;
 
-	uniform sampler2D SourceTexture;
+	uniform highp sampler2D SourceTexture;
 
 	uniform float MipLevel;
 	uniform vec2 TextureSize;
@@ -69,7 +69,7 @@ export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 
 	out vec4 OutColor;
 
-	uniform sampler2D SourceTexture;
+	uniform highp sampler2D SourceTexture;
 
 	uniform float MipLevel;
 	uniform vec2 TextureSize;
@@ -100,8 +100,8 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 
 	out vec4 OutColor;
 
-	uniform sampler2D FlameTexture;
-	uniform sampler2D FirePlaneTexture;
+	uniform highp sampler2D FlameTexture;
+	uniform highp sampler2D FirePlaneTexture;
 	uniform float MipLevel;
 
 	in vec2 vsOutTexCoords;
@@ -142,10 +142,10 @@ export function GetShaderSourceFlamePostProcessPS() {
 
 	uniform float Time;
 
-	uniform sampler2D FlameTexture;
-	uniform sampler2D NoiseTexture;
-	uniform sampler2D FlameNoiseTexture;
-	uniform sampler2D FlameNoiseTexture2;
+	uniform highp sampler2D FlameTexture;
+	uniform highp sampler2D NoiseTexture;
+	uniform highp sampler2D FlameNoiseTexture;
+	uniform highp sampler2D FlameNoiseTexture2;
 
 	in vec2 vsOutTexCoords;
 
@@ -222,7 +222,7 @@ export function GetShaderSourceFlamePostProcessPS() {
 		flameNoiseUV *= kViewSize;
 
 		//Translate
-		const float flameSpeed = 0.75f; //TODO: USE VARYING SPEED [0.25,0.75]
+		const float flameSpeed = 0.85f; //TODO: USE VARYING SPEED [0.25,0.75]
 		flameNoiseUV.y -= Time * flameSpeed;
 		flameNoiseUV.x += Time * 0.05f;
 
@@ -270,12 +270,24 @@ export function GetShaderSourceCombinerPassPS() {
 	
 		uniform float Time;
 	
-		uniform sampler2D FlameTexture;
-		uniform sampler2D FirePlaneTexture;
-		uniform sampler2D BloomTexture;
-		uniform sampler2D NoiseTexture;
+		uniform highp sampler2D FlameTexture;
+		uniform highp sampler2D FirePlaneTexture;
+		uniform highp sampler2D BloomTexture;
+		uniform highp sampler2D SmokeTexture;
+		uniform highp sampler2D NoiseTexture;
+		uniform highp sampler2D SpotlightTexture;
+		uniform highp sampler2D SmokeNoiseTexture;
+		uniform highp sampler2D PointLightsTexture;
+		uniform highp sampler2D LogoImageTexture;
+		uniform highp sampler2D LensTexture;
 	
 		in vec2 vsOutTexCoords;
+
+		float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+		{
+			///Translate to origin, scale by ranges ratio, translate to new position
+			return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+		}
 	
 		void main()
 		{
@@ -289,7 +301,7 @@ export function GetShaderSourceCombinerPassPS() {
         /* glsl */ `));
 
 			vec2 texCoords = vsOutTexCoords;
-			vec4 flame = textureLod(FlameTexture, texCoords.xy, 0.f);
+			vec3 flame = textureLod(FlameTexture, texCoords.xy, 0.f).rgb;
 			flame.rgb *= 1.1f;
 	
 		#if 1//heat distortion
@@ -312,30 +324,161 @@ export function GetShaderSourceCombinerPassPS() {
 			{
 				distortionNoise.r = mix(distortionNoise.g, distortionNoise.r, t - 1.f);
 			}
-			vec4 heat = textureLod(FlameTexture, (texCoords - vec2(0.f, (0.2f * kSizeScale) / kViewSize.y )), 0.f);
+			vec3 heat = textureLod(FlameTexture, (texCoords - vec2(0.f, (0.25f * kSizeScale) / kViewSize.y )), 0.f).rgb;
 			distortionNoise.x *= 0.0025;
 			distortionNoise.y *= 0.001;
 			//distortionNoise *= 0.5f;
-			distortionNoise *= 5.f;
+			distortionNoise *= 10.f;
 			distortionNoise *= clamp(dot(heat.rgb, vec3(0.333f)), 0.f, 1.f);
 			//OutColor = vec4(distortionNoise.rg, 0.f, 1.f); return;
 			distortionUV.x += distortionNoise.r;
 			distortionUV.y += distortionNoise.g;
-			vec4 firePlane = textureLod(FirePlaneTexture, distortionUV.xy, 0.f);
+			vec3 firePlane = textureLod(FirePlaneTexture, distortionUV.xy, 0.f).rgb;
 		#else
 			vec4 firePlane = textureLod(FirePlaneTexture, texCoords.xy, 0.f);
-		#endif
-	
+			#endif
 			
-			vec4 bloom = textureLod(BloomTexture, texCoords.xy, 0.f);
-			//bloom.rgb *= 0.75f;
-			vec3 final = max(firePlane.rgb, bloom.rgb);
+			vec3 bloom = textureLod(BloomTexture, texCoords.xy, 0.f).rgb;
+
+			float pointLights = textureLod(PointLightsTexture, texCoords.xy, 0.f).r; 
+
+			float light = textureLod(SpotlightTexture, vec2(texCoords.x, 1.f - texCoords.y), 0.f).r;
+
+			#if 1
+			float time = mod(Time, 12.4f);
+			if(time < 1.15f)
+			{
+				vec2 lightFlickerUV;
+				lightFlickerUV.y = Time * 0.001f;
+				float flickScale = 0.02;
+				lightFlickerUV.x = Time * flickScale;
+				float flickerNoise = textureLod(NoiseTexture, lightFlickerUV.xy, 0.f).r;
+				flickerNoise = MapToRange(flickerNoise, 0.2, 0.8, 0.0, 1.0);
+				flickerNoise = min(1.0, flickerNoise + 0.4f);
+				if(flickerNoise < 0.75)
+				{
+					flickerNoise *= 0.5f;
+				}
+				light *= clamp(abs(flickerNoise) , 0.0, 1.0);
+			}
+			#endif
+			
+			vec4 smoke = textureLod(SmokeTexture, texCoords.xy, 0.f);
+
+			vec2 noiseUV = texCoords;
+			noiseUV *= (2.0 - kSizeScale);
+			noiseUV *= kViewSize;
+			noiseUV.x -= Time * 0.0043f;
+			noiseUV.y -= Time * 0.0093f;
+			vec4 smokeNoise = textureLod(SmokeNoiseTexture, noiseUV, 0.f);
+			float smokeNoiseChannel = 1.f;
+			{
+				float tx = mod(Time, 9.f) / 3.f;
+				if(tx < 1.f)
+				{
+					smokeNoise.r = mix(smokeNoise.r, smokeNoise.g, tx);
+				}
+				else if(tx < 2.f)
+				{
+					smokeNoise.r = mix(smokeNoise.g, smokeNoise.b, smoothstep(0.f, 1.f, tx - 1.f));
+				}
+				else
+				{
+					smokeNoise.r = mix(smokeNoise.b, smokeNoise.r, smoothstep(0.f, 1.f, tx - 2.f));
+				}
+			}
+
+			//smoke = max(smoke, vec4(vec3(smokeNoise.r), 1.f));
+			smokeNoise.r *= min(1.f, texCoords.y + 0.3f);
+			smoke.rgba = smoke.rgba * 1.f + vec4(vec3(smokeNoise.r) * 0.15, smokeNoise.r * 0.15) * clamp(1.f - smoke.a, 0.0, 1.f);
+
+			smoke.rgb *= 0.75f;
+			smoke.rgb *= 0.25f;
+
+			const float BloomStrength = 5.0f;
+			const vec2 SmokeBloomColorClampMinMax = vec2(0.15, 1.f);
+			const vec2 SmokeBloomAlphaClampMinMax = vec2(0.f, 1.f);
+			vec3 smokeLightFromBloom = bloom.rgb
+			* BloomStrength
+			* clamp(1.f + clamp(smoke.r, SmokeBloomColorClampMinMax.x, SmokeBloomColorClampMinMax.y) - clamp(smoke.a, SmokeBloomAlphaClampMinMax.x, SmokeBloomAlphaClampMinMax.y), 0.f, 1.f) * clamp(smoke.a, 0.f, 1.f)
+			;
+
+			const float SmokeSpotlightStrength = 1.0f;
+			float smokeLightFromSpotlight = min(1.f, light + 0.05)
+			* SmokeSpotlightStrength
+			* clamp(1.f + clamp(smoke.r, SmokeBloomColorClampMinMax.x, SmokeBloomColorClampMinMax.y) - clamp(smoke.a, SmokeBloomAlphaClampMinMax.x, SmokeBloomAlphaClampMinMax.y), 0.f, 1.f) * clamp(smoke.a, 0.f, 1.f)
+			;
+
+
+			float smokeLightFromPointLights = pointLights * 3.5f
+			* clamp(1.f + clamp(smoke.r, SmokeBloomColorClampMinMax.x, SmokeBloomColorClampMinMax.y) - clamp(smoke.a, SmokeBloomAlphaClampMinMax.x, SmokeBloomAlphaClampMinMax.y), 0.f, 1.f) * clamp(smoke.a, 0.f, 1.f)
+			;
+
+			smoke.rgb += max(smokeLightFromBloom, smokeLightFromSpotlight);
+			smoke.rgb += smokeLightFromPointLights * vec3(1.f, 0.4f, 0.1f);
+
+
+			smoke.a *= 0.85f;
+			smoke.rgb *= 0.85f;
+
+			float smokeScale = 1.f;
+			//smokeScale *= (texCoords.y * kViewSize.y * (kSizeScale));
+			smokeScale *= clamp(length((texCoords.xy * kViewSize.xy * (2.0 - kSizeScale)) - vec2(0.5) * kViewSize.xy * (2.0 - kSizeScale)), 0.25f, 1.f);
+			smokeScale *= 2.0f;
+			//smokeScale = min(1.5f, smokeScale);
+
+			smoke.a *= smokeScale;
+			//smoke.rgb *= clamp(smokeScale, 0.5f, 1.f);
+
+			//lit plane with spotlight
+			if(firePlane.r < 1.0 /* && dot(firePlane.rgb, vec3(0.333)) < 1.f */)
+			{
+				const float ambientLight = 0.0f;
+				const float lightScale = 5.0f;
+				firePlane.rgb *= min(1.f, light * lightScale + ambientLight);
+			}
+
+			firePlane.rgb = smoke.rgb * 1.f + firePlane.rgb * clamp(1.f - smoke.a, 0.0, 1.f);
+
+			highp vec3 final = firePlane.rgb;
+			const float bloomStrengthPlane = 0.75f;
+			final = max(firePlane.rgb, bloom.rgb * bloomStrengthPlane);
 			final = max(final, flame.rgb);
 
+			vec2 lensUV = texCoords.xy;
+			if(kViewSize.y > 1.f)
+			{
+				const float xScale = 0.75f; //TODO: Startup random
+				lensUV = vec2(-texCoords.y, texCoords.x) * vec2(1.0, xScale);
+			}
+			vec4 lensDirt = textureLod(LensTexture, lensUV, 0.f);
+			final.rgb += (bloom.rgb + pointLights) * lensDirt.rgb * 2.0f;
+			//final.rgb = lensDirt.rgb;
 			//final = bloom.rgb;
-	
+
 			const float exposure = 1.f;
 			final.rgb *= exposure;
+
+			const float logoStart = 0.15f;
+			if(texCoords.x <= logoStart && texCoords.y <= logoStart)
+			{
+				vec2 logoUV;
+				logoUV.x = MapToRange(texCoords.x, logoStart, 0.0, 0.f, 1.f);
+				logoUV.x = 1.f - logoUV.x;	
+				logoUV.y = MapToRange(texCoords.y, logoStart, 0.00, 0.f, 1.f);
+
+				logoUV *= kViewSize;
+				if(logoUV.x >= 0.f && logoUV.x <= 1.f && logoUV.y >= 0.f && logoUV.y <= 1.f)
+				{
+					//logoUV.y -= 0.25f;
+					vec4 logo = textureLod(LogoImageTexture, logoUV.xy, 0.f);
+					final.rgb = logo.rgb * logo.a + final.rgb * clamp(1.f - logo.a, 0.0, 1.f);
+				}
+				
+			}
+
+			//final.rgb = pow(final.rgb, vec3(1.f/2.2f));
+
 			OutColor = vec4(final.rgb, 1);
 		}`
     );

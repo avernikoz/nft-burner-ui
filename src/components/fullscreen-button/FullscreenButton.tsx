@@ -1,16 +1,17 @@
 import { StyledButton } from "./FullscreenButton.styled";
+import { useState } from "react";
 
 function FullScreenButton() {
-    let toggle: boolean = false;
+    const [isFullScreen, setIsFullScreen] = useState(false);
+
     const handleFullscreen = () => {
         const element = document.documentElement;
-        if (!toggle) {
-            toggle = true;
+        if (!isFullScreen) {
             element.requestFullscreen();
         } else {
-            toggle = false;
             document.exitFullscreen();
         }
+        setIsFullScreen(!isFullScreen);
     };
 
     return <StyledButton onClick={handleFullscreen} icon="pi pi-desktop" rounded severity="secondary"></StyledButton>;
