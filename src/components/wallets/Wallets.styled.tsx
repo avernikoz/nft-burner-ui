@@ -32,6 +32,7 @@ export const ProfileLabel = styled.div`
     width: 200px;
     margin-left: 0.5rem;
     height: min-content;
+    margin-top: 0.2rem;
 
     .icon {
         margin-right: 8px;

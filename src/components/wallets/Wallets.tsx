@@ -11,7 +11,7 @@ import { ButtonContainer, ProfileLabel, StyledDialog } from "./Wallets.styled";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
-import { ConnectorData, fetchBalance, disconnect as wagmiDisconnect } from "@wagmi/core";
+import { ConnectorData, disconnect as wagmiDisconnect, fetchBalance } from "@wagmi/core";
 
 import { ReactComponent as SuietLogo } from "./assets/suietLogo.svg";
 import { ReactComponent as SolanaLogo } from "./assets/solana.svg";
@@ -24,7 +24,7 @@ import SuietWalletLIst from "./components/suietWalletList/SuietWalletLIst";
 import SolanaWalletList from "./components/solanaWalletList/SolanaWalletList";
 import IconTemplate from "../IconTemplate/IconTemplate";
 import { IAccount, IMenuConnectionItem } from "./models";
-import { arbitrum, optimism, polygon, mainnet } from "wagmi/chains";
+import { arbitrum, mainnet, optimism, polygon } from "wagmi/chains";
 import DialogWalletList from "./components/dialogWalletList/DialogWalletList";
 import { ethers } from "ethers";
 import { Connection, PublicKey } from "@solana/web3.js";
@@ -87,7 +87,7 @@ function Wallets() {
 
                         connect({
                             id: address,
-                            balance: balance.formatted + balance.symbol,
+                            balance: balance.formatted.substring(0, 5) + balance.symbol,
                         });
                     } else {
                         disconnect();
@@ -248,10 +248,10 @@ function Wallets() {
         if (solanaWallet.publicKey) {
             const connection = new Connection("https://solana-mainnet.rpc.extrnode.com");
             connection.getBalance(new PublicKey(solanaWallet.publicKey)).then((balance) => {
-                const balanceInSUI = ethers.formatUnits(balance, 9);
+                const balanceInSUI = ethers.formatUnits(balance, 9).substring(0, 5);
                 connect({
                     id: solanaWallet.publicKey?.toString(),
-                    balance: balanceInSUI + " SUI",
+                    balance: balanceInSUI + " SOL",
                     walletIcon: account?.walletIcon,
                 });
             });
@@ -266,7 +266,7 @@ function Wallets() {
                 }).then((balance) => {
                     connect({
                         id: data.account,
-                        balance: balance.formatted + balance.symbol,
+                        balance: balance.formatted.substring(0, 5) + balance.symbol,
                         walletIcon: account?.walletIcon,
                     });
                 });
@@ -276,8 +276,10 @@ function Wallets() {
                     toast.current?.show({ severity: "error", summary: "Error", detail: "Chain is unsuported" });
                     return;
                 }
+                const index = items.findIndex((a) => a.chainId === data.chain?.id)
+                localStorage.setItem("activeIndex", JSON.stringify(index));
                 switchChain(
-                    items.findIndex((a) => a.chainId === data.chain?.id),
+                    index,
                     data.chain.id,
                 );
             }
