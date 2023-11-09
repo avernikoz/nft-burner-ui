@@ -276,12 +276,9 @@ function Wallets() {
                     toast.current?.show({ severity: "error", summary: "Error", detail: "Chain is unsuported" });
                     return;
                 }
-                const index = items.findIndex((a) => a.chainId === data.chain?.id)
+                const index = items.findIndex((a) => a.chainId === data.chain?.id);
                 localStorage.setItem("activeIndex", JSON.stringify(index));
-                switchChain(
-                    index,
-                    data.chain.id,
-                );
+                switchChain(index, data.chain.id);
             }
         },
         [account?.walletIcon, connect, items, switchChain],
