@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 
 import "./App.css";
 import { SolanaWalletContext } from "../../context/SolanaWalletContext";
-// import { SuiWalletContext } from "../../context/SuiWalletContext";
 import { EVMWalletContext } from "../../context/EVMWalletContext";
 import { Footer } from "./app.styled";
 import FullScreenButton from "../../components/fullscreen-button/FullscreenButton";

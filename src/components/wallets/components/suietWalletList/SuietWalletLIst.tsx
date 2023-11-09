@@ -32,13 +32,11 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
             return;
         }
         if (wallet.connected && !loading && error == null && balance.toString() == "0" && retry < 5) {
-            console.log(balance.toString(), retry);
             setRetry(retry + 1);
             return;
         }
         if (wallet.connected && !loading && error == null) {
             const balanceInSUI = ethers.formatUnits(balance, 9);
-            console.log(wallet.account?.address);
             props.connect({
                 id: wallet.account?.address,
                 balance: balanceInSUI + " SUI",
@@ -60,7 +58,6 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
             await wallet.select(chosenWallet.name);
             setSelectedOption(chosenWallet);
         } catch (err) {
-            console.error("Failed to connect:", err);
             if (err instanceof Error) {
                 toast.current?.show({
                     severity: "error",
@@ -88,7 +85,6 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
                 value={selectedOption}
                 itemTemplate={itemTemplate}
                 onChange={async (e) => {
-                    console.log(e);
                     connect(e.value);
                 }}
                 listStyle={{ maxHeight: "310px" }}

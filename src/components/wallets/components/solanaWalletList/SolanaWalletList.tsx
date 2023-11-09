@@ -36,7 +36,6 @@ function SolanaWalletList(): JSX.Element {
                 itemTemplate={itemTemplate}
                 onChange={async (e) => {
                     try {
-                        console.log(e.value);
                         if (!e.value) {
                             return;
                         }
@@ -55,7 +54,6 @@ function SolanaWalletList(): JSX.Element {
                         await select(e.value.adapter.name);
                         setSelectedOption(e.value);
                     } catch (error) {
-                        console.error("Failed to connect:", error);
                         if (error instanceof Error) {
                             showError("Failed to connect: " + error.message);
                         } else {

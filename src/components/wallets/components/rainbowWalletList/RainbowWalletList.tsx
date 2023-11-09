@@ -95,7 +95,6 @@ function RainbowWalletList(props: {
             props.setActiveConnector(wallet.wallet);
             setSelectedOption(wallet);
         } catch (error) {
-            console.error("Failed to connect:", error);
             if (error instanceof Error) {
                 toast.current?.show({
                     severity: "error",

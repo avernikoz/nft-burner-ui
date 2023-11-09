@@ -42,7 +42,6 @@ function Wallets() {
 
     const connect = useCallback(
         (acc: IAccount) => {
-            console.log(acc);
             localStorage.setItem("activeIndex", JSON.stringify(activeIndex));
             setVisible(false);
             setAccount(acc);
@@ -63,7 +62,6 @@ function Wallets() {
 
     useEffect(() => {
         const active = localStorage.getItem("activeIndex");
-        console.log(active);
         if (active !== null) {
             setActiveIndex(+active);
         }
@@ -86,7 +84,6 @@ function Wallets() {
                             address,
                             chainId,
                         });
-                        console.log(balance, address);
 
                         connect({
                             id: address,
@@ -99,7 +96,6 @@ function Wallets() {
                 }
                 setActiveIndex(index); // fix
             } catch (error) {
-                console.error("Failed to connect:", error);
                 if (error instanceof Error) {
                     toast.current?.show({
                         severity: "error",
@@ -154,8 +150,6 @@ function Wallets() {
                 label: "Arbitrum",
                 icon: <ArbitrumLogo width={30} height={30} style={{ marginRight: "5px" }} />,
                 command: () => {
-                    console.log(activeIndex);
-
                     switchChain(2, arbitrum.id);
                 },
                 list: (
@@ -244,8 +238,6 @@ function Wallets() {
     ];
 
     useEffect(() => {
-        console.log(activeIndex);
-
         if (activeIndex < 4) {
             tabItems.current.shift();
             tabItems.current.unshift(items[activeIndex]);
@@ -256,7 +248,6 @@ function Wallets() {
         if (solanaWallet.publicKey) {
             const connection = new Connection("https://solana-mainnet.rpc.extrnode.com");
             connection.getBalance(new PublicKey(solanaWallet.publicKey)).then((balance) => {
-                console.log(balance);
                 const balanceInSUI = ethers.formatUnits(balance, 9);
                 connect({
                     id: solanaWallet.publicKey?.toString(),
@@ -295,7 +286,6 @@ function Wallets() {
     );
 
     useEffect(() => {
-        console.log(activeRainConnector);
         if (activeRainConnector) {
             activeRainConnector.on("change", accountChainListener);
             return () => {
