@@ -13,7 +13,7 @@ root.render(
     // <React.StrictMode>
 
     <PrimeReactProvider>
-        <App />,
+        <App />
     </PrimeReactProvider>,
     // </React.StrictMode>,
 );

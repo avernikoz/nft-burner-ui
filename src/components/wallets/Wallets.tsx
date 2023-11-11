@@ -27,7 +27,7 @@ import { IAccount, IMenuConnectionItem } from "./models";
 import { arbitrum, mainnet, optimism, polygon } from "wagmi/chains";
 import DialogWalletList from "./components/dialogWalletList/DialogWalletList";
 import { ethers } from "ethers";
-import { PublicKey } from "@solana/web3.js";
+import { AccountInfo, PublicKey } from "@solana/web3.js";
 
 function Wallets() {
     const [visible, setVisible] = useState(false);
@@ -253,13 +253,18 @@ function Wallets() {
     }, [activeIndex, tabItems, items]);
 
     useEffect(() => {
-        if (solanaWallet.publicKey && account !== null) {
-            solanaConnection.connection.getBalance(new PublicKey(solanaWallet.publicKey)).then((balance) => {
-                const balanceInSUI = ethers.formatUnits(balance, 9).substring(0, 5);
-                connect({
-                    id: solanaWallet.publicKey?.toString(),
-                    balance: balanceInSUI + " SOL",
-                    walletIcon: account?.walletIcon,
+        console.log(solanaWallet.publicKey?.toString(), solanaWallet.connected);
+        if (solanaWallet.publicKey && solanaWallet.connected) {
+            solanaConnection.connection.onAccountChange(solanaWallet.publicKey, (acc: AccountInfo<Buffer>) => {
+                console.log(acc);
+                solanaWallet.publicKey = acc.owner;
+                solanaConnection.connection.getBalance(acc.owner).then((balance) => {
+                    const balanceInSOL = ethers.formatUnits(balance, 9).substring(0, 5);
+                    connect({
+                        id: acc.owner.toString(),
+                        balance: balanceInSOL + " SOL",
+                        walletIcon: account?.walletIcon,
+                    });
                 });
             });
         }
