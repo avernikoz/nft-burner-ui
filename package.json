@@ -22,7 +22,8 @@
         "crypto-js": "4.2.0",
         "@babel/traverse": "7.23.2",
         "browserify-sign": "4.2.2",
-        "styled-components": "^5"
+        "styled-components": "^5",
+        "axios": "^1.6.0"
     },
     "dependencies": {
         "@avernikoz/nft-sdk": "1.0.0",
