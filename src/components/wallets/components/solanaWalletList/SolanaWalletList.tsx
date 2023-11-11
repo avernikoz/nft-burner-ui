@@ -28,10 +28,10 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
         console.log(connected, publicKey);
         if (connected && publicKey) {
             connection.getBalance(new PublicKey(publicKey)).then((balance) => {
-                const balanceInSUI = ethers.formatUnits(balance, 9).substring(0, 5);
+                const balanceInSOL = ethers.formatUnits(balance, 9).substring(0, 5);
                 props.connect({
                     id: publicKey?.toString(),
-                    balance: balanceInSUI + " SOL",
+                    balance: balanceInSOL + " SOL",
                     walletIcon: wallet?.adapter.icon,
                 });
             });
