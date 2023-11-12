@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Item } from "../rainbowWalletList/RainbowWalletList.styled";
 import { ListBox } from "primereact/listbox";
 import { useAccountBalance, useWallet } from "@suiet/wallet-kit";
 import { IWallet } from "@suiet/wallet-kit/dist/types/wallet";
 import { Toast } from "primereact/toast";
-import { IAccount } from "../../models";
+import { IAccount } from "../../types";
 import { ethers } from "ethers";
+import SuiItemTemplate from "./SuiItemTemplate";
 
 function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<IWallet | null>(null);
@@ -70,20 +70,13 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
         }
     }
 
-    const itemTemplate = (item: IWallet) => {
-        return (
-            <Item className="flex align-items-center" style={{ flexDirection: "row" }}>
-                <img src={item.iconUrl} width={30} height={30} alt={item.name} />
-                <div>{item.label}</div>
-            </Item>
-        );
-    };
+
     return (
         <>
             <Toast ref={toast} position="top-left" />
             <ListBox
                 value={selectedOption}
-                itemTemplate={itemTemplate}
+                itemTemplate={SuiItemTemplate}
                 onChange={async (e) => {
                     connect(e.value);
                 }}

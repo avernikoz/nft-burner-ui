@@ -1,4 +1,5 @@
 import { styled } from "styled-components";
+import {ListBox} from "primereact/listbox";
 
 export const Item = styled.div`
     display: flex;
@@ -7,4 +8,8 @@ export const Item = styled.div`
     div {
         margin: 0 1rem;
     }
+`;
+
+export const StyledListBox = styled(ListBox)`
+    max-height: 330px;
 `;

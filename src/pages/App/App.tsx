@@ -15,15 +15,12 @@ function App() {
     }, []);
 
     return (
+        <SolanaWalletContext>
+            <EVMWalletContext>
+                <SuiWalletContext>
         <div className="App">
             <div className="WalletConnectionHeader">
-                <SolanaWalletContext>
-                    <EVMWalletContext>
-                        <SuiWalletContext>
-                            <Wallets></Wallets>
-                        </SuiWalletContext>
-                    </EVMWalletContext>
-                </SolanaWalletContext>
+                            <Wallets/>
             </div>
             <div>
                 <canvas id="demo-canvas">
@@ -34,6 +31,10 @@ function App() {
                 <FullScreenButton />
             </Footer>
         </div>
+
+                </SuiWalletContext>
+            </EVMWalletContext>
+        </SolanaWalletContext>
     );
 }
 

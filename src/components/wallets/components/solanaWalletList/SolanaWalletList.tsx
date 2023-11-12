@@ -1,31 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ListBox } from "primereact/listbox";
 import { useConnection, useWallet, Wallet } from "@solana/wallet-adapter-react";
-import IconTemplate from "../../../IconTemplate/IconTemplate";
-import { Item } from "../rainbowWalletList/RainbowWalletList.styled";
 import { Toast } from "primereact/toast";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
-import { IAccount } from "../../models";
+import { IAccount } from "../../types";
 import { ethers } from "ethers";
 import { PublicKey } from "@solana/web3.js";
+import SolanaItemTemplate from "./SolanaItemTemplate";
 
 function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<Wallet | null>(null);
-    const { wallets, connected, select, publicKey, wallet } = useWallet();
+    const { wallets, connected, select, publicKey, wallet, disconnect } = useWallet();
     const toast = useRef<Toast>(null);
     const { connection } = useConnection();
 
-    const itemTemplate = (item: Wallet) => {
-        return (
-            <Item className="flex align-items-center">
-                <IconTemplate svgString={item.adapter.icon} />
-                <div>{item.adapter.name}</div>
-            </Item>
-        );
-    };
 
     useEffect(() => {
-        console.log(connected, publicKey);
         if (connected && publicKey) {
             connection.getBalance(new PublicKey(publicKey)).then((balance) => {
                 const balanceInSOL = ethers.formatUnits(balance, 9).substring(0, 5);
@@ -34,7 +24,12 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                     balance: balanceInSOL + " SOL",
                     walletIcon: wallet?.adapter.icon,
                 });
-            });
+            },
+                (err)=>{
+                    disconnect();
+                    showError("Trouble with balance: " + err.message);
+                }
+                );
         }
     }, [connected, connection, props, publicKey, wallet?.adapter.icon]);
 
@@ -51,7 +46,7 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
             <Toast ref={toast} position="top-left" />
             <ListBox
                 value={selectedOption}
-                itemTemplate={itemTemplate}
+                itemTemplate={SolanaItemTemplate}
                 onChange={async (e) => {
                     try {
                         if (!e.value) {

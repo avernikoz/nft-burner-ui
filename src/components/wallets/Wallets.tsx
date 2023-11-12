@@ -13,20 +13,12 @@ import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adap
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
 import { ConnectorData, disconnect as wagmiDisconnect, fetchBalance } from "@wagmi/core";
 
-import { ReactComponent as SuietLogo } from "./assets/suietLogo.svg";
-import { ReactComponent as SolanaLogo } from "./assets/solana.svg";
-import { ReactComponent as EthereumLogo } from "./assets/ethereum-logo.svg";
-import { ReactComponent as OptimismLogo } from "./assets/optimism-logo.svg";
-import { ReactComponent as ArbitrumLogo } from "./assets/arbitrum-logo.svg";
-import { ReactComponent as PolygonLogo } from "./assets/polygonLogo.svg";
-import RainbowWalletList from "./components/rainbowWalletList/RainbowWalletList";
-import SuietWalletLIst from "./components/suietWalletList/SuietWalletLIst";
-import SolanaWalletList from "./components/solanaWalletList/SolanaWalletList";
+
 import IconTemplate from "../IconTemplate/IconTemplate";
-import { IAccount, IMenuConnectionItem } from "./models";
-import { arbitrum, mainnet, optimism, polygon } from "wagmi/chains";
+import { IAccount, IMenuConnectionItem } from "./types";
 import DialogWalletList from "./components/dialogWalletList/DialogWalletList";
 import { ethers } from "ethers";
+import {createMenuItems} from "./variables";
 
 function Wallets() {
     const [visible, setVisible] = useState(false);
@@ -39,6 +31,7 @@ function Wallets() {
     const solanaConnection = useConnection();
     const wagmiAccount = useWagmiAccount();
     const toast = useRef<Toast>(null);
+    const lastEvmIndex= 3;
 
     const connect = useCallback(
         (acc: IAccount) => {
@@ -61,7 +54,6 @@ function Wallets() {
                 console.error("Failed to disconnect from Solana Wallet:", error);
             });
         }
-        console.log(solanaWallet);
 
         setActiveRainConnector(null);
         setAccount(null);
@@ -78,11 +70,11 @@ function Wallets() {
         async (index: number, chainId: number) => {
             try {
                 if (activeIndex !== index) {
-                    if (activeIndex < 4 && activeRainConnector !== null) {
-                        // if (!activeRainConnector.switchChain) {
-                        //     return;
-                        // }
-                        //await activeRainConnector?.switchChain(chainId);
+                    if (activeIndex <= lastEvmIndex && activeRainConnector !== null) {
+                        if (!activeRainConnector.switchChain) {
+                            return;
+                        }
+                        await activeRainConnector?.switchChain(chainId);
                         const address = await activeRainConnector?.getAccount();
                         if (!address) {
                             return;
@@ -118,98 +110,14 @@ function Wallets() {
     );
 
     const items = useMemo<IMenuConnectionItem[]>(
-        () => [
-            {
-                label: "Ethereum",
-                icon: <EthereumLogo width={30} height={30} style={{ marginRight: "5px" }} />,
-                command: () => {
-                    switchChain(0, mainnet.id);
-                },
-                list: (
-                    <RainbowWalletList
-                        connect={connect}
-                        setActiveConnector={(conn: Connector) => {
-                            setActiveRainConnector(conn);
-                        }}
-                        chain={mainnet.id}
-                    />
-                ),
-                chainId: mainnet.id,
-            },
-            {
-                label: "Polygon",
-                icon: <PolygonLogo width={30} height={30} style={{ marginRight: "5px" }} />,
-                command: () => {
-                    switchChain(1, polygon.id);
-                },
-                list: (
-                    <RainbowWalletList
-                        connect={connect}
-                        setActiveConnector={(conn: Connector) => {
-                            setActiveRainConnector(conn);
-                        }}
-                        chain={polygon.id}
-                    />
-                ),
-                chainId: polygon.id,
-            },
-            {
-                label: "Arbitrum",
-                icon: <ArbitrumLogo width={30} height={30} style={{ marginRight: "5px" }} />,
-                command: () => {
-                    switchChain(2, arbitrum.id);
-                },
-                list: (
-                    <RainbowWalletList
-                        connect={connect}
-                        setActiveConnector={(conn: Connector) => {
-                            setActiveRainConnector(conn);
-                        }}
-                        chain={arbitrum.id}
-                    />
-                ),
-                chainId: arbitrum.id,
-            },
-            {
-                label: "Optimism",
-                icon: <OptimismLogo width={30} height={30} style={{ marginRight: "5px" }} />,
-                command: () => {
-                    switchChain(3, optimism.id);
-                },
-                list: (
-                    <RainbowWalletList
-                        connect={connect}
-                        setActiveConnector={(conn: Connector) => {
-                            setActiveRainConnector(conn);
-                        }}
-                        chain={optimism.id}
-                    />
-                ),
-                chainId: optimism.id,
-            },
-            {
-                label: "Sui",
-                icon: <SuietLogo width={30} height={30} style={{ marginRight: "5px" }} />,
-                command: () => {
-                    if (activeIndex !== 4) {
-                        disconnect();
-                        setActiveIndex(4);
-                    }
-                },
-                list: <SuietWalletLIst connect={connect} />,
-            },
-            {
-                label: "Solana",
-                icon: <SolanaLogo width={30} height={30} style={{ marginRight: "5px" }} />,
-                command: () => {
-                    if (activeIndex !== 5) {
-                        disconnect();
-                        setActiveIndex(5);
-                    }
-                },
-                list: <SolanaWalletList connect={connect} />,
-            },
-        ],
+        () => createMenuItems(
+            switchChain,
+            connect,
+            setActiveRainConnector,
+            setActiveIndex,
+            activeIndex,
+            disconnect,
+        ),
         [activeIndex, connect, disconnect, switchChain],
     );
 
@@ -245,7 +153,7 @@ function Wallets() {
     ];
 
     useEffect(() => {
-        if (activeIndex < 4) {
+        if (activeIndex <= lastEvmIndex) {
             tabItems.current.shift();
             tabItems.current.unshift(items[activeIndex]);
         }
@@ -260,7 +168,12 @@ function Wallets() {
                     balance: balanceInSOL + " SOL",
                     walletIcon: account?.walletIcon,
                 });
-            });
+            },
+
+                (err)=>{
+                    solanaWallet.disconnect();
+                    toast.current?.show({ severity: "error", summary: "Error", detail:"Trouble with balance: " + err.message});
+                });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [solanaWallet.publicKey]);
@@ -355,7 +268,6 @@ function Wallets() {
             <StyledDialog
                 header="Choose your wallet"
                 visible={visible}
-                style={{ width: "450px", height: "500px" }}
                 onHide={() => setVisible(false)}
             >
                 <DialogWalletList

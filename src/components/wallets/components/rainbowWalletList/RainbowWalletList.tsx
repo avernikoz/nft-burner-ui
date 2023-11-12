@@ -3,21 +3,13 @@ import { ReactComponent as CoinBase } from "../../assets/coinbase.svg";
 import { ReactComponent as Phantom } from "../../assets/phantom.svg";
 import { ReactComponent as WalletConnect } from "../../assets/walletconnect.svg";
 import React, { JSX, useRef, useState } from "react";
-import { ListBox } from "primereact/listbox";
-import { Item } from "./RainbowWalletList.styled";
-import { coinbaseWallet, metaMaskWallet, phantomWallet, walletConnectWallet } from "@rainbow-me/rainbowkit/wallets";
+import { StyledListBox } from "./RainbowWalletList.styled";
 import { Connector } from "wagmi";
-import { connectorsForWallets } from "@rainbow-me/rainbowkit";
 import { Toast } from "primereact/toast";
-import { IAccount } from "../../models";
+import { IAccount, IWallet } from "../../types";
 import { fetchBalance } from "@wagmi/core";
-import { arbitrum, optimism, polygon, mainnet } from "wagmi/chains";
-
-interface IWallet {
-    logo: JSX.Element;
-    label: string;
-    wallet: Connector;
-}
+import RainbowItemTemplate from "./RainbowItemTemplate";
+import connectors from "../../../../utils/connectors";
 
 function RainbowWalletList(props: {
     connect: (account: IAccount) => void;
@@ -26,7 +18,6 @@ function RainbowWalletList(props: {
 }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<IWallet>();
     const toast = useRef<Toast>(null);
-    const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID;
 
     const show = () => {
         toast.current?.show({
@@ -37,23 +28,7 @@ function RainbowWalletList(props: {
         });
     };
 
-    if (typeof projectId !== "string" || projectId.length === 0) {
-        throw new Error("Empty REACT_APP_WALLET_CONNECT_PROJECT_ID");
-    }
-
-    const connectors = connectorsForWallets([
-        {
-            groupName: "My Wallets",
-            wallets: [
-                metaMaskWallet({ projectId, chains: [mainnet, polygon, arbitrum, optimism] }),
-                coinbaseWallet({ appName: "My RainbowKit App", chains: [mainnet, polygon, arbitrum, optimism] }),
-                phantomWallet({ chains: [mainnet, polygon, arbitrum, optimism] }),
-                walletConnectWallet({ chains: [mainnet, polygon, arbitrum, optimism], projectId }),
-            ],
-        },
-    ]);
-
-    const connectorsList = connectors();
+    const connectorsList = connectors;
 
     const wallets: IWallet[] = [
         {
@@ -82,6 +57,10 @@ function RainbowWalletList(props: {
         try {
             show();
             await wallet.wallet.connect();
+            const activeChain = await wallet.wallet.getChainId();
+            if (activeChain !== props.chain && wallet.wallet.switchChain) {
+                await wallet.wallet.switchChain(props.chain);
+            }
             const address = await wallet.wallet.getAccount();
             const balance = await fetchBalance({
                 address,
@@ -107,24 +86,15 @@ function RainbowWalletList(props: {
         }
     }
 
-    const itemTemplate = (item: (typeof wallets)[0]) => {
-        return (
-            <Item className="flex align-items-center" style={{ flexDirection: "row" }}>
-                {item.logo}
-                <div>{item.label}</div>
-            </Item>
-        );
-    };
     return (
         <>
             <Toast ref={toast} position="top-left" />
-            <ListBox
+            <StyledListBox
                 value={selectedOption}
-                itemTemplate={itemTemplate}
+                itemTemplate={RainbowItemTemplate}
                 onChange={async (e) => {
                     await connect(e.value);
                 }}
-                listStyle={{ maxHeight: "330px" }}
                 options={wallets}
                 optionLabel="label"
             />
