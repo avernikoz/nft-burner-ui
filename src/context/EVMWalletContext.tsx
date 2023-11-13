@@ -19,7 +19,7 @@ if (
 }
 
 const { chains, publicClient } = configureChains(
-    [mainnet, polygon, optimism, arbitrum, base, zora],
+    [mainnet, polygon, optimism, arbitrum],
     [alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_ID }), publicProvider()],
 );
 
