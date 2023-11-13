@@ -1,4 +1,4 @@
-import {IAccount, IMenuConnectionItem} from "./types";
+import { IAccount, IMenuConnectionItem } from "./types";
 import { Connector } from "wagmi";
 import { arbitrum, mainnet, optimism, polygon } from "wagmi/chains";
 import RainbowWalletList from "./components/rainbowWalletList/RainbowWalletList";
@@ -12,7 +12,6 @@ import { ReactComponent as EthereumLogo } from "./assets/ethereum-logo.svg";
 import { ReactComponent as OptimismLogo } from "./assets/optimism-logo.svg";
 import { ReactComponent as ArbitrumLogo } from "./assets/arbitrum-logo.svg";
 import { ReactComponent as PolygonLogo } from "./assets/polygonLogo.svg";
-
 
 export function createMenuItems(
     switchChain: (index: number, id: number) => void,

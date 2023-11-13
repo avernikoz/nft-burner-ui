@@ -13,12 +13,11 @@ import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adap
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
 import { ConnectorData, disconnect as wagmiDisconnect, fetchBalance } from "@wagmi/core";
 
-
 import IconTemplate from "../IconTemplate/IconTemplate";
 import { IAccount, IMenuConnectionItem } from "./types";
 import DialogWalletList from "./components/dialogWalletList/DialogWalletList";
 import { ethers } from "ethers";
-import {createMenuItems} from "./variables";
+import { createMenuItems } from "./variables";
 
 function Wallets() {
     const [visible, setVisible] = useState(false);
@@ -31,7 +30,7 @@ function Wallets() {
     const solanaConnection = useConnection();
     const wagmiAccount = useWagmiAccount();
     const toast = useRef<Toast>(null);
-    const lastEvmIndex= 3;
+    const lastEvmIndex = 3;
 
     const connect = useCallback(
         (acc: IAccount) => {
@@ -110,14 +109,7 @@ function Wallets() {
     );
 
     const items = useMemo<IMenuConnectionItem[]>(
-        () => createMenuItems(
-            switchChain,
-            connect,
-            setActiveRainConnector,
-            setActiveIndex,
-            activeIndex,
-            disconnect,
-        ),
+        () => createMenuItems(switchChain, connect, setActiveRainConnector, setActiveIndex, activeIndex, disconnect),
         [activeIndex, connect, disconnect, switchChain],
     );
 
@@ -161,19 +153,25 @@ function Wallets() {
 
     useEffect(() => {
         if (solanaWallet.publicKey && account !== null) {
-            solanaConnection.connection.getBalance(solanaWallet.publicKey).then((balance) => {
-                const balanceInSOL = ethers.formatUnits(balance, 9).substring(0, 5);
-                connect({
-                    id: solanaWallet.publicKey?.toString(),
-                    balance: balanceInSOL + " SOL",
-                    walletIcon: account?.walletIcon,
-                });
-            },
+            solanaConnection.connection.getBalance(solanaWallet.publicKey).then(
+                (balance) => {
+                    const balanceInSOL = ethers.formatUnits(balance, 9).substring(0, 5);
+                    connect({
+                        id: solanaWallet.publicKey?.toString(),
+                        balance: balanceInSOL + " SOL",
+                        walletIcon: account?.walletIcon,
+                    });
+                },
 
-                (err)=>{
+                (err) => {
                     solanaWallet.disconnect();
-                    toast.current?.show({ severity: "error", summary: "Error", detail:"Trouble with balance: " + err.message});
-                });
+                    toast.current?.show({
+                        severity: "error",
+                        summary: "Error",
+                        detail: "Trouble with balance: " + err.message,
+                    });
+                },
+            );
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [solanaWallet.publicKey]);
@@ -265,11 +263,7 @@ function Wallets() {
                     </>
                 )}
             </ButtonContainer>
-            <StyledDialog
-                header="Choose your wallet"
-                visible={visible}
-                onHide={() => setVisible(false)}
-            >
+            <StyledDialog header="Choose your wallet" visible={visible} onHide={() => setVisible(false)}>
                 <DialogWalletList
                     tabs={tabItems.current}
                     activeTab={activeIndex < 4 ? 0 : activeIndex - 3}
