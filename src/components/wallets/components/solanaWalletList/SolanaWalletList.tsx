@@ -27,7 +27,7 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                 },
                 (err) => {
                     disconnect();
-                    toastController?.showError("Trouble with balance: " + err.message);
+                    toastController?.showError("Failed to fetch balances: " + err.message);
                 },
             );
         }
@@ -49,7 +49,7 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                         if (e.value.readyState == WalletReadyState.Unsupported) {
                             toastController?.showError("Wallet is not unsupported: ");
                         }
-                        toastController?.showInfo("Connecting", "Please waiting");
+                        toastController?.showInfo("Connecting", "Please accept connection in wallet");
                         await select(e.value.adapter.name);
                         setSelectedOption(e.value);
                     } catch (error) {

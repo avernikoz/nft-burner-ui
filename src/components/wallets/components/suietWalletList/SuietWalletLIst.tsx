@@ -30,7 +30,20 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
                 walletIcon: wallet.adapter?.icon,
             });
         }
-    }, [wallet.connected, balance, retry, wallet.account?.address, wallet.adapter?.icon, loading, error, props]);
+        if (error) {
+            toastController?.showError("Failed to fetch balances: " + error);
+        }
+    }, [
+        wallet.connected,
+        balance,
+        retry,
+        wallet.account?.address,
+        wallet.adapter?.icon,
+        loading,
+        error,
+        props,
+        toastController,
+    ]);
 
     async function connect(chosenWallet: IWallet) {
         try {

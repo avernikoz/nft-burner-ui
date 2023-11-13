@@ -129,10 +129,13 @@ function Wallets() {
 
     const profileItems: MenuItem[] = [
         {
-            label: "Copy to clickBoard",
+            label: "Copy address",
             icon: "pi pi-copy",
             command: () => {
-                toastController?.showSuccess("Copy to Clipboard");
+                if (account !== null && account?.id !== null) {
+                    navigator.clipboard.writeText(account?.id ?? "");
+                    toastController?.showSuccess("Copy address");
+                }
             },
         },
         {

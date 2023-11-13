@@ -46,7 +46,7 @@ function RainbowWalletList(props: {
 
     async function connect(wallet: IWallet) {
         try {
-            toastController?.showInfo("Connecting", "Please waiting");
+            toastController?.showInfo("Connecting", "Please accept connection in wallet");
             await wallet.wallet.connect();
             const activeChain = await wallet.wallet.getChainId();
             if (activeChain !== props.chain && wallet.wallet.switchChain) {
