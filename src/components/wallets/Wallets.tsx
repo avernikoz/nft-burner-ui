@@ -4,9 +4,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { MenuItem } from "primereact/menuitem";
 import { PanelMenu } from "primereact/panelmenu";
 import { Menu } from "primereact/menu";
-// eslint-disable-next-line import/no-unresolved
 import { ButtonContainer, ProfileLabel, StyledDialog } from "./Wallets.styled";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
