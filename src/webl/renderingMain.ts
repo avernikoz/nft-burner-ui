@@ -562,18 +562,21 @@ export function RenderMain() {
                 GRenderingStates.Current = newState;
             }
 
-            //handle scene state transition
-            if (GRenderingStates.TransitionParameter <= 1.0) {
-                //We are in transition mode from old to new
+            if (GScreenDesc.bWideScreen) {
+                //handle scene state transition
+                if (GRenderingStates.TransitionParameter <= 1.0) {
+                    //We are in transition mode from old to new
 
-                AssignSceneDescriptions(
-                    GSceneStateDescsArray[GRenderingStates.Previous],
-                    GSceneStateDescsArray[GRenderingStates.Current],
-                    GRenderingStates.TransitionParameter,
-                );
-                //AssignSceneDescription(GSceneStateDescsArray[GRenderingStates.Current]);
+                    AssignSceneDescriptions(
+                        GSceneStateDescsArray[GRenderingStates.Previous],
+                        GSceneStateDescsArray[GRenderingStates.Current],
+                        GRenderingStates.TransitionParameter,
+                    );
 
-                GRenderingStates.TransitionParameter += GTime.Delta;
+                    GRenderingStates.TransitionParameter += GTime.Delta;
+                }
+            } else {
+                AssignSceneDescription(GSceneStateDescsArray[GRenderingStates.Burning]);
             }
 
             StateControllers[GRenderingStates.Current].bSelectedThisFrame = true;
