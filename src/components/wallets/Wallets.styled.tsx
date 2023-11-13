@@ -2,9 +2,9 @@ import { styled } from "styled-components";
 import { Dialog } from "primereact/dialog";
 
 export const StyledDialog = styled(Dialog)`
-  width: 450px;
-  height: 500px;
-  
+    width: 450px;
+    height: 500px;
+
     .p-menuitem-link {
         padding: 0.75rem;
     }

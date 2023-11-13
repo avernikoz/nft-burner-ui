@@ -18,20 +18,19 @@ function App() {
         <SolanaWalletContext>
             <EVMWalletContext>
                 <SuiWalletContext>
-        <div className="App">
-            <div className="WalletConnectionHeader">
-                            <Wallets/>
-            </div>
-            <div>
-                <canvas id="demo-canvas">
-                    Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
-                </canvas>
-            </div>
-            <Footer>
-                <FullScreenButton />
-            </Footer>
-        </div>
-
+                    <div className="App">
+                        <div className="WalletConnectionHeader">
+                            <Wallets />
+                        </div>
+                        <div>
+                            <canvas id="demo-canvas">
+                                Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
+                            </canvas>
+                        </div>
+                        <Footer>
+                            <FullScreenButton />
+                        </Footer>
+                    </div>
                 </SuiWalletContext>
             </EVMWalletContext>
         </SolanaWalletContext>

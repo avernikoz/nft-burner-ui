@@ -1,6 +1,6 @@
-import {connectorsForWallets} from "@rainbow-me/rainbowkit";
-import {coinbaseWallet, metaMaskWallet, phantomWallet, walletConnectWallet} from "@rainbow-me/rainbowkit/wallets";
-import {arbitrum, mainnet, optimism, polygon} from "wagmi/chains";
+import { connectorsForWallets } from "@rainbow-me/rainbowkit";
+import { coinbaseWallet, metaMaskWallet, phantomWallet, walletConnectWallet } from "@rainbow-me/rainbowkit/wallets";
+import { arbitrum, mainnet, optimism, polygon } from "wagmi/chains";
 
 const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID;
 
