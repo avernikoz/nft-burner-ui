@@ -1,6 +1,6 @@
 import { DrawUISingleton } from "./helpers/gui";
 import { CreateTexture, CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
-import { SceneDesc } from "./scene";
+import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import {
@@ -11,12 +11,18 @@ import {
     GetShaderSourceFireVisualizerPS,
 } from "./shaders/shaderFirePlane";
 import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
+import { GUserInputDesc } from "./input";
 import { Vector2 } from "./types";
-import { GTime } from "./utils";
+import { GTime, MathClamp, MathGetVectorLength, MathVector2Normalize } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
-        GPositionOffset: gl.getUniformLocation(shaderProgram, "GPositionOffset"),
+        SpotlightPos: gl.getUniformLocation(shaderProgram, "SpotlightPos"),
+        SpotlightScale: gl.getUniformLocation(shaderProgram, "SpotlightScale"),
+        CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
+        ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
+        FirePlanePositionOffset: gl.getUniformLocation(shaderProgram, "FirePlanePositionOffset"),
+        PointerPositionOffset: gl.getUniformLocation(shaderProgram, "PointerPositionOffset"),
         SizeScale: gl.getUniformLocation(shaderProgram, "SizeScale"),
         VelocityDir: gl.getUniformLocation(shaderProgram, "VelocityDir"),
         ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
@@ -35,7 +41,6 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         PointLightsTexture: gl.getUniformLocation(shaderProgram, "PointLightsTexture"),
         RoughnessTexture: gl.getUniformLocation(shaderProgram, "RoughnessTexture"),
         NormalsTexture: gl.getUniformLocation(shaderProgram, "NormalsTexture"),
-        LightPosNDC: gl.getUniformLocation(shaderProgram, "LightPosNDC"),
         MaterialUVOffset: gl.getUniformLocation(shaderProgram, "MaterialUVOffset"),
         SpecularIntensityAndPower: gl.getUniformLocation(shaderProgram, "SpecularIntensityAndPower"),
         DiffuseIntensity: gl.getUniformLocation(shaderProgram, "DiffuseIntensity"),
@@ -69,15 +74,33 @@ export class RApplyFireRenderPass {
 
     Execute(gl: WebGL2RenderingContext, positionOffset: Vector2, sizeScale: number, velDirection: Vector2) {
         gl.useProgram(this.shaderProgram);
+
         //VAO
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        //Bind Constants
+        gl.uniform4f(
+            this.UniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform3f(
+            this.UniformParametersLocationList.FirePlanePositionOffset,
+            GSceneDesc.FirePlane.PositionOffset.x,
+            GSceneDesc.FirePlane.PositionOffset.y,
+            GSceneDesc.FirePlane.PositionOffset.z,
+        );
+
+        gl.uniform2f(this.UniformParametersLocationList.PointerPositionOffset, positionOffset.x, positionOffset.y);
+        gl.uniform1f(this.UniformParametersLocationList.SizeScale, sizeScale);
+        gl.uniform2f(this.UniformParametersLocationList.VelocityDir, velDirection.x, velDirection.y);
+
         //Textures
         gl.activeTexture(gl.TEXTURE0 + 0);
         gl.uniform1i(this.UniformParametersLocationList.ColorTexture, 0);
-        //Bind Constants
-        gl.uniform2f(this.UniformParametersLocationList.GPositionOffset, positionOffset.x, positionOffset.y);
-        gl.uniform1f(this.UniformParametersLocationList.SizeScale, sizeScale);
-        gl.uniform2f(this.UniformParametersLocationList.VelocityDir, velDirection.x, velDirection.y);
 
         /* Set up blending */
         //gl.enable(gl.BLEND);
@@ -135,11 +158,10 @@ export class RFirePlanePass {
     VisualizerFirePlaneNoiseTexture: WebGLTexture;
 
     //Paper
-    LightPosNDC = { x: 0.0, y: 5.5, z: -2.5 };
 
     RoughnessParams = { Scale: 1.0, Add: 0.0, Contrast: 1.0, Min: 0.0 }; //Use variadic contrast [from 1 to 2]
 
-    ShadingParams = { SpecularIntensity: 0.9, SpecularPower: 2.0, DiffuseIntensity: 1.0 };
+    ShadingParams = { SpecularIntensity: 0.7, SpecularPower: 4.0, DiffuseIntensity: 1.0 };
 
     MaterialUVOffset = { x: 0.0, y: 0.0 };
 
@@ -214,18 +236,18 @@ export class RFirePlanePass {
         //Create Shader Program
         this.VisualizerShaderProgram = CreateShaderProgramVSPS(
             gl,
-            GetShaderSourceFireVisualizerVS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
-            GetShaderSourceFireVisualizerPS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
+            GetShaderSourceFireVisualizerVS(),
+            GetShaderSourceFireVisualizerPS(),
         );
 
         //Shader Parameters
         this.VisualizerUniformParametersLocationList = GetUniformParametersList(gl, this.VisualizerShaderProgram);
 
         this.VisualizerFlameColorLUT = CreateTexture(gl, 4, "assets/flameColorLUT5.png");
-        //this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/example.jpg");
-        //this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/apeBlue.png");
-        this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/example2.png");
-        this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg");
+        this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/example.jpg", true);
+        //this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/apeBlue.png", true);
+        //this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/example2.png", true);
+        this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg", true);
 
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
         this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise128.png");
@@ -252,9 +274,14 @@ export class RFirePlanePass {
         this.NormalsTexture = CreateTexture(gl, 7, "assets/background/blueWoodNRM2.jpg");
         this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/blueWoodRGH2.jpg"); */
 
-        this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, `assets/background/` + matName + `DFS` + fileFormat);
-        this.NormalsTexture = CreateTexture(gl, 7, `assets/background/` + matName + `NRM` + fileFormat);
-        this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/` + matName + `RGH` + fileFormat);
+        this.SurfaceMaterialColorTexture = CreateTexture(
+            gl,
+            7,
+            `assets/background/` + matName + `DFS` + fileFormat,
+            true,
+        );
+        this.NormalsTexture = CreateTexture(gl, 7, `assets/background/` + matName + `NRM` + fileFormat, true);
+        this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/` + matName + `RGH` + fileFormat, true);
 
         //this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/oxidCopperRGH.png");
 
@@ -263,10 +290,15 @@ export class RFirePlanePass {
         //this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/foil2RGH.png");
 
         const roughnessTextureId = Math.floor(Math.random() * 4);
-        this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/cdCoverRGH` + roughnessTextureId + `.png`);
+        this.RoughnessTexture = CreateTexture(
+            gl,
+            7,
+            `assets/background/cdCoverRGH` + roughnessTextureId + `.png`,
+            true,
+        );
         this.RoughnessParams.Contrast = 1.0 + Math.random();
 
-        this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/oxidCopperRGH.png");
+        this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/oxidCopperRGH.png", true);
         //this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/paperRGH.png");
 
         const matOffsetSign = { x: 1, y: 1 };
@@ -285,10 +317,7 @@ export class RFirePlanePass {
     DrawUI() {
         const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
         const folder = GDatGUI.addFolder("Shading");
-        folder.open();
-        folder.add(this.LightPosNDC, "x", -2, 5).name("LightPosX").step(0.01).listen();
-        folder.add(this.LightPosNDC, "y", -3, 10).name("LightPosY").step(0.01).listen();
-        folder.add(this.LightPosNDC, "z", -10, 2).name("LightPosZ").step(0.01);
+        //folder.open();
 
         folder.add(this.RoughnessParams, "Scale", 0, 20).name("RGHScale").step(0.01);
         folder.add(this.RoughnessParams, "Add", 0, 1).name("RGHAdd").step(0.01);
@@ -302,17 +331,32 @@ export class RFirePlanePass {
 
     bFirstBoot = true;
 
-    ApplyFire(gl: WebGL2RenderingContext, positionOffset: Vector2, sizeScale: number, velDirection: Vector2) {
+    ApplyFireFromInput(gl: WebGL2RenderingContext) {
+        const curInputPos = GUserInputDesc.InputPosNDCCur;
+        const curInputDir = { x: 0, y: 0 };
+        curInputDir.x = GUserInputDesc.InputPosNDCCur.x - GUserInputDesc.InputPosNDCPrev.x;
+        curInputDir.y = GUserInputDesc.InputPosNDCCur.y - GUserInputDesc.InputPosNDCPrev.y;
+        const inputDirLength = MathGetVectorLength(curInputDir);
+        let sizeScale;
+        if (GUserInputDesc.bPointerInputActiveThisFrame == false) {
+            sizeScale = 0.005;
+            curInputDir.x = 0;
+            curInputDir.y = 1;
+        } else {
+            sizeScale = MathClamp(inputDirLength * 0.5, 0.001, 0.05);
+        }
+
         const curSourceIndex = this.CurrentFireTextureIndex;
         //Raster particle to current fire texture
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[curSourceIndex]);
         gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
-        this.ApplyFirePass.Execute(gl, positionOffset, sizeScale, velDirection);
         if (this.bFirstBoot) {
+            //if (1) {
             gl.clearColor(0.0, 0.0, 0, 1);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             this.bFirstBoot = false;
         }
+        this.ApplyFirePass.Execute(gl, curInputPos, sizeScale, MathVector2Normalize(curInputDir));
     }
 
     UpdateFire(gl: WebGL2RenderingContext) {
@@ -364,17 +408,26 @@ export class RFirePlanePass {
     }
 
     VisualizeFirePlane(gl: WebGL2RenderingContext, pointLightsTexture: WebGLTexture, spotlightTexture: WebGLTexture) {
-        let spotlightHeight = this.LightPosNDC.y;
-        if (SceneDesc.ViewRatioXY.x > 1.0) {
-            this.LightPosNDC.x = SceneDesc.ViewRatioXY.x * 2.5;
-            spotlightHeight = this.LightPosNDC.y - this.LightPosNDC.x * 0.5;
-        }
-
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
         gl.useProgram(this.VisualizerShaderProgram);
 
         //Constants
+        gl.uniform4f(
+            this.VisualizerUniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.VisualizerUniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform3f(
+            this.VisualizerUniformParametersLocationList.FirePlanePositionOffset,
+            GSceneDesc.FirePlane.PositionOffset.x,
+            GSceneDesc.FirePlane.PositionOffset.y,
+            GSceneDesc.FirePlane.PositionOffset.z,
+        );
+
         gl.uniform1f(
             this.VisualizerUniformParametersLocationList.NoiseTextureInterpolator,
             this.NoiseTextureInterpolator,
@@ -383,10 +436,10 @@ export class RFirePlanePass {
         gl.uniform1f(this.VisualizerUniformParametersLocationList.Time, GTime.Cur);
 
         gl.uniform3f(
-            this.VisualizerUniformParametersLocationList.LightPosNDC,
-            this.LightPosNDC.x,
-            spotlightHeight /* this.LightPosNDC.y */,
-            this.LightPosNDC.z,
+            this.VisualizerUniformParametersLocationList.SpotlightPos,
+            GSceneDesc.Spotlight.Position.x,
+            GSceneDesc.Spotlight.Position.y,
+            GSceneDesc.Spotlight.Position.z,
         );
         gl.uniform4f(
             this.VisualizerUniformParametersLocationList.RoughnessScaleAddContrastMin,

@@ -13,6 +13,7 @@ import { getWebGLProgram } from "./helpers/getWebGLProgram";
 import { GTime, showError } from "./utils";
 import { APP_ENVIRONMENT } from "../config/config";
 import { Vector2 } from "./types";
+import { GSceneDesc, GScreenDesc } from "./scene";
 
 // ====================================================== SHADERS END ======================================================
 
@@ -543,6 +544,21 @@ export class ParticlesEmitter {
         gl.uniform1i(this.ParticleRenderUniformParametersLocationList.NoiseTexture, 1);
 
         //Constants
+        gl.uniform4f(
+            this.ParticleRenderUniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.ParticleRenderUniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform3f(
+            this.ParticleRenderUniformParametersLocationList.FirePlanePositionOffset,
+            GSceneDesc.FirePlane.PositionOffset.x,
+            GSceneDesc.FirePlane.PositionOffset.y,
+            GSceneDesc.FirePlane.PositionOffset.z,
+        );
+
         gl.uniform1f(this.ParticleRenderUniformParametersLocationList.ParticleLife, this.ParticleLife);
         gl.uniform1f(this.ParticleRenderUniformParametersLocationList.NumLoops, this.NumLoops);
         gl.uniform2f(
@@ -577,6 +593,9 @@ export class ParticlesEmitter {
 
     private GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
         const params = {
+            CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
+            ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
+            FirePlanePositionOffset: gl.getUniformLocation(shaderProgram, "FirePlanePositionOffset"),
             DeltaTime: gl.getUniformLocation(shaderProgram, "DeltaTime"),
             CurTime: gl.getUniformLocation(shaderProgram, "CurTime"),
             ParticleLife: gl.getUniformLocation(shaderProgram, "ParticleLife"),

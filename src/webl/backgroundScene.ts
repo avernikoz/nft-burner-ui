@@ -1,28 +1,39 @@
 import { DrawUISingleton } from "./helpers/gui";
 import { CreateTexture, CreateTextureRT } from "./resourcesUtils";
-import { SceneDesc } from "./scene";
+import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import {
     GetLightsUpdateShaderVS,
-    GetShaderSourceBackgroundFloorRenderVS,
-    GetShaderSourceBackgroundSpotlightRenderVS,
     LightsUpdatePS,
-    GetShaderSourceBackgroundFloorRenderPS,
-    ShaderSourceBackgroundSpotlightRenderPS,
-} from "./shaders/shaderBackground";
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    GetShaderSourceBackgroundFloorRenderPerspectiveVS,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    GetShaderSourceBackgroundFloorRenderPerspectivePS,
+    GetShaderSourceSpotlightRenderVS,
+    GetShaderSourceSpotlightRenderPS,
+    GetShaderSourceLightFlareRenderPS,
+    GetShaderSourceLightFlareRenderVS,
+} from "./shaders/shaderBackgroundScene";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { GTime } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
+        SpotlightPos: gl.getUniformLocation(shaderProgram, "SpotlightPos"),
+        SpotlightDirection: gl.getUniformLocation(shaderProgram, "SpotlightDirection"),
+        SpotlightDesc: gl.getUniformLocation(shaderProgram, "SpotlightDesc"),
+        SpotlightScale: gl.getUniformLocation(shaderProgram, "SpotlightScale"),
+        ProjectedLightSizeScale: gl.getUniformLocation(shaderProgram, "ProjectedLightSizeScale"),
+        CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
+        ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
         ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
+        NormalTexture: gl.getUniformLocation(shaderProgram, "NormalTexture"),
+        RoughnessTexture: gl.getUniformLocation(shaderProgram, "RoughnessTexture"),
         SpotlightTexture: gl.getUniformLocation(shaderProgram, "SpotlightTexture"),
         SmokeNoiseTexture: gl.getUniformLocation(shaderProgram, "SmokeNoiseTexture"),
 
-        FloorRotation: gl.getUniformLocation(shaderProgram, "FloorRotation"),
         FloorScale: gl.getUniformLocation(shaderProgram, "FloorScale"),
         FloorOffset: gl.getUniformLocation(shaderProgram, "FloorOffset"),
-        SpotlightTexScale: gl.getUniformLocation(shaderProgram, "SpotlightTexScale"),
         FloorTexScale: gl.getUniformLocation(shaderProgram, "FloorTexScale"),
         FloorBrightness: gl.getUniformLocation(shaderProgram, "FloorBrightness"),
         Time: gl.getUniformLocation(shaderProgram, "Time"),
@@ -98,18 +109,125 @@ export class SceneLights {
     }
 }
 
+export class RSpotlightRenderPass {
+    public ShaderProgram;
+
+    public ShaderProgramFlare;
+
+    public UniformParametersLocationList;
+
+    public UniformParametersLocationListFlare;
+
+    public SpotlightTexture;
+
+    public LightFlareTexture;
+
+    constructor(gl: WebGL2RenderingContext) {
+        //================================================ Floor Render
+
+        //Create Shader Program
+        this.ShaderProgram = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceSpotlightRenderVS(),
+            GetShaderSourceSpotlightRenderPS(),
+        );
+        this.ShaderProgramFlare = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceLightFlareRenderVS(),
+            GetShaderSourceLightFlareRenderPS(),
+        );
+
+        //Shader Parameters
+        this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
+        this.UniformParametersLocationListFlare = GetUniformParametersList(gl, this.ShaderProgramFlare);
+
+        const spotlightTextureId = Math.floor(Math.random() * 8);
+        this.SpotlightTexture = CreateTexture(gl, 4, `assets/spotlightCut` + spotlightTextureId + `.png`);
+        //this.SpotlightTexture = CreateTexture(gl, 5, "assets/example.jpg");
+
+        this.LightFlareTexture = CreateTexture(gl, 4, `assets/background/lightGlare1.png`);
+    }
+
+    RenderVolumetricLight(gl: WebGL2RenderingContext) {
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.ShaderProgram);
+
+        //Constants
+        gl.uniform4f(
+            this.UniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform2f(
+            this.UniformParametersLocationList.SpotlightScale,
+            GSceneDesc.Spotlight.SizeScale.x,
+            GSceneDesc.Spotlight.SizeScale.y,
+        );
+        gl.uniform3f(
+            this.UniformParametersLocationList.SpotlightPos,
+            GSceneDesc.Spotlight.Position.x,
+            GSceneDesc.Spotlight.Position.y,
+            GSceneDesc.Spotlight.Position.z,
+        );
+        const spDir = GSceneDesc.Spotlight.GetDirection();
+        gl.uniform3f(this.UniformParametersLocationList.SpotlightDirection, spDir.x, spDir.y, spDir.z);
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this.SpotlightTexture);
+        gl.uniform1i(this.UniformParametersLocationList.SpotlightTexture, 1);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    RenderFlare(gl: WebGL2RenderingContext) {
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.ShaderProgramFlare);
+
+        //Constants
+        gl.uniform4f(
+            this.UniformParametersLocationListFlare.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationListFlare.ScreenRatio, GScreenDesc.ScreenRatio);
+        const flareSize = { x: 0.5, y: 0.5 };
+        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, flareSize.x, flareSize.y);
+        gl.uniform3f(
+            this.UniformParametersLocationListFlare.SpotlightPos,
+            GSceneDesc.Spotlight.Position.x,
+            GSceneDesc.Spotlight.Position.y,
+            GSceneDesc.Spotlight.Position.z,
+        );
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this.LightFlareTexture);
+        gl.uniform1i(this.UniformParametersLocationListFlare.SpotlightTexture, 1);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+}
+
 export class RBackgroundRenderPass {
-    ShaderProgramSpotlight: WebGLProgram;
-
     ShaderProgramFloor: WebGLProgram;
-
-    public UniformParametersLocationListSpotlight;
 
     public UniformParametersLocationListFloor;
 
     SpotlightTexture: WebGLTexture;
 
     ColorTexture: WebGLTexture;
+
+    NormalTexture: WebGLTexture;
+
+    RoughnessTexture: WebGLTexture;
 
     PuddleTexture: WebGLTexture;
 
@@ -118,11 +236,7 @@ export class RBackgroundRenderPass {
     PointLights: SceneLights;
 
     FloorTransform = {
-        Rotation: 1.446,
-        Translation: 0.0,
-        Scale: { x: 1.0, y: 1.0 },
         FloorTexScale: 1.0,
-        LightTexScale: { x: 1.0, y: 2.4 },
         FloorBrightness: 1.0,
     };
 
@@ -130,37 +244,39 @@ export class RBackgroundRenderPass {
         //================================================ Floor Render
 
         //Create Shader Program
-        this.ShaderProgramSpotlight = CreateShaderProgramVSPS(
-            gl,
-            GetShaderSourceBackgroundSpotlightRenderVS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
-            ShaderSourceBackgroundSpotlightRenderPS,
-        );
-
         this.ShaderProgramFloor = CreateShaderProgramVSPS(
             gl,
-            GetShaderSourceBackgroundFloorRenderVS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
-            GetShaderSourceBackgroundFloorRenderPS(SceneDesc.FirePlaneSizeScaleNDC, SceneDesc.ViewRatioXY),
+            GetShaderSourceBackgroundFloorRenderPerspectiveVS(),
+            GetShaderSourceBackgroundFloorRenderPerspectivePS(),
+            /* GetShaderSourceBackgroundFloorRenderVS(GScreenDesc.FirePlaneSizeScaleNDC, GScreenDesc.ViewRatioXY),
+            GetShaderSourceBackgroundFloorRenderPS(GScreenDesc.FirePlaneSizeScaleNDC, GScreenDesc.ViewRatioXY), */
         );
 
         //Shader Parameters
-        this.UniformParametersLocationListSpotlight = GetUniformParametersList(gl, this.ShaderProgramSpotlight);
         this.UniformParametersLocationListFloor = GetUniformParametersList(gl, this.ShaderProgramFloor);
 
-        this.SpotlightTexture = CreateTexture(gl, 4, "assets/background/floorLight.jpg", true, true);
+        this.SpotlightTexture = CreateTexture(gl, 4, "assets/background/spotlightMask0.png", true, true);
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleBlack1024.png", true, true);
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/hexTilesDFS.jpg", true, true);
-        //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleTiles.png", true, true);
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/redConcreteDFS.jpg", true, true);
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleWhiteDFS.jpg", true, true);
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleGreenDFS.jpg", true, true);
 
-        this.ColorTexture = CreateTexture(gl, 5, "assets/background/foil2RGH.png", true, true);
+        const matName = `goldTiles`;
+        const fileFormat = 1 ? `.png` : `.jpg`;
+        //const fileFormat = `.jpg`;
+        this.ColorTexture = CreateTexture(gl, 7, `assets/background/` + matName + `DFS` + fileFormat, true, true);
+        this.NormalTexture = CreateTexture(gl, 7, `assets/background/` + matName + `NRM` + fileFormat, true, true);
+        this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/` + matName + `RGH` + fileFormat, true, true);
+        //this.RoughnessTexture = CreateTexture(gl, 5, "assets/background/goldRGH.png", true, true);
+
+        //this.ColorTexture = CreateTexture(gl, 5, "assets/background/foil2RGH.png", true, true);
         this.PuddleTexture = CreateTexture(gl, 5, "assets/background/floorAsphaltHeight.jpg", true, true);
         //this.PuddleTexture = CreateTexture(gl, 5, "assets/background/floorAsphaltRGH.jpg", true, true);
         this.OilTexture = CreateTexture(gl, 5, "assets/background/oil/oil4.jpeg", true, true);
 
-        /* this.ColorTexture = CreateTexture(gl, 5, "assets/background/copperRGH.png", true, true);
-        this.ColorTexture = CreateTexture(gl, 5, "assets/background/goldRGH.png", true, true); */
+        // this.ColorTexture = CreateTexture(gl, 5, "assets/background/copperRGH.png", true, true);
+        // this.ColorTexture = CreateTexture(gl, 5, "assets/background/goldRGH.png", true, true);
 
         this.PointLights = new SceneLights(gl);
 
@@ -170,30 +286,11 @@ export class RBackgroundRenderPass {
     DrawUI() {
         const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
         const folder = GDatGUI.addFolder("Plane Transform");
-        //folder.open();
-        folder.add(this.FloorTransform, "Rotation", 0, 3.14).step(0.001);
-        folder.add(this.FloorTransform, "Translation", -1, 1).step(0.001);
-        folder.add(this.FloorTransform.Scale, "x", 0.01, 5).name("FloorScaleX").step(0.01);
-        folder.add(this.FloorTransform.Scale, "y", 0.01, 1).name("FloorScaleY").step(0.01);
+        folder.open();
         folder.add(this.FloorTransform, "FloorTexScale", 0.01, 10);
-        folder.add(this.FloorTransform.LightTexScale, "x", 0.01, 10).name("LightTexScaleX").step(0.01);
-        folder.add(this.FloorTransform.LightTexScale, "y", 0.01, 10).name("LightTexScaleY").step(0.01);
+        folder.add(this.FloorTransform, "FloorTexScale", 0.01, 10).name("FloorTexScale").step(0.01);
+        //folder.add(this.FloorTransform.LightTexScale, "y", 0.01, 10).name("LightTexScaleY").step(0.01);
         folder.add(this.FloorTransform, "FloorBrightness", 0.01, 5);
-    }
-
-    RenderSpotlight(gl: WebGL2RenderingContext) {
-        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
-
-        gl.useProgram(this.ShaderProgramSpotlight);
-
-        //Constants
-
-        //Textures
-        gl.activeTexture(gl.TEXTURE0 + 3);
-        gl.bindTexture(gl.TEXTURE_2D, this.SpotlightTexture);
-        gl.uniform1i(this.UniformParametersLocationListSpotlight.SpotlightTexture, 3);
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
     RenderFloor(gl: WebGL2RenderingContext, bloomTexture: WebGLTexture, smokeNoiseTexture: WebGLTexture) {
@@ -202,21 +299,40 @@ export class RBackgroundRenderPass {
         gl.useProgram(this.ShaderProgramFloor);
 
         //Constants
-        gl.uniform1f(this.UniformParametersLocationListFloor.FloorOffset, this.FloorTransform.Translation);
-        gl.uniform1f(this.UniformParametersLocationListFloor.FloorRotation, this.FloorTransform.Rotation);
-        gl.uniform2f(
-            this.UniformParametersLocationListFloor.FloorScale,
-            this.FloorTransform.Scale.x,
-            this.FloorTransform.Scale.x,
+        gl.uniform4f(
+            this.UniformParametersLocationListFloor.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
         );
-        gl.uniform2f(
-            this.UniformParametersLocationListFloor.SpotlightTexScale,
-            this.FloorTransform.LightTexScale.x,
-            this.FloorTransform.LightTexScale.y,
-        );
+        gl.uniform1f(this.UniformParametersLocationListFloor.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform1f(this.UniformParametersLocationListFloor.FloorOffset, GSceneDesc.Floor.Position.y);
+        gl.uniform1f(this.UniformParametersLocationListFloor.FloorScale, GSceneDesc.Floor.SizeScale);
         gl.uniform1f(this.UniformParametersLocationListFloor.FloorTexScale, this.FloorTransform.FloorTexScale);
+
         gl.uniform1f(this.UniformParametersLocationListFloor.FloorBrightness, this.FloorTransform.FloorBrightness);
         gl.uniform1f(this.UniformParametersLocationListFloor.Time, GTime.Cur);
+
+        gl.uniform3f(
+            this.UniformParametersLocationListFloor.SpotlightPos,
+            GSceneDesc.Spotlight.Position.x,
+            GSceneDesc.Spotlight.Position.y,
+            GSceneDesc.Spotlight.Position.z,
+        );
+        const spDir = GSceneDesc.Spotlight.GetDirection();
+        gl.uniform3f(this.UniformParametersLocationListFloor.SpotlightDirection, spDir.x, spDir.y, spDir.z);
+        gl.uniform3f(
+            this.UniformParametersLocationListFloor.SpotlightDesc,
+            GSceneDesc.Spotlight.Radius,
+            Math.cos(Math.min(GSceneDesc.Spotlight.ConeAngles.x, GSceneDesc.Spotlight.ConeAngles.y - 0.01)),
+            Math.cos(GSceneDesc.Spotlight.ConeAngles.y),
+        );
+        gl.uniform2f(
+            this.UniformParametersLocationListFloor.ProjectedLightSizeScale,
+            GSceneDesc.Spotlight.ProjectedLightSizeScale.x,
+            GSceneDesc.Spotlight.ProjectedLightSizeScale.y,
+        );
 
         //Textures
 
@@ -247,6 +363,14 @@ export class RBackgroundRenderPass {
         gl.activeTexture(gl.TEXTURE0 + 7);
         gl.bindTexture(gl.TEXTURE_2D, this.OilTexture);
         gl.uniform1i(this.UniformParametersLocationListFloor.OilTexture, 7);
+
+        gl.activeTexture(gl.TEXTURE0 + 8);
+        gl.bindTexture(gl.TEXTURE_2D, this.NormalTexture);
+        gl.uniform1i(this.UniformParametersLocationListFloor.NormalTexture, 8);
+
+        gl.activeTexture(gl.TEXTURE0 + 9);
+        gl.bindTexture(gl.TEXTURE_2D, this.RoughnessTexture);
+        gl.uniform1i(this.UniformParametersLocationListFloor.RoughnessTexture, 9);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }

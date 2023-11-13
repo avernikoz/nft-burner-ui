@@ -1,5 +1,3 @@
-import { Vector2 } from "../types";
-
 export const ShaderSourceApplyFireVS = /* glsl */ `#version 300 es
 
 	precision highp float;
@@ -7,7 +5,11 @@ export const ShaderSourceApplyFireVS = /* glsl */ `#version 300 es
 	layout(location = 0) in vec2 VertexBuffer;
 	layout(location = 1) in vec2 TexCoordsBuffer;
 
-	uniform vec2 GPositionOffset;
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	uniform vec3 FirePlanePositionOffset;
+
+	uniform vec2 PointerPositionOffset;
 	uniform float SizeScale;
 	uniform vec2 VelocityDir;
 
@@ -18,11 +20,11 @@ export const ShaderSourceApplyFireVS = /* glsl */ `#version 300 es
 		vsOutTexCoords = TexCoordsBuffer;
 
 		vec2 pos = VertexBuffer.xy;
-		pos.y *= 0.2;
 
+	#if 1 //MOTION BASED TRANSFORM
+		pos.y *= 0.2;
 		// Calculate the angle between the initial direction (1, 0) and the desired direction
 		float angle = atan(VelocityDir.y, VelocityDir.x);
-	
 		// Rotate the stretched position
 		float cosAngle = cos(angle);
 		float sinAngle = sin(angle);
@@ -30,11 +32,27 @@ export const ShaderSourceApplyFireVS = /* glsl */ `#version 300 es
 			pos.x * cosAngle - pos.y * sinAngle,
 			pos.x * sinAngle + pos.y * cosAngle
 		);
-
 		pos = rotatedPosition;
+	#endif
+
+		float scale = 1.0;
+		scale *= SizeScale;
+		//scale *= 0.01;
+		scale *= 2.5f;
+		//scale *= (FirePlanePositionOffset.z - CameraDesc.z + 1.f); //For the size to remain const
+		
+		//calculate offset
+		vec2 posOffset = PointerPositionOffset.xy;
+		posOffset.x *= ScreenRatio;
+		posOffset.xy /= CameraDesc.w;
+
+		posOffset.xy *= (FirePlanePositionOffset.z - CameraDesc.z + 1.f);
+		
+		pos = (scale * pos.xy) + posOffset.xy;
+		gl_Position = vec4(pos.xy, 0.0, 1.0);
 
 
-		gl_Position = vec4(SizeScale * 2.5f * (pos.xy) + GPositionOffset.xy, 0, 1);
+		
 	}`;
 export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 	
@@ -230,51 +248,51 @@ export const ShaderSourceFireUpdatePS = /* glsl */ `#version 300 es
 
 	}`;
 
-export function GetShaderSourceFireVisualizerVS(sizeScale: number, viewSize: Vector2) {
-    return (
-        /* glsl */ `#version 300 es
+export function GetShaderSourceFireVisualizerVS() {
+    return /* glsl */ `#version 300 es
 
 		precision highp float;
 	
 		layout(location = 0) in vec2 VertexBuffer;
+
+		uniform vec4 CameraDesc;
+		uniform float ScreenRatio;
+		uniform vec3 FirePlanePositionOffset;
 	
 		out vec2 vsOutTexCoords;
+		out vec3 interpolatorWorldSpacePos;
 	
 		void main()
 		{
-			vec2 pos = VertexBuffer.xy;
+			vec3 pos = vec3(VertexBuffer.xy, 0.0f);
+			pos += FirePlanePositionOffset;
+			interpolatorWorldSpacePos = pos;
+			pos.xyz -= CameraDesc.xyz;
 
-			pos *= float(` +
-        sizeScale +
-        /* glsl */ `);
-			pos.x /= float(` +
-        viewSize.x +
-        /* glsl */ `);
-		pos.y /= float(` +
-        viewSize.y +
-        /* glsl */ `);
+			pos.xy *= CameraDesc.w;
+			pos.x /= ScreenRatio;
 
-			gl_Position = vec4(pos, 0.0, 1.0);
+			gl_Position = vec4(pos.xy, 0.0, (1.f + pos.z));
 			vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
-		}`
-    );
+		}`;
 }
-export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vector2) {
-    return (
-        /* glsl */ `#version 300 es
+export function GetShaderSourceFireVisualizerPS() {
+    return /* glsl */ `#version 300 es
 	
 	precision highp float;
 	precision highp sampler2D;
 
 	layout(location = 0) out vec4 OutFirePlane;
 
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	uniform vec3 FirePlanePositionOffset;
+	uniform vec3 SpotlightPos;
+
 	uniform float NoiseTextureInterpolator;
 	uniform float Time;
 
-	uniform vec3 CameraDesc;
-	
 	//Shading Constants
-	uniform vec3 LightPosNDC;
 	uniform vec4 RoughnessScaleAddContrastMin;
 	uniform vec2 SpecularIntensityAndPower;
 	uniform float DiffuseIntensity;
@@ -295,11 +313,18 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 	uniform sampler2D SpotlightTexture;
 
 	in vec2 vsOutTexCoords;
+	in vec3 interpolatorWorldSpacePos;
 
 	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
 	{
 		///Translate to origin, scale by ranges ratio, translate to new position
 		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
+	vec2 MapToRange(vec2 uv, float t0, float t1, float newt0, float newt1)
+	{
+		uv.x = MapToRange(uv.x, t0, t1, newt0, newt1);
+		uv.y = MapToRange(uv.y, t0, t1, newt0, newt1);
+		return uv;
 	}
 
 	float Contrast(float color, float contrast)
@@ -317,12 +342,6 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 		normTex.z *= -1.f;
 	    return normalize(normTex);
 	}
-
-	/* float GetLightIntensityDiffuse(vec3 pixelPos, vec3 lightPos, vec3 normal, float ambientLight)
-	{
-		vec3 vToLight = normalize(LightPosNDC - pixelPos);
-		return max(ambientLight, dot(normal, vToLight));
-	} */
 
 	#define PI 3.141592654f
 
@@ -399,31 +418,25 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 
 	}
 
-	#define PAPER 1
+	#define PAPER 0
+	#define WOOD 1
 
 	void main()
 	{
-		const float ImageMixRoughnessScale = 1.0f;
+		const float ImageMixRoughnessScale = 0.75f;
 		const bool bInverseRoughness = false;
 		const float TopSpecFadeScale = 2.0;
 		const float NormalHarshness = 0.5f;
 
-		const float kSizeScale = float(` +
-        sizeScale +
-        /* glsl */ `);
-			const vec2 kViewSize = vec2(float(` +
-        viewSize.x +
-        /* glsl */ `), float(` +
-        viewSize.y +
-        /* glsl */ `));
-
 		ivec2 SampleCoord = ivec2(gl_FragCoord.xy);
 
 		float curFire = texture(FireTexture, vsOutTexCoords.xy).r;
+		//OutFirePlane = vec4(vec3(1.f - clamp(curFire, 0.0, 1.0), 0.0, curFire), 1); return;
 		float curFuel = texture(FuelTexture, vsOutTexCoords.xy).r;
 
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
 		vec3 imageColor = texture(ImageTexture, flippedUVs.xy).rgb;
+		//OutFirePlane = vec4(imageColor.rgb, 1); return;
 
 		vec3 finalShadedImageColor = vec3(0.0);
 		vec3 lightingDiffuseFinal = vec3(0.f);
@@ -453,7 +466,7 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 		//roughness = roughness * clamp(pow(length(vsOutTexCoords.xy - vec2(0.5) * 1.0f), 1.f/4.f), 0.0, 1.0);
 
 		vec3 surfaceMaterialColor = texture(SurfaceMaterialColorTexture, materialSamplingUV.xy).rgb;
-		surfaceMaterialColor = min(vec3(1.0), surfaceMaterialColor *= 2.0f);
+		surfaceMaterialColor = min(vec3(1.0), surfaceMaterialColor *= 3.0f);
 		//surfaceMaterialColor = vec3(1.0);
 		//imageColor.rgb = vec3(0.1);
 		imageColor.rgb = mix(imageColor.rgb, surfaceMaterialColor.rgb, roughness * ImageMixRoughnessScale);
@@ -463,41 +476,40 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 		//===========================================================================================Main spotlight shading
 
 		//Shading Constants
-		const float ambientLight = 0.0f;
-		vec3 spotlightPosNDCSpace = LightPosNDC;
-		vec3 pixelPosNDCSpace = vec3(vsOutTexCoords.xy * 2.f - 1.f, 0.0);
-		vec3 vToLight = /* normalize */(spotlightPosNDCSpace - pixelPosNDCSpace);
+		vec3 lightPos = SpotlightPos;
+		lightPos.z = min(-1.f, lightPos.z);
+		vec3 vToLight = /* normalize */(lightPos - interpolatorWorldSpacePos);
 		//float distanceToLight = length(vToLight);
 		vToLight = normalize(vToLight);
-
+		
 		//Normal
 		vec3 normal = texture(NormalsTexture, (3.f - RoughnessScaleAddContrastMin.z) * materialSamplingUV.xy).rgb;
 		normal = DecodeNormalTexture(normal, NormalHarshness);
-
+		
 		//Vignette
-		float vignette = 1.f - min(1.f, 0.5 * length(vec2((pixelPosNDCSpace.x * 1.5), pixelPosNDCSpace.y * 0.75)));
+		highp vec2 ndcSpace = vec2(vsOutTexCoords.x * 2.f - 1.f, vsOutTexCoords.y * 2.f - 1.f);
+		float vignette = 1.f - min(1.f, 0.5 * length(vec2((ndcSpace.x * 1.5), ndcSpace.y * 0.75)));
 		vignette = min(1.f, 0.0 + vignette * 2.0f);
 		//imageColor.rgb = vec3(1.f - vignette);
 		//vignette = 1.f;
 
-		#if 0//Rect Heightmap
+		#if 1//Rect Heightmap
 		{
 			const highp float rectPow = 4.f;
-			highp vec2 ndcSpace = vec2(vsOutTexCoords.x * 2.f - 1.f, vsOutTexCoords.y * 2.f - 1.f);
 			highp float rectCircleLength = pow(abs(ndcSpace.x), rectPow) + pow(abs(ndcSpace.y), rectPow);
-			const float rectCircleFadeStart = 0.1;
+			const float rectCircleFadeStart = 0.95;
 			float height = 1.0;
 			if(rectCircleLength > rectCircleFadeStart)
 			{
 				float s = 1.f - clamp(MapToRange(rectCircleLength, rectCircleFadeStart, 2.0, 0.0, 1.0), 0.0, 1.0);
-				height = s /* * s */;
+				height = s * s;
 				height = min(1.f, height + (1.f-vsOutTexCoords.y));
-				/* float dx = (dFdx(height));
+				float dx = (dFdx(height));
 				float dy = (dFdy(height));
-				vec3 heightNormal = vec3(-dx, -dy, normal.z * 0.5);
+				vec3 heightNormal = vec3(-dx, -dy, normal.z * 0.1);
 				heightNormal = normalize(heightNormal);
-				normal = normalize(mix(heightNormal, normal, s)); */
-				vignette *= max(0.1, height);
+				normal = normalize(mix(heightNormal, normal, s));
+				//vignette *= max(0.1, height);
 				//imageColor = vec3(height);
 			}
 		}
@@ -506,78 +518,77 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 		vignette *= max(0.75, vsOutTexCoords.y);
 		
 
-		const float specFadeThres = 0.995;
+		const float specFadeThres = 0.9975;
 		if(vsOutTexCoords.y > specFadeThres)
 		{
-			float t = MapToRange(vsOutTexCoords.y, specFadeThres, 1.0, 0.0, 1.0);
-			imageColor *= max(1.f, TopSpecFadeScale * t);
-			/* normal.yz = mix(normal.yz, vec2(0.75, 0.0), t);
-			normal = normalize(normal); */
-			//this
+			//float t = MapToRange(vsOutTexCoords.y, specFadeThres, 1.0, 0.0, 1.0);
+			//imageColor *= max(1.f, TopSpecFadeScale * t);
+			//normal.yz = mix(normal.yz, vec2(1.0, 0.0), t);
+			normal.yz = vec2(0.75, 0.0);
+			normal = normalize(normal);
+		}
+		if(abs(ndcSpace.x) > specFadeThres)
+		{
+			//float t = MapToRange(abs(ndcSpace.x), specFadeThres, 1.0, 0.0, 1.0);
+			//normal.xz = mix(normal.xz, vec2(ndcSpace.x, 0.0), t);
+			normal.xz = vec2(ndcSpace.x > 0.f ? 0.75 : -0.75, 0.0);
+			normal = normalize(normal);
 		}
 
+		const float ambientLight = 0.1f;
 		float spotlightMask = 1.0f;
+
+		float nDotL = dot(normal, vToLight);
+		if(nDotL < 0.0f)
+		{
+			nDotL *= 0.1;
+		}
+		nDotL = max(ambientLight, abs(nDotL));
 
 		//Diffuse
 		{
 			//Mask
-			vec2 spotlightSamplingUV = vsOutTexCoords;
-			spotlightSamplingUV.y = 1.f - spotlightSamplingUV.y;
-			spotlightSamplingUV = spotlightSamplingUV * 2.f - 1.f;
-			spotlightSamplingUV *= kSizeScale;
-			spotlightSamplingUV /= (kViewSize.xy);
-			spotlightSamplingUV = (spotlightSamplingUV + 1.f) * 0.5;
-
-			if(kViewSize.x > 1.0)
-			{
-				const vec2 centerUV = vec2(0.5);
-
-				spotlightSamplingUV.x -= centerUV.x;
-    			spotlightSamplingUV.y -= centerUV.y;
-
-    			// Apply clockwise rotation
-				const float angle = -0.7f;
-    			spotlightSamplingUV.x = spotlightSamplingUV.x * cos(angle) + spotlightSamplingUV.y * (-sin(angle));
-    			spotlightSamplingUV.y = spotlightSamplingUV.x * sin(angle) + spotlightSamplingUV.y * cos(angle);
-
-    			// Translate back to the original position
-    			spotlightSamplingUV.x += centerUV.x;
-    			spotlightSamplingUV.y += centerUV.y;
-			}
+			ivec2 texelPos = ivec2(gl_FragCoord.xy);
+			spotlightMask = texelFetch(SpotlightTexture, texelPos, 0).r;
 			
-			spotlightMask = textureLod(SpotlightTexture, spotlightSamplingUV, 0.f).r;
 			const float spotLightMaskScale = 5.0f;
-			spotlightMask = min(1.f, spotlightMask /* * spotlightMask */ * spotLightMaskScale);
-			//spotlightMask = 1.0f;
+			const float spotlightAmbientLight = 0.15f;
+			spotlightMask = clamp(spotlightMask * spotLightMaskScale, spotlightAmbientLight, 1.0);
 
-			float lightScaleDiffuseFromNormal = max(ambientLight, dot(normal, vToLight));
-			lightingDiffuseFinal += (lightScaleDiffuseFromNormal) * spotlightMask * vignette * DiffuseIntensity;
+			//spotlightMask = 2.0f;
+
+			lightingDiffuseFinal += nDotL * spotlightMask * vignette * DiffuseIntensity;
 		}
 		
 		//Specular
-		vec3 camPosNDCSpace = vec3(0.f, 0.f, -1.0f);
-    	vec3 vToCam = normalize(camPosNDCSpace - pixelPosNDCSpace);
+		vec3 camPos = CameraDesc.xyz;
+    	vec3 vToCam = normalize(camPos - interpolatorWorldSpacePos);
 		vec3 halfVec = normalize(vToLight + vToCam);
-		float specular = pow(max(0.f, dot(halfVec, normal)), SpecularIntensityAndPower.y * 8.f);
-		lightingSpecFinal += specular * SpecularIntensityAndPower.x * max(0.2,(1.f - roughness)) * dot(normal, vToLight);
+		float specularPowerScaledCur = mix(2.0, SpecularIntensityAndPower.y, 1.f - roughness) * 8.f;
+		float specular = pow(max(0.f, dot(halfVec, normal)), specularPowerScaledCur);
+		//float specular = pow(max(0.f, dot(halfVec, normal)), SpecularIntensityAndPower.y * 8.f);
+		lightingSpecFinal += specular * SpecularIntensityAndPower.x * max(0.75,(1.f - roughness)) * nDotL * spotlightMask;
 
 
 		//After Burn Embers
-		#if PAPER
+	#if PAPER
 		vec3 ashesColor = vec3(0.1);
 		float afterBurnEmbers = 0.0;
-		#else
+	#elif WOOD
+		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * 0.5;
+		float afterBurnEmbers = 0.0;
+	#else
 		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * 1.5;
 		float afterBurnEmbers = texture(AfterBurnTexture, vsOutTexCoords.xy).r;
-		#endif
+	#endif
 		
 		//afterBurnNoise = 1.f - afterBurnNoise;
 		vec3 embersColor = vec3(afterBurnEmbers, afterBurnEmbers * 0.2, afterBurnEmbers * 0.1);
 		float emberScale = 1.f;
 	#if 1 //NOISE EMBERS SCALE
-		#if (1 && PAPER)
-		float noiseConst = textureLod(NoiseTextureLQ, 0.5 * (vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0043)), 0.f).r;
-		//float noiseConst = textureLod(NoiseTextureLQ, 50.f + vec2(Time * 0.0013, Time * 0.0093), 0.f).r;
+	#if (1 && (PAPER || WOOD))
+		//float noiseConst = textureLod(NoiseTextureLQ, 0.5 * (vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0043)), 0.f).r;
+		float noiseConst = textureLod(NoiseTextureLQ, 50.f + vec2(Time * 0.0013, Time * 0.0093), 0.f).r;
 		noiseConst = clamp(MapToRange(noiseConst, 0.4, 0.6, 0.25, 1.0), 0.1f, 1.f);
 		vec3 noiseVec = textureLod(AfterBurnTexture, (vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0043)), 0.f).rgb;
 		emberScale = noiseVec.x * noiseVec.y * noiseVec.z; 
@@ -589,7 +600,7 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 		}
 		//emberScale *= emberScale;
 		//emberScale = (sin(Time * PI * 0.35) + 1.0f) * 0.5;
-		#else
+	#else
 		vec3 noiseVec = textureLod(NoiseTextureLQ, vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0093), 0.f).rgb;
 		float t = NoiseTextureInterpolator;
 		//float t = mod(Time, 3.f);
@@ -639,21 +650,28 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 		//burnedImageTexture = luminance * 10.0 * vec3(0.5, 0.2, 0.7);
 		//burnedImageTexture = luminance * 10.0 * vec3(0.2, 0.2, 1.0);
 		//ashesColor.rgb += burnedImageTexture * emberScale;
-		#if PAPER
+	#if PAPER
 		ashesColor.rgb += luminance * min(0.5, Contrast(surfaceMaterialColor.r * 0.5f, 5.f));
 		ashesColor += burnedImageTexture * emberScale;
-		#else
+	#elif WOOD
+		ashesColor.rgb += luminance * min(0.5, Contrast(surfaceMaterialColor.r * 0.5f, 5.f));
+		ashesColor += burnedImageTexture * emberScale * 4.f;
+		ashesColor += burnedImageTexture * noiseConst * noiseConst;
+	#else
 		ashesColor.rgb = max(ashesColor.rgb, burnedImageTexture * 1.75f * emberScale);
-		#endif
 	#endif
+	#endif////BURNED IMAGE
 
 	#if 1 //VIRTUAL POINT LIGHTS
+	{
 		const int NumLights2D = 4;
 
 		const float FirePlaneSizeScaleNDC = 1.f;
 
 		const float distanceBetweenLightsNDC = (FirePlaneSizeScaleNDC * 2.f) / float(NumLights2D - 1);
         const float domainStart = (FirePlaneSizeScaleNDC * -1.0)/*  + distanceBetweenLightsNDC * 0.5f */;
+
+		vec3 pixelPosNDCSpace = vec3(ndcSpace.xy, 0.0);
 
 		vec3 virtualPointLightsColor = vec3(1.f, 0.5f, 0.1f);
 
@@ -690,11 +708,12 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 				
 			}
 		}
-
+	}
 	#endif////VIRTUAL POINT LIGHTS
 
-
+	#if PAPER
 		ashesColor = vec3(0.0);
+	#endif
 
 		vec3 surfaceColor = ashesColor;
 
@@ -703,13 +722,13 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 			surfaceColor = mix(ashesColor, imageColor, /* saturate */(curFuel));
 		}
 
-		if(/* surfaceColor.r <= 1.f ||  */curFuel > 0.99f)
+		if(surfaceColor.r <= 1.f || curFuel > 0.99f)
 		{
 			
 			surfaceColor = surfaceColor * lightingDiffuseFinal;
-			surfaceColor += lightingSpecFinal /* * vec3(0.82, 0.966, 0.99) */;
+			surfaceColor += lightingSpecFinal;
 
-			//surfaceColor = CalculateLightPBR(normal, spotlightPosNDCSpace, camPosNDCSpace, pixelPosNDCSpace, surfaceColor * spotlightMask * vignette, clamp(roughness, 0.1, 1.0), 0.0);
+			//surfaceColor = CalculateLightPBR(normal, lightPos, camPos, interpolatorWorldSpacePos, surfaceColor * spotlightMask * vignette, clamp(roughness, 0.1, 1.0), 0.0);
 		}
 
 		const float shadowFadeThres = 0.01;
@@ -720,7 +739,6 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 
 	#if 1//RECT FADE BUMPY
 		const highp float rectPow = 32.f;
-		highp vec2 ndcSpace = vec2(vsOutTexCoords.x * 2.f - 1.f, vsOutTexCoords.y * 2.f - 1.f);
 		highp float rectCircleLength = pow(abs(ndcSpace.x), rectPow) + pow(abs(ndcSpace.y), rectPow);
 		//float rectCircleLength = abs(vsOutTexCoords.x * 2.f - 1.f) + abs(vsOutTexCoords.y * 2.f - 1.f);
 		const float rectCircleFadeStart = 0.8;
@@ -759,7 +777,6 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 		}
 	#elif 1 //RECT FADE SIMPLE
 		const highp float rectPow = 4.f;
-		highp vec2 ndcSpace = vec2(vsOutTexCoords.x * 2.f - 1.f, vsOutTexCoords.y * 2.f - 1.f);
 		highp float rectCircleLength = pow((ndcSpace.x), rectPow) + pow((ndcSpace.y), rectPow);
 		const float rectCircleFadeStart = 1.8;
 		if(rectCircleLength > rectCircleFadeStart)
@@ -835,6 +852,5 @@ export function GetShaderSourceFireVisualizerPS(sizeScale: number, viewSize: Vec
 
 		OutFirePlane = vec4(finalColor.rgb, 1);
 
-	}`
-    );
+	}`;
 }

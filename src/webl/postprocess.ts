@@ -1,6 +1,7 @@
 //Bloom
 
 import { CreateTexture, CreateTextureRT } from "./resourcesUtils";
+import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import {
@@ -17,6 +18,11 @@ import { GTime } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
+        CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
+        ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
+        FirePlanePositionOffset: gl.getUniformLocation(shaderProgram, "FirePlanePositionOffset"),
+        SpotlightPos: gl.getUniformLocation(shaderProgram, "SpotlightPos"),
+        SpotlightScale: gl.getUniformLocation(shaderProgram, "SpotlightScale"),
         MipLevel: gl.getUniformLocation(shaderProgram, "MipLevel"),
         Time: gl.getUniformLocation(shaderProgram, "Time"),
         TextureSize: gl.getUniformLocation(shaderProgram, "TextureSize"),
@@ -227,6 +233,7 @@ export class RBloomPass {
         gl: WebGL2RenderingContext,
         flameTexture: WebGLTexture,
         firePlaneTexture: WebGLTexture,
+        spotLightTexture: WebGLTexture,
         sourceMipIndex: number,
     ) {
         gl.viewport(0, 0, this.TextureSize.x, this.TextureSize.y);
@@ -244,11 +251,15 @@ export class RBloomPass {
         gl.activeTexture(gl.TEXTURE0 + 1);
         gl.bindTexture(gl.TEXTURE_2D, flameTexture);
         gl.uniform1i(this.UniformParametersLocationListBloomPrePass.FlameTexture, 1);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
 
         gl.activeTexture(gl.TEXTURE0 + 2);
         gl.bindTexture(gl.TEXTURE_2D, firePlaneTexture);
         gl.uniform1i(this.UniformParametersLocationListBloomPrePass.FirePlaneTexture, 2);
+
+        gl.activeTexture(gl.TEXTURE0 + 3);
+        gl.bindTexture(gl.TEXTURE_2D, spotLightTexture);
+        gl.uniform1i(this.UniformParametersLocationListBloomPrePass.SpotlightTexture, 3);
+
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
 
@@ -279,8 +290,6 @@ export class RCombinerPass {
 
     NoiseTexture: WebGLTexture;
 
-    SpotlightTexture: WebGLTexture;
-
     SmokeNoiseTexture: WebGLTexture;
 
     LogoImageTexture: WebGLTexture;
@@ -296,9 +305,6 @@ export class RCombinerPass {
 
         this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
 
-        const spotlightTextureId = Math.floor(Math.random() * 8);
-        this.SpotlightTexture = CreateTexture(gl, 4, `assets/spotlightCut` + spotlightTextureId + `.png`);
-
         this.SmokeNoiseTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg");
         this.LogoImageTexture = CreateTexture(gl, 4, "assets/background/logoNewY.png");
         this.LensTexture = CreateTexture(gl, 4, "assets/lensDirt6Edit.jpg");
@@ -310,6 +316,7 @@ export class RCombinerPass {
         flameTexture: WebGLTexture,
         bloomTexture: WebGLTexture,
         smokeTexture: WebGLTexture,
+        spotlightTexture: WebGLTexture,
         pointLightsTexture: WebGLTexture,
         destFramebuffer: WebGLFramebuffer | null,
         destSize: Vector2,
@@ -322,6 +329,34 @@ export class RCombinerPass {
         gl.useProgram(this.shaderProgram);
 
         //Constants
+        gl.uniform4f(
+            this.UniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform3f(
+            this.UniformParametersLocationList.FirePlanePositionOffset,
+            GSceneDesc.FirePlane.PositionOffset.x,
+            GSceneDesc.FirePlane.PositionOffset.y,
+            GSceneDesc.FirePlane.PositionOffset.z,
+        );
+
+        //Spotlight
+        gl.uniform2f(
+            this.UniformParametersLocationList.SpotlightScale,
+            GSceneDesc.Spotlight.SizeScale.x,
+            GSceneDesc.Spotlight.SizeScale.y,
+        );
+        gl.uniform3f(
+            this.UniformParametersLocationList.SpotlightPos,
+            GSceneDesc.Spotlight.Position.x,
+            GSceneDesc.Spotlight.Position.y,
+            GSceneDesc.Spotlight.Position.z,
+        );
+
         gl.uniform1f(this.UniformParametersLocationList.Time, GTime.Cur);
 
         //Textures
@@ -346,7 +381,7 @@ export class RCombinerPass {
         gl.uniform1i(this.UniformParametersLocationList.SmokeTexture, 5);
 
         gl.activeTexture(gl.TEXTURE0 + 6);
-        gl.bindTexture(gl.TEXTURE_2D, this.SpotlightTexture);
+        gl.bindTexture(gl.TEXTURE_2D, spotlightTexture);
         gl.uniform1i(this.UniformParametersLocationList.SpotlightTexture, 6);
 
         gl.activeTexture(gl.TEXTURE0 + 7);

@@ -55,12 +55,12 @@ export const SmokeParticlesDesc = {
     inNumLoops: 1.0,
     inTextureFileName: "assets/sprites/Explosion01-nofire_5x5.png",
     inFlipbookSizeRC: { x: 5.0, y: 5.0 },
-    inDefaultSize: { x: 2.0 * 0.225, y: 2.125 * 0.225 },
+    inDefaultSize: { x: 2.0 * 0.5, y: 2.125 * 0.5 },
     inSizeRangeMinMax: { x: 0.7, y: 1.0 },
     inSizeClampMax: { x: 0.7, y: 0.7 },
     inInitialVelocityScale: 5.0,
     inVelocityFieldForceScale: 20.0,
-    inBuoyancyForceScale: 10, //TODO:Increase dynamically when overall temperature is high
+    inBuoyancyForceScale: 5, //TODO:Increase dynamically when overall temperature is high
     inDownwardForceScale: 0.25,
     inAlphaScale: 0.25,
     inEAlphaFade: 2,

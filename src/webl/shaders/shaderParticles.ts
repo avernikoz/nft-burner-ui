@@ -1,5 +1,4 @@
 import { EParticleShadingMode } from "../particles";
-import { SceneDesc } from "../scene";
 import { Vector2 } from "../types";
 
 //sc_ - ShaderCode
@@ -428,8 +427,6 @@ export function GetParticleRenderInstancedVS(
     bMotionBasedTransform: boolean,
     randomSizeChangeSpeed: number,
 ) {
-    const sizeScale = SceneDesc.FirePlaneSizeScaleNDC;
-    const viewSize = SceneDesc.ViewRatioXY;
     return (
         /* glsl */ `#version 300 es
   
@@ -442,6 +439,10 @@ export function GetParticleRenderInstancedVS(
 		layout(location = 3) in float inAge;
 		layout(location = 4) in vec2 inVelocity;
 	
+		uniform vec4 CameraDesc;
+		uniform float ScreenRatio;
+		uniform vec3 FirePlanePositionOffset;
+
 		uniform float ParticleLife;
 		uniform float NumLoops;
 		uniform float CurTime;
@@ -468,15 +469,7 @@ export function GetParticleRenderInstancedVS(
 	
 		void main()
 		{
-
-			float kSizeScale = float(` +
-        sizeScale +
-        /* glsl */ `);
-				const vec2 kViewSize = vec2(float(` +
-        viewSize.x +
-        /* glsl */ `), float(` +
-        viewSize.y +
-        /* glsl */ `));
+			float kSizeScale = 1.f + FirePlanePositionOffset.z - CameraDesc.z;
 
 			const vec2 kInitTranslate = vec2(float(` +
         initialTranslation.x +
@@ -523,7 +516,9 @@ export function GetParticleRenderInstancedVS(
 				//offset
 				pos += kInitTranslate;
 				
-				pos /= kViewSize;
+				pos.xy *= CameraDesc.w;
+				pos.x /= ScreenRatio;
+				pos.xy /= kSizeScale;
   
 			#if 1 //NOISE-DRIVEN SIZE
 			const float kSizeChangeSpeed = float(` +
@@ -542,7 +537,6 @@ export function GetParticleRenderInstancedVS(
         sizeClampMax.y +
         /* glsl */ `));
 				
-
 				float scale = 1.0f;
 				vec2 noiseUV = vec2((inPosition.x + 1.f) * 0.5f, (inPosition.y + 1.f) * 0.5f);
 				noiseUV *= 0.25f;
@@ -550,11 +544,8 @@ export function GetParticleRenderInstancedVS(
 				noiseUV.y += CurTime * 0.033f * kSizeChangeSpeed;
 				vec2 noise = textureLod(NoiseTexture, noiseUV.xy, 0.f).rg;
 
-				
-
 				scale = clamp(MapToRange(noise.r, 0.35, 0.65, kSizeRangeMinMax.x, kSizeRangeMinMax.y), kSizeRangeMinMax.x, kSizeRangeMinMax.y);
 
-				
 				const float particleDiffScale = 0.17f;
 				
 				const float sizeChangeSpeed = 0.77 * kSizeChangeSpeed;
@@ -578,7 +569,6 @@ export function GetParticleRenderInstancedVS(
 					}
 				}
 				
-
 				float scale2 = clamp(MapToRange(noise.r, 0.35, 0.65, kSizeRangeMinMax.x, kSizeRangeMinMax.y), kSizeRangeMinMax.x, kSizeRangeMinMax.y);
 
 				scale = scale * scale2;
@@ -590,14 +580,11 @@ export function GetParticleRenderInstancedVS(
 				  return;
 				}
 
-				scale *= kSizeScale;
 				pos.x *= max(kSizeClampMax.x, scale);
 				pos.y *= max(kSizeClampMax.y, scale);
 
 			}
 			#endif//NOISE DRIVEN SIZE
-
-				
 
 				//scale
 				pos.x *= float(` +
@@ -620,13 +607,12 @@ export function GetParticleRenderInstancedVS(
   
 				//translate
 				vec2 translation = inPosition;
-				translation *= kSizeScale;
-				translation.x /= float(` +
-        viewSize.x +
-        /* glsl */ `);
-				translation.y /= float(` +
-        viewSize.y +
-        /* glsl */ `);
+				translation += FirePlanePositionOffset.xy;
+				translation -= CameraDesc.xy;
+				translation.xy *= CameraDesc.w;
+				translation /= kSizeScale;
+				translation.x /= ScreenRatio;
+
 				pos.xy += translation;
 	
 				gl_Position = vec4(pos.xy, 0.0, 1.0);
