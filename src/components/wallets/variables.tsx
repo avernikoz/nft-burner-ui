@@ -2,7 +2,7 @@ import { IAccount, IMenuConnectionItem } from "./types";
 import { Connector } from "wagmi";
 import { arbitrum, mainnet, optimism, polygon } from "wagmi/chains";
 import RainbowWalletList from "./components/rainbowWalletList/RainbowWalletList";
-import SuietWalletLIst from "./components/suietWalletList/SuietWalletLIst";
+import SuietWalletLIst from "./components/suietWalletList/SuietWalletList";
 import SolanaWalletList from "./components/solanaWalletList/SolanaWalletList";
 import React from "react";
 
