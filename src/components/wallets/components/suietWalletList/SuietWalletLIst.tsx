@@ -70,7 +70,6 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
         }
     }
 
-
     return (
         <>
             <Toast ref={toast} position="top-left" />

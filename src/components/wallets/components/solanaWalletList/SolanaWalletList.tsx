@@ -14,25 +14,6 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
     const toast = useRef<Toast>(null);
     const { connection } = useConnection();
 
-
-    useEffect(() => {
-        if (connected && publicKey) {
-            connection.getBalance(new PublicKey(publicKey)).then((balance) => {
-                const balanceInSOL = ethers.formatUnits(balance, 9).substring(0, 5);
-                props.connect({
-                    id: publicKey?.toString(),
-                    balance: balanceInSOL + " SOL",
-                    walletIcon: wallet?.adapter.icon,
-                });
-            },
-                (err)=>{
-                    disconnect();
-                    showError("Trouble with balance: " + err.message);
-                }
-                );
-        }
-    }, [connected, connection, props, publicKey, wallet?.adapter.icon]);
-
     const showError = (message: string) => {
         toast.current?.show({
             severity: "error",
@@ -40,6 +21,25 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
             detail: message,
         });
     };
+
+    useEffect(() => {
+        if (connected && publicKey) {
+            connection.getBalance(new PublicKey(publicKey)).then(
+                (balance) => {
+                    const balanceInSOL = ethers.formatUnits(balance, 9).substring(0, 5);
+                    props.connect({
+                        id: publicKey?.toString(),
+                        balance: balanceInSOL + " SOL",
+                        walletIcon: wallet?.adapter.icon,
+                    });
+                },
+                (err) => {
+                    disconnect();
+                    showError("Trouble with balance: " + err.message);
+                },
+            );
+        }
+    }, [connected, connection, disconnect, props, publicKey, wallet?.adapter.icon]);
 
     return (
         <>

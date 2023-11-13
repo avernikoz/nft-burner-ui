@@ -1,5 +1,5 @@
 import { styled } from "styled-components";
-import {ListBox} from "primereact/listbox";
+import { ListBox } from "primereact/listbox";
 
 export const Item = styled.div`
     display: flex;
