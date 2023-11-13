@@ -94,6 +94,7 @@ export function createMenuItems(
             label: "Sui",
             icon: <SuietLogo width={30} height={30} style={{ marginRight: "5px" }} />,
             command: () => {
+                // TODO: Replace with more descriptive condition
                 if (activeIndex !== 4) {
                     disconnect();
                     setActiveIndex(4);
@@ -105,6 +106,7 @@ export function createMenuItems(
             label: "Solana",
             icon: <SolanaLogo width={30} height={30} style={{ marginRight: "5px" }} />,
             command: () => {
+                // TODO: Replace with more descriptive condition
                 if (activeIndex !== 5) {
                     disconnect();
                     setActiveIndex(5);
