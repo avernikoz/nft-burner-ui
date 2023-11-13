@@ -1,10 +1,9 @@
 import { Button } from "primereact/button";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line import/no-unresolved
 import { MenuItem } from "primereact/menuitem";
 import { PanelMenu } from "primereact/panelmenu";
 import { Menu } from "primereact/menu";
-import { Toast } from "primereact/toast";
 // eslint-disable-next-line import/no-unresolved
 import { ButtonContainer, ProfileLabel, StyledDialog } from "./Wallets.styled";
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -18,18 +17,19 @@ import { IAccount, IMenuConnectionItem } from "./types";
 import DialogWalletList from "./components/dialogWalletList/DialogWalletList";
 import { ethers } from "ethers";
 import { createMenuItems } from "./variables";
+import { ToastContext } from "../toastProvider/ToastProvider";
 
 function Wallets() {
     const [visible, setVisible] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
-    const [activeRainConnector, setActiveRainConnector] = useState<Connector | null>(null);
+    const [activeRainbowConnector, setActiveRainbowConnector] = useState<Connector | null>(null);
     const [account, setAccount] = useState<IAccount | null>(null);
     const profileMenu = useRef<Menu>(null);
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const solanaConnection = useConnection();
     const wagmiAccount = useWagmiAccount();
-    const toast = useRef<Toast>(null);
+    const toastController = useContext(ToastContext);
     const lastEvmIndex = 3;
 
     const connect = useCallback(
@@ -54,10 +54,11 @@ function Wallets() {
             });
         }
 
-        setActiveRainConnector(null);
+        setActiveRainbowConnector(null);
         setAccount(null);
     }, [suietWallet, solanaWallet, setAccount]);
 
+    // get previous connected network
     useEffect(() => {
         const active = localStorage.getItem("activeIndex");
         if (active !== null) {
@@ -65,16 +66,19 @@ function Wallets() {
         }
     }, []);
 
+    // method for switch account
     const switchChain = useCallback(
         async (index: number, chainId: number) => {
             try {
-                if (activeIndex !== index) {
-                    if (activeIndex <= lastEvmIndex && activeRainConnector !== null) {
-                        if (!activeRainConnector.switchChain) {
+                const isNetworkChange = activeIndex !== index;
+                if (isNetworkChange) {
+                    const isNetworkEvmAndConnected = activeIndex <= lastEvmIndex && activeRainbowConnector !== null;
+                    if (isNetworkEvmAndConnected) {
+                        if (!activeRainbowConnector.switchChain) {
                             return;
                         }
-                        await activeRainConnector?.switchChain(chainId);
-                        const address = await activeRainConnector?.getAccount();
+                        await activeRainbowConnector?.switchChain(chainId);
+                        const address = await activeRainbowConnector?.getAccount();
                         if (!address) {
                             return;
                         }
@@ -92,27 +96,23 @@ function Wallets() {
                     }
                     setActiveIndex(index);
                 }
-                setActiveIndex(index); // fix
             } catch (error) {
                 if (error instanceof Error) {
-                    toast.current?.show({
-                        severity: "error",
-                        summary: "Error",
-                        detail: "Failed to connect: " + error.message,
-                    });
+                    toastController?.showError("Failed to connect: " + error.message);
                 } else {
-                    toast.current?.show({ severity: "error", summary: "Error", detail: "Failed to connect: " + error });
+                    toastController?.showError("Failed to connect: " + error);
                 }
             }
         },
-        [activeIndex, activeRainConnector, connect, disconnect, setActiveIndex],
+        [activeIndex, activeRainbowConnector, connect, disconnect, toastController],
     );
 
     const items = useMemo<IMenuConnectionItem[]>(
-        () => createMenuItems(switchChain, connect, setActiveRainConnector, setActiveIndex, activeIndex, disconnect),
+        () => createMenuItems(switchChain, connect, setActiveRainbowConnector, setActiveIndex, activeIndex, disconnect),
         [activeIndex, connect, disconnect, switchChain],
     );
 
+    //items for dialog tabs
     const tabItems = useRef([items[0], items[4], items[5]]);
 
     const menuItems: MenuItem[] = [
@@ -132,7 +132,7 @@ function Wallets() {
             label: "Copy to clickBoard",
             icon: "pi pi-copy",
             command: () => {
-                toast.current?.show({ severity: "success", summary: "Success", detail: "Copy to Clipboard" });
+                toastController?.showSuccess("Copy to Clipboard");
             },
         },
         {
@@ -144,8 +144,10 @@ function Wallets() {
         },
     ];
 
+    // effect for change tab view in dialog
     useEffect(() => {
-        if (activeIndex <= lastEvmIndex) {
+        const isEvmNetwork = activeIndex <= lastEvmIndex;
+        if (isEvmNetwork) {
             tabItems.current.shift();
             tabItems.current.unshift(items[activeIndex]);
         }
@@ -165,16 +167,12 @@ function Wallets() {
 
                 (err) => {
                     solanaWallet.disconnect();
-                    toast.current?.show({
-                        severity: "error",
-                        summary: "Error",
-                        detail: "Trouble with balance: " + err.message,
-                    });
+                    toastController?.showError("Trouble with balance: " + err.message);
                 },
             );
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [solanaWallet.publicKey]);
+    }, [solanaWallet.publicKey?.toString()]);
 
     const accountChainListener = useCallback(
         (data: ConnectorData) => {
@@ -191,7 +189,7 @@ function Wallets() {
             }
             if (data.chain) {
                 if (data.chain.unsupported) {
-                    toast.current?.show({ severity: "error", summary: "Error", detail: "Chain is unsuported" });
+                    toastController?.showError("Chain is unsuported");
                     return;
                 }
                 const index = items.findIndex((a) => a.chainId === data.chain?.id);
@@ -199,20 +197,20 @@ function Wallets() {
                 switchChain(index, data.chain.id);
             }
         },
-        [account?.walletIcon, connect, items, switchChain],
+        [account?.walletIcon, connect, items, switchChain, toastController],
     );
 
     useEffect(() => {
-        if (activeRainConnector) {
-            activeRainConnector.on("change", accountChainListener);
+        if (activeRainbowConnector) {
+            activeRainbowConnector.on("change", accountChainListener);
             return () => {
-                activeRainConnector?.off("change", accountChainListener);
+                activeRainbowConnector?.off("change", accountChainListener);
             };
         }
     }, [
         account?.walletIcon,
         accountChainListener,
-        activeRainConnector,
+        activeRainbowConnector,
         connect,
         items,
         switchChain,
@@ -222,7 +220,6 @@ function Wallets() {
 
     return (
         <div className="wallet">
-            <Toast ref={toast} position="top-left" />
             <ButtonContainer>
                 <PanelMenu model={menuItems} className="w-full md:w-25rem" color={"primary"} />
                 {!account && (

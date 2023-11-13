@@ -8,6 +8,7 @@ import FullScreenButton from "../../components/fullscreen-button/FullscreenButto
 import Wallets from "../../components/wallets/Wallets";
 import { SuiWalletContext } from "../../context/SuiWalletContext";
 import { RenderMain } from "../../webl/script";
+import { ToastProvider } from "../../components/toastProvider/ToastProvider";
 
 function App() {
     useEffect(() => {
@@ -20,7 +21,9 @@ function App() {
                 <SuiWalletContext>
                     <div className="App">
                         <div className="WalletConnectionHeader">
-                            <Wallets />
+                            <ToastProvider>
+                                <Wallets />
+                            </ToastProvider>
                         </div>
                         <div>
                             <canvas id="demo-canvas">

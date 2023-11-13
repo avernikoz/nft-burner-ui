@@ -1,31 +1,18 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { ListBox } from "primereact/listbox";
 import { useAccountBalance, useWallet } from "@suiet/wallet-kit";
 import { IWallet } from "@suiet/wallet-kit/dist/types/wallet";
-import { Toast } from "primereact/toast";
 import { IAccount } from "../../types";
 import { ethers } from "ethers";
 import SuiItemTemplate from "./SuiItemTemplate";
+import { ToastContext } from "../../../toastProvider/ToastProvider";
 
 function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<IWallet | null>(null);
     const wallet = useWallet();
-    const toast = useRef<Toast>(null);
     const { error, loading, balance } = useAccountBalance();
     const [retry, setRetry] = useState(0);
-
-    const showDangerToast = () => {
-        toast.current?.show({ severity: "error", summary: "Error", detail: "Wallet is not installed" });
-    };
-
-    const show = () => {
-        toast.current?.show({
-            severity: "info",
-            summary: "Connecting",
-            detail: "Please accept connection in wallet",
-            icon: <i className="pi pi-spin pi-cog"></i>,
-        });
-    };
+    const toastController = useContext(ToastContext);
 
     useEffect(() => {
         if (balance === undefined) {
@@ -51,28 +38,23 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
                 return;
             }
             if (!chosenWallet.installed) {
-                showDangerToast();
+                toastController?.showError("Wallet is not installed");
                 return;
             }
-            show();
+            toastController?.showInfo("Connecting", "Please accept connection in wallet");
             await wallet.select(chosenWallet.name);
             setSelectedOption(chosenWallet);
         } catch (err) {
             if (err instanceof Error) {
-                toast.current?.show({
-                    severity: "error",
-                    summary: "Error",
-                    detail: "Failed to connect: " + err.message,
-                });
+                toastController?.showError("Failed to connect: " + err.message);
             } else {
-                toast.current?.show({ severity: "error", summary: "Error", detail: "Failed to connect: " + err });
+                toastController?.showError("Failed to connect: " + err);
             }
         }
     }
 
     return (
         <>
-            <Toast ref={toast} position="top-left" />
             <ListBox
                 value={selectedOption}
                 itemTemplate={SuiItemTemplate}
