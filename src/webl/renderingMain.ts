@@ -789,5 +789,11 @@ export function RenderMain() {
                 }
             }
         }
+
+        // }
+    }
+
+    if (gl !== null) {
+        RenderLoop();
     }
 }
