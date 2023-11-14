@@ -56,6 +56,14 @@ function Wallets() {
         setAccount(null);
     }, [suietWallet, solanaWallet, setAccount]);
 
+    useEffect(() => {
+        // Handle disconnect wallet in case wallet `A` was connected and then user
+        // switched account to wallet `B`, which was not connected ever to the dapp.
+        solanaWallet.wallet?.adapter.addListener("disconnect", () => {
+            setAccount(null);
+        });
+    }, [solanaWallet.wallet?.adapter]);
+
     // get previous connected network
     useEffect(() => {
         const active = localStorage.getItem("activeIndex");
