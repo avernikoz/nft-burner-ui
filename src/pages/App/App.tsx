@@ -3,29 +3,30 @@ import React, { useEffect } from "react";
 import "./App.css";
 import { RenderMain } from "../../webl/renderingMain";
 import { SolanaWalletContext } from "../../context/SolanaWalletContext";
-import { SuiWalletContext } from "../../context/SuiWalletContext";
 import { EVMWalletContext } from "../../context/EVMWalletContext";
 import { Footer } from "./app.styled";
-import FullScreenButton from "../../components/fullscreen-button/FullscreenButton";
-import { WalletDisconnectButton, WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { ConnectButton } from "@suiet/wallet-kit";
-import { ConnectButton as RainbowConnectButton } from "@rainbow-me/rainbowkit";
+import FullScreenButton from "../../components/FullscreenButton/FullscreenButton";
+import Wallets from "../../components/wallets/Wallets";
+import { SuiWalletContext } from "../../context/SuiWalletContext";
+import { ToastProvider } from "../../components/ToastProvider/ToastProvider";
 
 function App() {
     useEffect(() => {
-        RenderMain();
+        if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
+        } else {
+            RenderMain();
+        }
     }, []);
 
     return (
         <SolanaWalletContext>
-            <SuiWalletContext>
-                <EVMWalletContext>
+            <EVMWalletContext>
+                <SuiWalletContext>
                     <div className="App">
                         <div className="WalletConnectionHeader">
-                            <WalletMultiButton />
-                            <WalletDisconnectButton />
-                            <ConnectButton />
-                            <RainbowConnectButton />
+                            <ToastProvider>
+                                <Wallets />
+                            </ToastProvider>
                         </div>
                         <div>
                             <canvas id="demo-canvas">
@@ -36,8 +37,8 @@ function App() {
                             <FullScreenButton />
                         </Footer>
                     </div>
-                </EVMWalletContext>
-            </SuiWalletContext>
+                </SuiWalletContext>
+            </EVMWalletContext>
         </SolanaWalletContext>
     );
 }

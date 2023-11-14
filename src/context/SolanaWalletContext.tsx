@@ -11,7 +11,6 @@ import {
     UnsafeBurnerWalletAdapter,
     WalletConnectWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import { clusterApiUrl } from "@solana/web3.js";
 import React, { FC, PropsWithChildren, useMemo } from "react";
 
 // Default styles that can be overridden by your app
@@ -21,16 +20,16 @@ export const SolanaWalletContext: FC<PropsWithChildren> = (props) => {
     const { children } = props;
     const network = WalletAdapterNetwork.Mainnet;
     // TODO ASAP IMPORTANT: Add custom RPC
-    const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+    const endpoint = "https://solana-mainnet.rpc.extrnode.com";
 
     const wallets = useMemo(
         () => [
             /**
              * Wallets that implement either of these standards will be available automatically.
              *
-             *   - Solana Mobile Stack Mobile Wallet Adapter Protocol
+             *   - Solana Mobile Stack Mobile IWallet Adapter Protocol
              *     (https://github.com/solana-mobile/mobile-wallet-adapter)
-             *   - Solana Wallet Standard
+             *   - Solana IWallet Standard
              *     (https://github.com/solana-labs/wallet-standard)
              *
              * If you wish to support a wallet that supports neither of those standards,
@@ -46,7 +45,6 @@ export const SolanaWalletContext: FC<PropsWithChildren> = (props) => {
             new Coin98WalletAdapter(),
             new UnsafeBurnerWalletAdapter(),
         ],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [network],
     );
 
