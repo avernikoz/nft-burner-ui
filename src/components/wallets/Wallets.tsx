@@ -12,7 +12,7 @@ import { ConnectorData, disconnect as wagmiDisconnect, fetchBalance } from "@wag
 
 import IconTemplate from "../IconTemplate/IconTemplate";
 import { IAccount, IMenuConnectionItem } from "./types";
-import DialogWalletList from "./components/dialogWalletList/DialogWalletList";
+import DialogWalletList from "./components/DialogWalletList/DialogWalletList";
 import { ethers } from "ethers";
 import { createMenuItems } from "./variables";
 import { ToastContext } from "../ToastProvider/ToastProvider";
