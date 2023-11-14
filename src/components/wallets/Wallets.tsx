@@ -63,6 +63,10 @@ function Wallets() {
             setAccount(null);
             toastController?.showInfo("Wallet disconnected", "Wallet got disconnected");
         });
+
+        return () => {
+            solanaWallet.wallet?.adapter.removeListener("disconnect");
+        };
     }, [solanaWallet.wallet?.adapter, toastController]);
 
     // get previous connected network
