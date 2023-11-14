@@ -4,7 +4,6 @@ import { arbitrum, mainnet, optimism, polygon } from "wagmi/chains";
 import RainbowWalletList from "./components/RainbowWalletList/RainbowWalletList";
 import SuietWalletLIst from "./components/SuietWalletList/SuietWalletList";
 import SolanaWalletList from "./components/SolanaWalletList/SolanaWalletList";
-import React from "react";
 
 import { ReactComponent as SuietLogo } from "./assets/suietLogo.svg";
 import { ReactComponent as SolanaLogo } from "./assets/solana.svg";
