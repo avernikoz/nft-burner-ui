@@ -12,7 +12,7 @@ import { ToastProvider } from "../../components/ToastProvider/ToastProvider";
 
 function App() {
     useEffect(() => {
-        if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION === true) {
+        if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
         } else {
             RenderMain();
         }
