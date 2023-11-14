@@ -61,8 +61,9 @@ function Wallets() {
         // switched account to wallet `B`, which was not connected ever to the dapp.
         solanaWallet.wallet?.adapter.addListener("disconnect", () => {
             setAccount(null);
+            toastController?.showInfo("Wallet disconnected", "Wallet got disconnected");
         });
-    }, [solanaWallet.wallet?.adapter]);
+    }, [solanaWallet.wallet?.adapter, toastController]);
 
     // get previous connected network
     useEffect(() => {
