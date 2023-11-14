@@ -24,4 +24,8 @@ export const GlobalStyles = createGlobalStyle`
             color: ${STYLES_CONFIG.button.active.color};
         }
     }
+
+    .p-toast button {
+        color: ${STYLES_CONFIG.button.active.color};
+    }
 `;

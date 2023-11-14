@@ -8,4 +8,9 @@ export const STYLES_CONFIG = {
             color: "#ffffff",
         },
     },
+    toast: {
+        color: "#ffffff",
+        backgroundColor: "transparent",
+        borderColor: "#ffffff",
+    },
 };
