@@ -1,5 +1,6 @@
 import { styled } from "styled-components";
 import { Dialog } from "primereact/dialog";
+import { STYLES_CONFIG } from "../../config/styles.config";
 
 export const StyledDialog = styled(Dialog)`
     width: 450px;
@@ -19,6 +20,8 @@ export const ButtonContainer = styled.div`
 
     button {
         margin: 0.8rem 0.5rem;
+        border: ${STYLES_CONFIG.button.border};
+        background-color: ${STYLES_CONFIG.button.backgroundColor};
     }
 `;
 
@@ -26,12 +29,12 @@ export const ProfileLabel = styled.div`
     display: flex;
     align-items: center;
     padding: 10px;
-    border: 1px solid #ffffff;
-    border-radius: 8px;
-    background-color: #4f46e5;
+    border: ${STYLES_CONFIG.button.border};
+    border-radius: ${STYLES_CONFIG.button.borderRadius};
+    background-color: ${STYLES_CONFIG.button.backgroundColor};
     font-family: Arial, sans-serif;
     font-size: 18px;
-    color: #ffffff;
+    color: ${STYLES_CONFIG.button.color};
     width: 200px;
     margin-left: 0.5rem;
     height: 72px;
@@ -55,5 +58,9 @@ export const ProfileLabel = styled.div`
 
     .balance {
         font-weight: bold;
+    }
+
+    &:hover {
+        color: ${STYLES_CONFIG.button.active.color};
     }
 `;

@@ -37,8 +37,3 @@ textarea {
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-
-#demo-canvas {
-    /* aspect-ratio: 1 / 1; */
-    /* width: min(100%, 100vh * 1 / 1); */
-}
