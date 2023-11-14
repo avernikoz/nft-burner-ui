@@ -15,7 +15,7 @@ import { IAccount, IMenuConnectionItem } from "./types";
 import DialogWalletList from "./components/dialogWalletList/DialogWalletList";
 import { ethers } from "ethers";
 import { createMenuItems } from "./variables";
-import { ToastContext } from "../toastProvider/ToastProvider";
+import { ToastContext } from "../ToastProvider/ToastProvider";
 
 function Wallets() {
     const [visible, setVisible] = useState(false);

@@ -6,7 +6,7 @@ import { IAccount } from "../../types";
 import { ethers } from "ethers";
 import { PublicKey } from "@solana/web3.js";
 import SolanaItemTemplate from "./SolanaItemTemplate";
-import { ToastContext } from "../../../toastProvider/ToastProvider";
+import { ToastContext } from "../../../ToastProvider/ToastProvider";
 
 function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<Wallet | null>(null);

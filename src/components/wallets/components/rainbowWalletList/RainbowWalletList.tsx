@@ -9,7 +9,7 @@ import { IAccount, IWallet } from "../../types";
 import { fetchBalance } from "@wagmi/core";
 import RainbowItemTemplate from "./RainbowItemTemplate";
 import connectors from "../../../../utils/connectors";
-import { ToastContext } from "../../../toastProvider/ToastProvider";
+import { ToastContext } from "../../../ToastProvider/ToastProvider";
 
 function RainbowWalletList(props: {
     connect: (account: IAccount) => void;

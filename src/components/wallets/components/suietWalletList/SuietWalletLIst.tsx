@@ -5,7 +5,7 @@ import { IWallet } from "@suiet/wallet-kit/dist/types/wallet";
 import { IAccount } from "../../types";
 import { ethers } from "ethers";
 import SuiItemTemplate from "./SuiItemTemplate";
-import { ToastContext } from "../../../toastProvider/ToastProvider";
+import { ToastContext } from "../../../ToastProvider/ToastProvider";
 
 function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<IWallet | null>(null);
