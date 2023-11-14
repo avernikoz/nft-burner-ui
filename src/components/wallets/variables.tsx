@@ -2,7 +2,7 @@ import { IAccount, IMenuConnectionItem } from "./types";
 import { Connector } from "wagmi";
 import { arbitrum, mainnet, optimism, polygon } from "wagmi/chains";
 import RainbowWalletList from "./components/RainbowWalletList/RainbowWalletList";
-import SuietWalletLIst from "./components/SuietWalletList/SuietWalletList";
+import SuietWalletList from "./components/SuietWalletList/SuietWalletList";
 import SolanaWalletList from "./components/SolanaWalletList/SolanaWalletList";
 
 import { ReactComponent as SuietLogo } from "./assets/suietLogo.svg";
@@ -99,7 +99,7 @@ export function createMenuItems(
                     setActiveIndex(4);
                 }
             },
-            list: <SuietWalletLIst connect={connect} />,
+            list: <SuietWalletList connect={connect} />,
         },
         {
             label: "Solana",
