@@ -1,13 +1,13 @@
 import React, { useEffect } from "react";
 
 import "./App.css";
+import { RenderMain } from "../../webl/renderingMain";
 import { SolanaWalletContext } from "../../context/SolanaWalletContext";
 import { EVMWalletContext } from "../../context/EVMWalletContext";
 import { Footer } from "./app.styled";
 import FullScreenButton from "../../components/FullscreenButton/FullscreenButton";
 import Wallets from "../../components/wallets/Wallets";
 import { SuiWalletContext } from "../../context/SuiWalletContext";
-import { RenderMain } from "../../webl/script";
 import { ToastProvider } from "../../components/ToastProvider/ToastProvider";
 
 function App() {

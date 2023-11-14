@@ -17,12 +17,16 @@ export const FlameParticlesDesc = {
     inBuoyancyForceScale: 0.0,
     inbOriginAtCenter: false,
     inEAlphaFade: 1,
+    inRandomSpawnThres: 1.0,
     inESpecificShadingMode: EParticleShadingMode.Flame,
+    inEFadeInOutMode: 3,
+
+    inInitialTranslate: { x: 0.0, y: 0.9 },
 };
 
 export const EmberParticlesDesc = {
     inName: "Ember Particles",
-    inNumSpawners2D: 64,
+    inNumSpawners2D: 32,
     inNumParticlesPerSpawner: 1,
     inSpawnRange: { x: 0.9, y: 1000.0 },
     inParticleLife: 2.8,
@@ -38,6 +42,7 @@ export const EmberParticlesDesc = {
     inDownwardForceScale: 1.0,
     inbOriginAtCenter: true,
     inbMotionBasedTransform: true,
+    inEFadeInOutMode: 0,
     inESpecificShadingMode: EParticleShadingMode.Embers,
 };
 
@@ -50,16 +55,18 @@ export const SmokeParticlesDesc = {
     inNumLoops: 1.0,
     inTextureFileName: "assets/sprites/Explosion01-nofire_5x5.png",
     inFlipbookSizeRC: { x: 5.0, y: 5.0 },
-    inDefaultSize: { x: 2.0 * 0.225, y: 2.125 * 0.225 },
+    inDefaultSize: { x: 2.0 * 0.5, y: 2.125 * 0.5 },
     inSizeRangeMinMax: { x: 0.7, y: 1.0 },
     inSizeClampMax: { x: 0.7, y: 0.7 },
     inInitialVelocityScale: 5.0,
     inVelocityFieldForceScale: 20.0,
-    inBuoyancyForceScale: 15, //TODO:Increase dynamically when overall temperature is high
+    inBuoyancyForceScale: 5, //TODO:Increase dynamically when overall temperature is high
     inDownwardForceScale: 0.25,
     inAlphaScale: 0.25,
     inEAlphaFade: 2,
     inbOriginAtCenter: true,
+    inBrightness: 1.0,
+    inEFadeInOutMode: 1,
     inESpecificShadingMode: EParticleShadingMode.Smoke,
 };
 
@@ -75,15 +82,19 @@ export const AfterBurnSmokeParticlesDesc = {
     inDefaultSize: { x: 2.0 * 0.2, y: 4.125 * 0.2 },
     inSizeRangeMinMax: { x: 0.99, y: 1.01 },
     inSizeClampMax: { x: 1.0, y: 1.0 },
-    inInitialVelocityScale: 0.01,
+    inInitialVelocityScale: 0.1,
     inVelocityFieldForceScale: 0.0,
     inBuoyancyForceScale: 0,
     inDownwardForceScale: 0.0,
     inbOriginAtCenter: false,
+    inbMotionBasedTransform: false,
     inEAlphaFade: 1,
     inAlphaScale: 0.5,
     inBrightness: 0.0,
+    inEFadeInOutMode: 0,
     inESpecificShadingMode: EParticleShadingMode.Smoke,
+
+    inInitialTranslate: { x: 0.0, y: 0.95 },
 };
 
 export const AfterBurnAshesParticlesDesc = {
@@ -104,5 +115,32 @@ export const AfterBurnAshesParticlesDesc = {
     inBuoyancyForceScale: 5.0,
     inDownwardForceScale: 0.1,
     inbOriginAtCenter: true,
+    //inEFadeInOutMode: 2,
     inESpecificShadingMode: EParticleShadingMode.Ashes,
+};
+
+export const DustParticlesDesc = {
+    inName: "Dust Particles",
+    inNumSpawners2D: 48,
+    inNumParticlesPerSpawner: 1,
+    inSpawnRange: { x: 0.0, y: 1.0 },
+    inParticleLife: 20.8,
+    inNumLoops: 1.0,
+    //inTextureFileName: "",
+    inTextureFileName: "assets/perlinNoise512.png",
+    inFlipbookSizeRC: { x: 5.0, y: 5.0 },
+    inDefaultSize: { x: 0.01, y: 0.01 },
+    inSizeRangeMinMax: { x: 0.45, y: 1.35 },
+    inSizeClampMax: { x: 0.0, y: 0.0 },
+    inRandomSizeChangeSpeed: 0.2,
+    inInitialVelocityScale: 2.0,
+    inVelocityFieldForceScale: 2.0,
+    inBuoyancyForceScale: 0.0,
+    inDownwardForceScale: 2.0,
+    inbOriginAtCenter: true,
+    inbRandomInitialPosition: true,
+    inRandomSpawnThres: 0.5,
+    inEAlphaFade: 1,
+    inEFadeInOutMode: 0,
+    inESpecificShadingMode: EParticleShadingMode.Dust,
 };

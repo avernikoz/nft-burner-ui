@@ -13,6 +13,7 @@ import { getWebGLProgram } from "./helpers/getWebGLProgram";
 import { GTime, showError } from "./utils";
 import { APP_ENVIRONMENT } from "../config/config";
 import { Vector2 } from "./types";
+import { GSceneDesc, GScreenDesc } from "./scene";
 
 // ====================================================== SHADERS END ======================================================
 
@@ -41,6 +42,7 @@ export const EParticleShadingMode = {
     Embers: 2,
     Smoke: 3,
     Ashes: 4,
+    Dust: 5,
 };
 
 export class ParticlesEmitter {
@@ -111,15 +113,19 @@ export class ParticlesEmitter {
             inDefaultSize = { x: 1.0, y: 1.0 },
             inSizeRangeMinMax = { x: 1.0, y: 1.0 },
             inSizeClampMax = { x: 1.0, y: 1.0 },
+            inRandomSizeChangeSpeed = 1.0,
             inInitialVelocityScale = 0.0,
             inVelocityFieldForceScale = 0.0,
             inBuoyancyForceScale = 0.0,
             inDownwardForceScale = 2.5,
             inBrightness = 1.0,
             inAlphaScale = 0.25, //Currently smoke shading mode specific
-            inbOriginAtCenter = true,
+            inInitialTranslate = { x: 0.0, y: 0.0 },
             inbMotionBasedTransform = false,
-            inEAlphaFade = 0,
+            inbRandomInitialPosition = false,
+            inRandomSpawnThres = 1.0,
+            inEAlphaFade = 0, //0:disabled, 1:smooth, 2:fast
+            inEFadeInOutMode = 1, //0-disabled //1-fadeIn only //2-fadeOut only 3-enable all
             inESpecificShadingMode = EParticleShadingMode.Default,
         },
     ) {
@@ -279,6 +285,8 @@ export class ParticlesEmitter {
                     inVelocityFieldForceScale,
                     inBuoyancyForceScale,
                     inDownwardForceScale,
+                    inbRandomInitialPosition,
+                    inRandomSpawnThres,
                 ),
             );
             const shaderPS = CreateShader(gl, gl.FRAGMENT_SHADER, ParticleUpdatePS);
@@ -332,10 +340,12 @@ export class ParticlesEmitter {
             GetParticleRenderInstancedVS(
                 this.bUsesTexture,
                 inDefaultSize,
+                inEFadeInOutMode,
                 inSizeRangeMinMax,
                 inSizeClampMax,
-                inbOriginAtCenter,
+                inInitialTranslate,
                 inbMotionBasedTransform,
+                inRandomSizeChangeSpeed,
             ),
             GetParticleRenderColorPS(
                 inESpecificShadingMode,
@@ -534,6 +544,21 @@ export class ParticlesEmitter {
         gl.uniform1i(this.ParticleRenderUniformParametersLocationList.NoiseTexture, 1);
 
         //Constants
+        gl.uniform4f(
+            this.ParticleRenderUniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.ParticleRenderUniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform3f(
+            this.ParticleRenderUniformParametersLocationList.FirePlanePositionOffset,
+            GSceneDesc.FirePlane.PositionOffset.x,
+            GSceneDesc.FirePlane.PositionOffset.y,
+            GSceneDesc.FirePlane.PositionOffset.z,
+        );
+
         gl.uniform1f(this.ParticleRenderUniformParametersLocationList.ParticleLife, this.ParticleLife);
         gl.uniform1f(this.ParticleRenderUniformParametersLocationList.NumLoops, this.NumLoops);
         gl.uniform2f(
@@ -568,6 +593,9 @@ export class ParticlesEmitter {
 
     private GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
         const params = {
+            CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
+            ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
+            FirePlanePositionOffset: gl.getUniformLocation(shaderProgram, "FirePlanePositionOffset"),
             DeltaTime: gl.getUniformLocation(shaderProgram, "DeltaTime"),
             CurTime: gl.getUniformLocation(shaderProgram, "CurTime"),
             ParticleLife: gl.getUniformLocation(shaderProgram, "ParticleLife"),
