@@ -1,43 +1,8 @@
-import { CGConstants } from "./systemValues";
-import { Vector2 } from "./types";
-
-export function getMousePosition(canvas: HTMLCanvasElement, event: MouseEvent | TouchEvent) {
-    const rect = canvas.getBoundingClientRect();
-    let clientX, clientY;
-
-    if (event instanceof MouseEvent) {
-        clientX = event.clientX;
-        clientY = event.clientY;
-    } else if (event.touches && event.touches.length > 0) {
-        // Handle the first touch if available
-        clientX = event.touches[0].clientX;
-        clientY = event.touches[0].clientY;
-    }
-
-    if (clientX !== undefined && clientY !== undefined) {
-        const mouseX = ((clientX - rect.left) / canvas.clientWidth) * 2 - 1;
-        const mouseY = (1.0 - (clientY - rect.top) / canvas.clientHeight) * 2 - 1;
-        CGConstants.PrevMousePosNDC.x = CGConstants.MousePosNDC.x;
-        CGConstants.PrevMousePosNDC.y = CGConstants.MousePosNDC.y;
-        CGConstants.MousePosNDC.x = mouseX;
-        CGConstants.MousePosNDC.y = mouseY;
-        CGConstants.bMouseMoved = true;
-    }
-}
+import { Vector2, Vector3 } from "./types";
 
 export function showError(errorText: string) {
-    // const errorBoxDiv = document.getElementById("error-box");
-    // const errorTextElement = document.createElement("p");
-    // errorTextElement.innerText = errorText;
-    // errorBoxDiv.appendChild(errorTextElement);
     console.log(errorText);
 }
-
-/* function check(condition, text) {
-  if (condition == false) {
-    showError(text);
-  } */
-// }
 
 /* 
 Time
@@ -64,7 +29,7 @@ export function MathGetVectorLength(vec2: Vector2) {
 export function MathClamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max);
 }
-export function MathVectorNormalize(vec: Vector2) {
+export function MathVector2Normalize(vec: Vector2) {
     const length = Math.sqrt(vec.x * vec.x + vec.y * vec.y);
     if (length === 0) {
         // Avoid division by zero
@@ -73,8 +38,46 @@ export function MathVectorNormalize(vec: Vector2) {
         return { x: vec.x / length, y: vec.y / length };
     }
 }
+export function MathVector3Normalize(vec: Vector3) {
+    const length = Math.sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+    if (length === 0) {
+        // Avoid division by zero
+        return { x: 0, y: 0, z: 0 };
+    } else {
+        return { x: vec.x / length, y: vec.y / length, z: vec.z / length };
+    }
+}
+
+export function MathVector3Negate(a: Vector3, b: Vector3) {
+    return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+}
 
 export function MathMapToRange(t: number, t0: number, t1: number, newt0: number, newt1: number) {
     ///Translate to origin, scale by ranges ratio, translate to new position
     return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+}
+
+export function MathSmoothstep(edge0: number, edge1: number, x: number): number {
+    // Scale, and clamp x to 0..1 range
+    const t = Math.max(0, Math.min((x - edge0) / (edge1 - edge0), 1));
+    // Evaluate polynomial
+    return t * t * (3 - 2 * t);
+}
+
+export function MathLerp(start: number, end: number, t: number): number {
+    return start * (1 - t) + end * t;
+}
+export function MathLerpVec3(start: Vector3, end: Vector3, t: number): Vector3 {
+    return {
+        x: MathLerp(start.x, end.x, t),
+        y: MathLerp(start.y, end.y, t),
+        z: MathLerp(start.z, end.z, t),
+    };
+}
+
+export function MathIntersectionSphereSphere(pos1: Vector2, radius1: number, pos2: Vector2, radius2: number) {
+    // Assuming spheres are objects with properties x, y, z (center) and radius
+    const distance = Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
+
+    return distance <= radius1 + radius2;
 }

@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 
 import "./App.css";
-import { RenderMain } from "../../webl/script";
+import { RenderMain } from "../../webl/renderingMain";
 import { SolanaWalletContext } from "../../context/SolanaWalletContext";
 import { SuiWalletContext } from "../../context/SuiWalletContext";
 import { EVMWalletContext } from "../../context/EVMWalletContext";

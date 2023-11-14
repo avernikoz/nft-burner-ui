@@ -2,6 +2,17 @@ import { APP_ENVIRONMENT } from "../config/config";
 import { Vector2 } from "./types";
 import { showError } from "./utils";
 
+export let GNumPendingTextures = 0;
+
+export function GAreAllTexturesLoaded(): boolean {
+    if (GNumPendingTextures > 0) {
+        console.log("Num Pending Textures" + GNumPendingTextures);
+        return false;
+    } else {
+        return true;
+    }
+}
+
 export function CreateTexture(
     gl: WebGL2RenderingContext,
     inUnitIndex: number,
@@ -10,6 +21,8 @@ export function CreateTexture(
     bUseTrilinearFilter = false,
 ): WebGLTexture {
     const texture = gl.createTexture();
+
+    GNumPendingTextures += 1;
 
     //Set Cur Texture Unit
     gl.activeTexture(gl.TEXTURE0 + inUnitIndex);
@@ -33,6 +46,7 @@ export function CreateTexture(
             if (bGenerateMips) {
                 gl.generateMipmap(gl.TEXTURE_2D);
             }
+            GNumPendingTextures -= 1;
         });
 
         gl.bindTexture(gl.TEXTURE_2D, texture);

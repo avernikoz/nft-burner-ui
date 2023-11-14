@@ -1,16 +1,17 @@
 import { EParticleShadingMode } from "../particles";
-import { SceneDesc } from "../scene";
 import { Vector2 } from "../types";
 
-//SC - Shader Code
-function scTranslateToBaseAtOrigin(condition: boolean) {
+//sc_ - ShaderCode
+
+//
+/* function scTranslateToBaseAtOrigin(condition: boolean) {
     if (condition) {
-        return /* glsl */ `const float scaleOffsetAmount = 0.9f;
+        return  `const float scaleOffsetAmount = 0.9f;
 			pos.y += (scale / kViewSize.y) * scaleOffsetAmount;`;
     } else {
         return ``;
     }
-}
+} */
 
 function scGetRandomInitialVelocity(randomVelocityScale: number) {
     if (randomVelocityScale > 0) {
@@ -38,6 +39,53 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
     }
 }
 
+function scGetInitialPosition(condition: boolean) {
+    if (condition) {
+        return /* glsl */ `
+			{
+				//random position
+				vec2 uvPos = vec2(0.0);
+				uvPos.y = float(gl_VertexID) * 0.007 + CurTime * 0.01;
+				uvPos.x = float(gl_VertexID) * 0.0013 + CurTime * 0.07;
+				vec3 noisePos = textureLod(NoiseTextureHQ, uvPos, 0.f).rgb;
+				noisePos.x = MapToRange(noisePos.x, 0.4, 0.6, -2.f, 2.f);
+				noisePos.y = MapToRange(noisePos.y, 0.4, 0.6, -1.f, 2.f);
+				//noisePos = noisePos * 2.f - 1.f;
+				outPosition = noisePos.xy /* + uvPos.xy * 0.01 */;
+			  }
+		`;
+    } else {
+        return /* glsl */ `outPosition = inDefaultPosition;`;
+    }
+}
+
+function scRandomiseParticleSpawn(threshold: number) {
+    if (threshold < 1.0) {
+        return (
+            /* glsl */ `
+		{
+			const float thres = float(` +
+            threshold +
+            /* glsl */ `);
+			vec2 uvPos = vec2(0.0, float(gl_VertexID) * 0.047);
+			uvPos += vec2(CurTime * 0.0007f, CurTime * 0.0003);
+			float noiseVal = texture(NoiseTexture, uvPos).r;
+			noiseVal = MapToRange(noiseVal, 0.4, 0.6, 0.f, 1.f);
+			if(noiseVal < thres)
+			{
+				outAge = ParticleLife;
+				outPosition = vec2(0.f, 0.f);
+				outVelocity = vec2(0, 0);
+				return;
+			}
+		}
+		`
+        );
+    } else {
+        return ``;
+    }
+}
+
 function scGetVectorFieldForce(scale: number) {
     if (scale > 0) {
         return (
@@ -56,7 +104,25 @@ function scGetVectorFieldForce(scale: number) {
             scale +
             /* glsl */ `);
 			//randVel = normalize(randVel);
-			randVel = (randVel) * RandVelocityScale;
+			randVel = (randVel) * RandVelocityScale * 0.5;
+
+
+			//LQ Noise
+			uv = (inPosition + 1.f) * 0.5f;
+			uv *= 0.01f;
+			uv.y -= CurTime * 0.00025f;
+			uv.x += CurTime * 0.0025f;
+			randVelNoise = texture(NoiseTexture, uv.xy).rgb;
+			vec2 randVelLQ;
+			randVelLQ.x = randVelNoise.r;
+			randVelLQ.y = randVelNoise.g;
+			randVelLQ = randVelLQ * 2.f - 1.f;
+			randVel += (randVelLQ) * RandVelocityScale;
+
+			const float clampValue = 10.f;
+			randVel = clamp(randVel, vec2(-clampValue), vec2(clampValue));
+
+
 			curVel += randVel * DeltaTime;`
         );
     } else {
@@ -105,6 +171,8 @@ export function GetParticleUpdateShaderVS(
     velocityFieldForceScale: number,
     buoyancyForceScale: number,
     downwardForceScale: number,
+    bRandomPosition: boolean,
+    randomSpawnThres: number,
 ) {
     return (
         /* glsl */ `#version 300 es
@@ -208,26 +276,22 @@ export function GetParticleUpdateShaderVS(
   
 			  if(bAllowNewSpawn)
 			  {
+					
 				  /* Particle has exceeded its lifetime. Respawn. */
-				  #if 1
-					  outPosition = inDefaultPosition;
-					  //outPosition = vec2(0, -0.5);
-				  #else
-					  //random position
-					  vec2 uvPos = vec2(CurTime * 0.01f, CurTime * 0.001);
-					  vec3 noisePos = texture(NoiseTextureHQ, uvPos).rgb;
-					  noisePos.x = MapToRange(noisePos.x, 0.2, 0.8, 0.f, 1.f);
-					  noisePos.y = MapToRange(noisePos.y, 0.2, 0.8, 0.f, 1.f);
-					  noisePos = noisePos * 2.f - 1.f;
-					  outPosition = noisePos.xy;
-				  #endif
+				  
+					outAge = 0.0; //TODO: Random Age
+
+					` +
+        scRandomiseParticleSpawn(randomSpawnThres) +
+        /* glsl */ `
+
+				  ` +
+        scGetInitialPosition(bRandomPosition) +
+        /* glsl */ `
   
 				  ` +
         scGetRandomInitialVelocity(initialVelocityScale) +
         /* glsl */ `
-  
-				  outAge = 0.0; //TODO: Random Age
-  
 				  return;
 			  }
 			  else if(bAllowUpdate)
@@ -314,23 +378,30 @@ function scTransformBasedOnMotion(condition: boolean) {
     }
 }
 
-function scFadeInOutTransform(condition: boolean) {
+//0-disabled
+//1-fadeIn only
+//2-fadeOut only
+//3-enable all
+function scFadeInOutTransform(condition: number) {
     if (condition) {
-        return /* glsl */ `
+        return (
+            /* glsl */ `
 		#if 1 //SINGLE CURVE SCALE FADE OUT
-
-		float velLength = length(inVelocity);//TODO Optimization : Replace with compile time const
-		if(ageNorm < 0.333f)
+		const int curFadeSetting = int(` +
+            condition +
+            /* glsl */ `);
+		
+		if(ageNorm < 0.333f && (curFadeSetting != 2)) 
 		{
-			ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
-			pos.x *= clamp(ageNorm, 0.2, 1.f);
-			pos.y *= clamp(ageNorm, 0.05, 1.f);
+			float fadeParam = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
+			pos.x *= clamp(fadeParam, 0.2, 1.f);
+			pos.y *= clamp(fadeParam, 0.05, 1.f);
 		}
-		else if((velLength < 0.01))
+		else if((curFadeSetting != 1))
 		{
-			ageNorm = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
-			pos.x *= clamp(ageNorm, 0.5, 1.f);
-			pos.y *= clamp(ageNorm, 0.0, 1.f);
+			float fadeParam = ageNorm * (1.0 - ageNorm) * (1.0 - ageNorm) * 6.74;
+			pos.x *= clamp(fadeParam, 0.5, 1.f);
+			pos.y *= clamp(fadeParam, 0.0, 1.f);
 		}
 	  #else
 		float normAgeFadeInPow = sqrt(1.f - pow(1.f - ageNorm, 8.f));
@@ -339,7 +410,8 @@ function scFadeInOutTransform(condition: boolean) {
 		float normAgeFadeOutPow = 1.f - clamp(pow(ageNorm, 4.f), 0.f, 1.f);
 		pos.xy *= normAgeFadeOutPow;
 	  #endif
-	  `;
+	  `
+        );
     } else {
         return ``;
     }
@@ -348,13 +420,13 @@ function scFadeInOutTransform(condition: boolean) {
 export function GetParticleRenderInstancedVS(
     bUsesTexture: boolean,
     defaultSize: Vector2,
+    EFadeInOutMode: number,
     sizeRangeMinMax: Vector2,
     sizeClampMax: Vector2,
-    bOriginAtCenter = true,
-    bMotionBasedTransform = false,
+    initialTranslation: Vector2,
+    bMotionBasedTransform: boolean,
+    randomSizeChangeSpeed: number,
 ) {
-    const sizeScale = SceneDesc.FirePlaneSizeScaleNDC;
-    const viewSize = SceneDesc.ViewRatioXY;
     return (
         /* glsl */ `#version 300 es
   
@@ -367,6 +439,10 @@ export function GetParticleRenderInstancedVS(
 		layout(location = 3) in float inAge;
 		layout(location = 4) in vec2 inVelocity;
 	
+		uniform vec4 CameraDesc;
+		uniform float ScreenRatio;
+		uniform vec3 FirePlanePositionOffset;
+
 		uniform float ParticleLife;
 		uniform float NumLoops;
 		uniform float CurTime;
@@ -393,6 +469,14 @@ export function GetParticleRenderInstancedVS(
 	
 		void main()
 		{
+			float kSizeScale = 1.f + FirePlanePositionOffset.z - CameraDesc.z;
+
+			const vec2 kInitTranslate = vec2(float(` +
+        initialTranslation.x +
+        /* glsl */ `), float(` +
+        initialTranslation.y +
+        /* glsl */ `));
+
 			if(IsParticleDead())
 			{
 				gl_Position = vec4(-10, -10, -10, 1.0);
@@ -426,28 +510,22 @@ export function GetParticleRenderInstancedVS(
 				float TotalFlipFrames = FlipbookSizeRC.x * FlipbookSizeRC.y;
 				interpolatorFrameIndex = (animationParameterNorm * TotalFlipFrames);
 	
-	
-				float kSizeScale = float(` +
-        sizeScale +
-        /* glsl */ `);
-				const vec2 kViewSize = vec2(float(` +
-        viewSize.x +
-        /* glsl */ `), float(` +
-        viewSize.y +
-        /* glsl */ `));
-
+				//=======================================================================================Position & Scale
 				vec2 pos = VertexBuffer.xy;
-				pos /= kViewSize;
-  
-				//scale
-				float scale = 1.0f;
-			  #if 1 //NOISE-DRIVEN SIZE
-				vec2 noiseUV = vec2((inPosition.x + 1.f) * 0.5f, (inPosition.y + 1.f) * 0.5f);
-				noiseUV *= 0.25f;
-				//noiseUV.x += CurTime * 0.017f;
-				noiseUV.y += CurTime * 0.033f;
-				vec2 noise = textureLod(NoiseTexture, noiseUV.xy, 0.f).rg;
 
+				//offset
+				pos += kInitTranslate;
+				
+				pos.xy *= CameraDesc.w;
+				pos.x /= ScreenRatio;
+				pos.xy /= kSizeScale;
+  
+			#if 1 //NOISE-DRIVEN SIZE
+			const float kSizeChangeSpeed = float(` +
+        randomSizeChangeSpeed +
+        /* glsl */ `);
+			if(kSizeChangeSpeed > 0.01)
+			{
 				const vec2 kSizeRangeMinMax = vec2(float(` +
         sizeRangeMinMax.x +
         /* glsl */ `), float(` +
@@ -458,24 +536,39 @@ export function GetParticleRenderInstancedVS(
         /* glsl */ `), float(` +
         sizeClampMax.y +
         /* glsl */ `));
+				
+				float scale = 1.0f;
+				vec2 noiseUV = vec2((inPosition.x + 1.f) * 0.5f, (inPosition.y + 1.f) * 0.5f);
+				noiseUV *= 0.25f;
+				//noiseUV.x += CurTime * 0.017f;
+				noiseUV.y += CurTime * 0.033f * kSizeChangeSpeed;
+				vec2 noise = textureLod(NoiseTexture, noiseUV.xy, 0.f).rg;
 
 				scale = clamp(MapToRange(noise.r, 0.35, 0.65, kSizeRangeMinMax.x, kSizeRangeMinMax.y), kSizeRangeMinMax.x, kSizeRangeMinMax.y);
 
+				const float particleDiffScale = 0.17f;
 				
-				float particleDiffScale = 0.17f;
-				float sizeChangeSpeed = 0.77;
-				noiseUV = vec2(CurTime * 0.0017f + 0.23f * float(gl_InstanceID) * particleDiffScale, CurTime * sizeChangeSpeed * 0.1f + 0.17 * float(gl_InstanceID) * particleDiffScale);
+				const float sizeChangeSpeed = 0.77 * kSizeChangeSpeed;
+				noiseUV = vec2(CurTime * kSizeChangeSpeed * 0.0017f + 0.23f * float(gl_InstanceID) * particleDiffScale, CurTime * sizeChangeSpeed * 0.1f + 0.17 * float(gl_InstanceID) * particleDiffScale);
 				noise = textureLod(NoiseTexture, noiseUV.xy, 0.f).rg;
-				float t = mod(CurTime, 2.f);
-				if(t < 1.f)
+
+				if(kSizeChangeSpeed < 0.5)
 				{
-					noise.r = mix(noise.r, noise.g, t);
+
 				}
 				else
 				{
-					noise.r = mix(noise.g, noise.r, t - 1.f);
+					float t = mod(CurTime, 2.f);
+					if(t < 1.f)
+					{
+						noise.r = mix(noise.r, noise.g, t);
+					}
+					else
+					{
+						noise.r = mix(noise.g, noise.r, t - 1.f);
+					}
 				}
-
+				
 				float scale2 = clamp(MapToRange(noise.r, 0.35, 0.65, kSizeRangeMinMax.x, kSizeRangeMinMax.y), kSizeRangeMinMax.x, kSizeRangeMinMax.y);
 
 				scale = scale * scale2;
@@ -487,17 +580,11 @@ export function GetParticleRenderInstancedVS(
 				  return;
 				}
 
-				scale *= kSizeScale;
 				pos.x *= max(kSizeClampMax.x, scale);
 				pos.y *= max(kSizeClampMax.y, scale);
 
-				
-				#endif//NOISE DRIVEN SIZE
-
-				//offset to origin
-				` +
-        scTranslateToBaseAtOrigin(!bOriginAtCenter) +
-        /* glsl */ `
+			}
+			#endif//NOISE DRIVEN SIZE
 
 				//scale
 				pos.x *= float(` +
@@ -515,18 +602,17 @@ export function GetParticleRenderInstancedVS(
 
 			//fade in-out
 		` +
-        scFadeInOutTransform(bUsesTexture) +
+        scFadeInOutTransform(EFadeInOutMode) +
         /* glsl */ `
   
 				//translate
 				vec2 translation = inPosition;
-				translation *= kSizeScale;
-				translation.x /= float(` +
-        viewSize.x +
-        /* glsl */ `);
-				translation.y /= float(` +
-        viewSize.y +
-        /* glsl */ `);
+				translation += FirePlanePositionOffset.xy;
+				translation -= CameraDesc.xy;
+				translation.xy *= CameraDesc.w;
+				translation /= kSizeScale;
+				translation.x /= ScreenRatio;
+
 				pos.xy += translation;
 	
 				gl_Position = vec4(pos.xy, 0.0, 1.0);
@@ -708,7 +794,17 @@ function scAshesSpecificShading() {
 		const vec3 colorEmber = vec3(0.5, 0.4, 0.4);
 		const vec3 colorEmber2 = vec3(0.9, 0.4, 0.1f) * 10.f;
 		const vec3 colorAsh  = vec3(0.1, 0.1, 0.1);
-		vec3 colorEmberFinal = mix(colorEmber2, colorEmber, noise);
+		vec3 colorEmberFinal;
+		if((interpolatorInstanceId % 10) == 0)
+		{
+			colorEmberFinal = mix(colorEmber2, colorEmber, noise);
+		}
+		else
+		{
+			colorEmberFinal = mix(vec3(0.75) * 10.f, colorEmber, noise);
+			//colorEmberFinal = vec3(0.75);
+		}
+
 		vec3 color = mix(colorEmberFinal, colorAsh, min(1.f, 3.5f * interpolatorAge));
 		
 		if(noise <= clamp((interpolatorAge) + 0.25, 0.0, 0.9))
@@ -745,19 +841,63 @@ function scAshesSpecificShading() {
 
 		//color += colorEmber * (dx + dy) * 0.5f;
 
-		const float thres = 0.04f;
-
+		
 		colorFinal.rgb = color;
 		colorFinal.a = noise;
-
-		if(interpolatorAge >= 0.8f)
+		
+		const float thres = 0.8f;
+		if(interpolatorAge >= thres)
 		{
-			float s = MapToRange(interpolatorAge, 0.8, 1.0, 1.0, 0.0);
+			float s = MapToRange(interpolatorAge, thres, 1.0, 1.0, 0.0);
 			colorFinal.rgba *= s;
 		}
 
 		`
     );
+}
+
+function scDustSpecificShading() {
+    return /* glsl */ `
+
+		//vec2 uv = interpolatorTexCoords * 0.005f;
+		vec2 uv = interpolatorTexCoords * 0.01f;
+		float instanceId = float(interpolatorInstanceId);
+		uv.x += instanceId * 0.073f;
+		uv.y += instanceId * 0.177f;
+		//uv.y += interpolatorFrameIndex * 0.0037f;
+		uv.x += interpolatorFrameIndex * 0.0053f;
+		float noise = texture(ColorTexture, uv).r;
+		noise = clamp(MapToRange(noise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
+
+
+		/* float t = noise;
+		t = CircularFadeOut(clamp(t, 0.f, 1.f));
+		float curFire = (1.f - t) * 0.25f; */
+
+		float curFire = 0.1f;
+
+		colorFinal.rgb = vec3(curFire);
+		colorFinal.a = 0.35 * (1.f - noise);
+
+		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		float c = noise * 0.5;
+		//float c = 0.1;
+		s *= 2.f;
+		if(s > 0.5f)
+		{
+			s += c;
+			//s = 1.f;
+		}
+		else
+		{
+			s -= c;
+			//s = 0.f;
+		}
+		//s += 0.15f;
+		s = (1.f - clamp(s, 0.f, 1.f));
+		colorFinal.rgb *= s;
+		colorFinal.a *= s * s;
+		`;
 }
 
 function scGetBasedOnShadingMode(
@@ -777,6 +917,8 @@ function scGetBasedOnShadingMode(
             return scSmokeSpecificShading(alphaScale);
         case EParticleShadingMode.Ashes:
             return scAshesSpecificShading();
+        case EParticleShadingMode.Dust:
+            return scDustSpecificShading();
     }
 }
 
