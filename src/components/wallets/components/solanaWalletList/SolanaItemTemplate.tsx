@@ -1,7 +1,7 @@
 import { Wallet } from "@solana/wallet-adapter-react";
 import React from "react";
 import IconTemplate from "../../../IconTemplate/IconTemplate";
-import { Item } from "../rainbowWalletList/RainbowWalletList.styled";
+import { Item } from "../RainbowWalletList/RainbowWalletList.styled";
 
 function SolanaItemTemplate(item: Wallet) {
     return (

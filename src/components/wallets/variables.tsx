@@ -1,9 +1,9 @@
 import { IAccount, IMenuConnectionItem } from "./types";
 import { Connector } from "wagmi";
 import { arbitrum, mainnet, optimism, polygon } from "wagmi/chains";
-import RainbowWalletList from "./components/rainbowWalletList/RainbowWalletList";
-import SuietWalletLIst from "./components/suietWalletList/SuietWalletList";
-import SolanaWalletList from "./components/solanaWalletList/SolanaWalletList";
+import RainbowWalletList from "./components/RainbowWalletList/RainbowWalletList";
+import SuietWalletLIst from "./components/SuietWalletList/SuietWalletList";
+import SolanaWalletList from "./components/SolanaWalletList/SolanaWalletList";
 import React from "react";
 
 import { ReactComponent as SuietLogo } from "./assets/suietLogo.svg";

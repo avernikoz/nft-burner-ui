@@ -1,5 +1,5 @@
 import { IWallet } from "@suiet/wallet-kit/dist/types/wallet";
-import { Item } from "../rainbowWalletList/RainbowWalletList.styled";
+import { Item } from "../RainbowWalletList/RainbowWalletList.styled";
 import React from "react";
 
 function SuiItemTemplate(item: IWallet) {
