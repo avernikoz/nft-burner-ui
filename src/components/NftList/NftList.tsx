@@ -4,7 +4,7 @@ import { List } from "./NftList.styled";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useAccount as useWagmiAccount } from "wagmi";
-import { sui, solana } from "@avernikoz/nft-sdk";
+import { solana } from "@avernikoz/nft-sdk";
 
 function NftList() {
     const suietWallet = suietUseWallet();
