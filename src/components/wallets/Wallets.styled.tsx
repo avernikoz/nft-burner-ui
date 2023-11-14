@@ -26,7 +26,7 @@ export const ProfileLabel = styled.div`
     display: flex;
     align-items: center;
     padding: 10px;
-    border: 2px solid #ffffff;
+    border: 1px solid #ffffff;
     border-radius: 8px;
     background-color: #4f46e5;
     font-family: Arial, sans-serif;
@@ -34,8 +34,8 @@ export const ProfileLabel = styled.div`
     color: #ffffff;
     width: 200px;
     margin-left: 0.5rem;
-    height: min-content;
-    margin-top: 0.2rem;
+    height: 72px;
+    margin-top: 0;
 
     .icon {
         margin-right: 8px;
