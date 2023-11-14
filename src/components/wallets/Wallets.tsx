@@ -168,7 +168,7 @@ function Wallets() {
 
                 (err) => {
                     solanaWallet.disconnect();
-                    toastController?.showError("Trouble with balance: " + err.message);
+                    toastController?.showError("Failed to fetch balance: " + err.message);
                 },
             );
         }
