@@ -41,4 +41,8 @@ code {
 #demo-canvas {
     /* aspect-ratio: 1 / 1; */
     /* width: min(100%, 100vh * 1 / 1); */
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
 }

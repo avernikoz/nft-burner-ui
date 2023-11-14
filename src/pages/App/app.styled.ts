@@ -9,3 +9,19 @@ export const Footer = styled.div`
         right: 0;
     }
 `;
+
+export const BodyContainer = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    padding: 0 1rem;
+
+    .half {
+        grid-column: span 1;
+        background-color: rgba(0, 0, 0, 0.3);
+        padding: 0.5rem;
+        border: 1px solid #acacac;
+        border-radius: 15px;
+        height: 80vh;
+    }
+`;
