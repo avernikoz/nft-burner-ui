@@ -593,7 +593,7 @@ export function RenderMain() {
 
             if (GAreAllTexturesLoaded() && GSettings.bRunSimulation) {
                 if (GFirstRenderingFrame) {
-                    GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, true);
+                    GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory, true);
                     GFirstRenderingFrame = false;
                 }
 
