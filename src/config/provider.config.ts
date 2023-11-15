@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-unresolved
 import { SuiClient } from "@mysten/sui.js/client";
 import { Connection } from "@solana/web3.js";
 

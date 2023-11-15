@@ -10,7 +10,14 @@ const burnAnimation = keyframes`
         opacity: 0;
     }
 `;
-
+export const BurnEffect = styled.div`
+    transform: scale(0.5);
+    opacity: 0;
+    z-index: 100;
+    transition:
+        transform 0.3s ease-in-out,
+        opacity 0.3s ease-in-out;
+`;
 export const Card = styled.div`
     width: 200px;
     height: 220px;
@@ -21,7 +28,8 @@ export const Card = styled.div`
     transition: box-shadow 0.3s ease-in-out;
 
     &:active {
-        animation: ${burnAnimation} 0.5s forwards;
+        /* animation: ${burnAnimation} 0.5s forwards; */
+        /* opacity: 0.5; */
     }
 
     &:hover {

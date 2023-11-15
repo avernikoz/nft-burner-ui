@@ -49,10 +49,10 @@
   resolved "https://registry.yarnpkg.com/@apocentre/alias-sampling/-/alias-sampling-0.5.3.tgz#897ff181b48ad7b2bcb4ecf29400214888244f08"
   integrity sha512-7UDWIIF9hIeJqfKXkNIzkVandlwLf1FWTSdrb9iXvOP8oF544JRXQjCbiTmCv2c9n44n/FIWtehhBfNuAx2CZA==
 
-"@avernikoz/nft-sdk@^2.0.0":
-  version "2.0.0"
-  resolved "https://npm.pkg.github.com/download/@avernikoz/nft-sdk/2.0.0/d47da5807efa7e7296af368bc657de7bc841f049#d47da5807efa7e7296af368bc657de7bc841f049"
-  integrity sha512-pbcu2Msp1dpBUxzmkQ5/jCi85VPHsdjoB9ZUjvCDzbtKcAlnilg6mSV/AxNf3eXqlonoZAgQQo0CEcq8ZOYyUw==
+"@avernikoz/nft-sdk@^2.0.1":
+  version "2.0.1"
+  resolved "https://npm.pkg.github.com/download/@avernikoz/nft-sdk/2.0.1/750c93152a0a9f3c009fb331081d5306d7c5c00c#750c93152a0a9f3c009fb331081d5306d7c5c00c"
+  integrity sha512-mUXtWWDuF60C8PcDLG7gDt05br6bQ27r6r5oJtTekD7N+kayNwPiGTjEsTVL8xc7mC3gypXSs+Z+0kmoJ3+VYw==
   dependencies:
     "@metaplex-foundation/js" "^0.19.5"
     "@metaplex-foundation/mpl-token-metadata" "2.13.0"
@@ -8686,22 +8686,9 @@ ethers@^5.5.1:
     "@ethersproject/web" "5.7.1"
     "@ethersproject/wordlists" "5.7.0"
 
-ethers@^6.7.1:
+ethers@^6.7.1, ethers@^6.8.1:
   version "6.8.1"
   resolved "https://registry.npmjs.org/ethers/-/ethers-6.8.1.tgz#ee2a1a39b5f62a13678f90ccd879175391d0a2b4"
-  integrity sha512-iEKm6zox5h1lDn6scuRWdIdFJUCGg3+/aQWu0F4K0GVyEZiktFkqrJbRjTn1FlYEPz7RKA707D6g5Kdk6j7Ljg==
-  dependencies:
-    "@adraffy/ens-normalize" "1.10.0"
-    "@noble/curves" "1.2.0"
-    "@noble/hashes" "1.3.2"
-    "@types/node" "18.15.13"
-    aes-js "4.0.0-beta.5"
-    tslib "2.4.0"
-    ws "8.5.0"
-
-ethers@^6.8.1:
-  version "6.8.1"
-  resolved "https://registry.yarnpkg.com/ethers/-/ethers-6.8.1.tgz#ee2a1a39b5f62a13678f90ccd879175391d0a2b4"
   integrity sha512-iEKm6zox5h1lDn6scuRWdIdFJUCGg3+/aQWu0F4K0GVyEZiktFkqrJbRjTn1FlYEPz7RKA707D6g5Kdk6j7Ljg==
   dependencies:
     "@adraffy/ens-normalize" "1.10.0"
