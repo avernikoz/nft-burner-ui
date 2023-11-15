@@ -145,6 +145,8 @@ export class RFirePlanePass {
 
     VisualizerImageTexture: WebGLTexture;
 
+    CurrentImageTextureSrc: string;
+
     VisualizerAshTexture: WebGLTexture;
 
     RoughnessTexture: WebGLTexture;
@@ -244,9 +246,10 @@ export class RFirePlanePass {
         this.VisualizerUniformParametersLocationList = GetUniformParametersList(gl, this.VisualizerShaderProgram);
 
         this.VisualizerFlameColorLUT = CreateTexture(gl, 4, "assets/flameColorLUT5.png");
-        this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/example.jpg", true);
-        //this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/apeBlue.png", true);
-        //this.VisualizerImageTexture = CreateTexture(gl, 5, "assets/example2.png", true);
+        this.CurrentImageTextureSrc = "assets/example.jpg";
+        //this.CurrentImageTextureSrc = "assets/apeBlue.png";
+        //this.CurrentImageTextureSrc = "assets/example2.png";
+        this.VisualizerImageTexture = CreateTexture(gl, 5, this.CurrentImageTextureSrc, true);
         this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg", true);
 
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
@@ -407,6 +410,35 @@ export class RFirePlanePass {
 
         this.CurrentFireTextureIndex = 1 - this.CurrentFireTextureIndex;
         this.CurrentFuelTextureIndex = 1 - this.CurrentFuelTextureIndex;
+    }
+
+    UpdatePlaneSurfaceImage(gl: WebGL2RenderingContext, inImage: TexImageSource, inImageSrc: string) {
+        if (inImageSrc !== this.CurrentImageTextureSrc) {
+            this.CurrentImageTextureSrc = inImageSrc;
+
+            gl.activeTexture(gl.TEXTURE0 + 5);
+            gl.bindTexture(gl.TEXTURE_2D, this.VisualizerImageTexture);
+
+            //Load Image
+            const texRef = this.VisualizerImageTexture;
+
+            gl.bindTexture(gl.TEXTURE_2D, texRef);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, inImage);
+            gl.generateMipmap(gl.TEXTURE_2D);
+
+            if (1 /* bGenerateMips */) {
+                if (1 /* bUseTrilinearFilter */) {
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+                } else {
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+                }
+            } else {
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            }
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        }
     }
 
     VisualizeFirePlane(gl: WebGL2RenderingContext, pointLightsTexture: WebGLTexture, spotlightTexture: WebGLTexture) {

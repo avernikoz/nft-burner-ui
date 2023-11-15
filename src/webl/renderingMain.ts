@@ -40,6 +40,7 @@ import { GTime, MathClamp, MathMapToRange, MathVector2Normalize, UpdateTime, sho
 import { ApplyCameraControl, SetupCameraControlThroughInput } from "./shaders/controller";
 import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./spatialController";
 import { ERenderingState, GRenderingStateMachine } from "./states";
+import { IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -520,6 +521,42 @@ export function RenderMain() {
 
     let GFirstRenderingFrame = true;
 
+    function ApplySpotlightControlFromGUI() {
+        if (SpotlightPositionController.bIntersectionThisFrame) {
+            //Control Spotlight
+            const controllerPosNDC = {
+                x: SpotlightPositionController.Position.x / GScreenDesc.ScreenRatio,
+                y: SpotlightPositionController.Position.y,
+            };
+            const xRange = 3.0;
+            const spotLightXMapped = MathMapToRange(controllerPosNDC.x, -1.0, 1.0, -xRange, xRange);
+            GSceneDesc.Spotlight.Position.x = spotLightXMapped;
+
+            const yRange = { min: -0.0, max: 3.0 };
+            let spotLightYMapped = MathMapToRange(controllerPosNDC.y, 1.0, -0.5, yRange.max, yRange.min);
+            spotLightYMapped = MathClamp(spotLightYMapped, yRange.min, yRange.max);
+            spotLightYMapped =
+                spotLightYMapped -
+                2.0 *
+                    (1.0 - Math.abs(controllerPosNDC.x)) *
+                    MathClamp(MathMapToRange(controllerPosNDC.y, 0.0, -1.0, 0.0, 1.0), 0.0, 1.0);
+            GSceneDesc.Spotlight.Position.y = spotLightYMapped;
+
+            const yFocusRange = { min: 0.0, max: 0.75 };
+            let spotLightFocusYMapped = MathMapToRange(controllerPosNDC.y, 0.5, -1.0, yRange.min, yRange.max);
+            spotLightFocusYMapped = MathClamp(spotLightFocusYMapped, yFocusRange.min, yFocusRange.max);
+            const yFocusAdditional =
+                Math.abs(controllerPosNDC.x) * MathMapToRange(controllerPosNDC.y, 0.75, -0.5, 1.0, 0);
+            GSceneDesc.Spotlight.FocusPosition.y = spotLightFocusYMapped + yFocusAdditional;
+
+            const zRange = { min: -3, max: -1.0 };
+            const spotLightZMapped = MathMapToRange(controllerPosNDC.y, 1.0, -1.0, zRange.max, zRange.min);
+            GSceneDesc.Spotlight.Position.z = spotLightZMapped;
+
+            GSceneDesc.Spotlight.SizeScale.y = 2.5 + Math.abs(controllerPosNDC.x) * 0.75 * GScreenDesc.ScreenRatio;
+        }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
         if (gl !== null && GRenderTargets.FirePlaneTexture !== null && GPostProcessPasses.CopyPresemt !== null) {
@@ -533,27 +570,26 @@ export function RenderMain() {
 
             UpdateTime();
 
-            GRenderingStateMachine.GetInstance().AdvanceTransitionParameter();
+            const RenderStateMachine = GRenderingStateMachine.GetInstance();
+
+            RenderStateMachine.AdvanceTransitionParameter();
 
             //Handle State transition if present
-            if (GScreenDesc.bWideScreen) {
-                //handle scene state transition
-                if (GRenderingStateMachine.GetInstance().transitionParameter <= 1.0) {
-                    AssignSceneDescriptions(
-                        GSceneStateDescsArray[GRenderingStateMachine.GetInstance().previousState],
-                        GSceneStateDescsArray[GRenderingStateMachine.GetInstance().currentState],
-                        GRenderingStateMachine.GetInstance().transitionParameter,
-                    );
-                }
+            if (RenderStateMachine.transitionParameter <= 1.0) {
+                AssignSceneDescriptions(
+                    GSceneStateDescsArray[RenderStateMachine.previousState],
+                    GSceneStateDescsArray[RenderStateMachine.currentState],
+                    RenderStateMachine.transitionParameter,
+                );
             } else {
-                AssignSceneDescription(GSceneStateDescsArray[ERenderingState.Burning]);
+                AssignSceneDescription(GSceneStateDescsArray[RenderStateMachine.currentState]);
             }
 
             StateControllers.forEach((controller) => {
                 controller.ClearState();
             });
-            StateControllers[GRenderingStateMachine.GetInstance().currentState].bSelectedThisFrame = true;
-            StateControllers[GRenderingStateMachine.GetInstance().currentState].bIntersectionThisFrame = true;
+            StateControllers[RenderStateMachine.currentState].bSelectedThisFrame = true;
+            StateControllers[RenderStateMachine.currentState].bIntersectionThisFrame = true;
 
             if (GAreAllTexturesLoaded() && GSettings.bRunSimulation) {
                 if (GFirstRenderingFrame) {
@@ -563,69 +599,26 @@ export function RenderMain() {
 
                 ApplyCameraControl();
 
-                SpotlightPositionController.OnUpdate();
-                if (SpotlightPositionController.bIntersectionThisFrame) {
-                    //Control Spotlight
-                    const controllerPosNDC = {
-                        x: SpotlightPositionController.Position.x / GScreenDesc.ScreenRatio,
-                        y: SpotlightPositionController.Position.y,
-                    };
-                    const xRange = 3.0;
-                    const spotLightXMapped = MathMapToRange(controllerPosNDC.x, -1.0, 1.0, -xRange, xRange);
-                    GSceneDesc.Spotlight.Position.x = spotLightXMapped;
-
-                    const yRange = { min: -0.0, max: 3.0 };
-                    let spotLightYMapped = MathMapToRange(controllerPosNDC.y, 1.0, -0.5, yRange.max, yRange.min);
-                    spotLightYMapped = MathClamp(spotLightYMapped, yRange.min, yRange.max);
-                    spotLightYMapped =
-                        spotLightYMapped -
-                        2.0 *
-                            (1.0 - Math.abs(controllerPosNDC.x)) *
-                            MathClamp(MathMapToRange(controllerPosNDC.y, 0.0, -1.0, 0.0, 1.0), 0.0, 1.0);
-                    GSceneDesc.Spotlight.Position.y = spotLightYMapped;
-
-                    const yFocusRange = { min: 0.0, max: 0.75 };
-                    let spotLightFocusYMapped = MathMapToRange(controllerPosNDC.y, 0.5, -1.0, yRange.min, yRange.max);
-                    spotLightFocusYMapped = MathClamp(spotLightFocusYMapped, yFocusRange.min, yFocusRange.max);
-                    const yFocusAdditional =
-                        Math.abs(controllerPosNDC.x) * MathMapToRange(controllerPosNDC.y, 0.75, -0.5, 1.0, 0);
-                    GSceneDesc.Spotlight.FocusPosition.y = spotLightFocusYMapped + yFocusAdditional;
-
-                    const zRange = { min: -3, max: -1.0 };
-                    const spotLightZMapped = MathMapToRange(controllerPosNDC.y, 1.0, -1.0, zRange.max, zRange.min);
-                    GSceneDesc.Spotlight.Position.z = spotLightZMapped;
-
-                    GSceneDesc.Spotlight.SizeScale.y =
-                        2.5 + Math.abs(controllerPosNDC.x) * 0.75 * GScreenDesc.ScreenRatio;
+                if (RenderStateMachine.currentState === ERenderingState.Inventory) {
+                    SpotlightPositionController.OnUpdate();
+                    ApplySpotlightControlFromGUI();
                 }
 
-                if (GUserInputDesc.bPointerInputPressed && !SpotlightPositionController.bIntersectionThisFrame) {
-                    FirePlanePass.ApplyFireFromInput(gl);
+                if (RenderStateMachine.currentState === ERenderingState.Burning) {
+                    if (GUserInputDesc.bPointerInputPressed && !SpotlightPositionController.bIntersectionThisFrame) {
+                        FirePlanePass.ApplyFireFromInput(gl);
+                    }
+                    FirePlanePass.UpdateFire(gl);
+
+                    BackGroundRenderPass.PointLights.Update(gl, FirePlanePass.GetCurFireTexture()!);
+
+                    FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+                    EmberParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+                    AshesParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+                    SmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+                    AfterBurnSmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+                    DustParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
                 }
-                /* if (bMouseDown) {
-				} */
-
-                FirePlanePass.UpdateFire(gl);
-                BackGroundRenderPass.PointLights.Update(gl, FirePlanePass.GetCurFireTexture()!);
-
-                /* GPostProcessPasses.CopyPresemt.Execute(
-					gl,
-					canvas,
-					BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
-					0,
-					null,
-					{
-						x: canvas.width,
-						y: canvas.height,
-					},
-				); */
-
-                FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-                EmberParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-                AshesParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-                SmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-                AfterBurnSmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-                DustParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
                 BindRenderTarget(gl, GRenderTargets.SpotlightFramebuffer!, GScreenDesc.RenderTargetSize, true);
                 SpotlightRenderPass.RenderVolumetricLight(gl);
@@ -636,7 +629,7 @@ export function RenderMain() {
                 gl.disable(gl.BLEND);
 
                 BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
-
+                //Render Background floor
                 if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
                     BackGroundRenderPass.RenderFloor(
                         gl,
@@ -644,18 +637,22 @@ export function RenderMain() {
                         GPostProcessPasses.Combiner!.SmokeNoiseTexture,
                     );
                 }
-
-                //Render Main Burner Plane
+                //Render Main Burner Plane Surface
                 {
-                    /* gl.enable(gl.BLEND);
-					gl.blendFunc(gl.ONE, gl.ONE);
-					gl.blendEquation(gl.FUNC_ADD); */
+                    //Update Iamge Surface with one selected from Inventory
+                    if (RenderStateMachine.currentState === ERenderingState.Inventory) {
+                        const srcImage = IMAGE_STORE_SINGLETON_INSTANCE.getImage();
+                        const srcImageUrl = IMAGE_STORE_SINGLETON_INSTANCE.getImageUrl();
+                        if (srcImage && srcImageUrl) {
+                            FirePlanePass.UpdatePlaneSurfaceImage(gl, srcImage, srcImageUrl);
+                        }
+                    }
+
                     FirePlanePass.VisualizeFirePlane(
                         gl,
                         BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
                         GRenderTargets.SpotlightTexture!,
                     );
-                    //gl.disable(gl.BLEND);
                 }
 
                 //Control UI
@@ -663,7 +660,9 @@ export function RenderMain() {
                     gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ONE, gl.ONE);
                     gl.blendEquation(gl.MAX);
-                    SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
+                    if (RenderStateMachine.currentState === ERenderingState.Inventory) {
+                        SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
+                    }
 
                     StateControllers.forEach((controller) => {
                         SpatialControlUIVisualizer.Render(gl, controller);
@@ -671,20 +670,23 @@ export function RenderMain() {
                     gl.disable(gl.BLEND);
                 }
 
-                BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, GScreenDesc.RenderTargetSize, true);
-                FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
+                let flameSourceTextureRef = GRenderTargets.FlameTexture;
+                if (RenderStateMachine.currentState === ERenderingState.Burning) {
+                    BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, GScreenDesc.RenderTargetSize, true);
+                    FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
 
-                GPostProcessPasses.FlamePostProcess!.Execute(
-                    gl,
-                    GRenderTargets.FlameTexture!,
-                    GRenderTargets.FlameFramebuffer2!,
-                    GScreenDesc.RenderTargetSize,
-                );
-                const flameSourceTextureRef = GRenderTargets.FlameTexture2;
+                    GPostProcessPasses.FlamePostProcess!.Execute(
+                        gl,
+                        GRenderTargets.FlameTexture!,
+                        GRenderTargets.FlameFramebuffer2!,
+                        GScreenDesc.RenderTargetSize,
+                    );
+                    flameSourceTextureRef = GRenderTargets.FlameTexture2;
 
-                EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
-                if (bAshesInEmbersPass) {
-                    AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                    EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+                    if (bAshesInEmbersPass) {
+                        AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                    }
                 }
 
                 if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
@@ -706,15 +708,6 @@ export function RenderMain() {
                         GPostProcessPasses.Bloom!.Blur(gl, GPostProcessPasses.Blur!);
                     }
                 }
-
-                /* BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
-				if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
-					BackGroundRenderPass.RenderFloor(
-						gl,
-						GPostProcessPasses.Bloom!.BloomTexture,
-						GPostProcessPasses.Combiner!.SmokeNoiseTexture,
-					);
-				} */
 
                 //Render Smoke
                 BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, GScreenDesc.RenderTargetSize, true);
