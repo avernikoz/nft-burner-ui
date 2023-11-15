@@ -1,7 +1,7 @@
 export class ImageStoreSingleton {
     private readonly cache: {
-        img: { url: string | null };
-    } = { img: { url: null } };
+        img: { url: string | null; raw: TexImageSource | null };
+    } = { img: { url: null, raw: null } };
 
     private static _instance: ImageStoreSingleton;
 
@@ -20,5 +20,13 @@ export class ImageStoreSingleton {
 
     public setImageUrl(url: string) {
         this.cache.img.url = url;
+    }
+
+    public setImage(img: TexImageSource) {
+        this.cache.img.raw = img;
+    }
+
+    public getImage() {
+        return this.cache.img.raw;
     }
 }
