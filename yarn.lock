@@ -49,7 +49,7 @@
   resolved "https://registry.yarnpkg.com/@apocentre/alias-sampling/-/alias-sampling-0.5.3.tgz#897ff181b48ad7b2bcb4ecf29400214888244f08"
   integrity sha512-7UDWIIF9hIeJqfKXkNIzkVandlwLf1FWTSdrb9iXvOP8oF544JRXQjCbiTmCv2c9n44n/FIWtehhBfNuAx2CZA==
 
-"@avernikoz/nft-sdk@2.0.0":
+"@avernikoz/nft-sdk@^2.0.0":
   version "2.0.0"
   resolved "https://npm.pkg.github.com/download/@avernikoz/nft-sdk/2.0.0/d47da5807efa7e7296af368bc657de7bc841f049#d47da5807efa7e7296af368bc657de7bc841f049"
   integrity sha512-pbcu2Msp1dpBUxzmkQ5/jCi85VPHsdjoB9ZUjvCDzbtKcAlnilg6mSV/AxNf3eXqlonoZAgQQo0CEcq8ZOYyUw==
@@ -2645,7 +2645,7 @@
     superstruct "^1.0.3"
     tweetnacl "^1.0.3"
 
-"@mysten/sui.js@^0.42.0":
+"@mysten/sui.js@0.42.0", "@mysten/sui.js@^0.42.0":
   version "0.42.0"
   resolved "https://registry.npmjs.org/@mysten/sui.js/-/sui.js-0.42.0.tgz#db57ad931aa7683fe1526cb4b308425234e1eecf"
   integrity sha512-khYpfrWTRNk7WTuDWJx/KCbleqY1B40gVRt1DttqlNkD2lvg134xZn7F/r94jxgnUETbK+hVoQvBY7F36MsfRw==

@@ -121,43 +121,45 @@ export function AssignSceneDescriptions(
 
 export function EnableSceneDescUI() {
     const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-    const folder = GDatGUI.addFolder("SceneDesc");
-    folder.open();
-    folder.add(GSceneDesc.FirePlane.PositionOffset, "x", -2, 5).name("PlanePosX").step(0.01);
-    folder.add(GSceneDesc.FirePlane.PositionOffset, "y", -3, 10).name("PlanePosY").step(0.01);
-    folder.add(GSceneDesc.FirePlane.PositionOffset, "z", -10, 2).name("PlanePosZ").step(0.01);
+    if (GDatGUI) {
+        const folder = GDatGUI.addFolder("SceneDesc");
+        folder.open();
+        folder.add(GSceneDesc.FirePlane.PositionOffset, "x", -2, 5).name("PlanePosX").step(0.01);
+        folder.add(GSceneDesc.FirePlane.PositionOffset, "y", -3, 10).name("PlanePosY").step(0.01);
+        folder.add(GSceneDesc.FirePlane.PositionOffset, "z", -10, 2).name("PlanePosZ").step(0.01);
 
-    folder.add(GSceneDesc.Camera.Position, "x", -2, 5).name("CamPosX").step(0.01).listen();
-    folder.add(GSceneDesc.Camera.Position, "y", -3, 10).name("CamPosY").step(0.01).listen();
-    folder.add(GSceneDesc.Camera.Position, "z", -10, 2).name("CamPosZ").step(0.01).listen();
-    folder.add(GSceneDesc.Camera, "ZoomScale", 0, 5).name("Zoom").step(0.01).listen();
+        folder.add(GSceneDesc.Camera.Position, "x", -2, 5).name("CamPosX").step(0.01).listen();
+        folder.add(GSceneDesc.Camera.Position, "y", -3, 10).name("CamPosY").step(0.01).listen();
+        folder.add(GSceneDesc.Camera.Position, "z", -10, 2).name("CamPosZ").step(0.01).listen();
+        folder.add(GSceneDesc.Camera, "ZoomScale", 0, 5).name("Zoom").step(0.01).listen();
 
-    //folder.add(GSceneDesc.Floor.PositionOffset, "x", -2, 5).name("FloorPosX").step(0.01);
-    folder.add(GSceneDesc.Floor.Position, "y", -3, 10).name("FloorPosY").step(0.01);
-    //folder.add(GSceneDesc.Floor.PositionOffset, "z", -10, 2).name("FloorPosZ").step(0.01);
+        //folder.add(GSceneDesc.Floor.PositionOffset, "x", -2, 5).name("FloorPosX").step(0.01);
+        folder.add(GSceneDesc.Floor.Position, "y", -3, 10).name("FloorPosY").step(0.01);
+        //folder.add(GSceneDesc.Floor.PositionOffset, "z", -10, 2).name("FloorPosZ").step(0.01);
 
-    folder.add(GSceneDesc.Floor, "SizeScale", -2, 5).name("FloorSizeScale").step(0.01);
+        folder.add(GSceneDesc.Floor, "SizeScale", -2, 5).name("FloorSizeScale").step(0.01);
 
-    const spotlightFolder = folder.addFolder("Spotlight");
-    spotlightFolder.open();
-    spotlightFolder.add(GSceneDesc.Spotlight.SizeScale, "x", -2, 5).name("LightSizeX").step(0.01);
-    spotlightFolder.add(GSceneDesc.Spotlight.SizeScale, "y", -2, 5).name("LightSizeY").step(0.01).listen();
-    spotlightFolder.add(GSceneDesc.Spotlight.Position, "x", -3, 10).name("LightPosX").step(0.01).listen();
-    spotlightFolder.add(GSceneDesc.Spotlight.Position, "y", -3, 10).name("LightPosY").step(0.01).listen();
-    spotlightFolder.add(GSceneDesc.Spotlight.Position, "z", -10, 10).name("LightPosZ").step(0.01).listen();
-    spotlightFolder.add(GSceneDesc.Spotlight.FocusPosition, "x", -3, 10).name("FocusPosX").step(0.01).listen();
-    spotlightFolder.add(GSceneDesc.Spotlight.FocusPosition, "y", -3, 10).name("FocusPosY").step(0.01).listen();
-    spotlightFolder.add(GSceneDesc.Spotlight.FocusPosition, "z", -3, 10).name("FocusPosZ").step(0.01).listen();
-    spotlightFolder.add(GSceneDesc.Spotlight, "Radius", 0, 10).name("Radius").step(0.01);
-    spotlightFolder
-        .add(GSceneDesc.Spotlight.ConeAngles, "x", 0, Math.PI / 2)
-        .name("InnerAngle")
-        .step(0.01);
-    spotlightFolder
-        .add(GSceneDesc.Spotlight.ConeAngles, "y", 0, Math.PI / 2)
-        .name("OuterAngle")
-        .step(0.01);
+        const spotlightFolder = folder.addFolder("Spotlight");
+        spotlightFolder.open();
+        spotlightFolder.add(GSceneDesc.Spotlight.SizeScale, "x", -2, 5).name("LightSizeX").step(0.01);
+        spotlightFolder.add(GSceneDesc.Spotlight.SizeScale, "y", -2, 5).name("LightSizeY").step(0.01).listen();
+        spotlightFolder.add(GSceneDesc.Spotlight.Position, "x", -3, 10).name("LightPosX").step(0.01).listen();
+        spotlightFolder.add(GSceneDesc.Spotlight.Position, "y", -3, 10).name("LightPosY").step(0.01).listen();
+        spotlightFolder.add(GSceneDesc.Spotlight.Position, "z", -10, 10).name("LightPosZ").step(0.01).listen();
+        spotlightFolder.add(GSceneDesc.Spotlight.FocusPosition, "x", -3, 10).name("FocusPosX").step(0.01).listen();
+        spotlightFolder.add(GSceneDesc.Spotlight.FocusPosition, "y", -3, 10).name("FocusPosY").step(0.01).listen();
+        spotlightFolder.add(GSceneDesc.Spotlight.FocusPosition, "z", -3, 10).name("FocusPosZ").step(0.01).listen();
+        spotlightFolder.add(GSceneDesc.Spotlight, "Radius", 0, 10).name("Radius").step(0.01);
+        spotlightFolder
+            .add(GSceneDesc.Spotlight.ConeAngles, "x", 0, Math.PI / 2)
+            .name("InnerAngle")
+            .step(0.01);
+        spotlightFolder
+            .add(GSceneDesc.Spotlight.ConeAngles, "y", 0, Math.PI / 2)
+            .name("OuterAngle")
+            .step(0.01);
 
-    spotlightFolder.add(GSceneDesc.Spotlight.ProjectedLightSizeScale, "x", 0, 40).name("ProjSizeX").step(0.01);
-    spotlightFolder.add(GSceneDesc.Spotlight.ProjectedLightSizeScale, "y", 0, 40).name("ProjSizeY").step(0.01);
+        spotlightFolder.add(GSceneDesc.Spotlight.ProjectedLightSizeScale, "x", 0, 40).name("ProjSizeX").step(0.01);
+        spotlightFolder.add(GSceneDesc.Spotlight.ProjectedLightSizeScale, "y", 0, 40).name("ProjSizeY").step(0.01);
+    }
 }

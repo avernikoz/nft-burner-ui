@@ -316,17 +316,19 @@ export class RFirePlanePass {
 
     DrawUI() {
         const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-        const folder = GDatGUI.addFolder("Shading");
-        //folder.open();
+        if (GDatGUI) {
+            const folder = GDatGUI.addFolder("Shading");
+            //folder.open();
 
-        folder.add(this.RoughnessParams, "Scale", 0, 20).name("RGHScale").step(0.01);
-        folder.add(this.RoughnessParams, "Add", 0, 1).name("RGHAdd").step(0.01);
-        folder.add(this.RoughnessParams, "Contrast", 0, 20).name("RGHContrast").step(0.01);
-        folder.add(this.RoughnessParams, "Min", 0, 1).name("RGHMin").step(0.01);
+            folder.add(this.RoughnessParams, "Scale", 0, 20).name("RGHScale").step(0.01);
+            folder.add(this.RoughnessParams, "Add", 0, 1).name("RGHAdd").step(0.01);
+            folder.add(this.RoughnessParams, "Contrast", 0, 20).name("RGHContrast").step(0.01);
+            folder.add(this.RoughnessParams, "Min", 0, 1).name("RGHMin").step(0.01);
 
-        folder.add(this.ShadingParams, "DiffuseIntensity", 0.75, 1.25).name("DFSIntensity").step(0.01);
-        folder.add(this.ShadingParams, "SpecularIntensity", 0, 2).name("SPCIntensity").step(0.01);
-        folder.add(this.ShadingParams, "SpecularPower", 0, 64).name("SPCPower").step(2.0);
+            folder.add(this.ShadingParams, "DiffuseIntensity", 0.75, 1.25).name("DFSIntensity").step(0.01);
+            folder.add(this.ShadingParams, "SpecularIntensity", 0, 2).name("SPCIntensity").step(0.01);
+            folder.add(this.ShadingParams, "SpecularPower", 0, 64).name("SPCPower").step(2.0);
+        }
     }
 
     bFirstBoot = true;

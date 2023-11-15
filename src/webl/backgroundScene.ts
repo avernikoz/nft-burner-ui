@@ -285,12 +285,14 @@ export class RBackgroundRenderPass {
 
     DrawUI() {
         const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-        const folder = GDatGUI.addFolder("Plane Transform");
-        folder.open();
-        folder.add(this.FloorTransform, "FloorTexScale", 0.01, 10);
-        folder.add(this.FloorTransform, "FloorTexScale", 0.01, 10).name("FloorTexScale").step(0.01);
-        //folder.add(this.FloorTransform.LightTexScale, "y", 0.01, 10).name("LightTexScaleY").step(0.01);
-        folder.add(this.FloorTransform, "FloorBrightness", 0.01, 5);
+        if (GDatGUI) {
+            const folder = GDatGUI.addFolder("Plane Transform");
+            folder.open();
+            folder.add(this.FloorTransform, "FloorTexScale", 0.01, 10);
+            folder.add(this.FloorTransform, "FloorTexScale", 0.01, 10).name("FloorTexScale").step(0.01);
+            //folder.add(this.FloorTransform.LightTexScale, "y", 0.01, 10).name("LightTexScaleY").step(0.01);
+            folder.add(this.FloorTransform, "FloorBrightness", 0.01, 5);
+        }
     }
 
     RenderFloor(gl: WebGL2RenderingContext, bloomTexture: WebGLTexture, smokeNoiseTexture: WebGLTexture) {

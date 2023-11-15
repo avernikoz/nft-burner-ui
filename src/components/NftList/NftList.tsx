@@ -5,8 +5,6 @@ import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useAccount as useWagmiAccount, useWalletClient  } from "wagmi";
 import { solana } from "@avernikoz/nft-sdk";
-import { AlchemyMultichainClient } from "@avernikoz/nft-sdk/dist/networks/evm/common/AlchemyMultichainClient";
-import { ALLOWED_EVM_CHAINS } from "@avernikoz/nft-sdk/dist/networks/evm/common/const";
 import { EVMMultichainSettings } from "@avernikoz/nft-sdk/dist/networks/evm/common/EVMMultichainClient";
 
 const settings: EVMMultichainSettings = {
