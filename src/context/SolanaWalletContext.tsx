@@ -8,7 +8,6 @@ import {
     PhantomWalletAdapter,
     SolflareWalletAdapter,
     TrustWalletAdapter,
-    UnsafeBurnerWalletAdapter,
     WalletConnectWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import React, { FC, PropsWithChildren, useMemo } from "react";
@@ -43,7 +42,6 @@ export const SolanaWalletContext: FC<PropsWithChildren> = (props) => {
             new CoinbaseWalletAdapter(),
             new TrustWalletAdapter(),
             new Coin98WalletAdapter(),
-            new UnsafeBurnerWalletAdapter(),
         ],
         [network],
     );

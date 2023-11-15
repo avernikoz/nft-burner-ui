@@ -235,7 +235,12 @@ function Wallets() {
     return (
         <div className="wallet">
             <ButtonContainer>
-                <PanelMenu model={menuItems} className="w-full md:w-25rem" color={"primary"} />
+                <PanelMenu
+                    model={menuItems}
+                    className="w-full md:w-25rem"
+                    color={"primary"}
+                    style={{ minWidth: "200px" }}
+                />
                 {!account && (
                     <Button
                         aria-label="Choose your wallet"

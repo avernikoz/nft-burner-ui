@@ -9,6 +9,7 @@ import FullScreenButton from "../../components/FullscreenButton/FullscreenButton
 import Wallets from "../../components/wallets/Wallets";
 import { SuiWalletContext } from "../../context/SuiWalletContext";
 import { ToastProvider } from "../../components/ToastProvider/ToastProvider";
+import { GlobalStyles } from "../../config/globalStyles";
 
 function App() {
     useEffect(() => {
@@ -19,27 +20,31 @@ function App() {
     }, []);
 
     return (
-        <SolanaWalletContext>
-            <EVMWalletContext>
-                <SuiWalletContext>
-                    <div className="App">
-                        <div className="WalletConnectionHeader">
-                            <ToastProvider>
-                                <Wallets />
-                            </ToastProvider>
+        <>
+            <GlobalStyles />
+            <SolanaWalletContext>
+                <EVMWalletContext>
+                    <SuiWalletContext>
+                        <div className="App">
+                            <div className="WalletConnectionHeader">
+                                <ToastProvider>
+                                    <Wallets />
+                                </ToastProvider>
+                            </div>
+                            <div>
+                                <canvas id="demo-canvas">
+                                    Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code>{" "}
+                                    element.
+                                </canvas>
+                            </div>
+                            <Footer>
+                                <FullScreenButton />
+                            </Footer>
                         </div>
-                        <div>
-                            <canvas id="demo-canvas">
-                                Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
-                            </canvas>
-                        </div>
-                        <Footer>
-                            <FullScreenButton />
-                        </Footer>
-                    </div>
-                </SuiWalletContext>
-            </EVMWalletContext>
-        </SolanaWalletContext>
+                    </SuiWalletContext>
+                </EVMWalletContext>
+            </SolanaWalletContext>
+        </>
     );
 }
 
