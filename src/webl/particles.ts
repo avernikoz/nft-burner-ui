@@ -5,13 +5,11 @@ import {
     ParticleUpdatePS,
 } from "./shaders/shaderParticles";
 
-import { DrawUISingleton } from "./helpers/gui";
 import { CreateShader, CreateShaderProgramVSPS } from "./shaderUtils";
 import { CreateTexture } from "./resourcesUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { getWebGLProgram } from "./helpers/getWebGLProgram";
 import { GTime, showError } from "./utils";
-import { APP_ENVIRONMENT } from "../config/config";
 import { Vector2 } from "./types";
 import { GSceneDesc, GScreenDesc } from "./scene";
 
@@ -477,8 +475,6 @@ export class ParticlesEmitter {
 
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
         }
-
-        //this.DrawUI(inName);
     }
 
     Update(gl: WebGL2RenderingContext, fireTexture: WebGLTexture) {
@@ -577,18 +573,6 @@ export class ParticlesEmitter {
         gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.NumActiveParticles);
 
         gl.disable(gl.BLEND);
-    }
-
-    DrawUI(name: string) {
-        if (APP_ENVIRONMENT === "development") {
-            const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-            const folder = GDatGUI.addFolder(name);
-            //folder.open();
-            folder
-                .add({ NumberOfActiveParticles: this.NumActiveParticles }, "NumberOfActiveParticles", 0, 65000)
-                .step(1)
-                .listen();
-        }
     }
 
     private GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
