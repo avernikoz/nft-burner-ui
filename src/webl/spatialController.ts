@@ -53,6 +53,12 @@ export class SpatialControlPoint {
         this.ColorTexture1 = CreateTexture(gl, 4, activeTextureLocation);
     }
 
+    ClearState() {
+        this.bSelectedThisFrame = false;
+        this.bIntersectionPrevFrame = false;
+        this.bIntersectionThisFrame = false;
+    }
+
     OnUpdate() {
         this.bSelectedThisFrame = false;
         this.bIntersectionPrevFrame = this.bIntersectionThisFrame;
