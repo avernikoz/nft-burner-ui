@@ -1,8 +1,6 @@
 import { sui, solana, evm } from "@avernikoz/nft-sdk";
 import { suiProvider, solanaProvider } from "./provider.config";
 import { PublicKey } from "@solana/web3.js";
-import { EVMMultichainSettings } from "@avernikoz/nft-sdk/dist/networks/evm/common/EVMMultichainClient";
-import { ALLOWED_EVM_CHAINS } from "@avernikoz/nft-sdk/dist/networks/evm/common/const";
 
 // sui
 if (!process.env.REACT_APP_SUI_NFT_PRICE_API?.length) {
@@ -52,20 +50,20 @@ if (!process.env.REACT_APP_OPTIMISM_MAINNET_API_KEY?.length) {
     throw new Error("Empty OPTIMISM_MAINNET_API_KEY");
 }
 
-export const EVM_CHAINS_ALCHEMY_CONFIG: EVMMultichainSettings = {
-    [ALLOWED_EVM_CHAINS.Ethereum]: {
+export const EVM_CHAINS_ALCHEMY_CONFIG: evm.EVMMultichainSettings = {
+    [evm.ALLOWED_EVM_CHAINS.Ethereum]: {
         apiKey: process.env.REACT_APP_ETHEREUM_MAINNET_API_KEY,
         feeCollector: process.env.REACT_APP_ETHEREUM_FEE_COLLECTOR_WALLET,
     },
-    [ALLOWED_EVM_CHAINS.Polygon]: {
+    [evm.ALLOWED_EVM_CHAINS.Polygon]: {
         apiKey: process.env.REACT_APP_POLYGON_MAINNET_API_KEY,
         feeCollector: process.env.REACT_APP_POLYGON_FEE_COLLECTOR_WALLET,
     },
-    [ALLOWED_EVM_CHAINS.Arbitrum]: {
+    [evm.ALLOWED_EVM_CHAINS.Arbitrum]: {
         apiKey: process.env.REACT_APP_ARBITRUM_MAINNET_API_KEY,
         feeCollector: process.env.REACT_APP_ARBITRUM_FEE_COLLECTOR_WALLET,
     },
-    [ALLOWED_EVM_CHAINS.Optimism]: {
+    [evm.ALLOWED_EVM_CHAINS.Optimism]: {
         apiKey: process.env.REACT_APP_OPTIMISM_MAINNET_API_KEY,
         feeCollector: process.env.REACT_APP_OPTIMISM_FEE_COLLECTOR_WALLET,
     },
