@@ -40,7 +40,7 @@ import { Vector2 } from "./types";
 import { GTime, MathClamp, MathMapToRange, MathVector2Normalize, UpdateTime, showError } from "./utils";
 import { ApplyCameraControl, SetupCameraControlThroughInput } from "./shaders/controller";
 import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./spatialController";
-import { GRenderingStates } from "./states";
+import { ERenderingState, GRenderingStateMachine } from "./states";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -396,9 +396,10 @@ export function RenderMain() {
     }
 
     //States Controllers
+    const stateControllerSize = 0.05;
     const numStateControllers = 4;
-    const stateControllersViewSpaceStart = -0.5;
-    const stateControllersViewSpaceLength = 1;
+    const stateControllersViewSpaceStart = -0.25;
+    const stateControllersViewSpaceLength = 0.5;
     const distBBetwenControllers = stateControllersViewSpaceLength / (numStateControllers - 1);
     let curStateControllerPos = stateControllersViewSpaceStart;
 
@@ -407,7 +408,7 @@ export function RenderMain() {
     StateControllers[0] = new SpatialControlPoint(
         gl,
         { x: curStateControllerPos, y: -0.75 },
-        0.075,
+        stateControllerSize,
         false,
         `assets/background/stateIcon0.png`,
         `assets/background/stateIcon01.png`,
@@ -416,7 +417,7 @@ export function RenderMain() {
     StateControllers[1] = new SpatialControlPoint(
         gl,
         { x: curStateControllerPos, y: -0.75 },
-        0.075,
+        stateControllerSize,
         false,
         `assets/background/stateIcon1.png`,
         `assets/background/stateIcon11.png`,
@@ -425,7 +426,7 @@ export function RenderMain() {
     StateControllers[2] = new SpatialControlPoint(
         gl,
         { x: curStateControllerPos, y: -0.75 },
-        0.075,
+        stateControllerSize,
         false,
         `assets/background/stateIcon2.png`,
         `assets/background/stateIcon21.png`,
@@ -434,7 +435,7 @@ export function RenderMain() {
     StateControllers[3] = new SpatialControlPoint(
         gl,
         { x: curStateControllerPos, y: -0.75 },
-        0.075,
+        stateControllerSize,
         false,
         `assets/background/stateIcon3.png`,
         `assets/background/stateIcon31.png`,
@@ -450,8 +451,6 @@ export function RenderMain() {
     //GUI
     if (APP_ENVIRONMENT === "development") {
         DrawUI(GSettings);
-        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-        GDatGUI.add(GRenderingStates, "TransitionParameter").name("T").listen().step(0.0001);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -535,58 +534,31 @@ export function RenderMain() {
 
             UpdateTime();
 
-            StateControllers.forEach((controller) => {
-                controller.OnUpdate();
-            });
+            GRenderingStateMachine.GetInstance().AdvanceTransitionParameter();
 
-            let newState = GRenderingStates.Current;
-            //Check for clicked states UIs
-            for (let i = 0; i < numStateControllers; i++) {
-                if (StateControllers[i].bSelectedThisFrame) {
-                    newState = i;
-                }
-                if (
-                    StateControllers[i].bIntersectionThisFrame &&
-                    StateControllers[i].bIntersectionThisFrame !== StateControllers[i].bIntersectionPrevFrame
-                ) {
-                    GAudioEngine.PlayClickSound();
-                }
-            }
-            if (newState != GRenderingStates.Current && newState != 0) {
-                //...
-                GAudioEngine.PlayIntroSound();
-
-                GRenderingStates.TransitionParameter = 0.0;
-
-                GRenderingStates.Previous = GRenderingStates.Current;
-                GRenderingStates.Current = newState;
-            }
-
+            //Handle State transition if present
             if (GScreenDesc.bWideScreen) {
                 //handle scene state transition
-                if (GRenderingStates.TransitionParameter <= 1.0) {
-                    //We are in transition mode from old to new
-
+                if (GRenderingStateMachine.GetInstance().transitionParameter <= 1.0) {
                     AssignSceneDescriptions(
-                        GSceneStateDescsArray[GRenderingStates.Previous],
-                        GSceneStateDescsArray[GRenderingStates.Current],
-                        GRenderingStates.TransitionParameter,
+                        GSceneStateDescsArray[GRenderingStateMachine.GetInstance().previousState],
+                        GSceneStateDescsArray[GRenderingStateMachine.GetInstance().currentState],
+                        GRenderingStateMachine.GetInstance().transitionParameter,
                     );
-
-                    GRenderingStates.TransitionParameter += GTime.Delta;
                 }
             } else {
-                AssignSceneDescription(GSceneStateDescsArray[GRenderingStates.Burning]);
+                AssignSceneDescription(GSceneStateDescsArray[ERenderingState.Burning]);
             }
 
-            StateControllers[GRenderingStates.Current].bSelectedThisFrame = true;
-            StateControllers[GRenderingStates.Current].bIntersectionThisFrame = true;
+            StateControllers.forEach((controller) => {
+                controller.ClearState();
+            });
+            StateControllers[GRenderingStateMachine.GetInstance().currentState].bSelectedThisFrame = true;
+            StateControllers[GRenderingStateMachine.GetInstance().currentState].bIntersectionThisFrame = true;
 
-            if (GAreAllTexturesLoaded()) {
+            if (GAreAllTexturesLoaded() && GSettings.bRunSimulation) {
                 if (GFirstRenderingFrame) {
-                    GRenderingStates.Current = GRenderingStates.Intro;
-                    AssignSceneDescription(GSceneStateDescsArray[GRenderingStates.Intro]);
-                    GRenderingStates.TransitionParameter = 1.0;
+                    GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, true);
                     GFirstRenderingFrame = false;
                 }
 
@@ -784,7 +756,7 @@ export function RenderMain() {
             GUserInputDesc.bPointerInputActiveThisFrame = false;
 
             if (gl !== null) {
-                if (CheckGL(gl) && GSettings.bRunSimulation) {
+                if (CheckGL(gl)) {
                     requestAnimationFrame(RenderLoop);
                 }
             }

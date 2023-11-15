@@ -65,9 +65,9 @@ export type SceneStateDescription = {
 export const GSceneStateDescsArray = [
     //Dummy
     {
-        CameraPosition: { x: 0, y: 0.0, z: -4.0 },
-        SpotlightPosition: { x: 0.0, y: 2.5, z: -1.0 },
-        SpotlightFocusPosition: { x: 0.0, y: 0.0, z: 1.5 },
+        CameraPosition: { x: -1.6, y: 0.0, z: -3.61 },
+        SpotlightPosition: { x: -2.88, y: 1.57, z: -1.71 },
+        SpotlightFocusPosition: { x: 0, y: 1.03, z: 1.5 },
         FloorHeight: -1,
     },
     //Intro
