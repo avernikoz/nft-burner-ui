@@ -1,4 +1,15 @@
-import { styled } from "styled-components";
+import { keyframes, styled } from "styled-components";
+
+const burnAnimation = keyframes`
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+`;
 
 export const Card = styled.div`
     width: 200px;
@@ -8,6 +19,10 @@ export const Card = styled.div`
     border-radius: 10px;
     overflow: hidden;
     transition: box-shadow 0.3s ease-in-out;
+
+    &:active {
+        animation: ${burnAnimation} 0.5s forwards;
+    }
 
     &:hover {
         box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);

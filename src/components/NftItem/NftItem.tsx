@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 import { Card, CardImage, CardTitle } from "./NftItem.styled";
 
@@ -9,9 +9,13 @@ export interface INft {
 
 function NftItem(props: { item: INft }) {
     const { item } = props;
+    const [isActive, setIsActive] = useState(false);
 
+    const handleCardClick = () => {
+        setIsActive(!isActive);
+    };
     return (
-        <Card>
+        <Card className={isActive ? "active" : ""} onClick={handleCardClick}>
             <CardImage src={item.logoURI} alt={item.name} />
             <CardTitle>{item.name}</CardTitle>
         </Card>

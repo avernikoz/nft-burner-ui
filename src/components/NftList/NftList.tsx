@@ -3,40 +3,49 @@ import NftItem, { INft } from "../NftItem/NftItem";
 import { List } from "./NftList.styled";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
-import { useAccount as useWagmiAccount, useWalletClient  } from "wagmi";
-import { solana } from "@avernikoz/nft-sdk";
-import { EVMMultichainSettings } from "@avernikoz/nft-sdk/dist/networks/evm/common/EVMMultichainClient";
+import { useAccount as useWagmiAccount } from "wagmi";
+import { ALCHEMY_MULTICHAIN_CLIENT_INSTANCE, SOLANA_NFT_CLIENT_INSTANCE } from "../../config/nft.config";
+import { ALLOWED_EVM_CHAINS } from "@avernikoz/nft-sdk/dist/networks/evm/common/const";
 
-const settings: EVMMultichainSettings = {
-    [ALLOWED_EVM_CHAINS.Ethereum]: { apiKey:  process.env.ETHEREUM_MAINNET_API_KEY, feeCollector: 'your-fee-collector' },
-    [ALLOWED_EVM_CHAINS.Polygon]: { apiKey:  process.env.POLYGON_MAINNET_API_KEY, feeCollector: 'your-fee-collector' },
-    [ALLOWED_EVM_CHAINS.Arbitrum]: { apiKey:  process.env.ARBITRUM_MAINNET_API_KEY, feeCollector: 'your-fee-collector' },
-    [ALLOWED_EVM_CHAINS.Optimism]: { apiKey:  process.env.OPTIMISM_MAINNET_API_KEY, feeCollector: 'your-fee-collector' },
-  };
-  
+import { useEthersSigner } from "./variables";
+
 function NftList() {
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const solanaConnection = useConnection();
     const wagmiAccount = useWagmiAccount();
-    const { data: walletClient, isError, isLoading } = useWalletClient()
+    const signer = useEthersSigner();
     const [NFTList, setNFTList] = useState<INft[]>([]);
     useEffect(() => {
         if (wagmiAccount.isConnected && wagmiAccount.address) {
             wagmiAccount.connector?.getChainId();
-            walletClient
-            const test = new AlchemyMultichainClient({"Ethereum":walletClient});
-
-
+            if (signer) {
+                ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
+                    network: ALLOWED_EVM_CHAINS.Optimism,
+                    owner: signer,
+                }).then((data) => {
+                    console.log(data);
+                });
+            }
         } else if (solanaWallet.connected && solanaWallet.publicKey) {
-            solana.getNFTs(solanaWallet.publicKey, solanaConnection.connection).then((nfts: Required<INft[]>) => {
+            SOLANA_NFT_CLIENT_INSTANCE.getNFTs(solanaWallet.publicKey).then((nfts: Required<INft[]>) => {
                 setNFTList(nfts);
             });
         } else if (suietWallet.connected && suietWallet.address) {
             // sui.getNFTs(suietWallet.address?.toString());
         } else {
         }
-    }, [solanaConnection.connection, solanaWallet.connected, solanaWallet.publicKey, suietWallet.address, suietWallet.connected, wagmiAccount.address, wagmiAccount.connector, wagmiAccount.isCo nnected]);
+    }, [
+        signer,
+        solanaConnection.connection,
+        solanaWallet.connected,
+        solanaWallet.publicKey,
+        suietWallet.address,
+        suietWallet.connected,
+        wagmiAccount.address,
+        wagmiAccount.connector,
+        wagmiAccount.isConnected,
+    ]);
 
     return (
         <List>
