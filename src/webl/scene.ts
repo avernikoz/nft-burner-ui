@@ -57,6 +57,7 @@ export const GSceneDesc = {
 
 export type SceneStateDescription = {
     CameraPosition: { x: number; y: number; z: number };
+    CameraZoom: number;
     SpotlightPosition: { x: number; y: number; z: number };
     SpotlightFocusPosition: { x: number; y: number; z: number };
     FloorHeight: number;
@@ -69,6 +70,7 @@ export const GSceneStateDescsArray = [
         SpotlightPosition: { x: -2.88, y: 1.57, z: -1.71 },
         SpotlightFocusPosition: { x: 0, y: 1.03, z: 1.5 },
         FloorHeight: -1,
+        CameraZoom: 2,
     },
     //Intro
     {
@@ -76,27 +78,42 @@ export const GSceneStateDescsArray = [
         SpotlightPosition: { x: -2.88, y: 1.57, z: -1.71 },
         SpotlightFocusPosition: { x: 0, y: 1.03, z: 1.5 },
         FloorHeight: -1,
+        CameraZoom: 2,
     },
     //Inventory
     {
-        CameraPosition: { x: -1.23, y: 0.0, z: -2.15 },
+        CameraPosition: { x: -1.23, y: 0.0, z: -4.5 },
+        SpotlightPosition: { x: -1.43, y: -1.33, z: -1.0 },
+        SpotlightFocusPosition: { x: 0, y: 1.0, z: 0.0 },
+        FloorHeight: -2,
+        CameraZoom: 3,
+    },
+    /* {
+        CameraPosition: { x: -1.23, y: 0.0, z: -2.5 },
         SpotlightPosition: { x: -1.81, y: 1.65, z: -1.71 },
         SpotlightFocusPosition: { x: 0, y: 0.03, z: 1.5 },
         FloorHeight: -2,
-    },
+		CameraZoom : 2,
+    }, */
     //Burn
     {
         CameraPosition: { x: 0, y: 0.0, z: -4.0 },
         SpotlightPosition: { x: 0.0, y: 2.5, z: -1.0 },
         SpotlightFocusPosition: { x: 0.0, y: 0.0, z: 1.5 },
         FloorHeight: -1,
+        CameraZoom: 2,
     },
 ];
 
 export function AssignSceneDescription(inSceneDesc: SceneStateDescription): void {
     GSceneDesc.Camera.Position = inSceneDesc.CameraPosition;
-    GSceneDesc.Spotlight.Position = inSceneDesc.SpotlightPosition;
-    GSceneDesc.Spotlight.FocusPosition = inSceneDesc.SpotlightFocusPosition;
+    GSceneDesc.Camera.ZoomScale = inSceneDesc.CameraZoom;
+    GSceneDesc.Spotlight.Position.x = inSceneDesc.SpotlightPosition.x;
+    GSceneDesc.Spotlight.Position.y = inSceneDesc.SpotlightPosition.y;
+    GSceneDesc.Spotlight.Position.z = inSceneDesc.SpotlightPosition.z;
+    GSceneDesc.Spotlight.FocusPosition.x = inSceneDesc.SpotlightFocusPosition.x;
+    GSceneDesc.Spotlight.FocusPosition.y = inSceneDesc.SpotlightFocusPosition.y;
+    GSceneDesc.Spotlight.FocusPosition.z = inSceneDesc.SpotlightFocusPosition.z;
     GSceneDesc.Floor.Position.y = inSceneDesc.FloorHeight;
 }
 
@@ -107,6 +124,7 @@ export function AssignSceneDescriptions(
 ): void {
     const t = MathSmoothstep(0.0, 1.0, inParameter);
     const sceneDescIntermediate: SceneStateDescription = {
+        CameraZoom: MathLerp(inSceneDescPrev.CameraZoom, inSceneDescNew.CameraZoom, t),
         CameraPosition: MathLerpVec3(inSceneDescPrev.CameraPosition, inSceneDescNew.CameraPosition, t),
         SpotlightPosition: MathLerpVec3(inSceneDescPrev.SpotlightPosition, inSceneDescNew.SpotlightPosition, t),
         SpotlightFocusPosition: MathLerpVec3(
@@ -124,9 +142,12 @@ export function EnableSceneDescUI() {
     if (GDatGUI) {
         const folder = GDatGUI.addFolder("SceneDesc");
         folder.open();
-        folder.add(GSceneDesc.FirePlane.PositionOffset, "x", -2, 5).name("PlanePosX").step(0.01);
+        /* folder.add(GSceneDesc.FirePlane.PositionOffset, "x", -2, 5).name("PlanePosX").step(0.01);
         folder.add(GSceneDesc.FirePlane.PositionOffset, "y", -3, 10).name("PlanePosY").step(0.01);
-        folder.add(GSceneDesc.FirePlane.PositionOffset, "z", -10, 2).name("PlanePosZ").step(0.01);
+        folder.add(GSceneDesc.FirePlane.PositionOffset, "z", -10, 2).name("PlanePosZ").step(0.01); */
+        folder.add(GSceneDesc.FirePlane.OrientationEuler, "pitch", -Math.PI, Math.PI).name("pitch").step(0.01);
+        folder.add(GSceneDesc.FirePlane.OrientationEuler, "yaw", -Math.PI, Math.PI).name("yaw").step(0.01);
+        folder.add(GSceneDesc.FirePlane.OrientationEuler, "roll", -Math.PI, Math.PI).name("roll").step(0.01);
 
         folder.add(GSceneDesc.Camera.Position, "x", -2, 5).name("CamPosX").step(0.01).listen();
         folder.add(GSceneDesc.Camera.Position, "y", -3, 10).name("CamPosY").step(0.01).listen();

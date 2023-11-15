@@ -889,8 +889,9 @@ export function GetShaderSourceLightFlareRenderVS() {
 			void main()
 			{
 				vec3 pos = vec3(VertexBuffer.xy, 0.0f);
-				pos.y -= 0.01f;
+				//pos.y -= 0.01f;
 				pos.xy *= SpotlightScale * 0.75;
+				pos.x *= 2.f;
 				pos.xy += SpotlightPos.xy;
 				pos.z += SpotlightPos.z;
 				pos.xyz -= CameraDesc.xyz;

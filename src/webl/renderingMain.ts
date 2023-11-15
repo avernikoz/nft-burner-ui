@@ -20,11 +20,11 @@ import {
     GAreAllTexturesLoaded,
 } from "./resourcesUtils";
 import {
-    AssignSceneDescription,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     AssignSceneDescriptions,
     EnableSceneDescUI,
     GSceneDesc,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     GSceneStateDescsArray,
     GScreenDesc,
 } from "./scene";
@@ -36,11 +36,27 @@ import { GUserInputDesc, RegisterUserInput } from "./input";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Vector2 } from "./types";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { GTime, MathClamp, MathMapToRange, MathVector2Normalize, UpdateTime, showError } from "./utils";
+import {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    GTime,
+    MathClamp,
+    MathLerp,
+    MathMapToRange,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    MathSmoothstep,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    MathVector2Normalize,
+    MathVector3Add,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    MathVector3Negate,
+    UpdateTime,
+    showError,
+} from "./utils";
 import { ApplyCameraControl, SetupCameraControlThroughInput } from "./shaders/controller";
 import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./spatialController";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
+import { AnimationController } from "./animationController";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -461,6 +477,13 @@ export function RenderMain() {
     const FirePlaneSizePixels = { x: 512, y: 512 };
     const FirePlanePass = new RFirePlanePass(gl, FirePlaneSizePixels);
 
+    const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
+    const FirePlaneAnimationController = new AnimationController(
+        firePlanePos,
+        MathVector3Add(firePlanePos, { x: 0, y: -0.05, z: 0.0 }),
+        MathVector3Add(firePlanePos, { x: 0, y: 0.05, z: 0.0 }),
+    );
+
     if (GScreenDesc.bWideScreen) {
         EmberParticlesDesc.inDownwardForceScale = 2.5;
         AfterBurnAshesParticlesDesc.inDownwardForceScale = 2.5;
@@ -572,8 +595,6 @@ export function RenderMain() {
 
             const RenderStateMachine = GRenderingStateMachine.GetInstance();
 
-            RenderStateMachine.AdvanceTransitionParameter();
-
             //Handle State transition if present
             if (RenderStateMachine.transitionParameter <= 1.0) {
                 AssignSceneDescriptions(
@@ -582,8 +603,9 @@ export function RenderMain() {
                     RenderStateMachine.transitionParameter,
                 );
             } else {
-                AssignSceneDescription(GSceneStateDescsArray[RenderStateMachine.currentState]);
+                //AssignSceneDescription(GSceneStateDescsArray[RenderStateMachine.currentState]);
             }
+            RenderStateMachine.AdvanceTransitionParameter();
 
             StateControllers.forEach((controller) => {
                 controller.ClearState();
@@ -593,11 +615,27 @@ export function RenderMain() {
 
             if (GAreAllTexturesLoaded() && GSettings.bRunSimulation) {
                 if (GFirstRenderingFrame) {
-                    GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, true);
+                    GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory, true);
                     GFirstRenderingFrame = false;
                 }
 
                 ApplyCameraControl();
+
+                FirePlaneAnimationController.UpdateSelf();
+                GSceneDesc.FirePlane.PositionOffset = FirePlaneAnimationController.UpdateObjectPosition(
+                    GSceneDesc.FirePlane.PositionOffset,
+                    0.25,
+                );
+                //Update orientation
+                {
+                    let t = FirePlaneAnimationController.YawInterpolationParameter;
+                    const yawRange = { min: -Math.PI / 4, max: 0.0 };
+                    GSceneDesc.FirePlane.OrientationEuler.yaw = MathLerp(yawRange.min, yawRange.max, t);
+                    //Apply pitch rotation based on user input pos
+                    t = MathMapToRange(GUserInputDesc.InputPosNDCCur.y, -1.0, 1.0, 1.0, 0.0);
+                    const pitchRange = { min: -Math.PI / 6, max: Math.PI / 6 };
+                    GSceneDesc.FirePlane.OrientationEuler.pitch = MathLerp(pitchRange.min, pitchRange.max, t);
+                }
 
                 if (RenderStateMachine.currentState === ERenderingState.Inventory) {
                     SpotlightPositionController.OnUpdate();

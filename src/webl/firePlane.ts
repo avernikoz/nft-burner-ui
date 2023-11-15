@@ -18,6 +18,7 @@ import { GTime, MathClamp, MathGetVectorLength, MathVector2Normalize } from "./u
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
         SpotlightPos: gl.getUniformLocation(shaderProgram, "SpotlightPos"),
+        OrientationEuler: gl.getUniformLocation(shaderProgram, "OrientationEuler"),
         SpotlightScale: gl.getUniformLocation(shaderProgram, "SpotlightScale"),
         CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
         ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
@@ -163,7 +164,7 @@ export class RFirePlanePass {
 
     RoughnessParams = { Scale: 1.0, Add: 0.0, Contrast: 1.0, Min: 0.0 }; //Use variadic contrast [from 1 to 2]
 
-    ShadingParams = { SpecularIntensity: 0.7, SpecularPower: 4.0, DiffuseIntensity: 1.0 };
+    ShadingParams = { SpecularIntensity: 0.7, SpecularPower: 8.0, DiffuseIntensity: 1.0 };
 
     MaterialUVOffset = { x: 0.0, y: 0.0 };
 
@@ -249,7 +250,7 @@ export class RFirePlanePass {
         this.CurrentImageTextureSrc = "assets/example.jpg";
         //this.CurrentImageTextureSrc = "assets/apeBlue.png";
         //this.CurrentImageTextureSrc = "assets/example2.png";
-        this.VisualizerImageTexture = CreateTexture(gl, 5, this.CurrentImageTextureSrc, true);
+        this.VisualizerImageTexture = CreateTexture(gl, 5, this.CurrentImageTextureSrc, true, true);
         this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg", true);
 
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
@@ -297,6 +298,7 @@ export class RFirePlanePass {
             gl,
             7,
             `assets/background/cdCoverRGH` + roughnessTextureId + `.png`,
+            true,
             true,
         );
         this.RoughnessParams.Contrast = 1.0 + Math.random();
@@ -460,6 +462,12 @@ export class RFirePlanePass {
             GSceneDesc.FirePlane.PositionOffset.x,
             GSceneDesc.FirePlane.PositionOffset.y,
             GSceneDesc.FirePlane.PositionOffset.z,
+        );
+        gl.uniform3f(
+            this.VisualizerUniformParametersLocationList.OrientationEuler,
+            GSceneDesc.FirePlane.OrientationEuler.pitch,
+            GSceneDesc.FirePlane.OrientationEuler.yaw,
+            GSceneDesc.FirePlane.OrientationEuler.roll,
         );
 
         gl.uniform1f(

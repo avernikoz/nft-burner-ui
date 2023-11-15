@@ -145,7 +145,7 @@ export class RSpotlightRenderPass {
         this.SpotlightTexture = CreateTexture(gl, 4, `assets/spotlightCut` + spotlightTextureId + `.png`);
         //this.SpotlightTexture = CreateTexture(gl, 5, "assets/example.jpg");
 
-        this.LightFlareTexture = CreateTexture(gl, 4, `assets/background/lightGlare1.png`);
+        this.LightFlareTexture = CreateTexture(gl, 4, `assets/background/lightGlare0.png`);
     }
 
     RenderVolumetricLight(gl: WebGL2RenderingContext) {
