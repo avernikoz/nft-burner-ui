@@ -14,13 +14,17 @@ function NftItem(props: { item: INft }) {
     const imgRef = useRef<HTMLImageElement>(null);
 
     const handleCardClick = () => {
-        IMAGE_STORE_SINGLETON_INSTANCE.setImageUrl(item.logoURI);
-        setIsActive(!isActive);
+        if (imgRef.current) {
+            console.log(isActive);
+            IMAGE_STORE_SINGLETON_INSTANCE.setImageUrl(item.logoURI);
+            IMAGE_STORE_SINGLETON_INSTANCE.setImage(imgRef?.current);
+            setIsActive(!isActive);
+        }
     };
     return (
-        <Card className={isActive ? "active" : ""} onClick={handleCardClick}>
+        <Card onClick={handleCardClick}>
             {isActive ? <BurnEffect /> : null}
-            <CardImage src={item.logoURI} alt={item.name} />
+            <CardImage ref={imgRef} src={item.logoURI} alt={item.name} />
             <CardTitle>{item.name}</CardTitle>
         </Card>
     );

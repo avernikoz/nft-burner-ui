@@ -40,7 +40,9 @@ function Wallets() {
     );
 
     const disconnect = useCallback(async () => {
-        await wagmiDisconnect();
+        if (wagmiAccount.isConnected) {
+            await wagmiDisconnect();
+        }
         if (suietWallet.connected) {
             await suietWallet.disconnect();
         }
@@ -54,7 +56,7 @@ function Wallets() {
 
         setActiveRainbowConnector(null);
         setAccount(null);
-    }, [suietWallet, solanaWallet, setAccount]);
+    }, [wagmiAccount.isConnected, suietWallet, solanaWallet]);
 
     useEffect(() => {
         // Handle disconnect wallet in case wallet `A` was connected and then user

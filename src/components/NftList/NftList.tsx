@@ -7,9 +7,9 @@ import { useAccount as useWagmiAccount } from "wagmi";
 import {
     ALCHEMY_MULTICHAIN_CLIENT_INSTANCE,
     SOLANA_NFT_CLIENT_INSTANCE,
-    SUI_NFT_CLIENT_INSTANCE,
+    // SUI_NFT_CLIENT_INSTANCE,
 } from "../../config/nft.config";
-import { ALLOWED_EVM_CHAINS } from "@avernikoz/nft-sdk/dist/networks/evm/common/const";
+// import { ALLOWED_EVM_CHAINS } from "@avernikoz/nft-sdk/dist/networks/evm/common/const";
 
 import { useEthersSigner } from "./variables";
 import { evm } from "@avernikoz/nft-sdk";
