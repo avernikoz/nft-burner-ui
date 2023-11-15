@@ -449,9 +449,7 @@ export function RenderMain() {
     //const DebugColorTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg", true);
 
     //GUI
-    if (APP_ENVIRONMENT === "development") {
-        DrawUI(GSettings);
-    }
+    DrawUI(GSettings);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const BackGroundRenderPass = new RBackgroundRenderPass(gl);
