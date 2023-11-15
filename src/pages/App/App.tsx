@@ -12,12 +12,12 @@ import { ToastProvider } from "../../components/ToastProvider/ToastProvider";
 import NftList from "../../components/NftList/NftList";
 
 function App() {
-    useEffect(() => {
-        if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
-        } else {
-            RenderMain();
-        }
-    }, []);
+    // useEffect(() => {
+    //     if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
+    //     } else {
+    //         RenderMain();
+    //     }
+    // }, []);
 
     return (
         <SolanaWalletContext>
@@ -39,9 +39,10 @@ function App() {
                             <FullScreenButton />
                         </Footer>
                     </div>
-                    <canvas id="demo-canvas">
+                    {/* <canvas id="demo-canvas">
                         Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
-                    </canvas>
+                    </canvas> */}
+                    <div id="demo-canvas"></div>
                 </SuiWalletContext>
             </EVMWalletContext>
         </SolanaWalletContext>
