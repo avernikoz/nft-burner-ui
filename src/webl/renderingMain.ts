@@ -1,4 +1,3 @@
-import { APP_ENVIRONMENT } from "../config/config";
 import { RBackgroundRenderPass, RSpotlightRenderPass } from "./backgroundScene";
 import { RFirePlanePass } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
@@ -171,8 +170,10 @@ function SetupPostProcessPasses(gl: WebGL2RenderingContext) {
     GPostProcessPasses.Combiner = new RCombinerPass(gl);
     GPostProcessPasses.FlamePostProcess = new RFlamePostProcessPass(gl);
     SetupBloomPostProcessPass(gl);
-    if (APP_ENVIRONMENT === "development") {
-        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
+
+    //Draw UI
+    const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
+    if (GDatGUI) {
         //const folder = GDatGUI.addFolder(name);
         //folder.open();
 
@@ -448,11 +449,7 @@ export function RenderMain() {
     //const DebugColorTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg", true);
 
     //GUI
-    if (APP_ENVIRONMENT === "development") {
-        DrawUI(GSettings);
-        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-        GDatGUI.add(GRenderingStates, "TransitionParameter").name("T").listen().step(0.0001);
-    }
+    DrawUI(GSettings);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const BackGroundRenderPass = new RBackgroundRenderPass(gl);
