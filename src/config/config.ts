@@ -1,4 +1,4 @@
-import { SuiClient } from "@mysten/sui.js/client";
+import { ImageStoreSingleton } from "../common/ImageStoreSingleton";
 
 export const APP_ENVIRONMENT: "production" | "development" = (() => {
     if (process.env.REACT_APP_ENVIRONMENT === "production") {
@@ -8,4 +8,4 @@ export const APP_ENVIRONMENT: "production" | "development" = (() => {
     }
 })();
 
-export const provider = new SuiClient({ url: "https://sui-rpc.publicnode.com" });
+export const IMAGE_STORE_SINGLETON_INSTANCE = ImageStoreSingleton.getInstance();
