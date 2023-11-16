@@ -10,7 +10,6 @@ export const GScreenDesc = {
     ScreenRatio: 16.0 / 9.0,
     bWideScreen: true,
     ViewRatioXY: { x: 16.0 / 9.0, y: 1.0 }, //Used for pre-ViewportTransform, For WideScreen: y = 1, for Narrow Screen: x = 1
-    FirePlaneSizeScaleNDC: 0.75, //Related to ViewportMin
 };
 
 export const GSceneDesc = {
@@ -82,11 +81,11 @@ export const GSceneStateDescsArray = [
     },
     //Inventory
     {
-        CameraPosition: { x: -1.23, y: 0.0, z: -4.5 },
+        CameraPosition: { x: -1.5, y: 0.0, z: -6.0 },
         SpotlightPosition: { x: -1.43, y: -1.33, z: -1.0 },
         SpotlightFocusPosition: { x: 0, y: 1.0, z: 0.0 },
         FloorHeight: -2,
-        CameraZoom: 3,
+        CameraZoom: 4,
     },
     /* {
         CameraPosition: { x: -1.23, y: 0.0, z: -2.5 },

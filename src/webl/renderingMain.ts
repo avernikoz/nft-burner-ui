@@ -380,11 +380,6 @@ export function RenderMain() {
         } else {
             GScreenDesc.ViewRatioXY.y = window.innerHeight / window.innerWidth;
         }
-        {
-            //Additional scale for square and wide screens
-            const addScale = MathClamp(-0.25 * (GScreenDesc.ViewRatioXY.y - 1.0) + 0.25, 0.0, 0.25);
-            GScreenDesc.FirePlaneSizeScaleNDC = GScreenDesc.FirePlaneSizeScaleNDC - addScale;
-        }
     }
 
     // Call the resizeCanvas function initially and whenever the window is resized
@@ -485,12 +480,12 @@ export function RenderMain() {
     );
 
     if (GScreenDesc.bWideScreen) {
-        EmberParticlesDesc.inDownwardForceScale = 2.5;
+        /* EmberParticlesDesc.inDownwardForceScale = 2.5;
         AfterBurnAshesParticlesDesc.inDownwardForceScale = 2.5;
-        SmokeParticlesDesc.inDownwardForceScale = 2.5;
+        SmokeParticlesDesc.inDownwardForceScale = 2.5; */
     }
 
-    const bPaperMaterial = true;
+    const bPaperMaterial = false;
     const bAshesInEmbersPass = 0 && bPaperMaterial;
     if (bPaperMaterial) {
         //FlameParticlesDesc.inDefaultSize.y *= 0.9;
@@ -726,7 +721,9 @@ export function RenderMain() {
                         GRenderTargets.SpotlightTexture!,
                     );
                 }
-
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.ONE, gl.ONE);
+                gl.blendEquation(gl.MAX);
                 SpotlightRenderPass.RenderSourceSprite(gl);
 
                 //Control UI

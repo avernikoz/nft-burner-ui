@@ -943,7 +943,7 @@ export function GetShaderSourceLightFlareRenderPS() {
 		float light = texture(SpotlightTexture, flippedUVs.xy).r;
 
 
-		outSpotlightColor = vec3(light * 1.5f);
+		outSpotlightColor = vec3(light * 1.0f);
 
 	}`;
 }
@@ -1036,13 +1036,32 @@ export function GetShaderSourceLightSourceSpriteRenderPS() {
 		//light = texture(SpotlightTexture, flippedUVs.xy).rgb * 5.f;
 
 		float s = length(vsOutTexCoords - vec2(0.5));
-		if(s > 0.5)
+		float s2 = s;
+		if(s2 > 0.5)
 		{
-			s += 0.5f;
+			s2 += 0.5f;
 			//light = vec3(0.0f);
 		}
+		//light *= pow(1.f - clamp(s2, 0.0, 1.0), 2.f);
 
-		light *= pow(1.f - clamp(s, 0.0, 1.0), 2.f);
+		const float fadeStart = 0.3;
+		const float fadeSize = 0.2;
+		if(s > fadeStart)
+		{
+			s = MapToRange(s, fadeStart, fadeStart + fadeSize, 0.0, 1.0);
+			s = clamp(s, 0.0, 1.0);
+			s = 1.f - s;
+			/* s *= s;
+			s *= s; */
+			light *= s;
+		}
+		
+		
+		/* if(s > 0.7)
+		{
+			float m = MapToRange(s, 0.7, 1.0, 1.0, 0.0);
+			light *= m * m;
+		} */
 
 		outSpotlightColor = vec3(min(vec3(1.0), light * 2.0f));
 

@@ -261,7 +261,7 @@ export class RSpotlightRenderPass {
         gl.uniform1i(this.UniformParametersLocationListSourceSprite.SpotlightTexture, 1);
 
         // Enable face culling
-        gl.enable(gl.CULL_FACE);
+        //gl.enable(gl.CULL_FACE);
         gl.cullFace(gl.BACK);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);

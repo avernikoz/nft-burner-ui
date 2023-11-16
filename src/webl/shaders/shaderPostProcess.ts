@@ -1,4 +1,5 @@
 import { GScreenDesc } from "../scene";
+import { Vector3 } from "../types";
 
 export function scSpotlightFlicker() {
     return /* glsl */ `
@@ -133,9 +134,12 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 		vec2 texCoords = vsOutTexCoords;
 		vec4 flame = textureLod(FlameTexture, texCoords.xy, MipLevel);
 		vec4 firePlane = textureLod(FirePlaneTexture, texCoords.xy, MipLevel);
-		vec3 spotLight = vec3(1.0) * textureLod(SpotlightTexture, texCoords.xy, MipLevel).r;
+		#if 1
 		vec4 Color = vec4(max(flame.rgb, firePlane.rgb).rgb, 1.f);
-		//vec4 Color = vec4(max(spotLight, max(flame.rgb, firePlane.rgb)), 1.f);
+		#else
+		vec3 spotLight = vec3(1.0) * textureLod(SpotlightTexture, texCoords.xy, MipLevel).r * 0.5;
+		vec4 Color = vec4(max(spotLight, max(flame.rgb, firePlane.rgb)), 1.f);
+		#endif
 		//vec4 Color = firePlane;
 		//Color.rgb = flame.rgb;
 		//float brightness = dot(Color.rgb, vec3( 0.299f, 0.587f, 0.114f ));
@@ -152,8 +156,7 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 		
 	}`;
 
-export function GetShaderSourceFlamePostProcessPS() {
-    const SizeScale = GScreenDesc.FirePlaneSizeScaleNDC;
+export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
     const ViewSize = GScreenDesc.ViewRatioXY;
     return (
         /* glsl */ `#version 300 es
@@ -164,6 +167,9 @@ export function GetShaderSourceFlamePostProcessPS() {
 	out vec4 OutColor;
 
 	uniform float Time;
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	
 
 	uniform highp sampler2D FlameTexture;
 	uniform highp sampler2D NoiseTexture;
@@ -177,17 +183,30 @@ export function GetShaderSourceFlamePostProcessPS() {
 		///Translate to origin, scale by ranges ratio, translate to new position
 		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
 	}
+	vec2 MapToRange(vec2 t, float t0, float t1, float newt0, float newt1)
+	{
+		vec2 res;
+		res.x = MapToRange(t.x, t0, t1, newt0, newt1);
+		res.y = MapToRange(t.y, t0, t1, newt0, newt1);
+		return res;
+	}
 
 	void main()
 	{
-		const float kSizeScale = float(` +
-        SizeScale +
-        /* glsl */ `);
 			const vec2 kViewSize = vec2(float(` +
         ViewSize.x +
         /* glsl */ `), float(` +
         ViewSize.y +
         /* glsl */ `));
+		const vec3 kRandomValues = vec3(float(` +
+        randomValues.x +
+        /* glsl */ `), float(` +
+        randomValues.y +
+        /* glsl */ `),
+		float(` +
+        randomValues.z +
+        /* glsl */ `)
+		);
 		
 		vec2 flameNoiseUV = vsOutTexCoords;
 		vec2 flameSamplingUV = flameNoiseUV;
@@ -208,8 +227,11 @@ export function GetShaderSourceFlamePostProcessPS() {
 		flameSamplingUV.y -= Time * 0.013;
 		flameSamplingUV.x += Time * 0.003;
 
-		//flameSamplingUV *= (2.0 - kSizeScale);
-		flameSamplingUV *= kViewSize;
+		flameSamplingUV = MapToRange(flameSamplingUV, 0.0, 1.0, -1.0, 1.0);
+		flameSamplingUV.x *= ScreenRatio;
+		/* flameSamplingUV /= (1.f + CameraDesc.z);
+		flameSamplingUV *= (CameraDesc.w); */
+		flameSamplingUV = MapToRange(flameSamplingUV, -1.0, 1.0, 0.0, 1.0);
 		vec3 distortionNoise = textureLod(NoiseTexture, flameSamplingUV.xy, 0.f).rgb;
 		distortionNoise = (distortionNoise * 2.f) - 1.f;
 		flameSamplingUV = flameNoiseUV;
@@ -226,7 +248,8 @@ export function GetShaderSourceFlamePostProcessPS() {
 
 		//OutColor = vec4(distortionNoise.r, distortionNoise.r,distortionNoise.r, 1.0);return;
 
-		distortionNoise *= 2.5f;
+		distortionNoise *= 2.0f;
+		distortionNoise *= (1.f + kRandomValues.x);
 		flameSamplingUV.x += distortionNoise.r * 0.0075;
 		flameSamplingUV.y += distortionNoise.g * 0.001;
 
@@ -241,16 +264,19 @@ export function GetShaderSourceFlamePostProcessPS() {
 		flameNoiseUV *= 0.9f;
 		flameNoiseUV.x *= 4.f;
 
-		flameNoiseUV *= (2.0 - kSizeScale);
-		flameNoiseUV *= kViewSize;
+		flameNoiseUV = MapToRange(flameNoiseUV, 0.0, 1.0, -1.0, 1.0);
+		flameNoiseUV.x *= ScreenRatio;
+		/* flameNoiseUV /= (1.f + CameraDesc.z);
+		flameNoiseUV *= (CameraDesc.w); */
+		flameNoiseUV = MapToRange(flameNoiseUV, -1.0, 1.0, 0.0, 1.0);
 
 		//Translate
-		const float flameSpeed = 0.85f; //TODO: USE VARYING SPEED [0.25,0.75]
+		const float flameSpeed = 0.35f + (kRandomValues.y * 0.5); //TODO: USE VARYING SPEED [0.25,0.75]
 		flameNoiseUV.y -= Time * flameSpeed;
 		flameNoiseUV.x += Time * 0.05f;
 
 		//Post-Translate Scale
-		flameNoiseUV *= 0.2f;
+		flameNoiseUV *= (0.2f + kRandomValues.z * 0.5);
 
 		flameNoiseUV.x += distortionNoise.r * 0.0095f;
 		flameNoiseUV.y -= distortionNoise.g * 0.0055f;
@@ -281,7 +307,6 @@ export function GetShaderSourceFlamePostProcessPS() {
 }
 
 export function GetShaderSourceCombinerPassPS() {
-    const SizeScale = GScreenDesc.FirePlaneSizeScaleNDC;
     const ViewSize = GScreenDesc.ViewRatioXY;
     return (
         /* glsl */ `#version 300 es
@@ -336,10 +361,6 @@ export function GetShaderSourceCombinerPassPS() {
 	
 		void main()
 		{
-			const float kSizeScale = float(` +
-        SizeScale +
-        /* glsl */ `);
-			const float kSizeScaleRcp = 1.f / kSizeScale;
 			const vec2 kViewSize = vec2(float(` +
         ViewSize.x +
         /* glsl */ `), float(` +
@@ -353,12 +374,14 @@ export function GetShaderSourceCombinerPassPS() {
 		#if 1//heat distortion
 			vec2 distortionUV = vsOutTexCoords;
 			distortionUV.y -= Time * 0.25;
-			distortionUV.x *= 2.5;
-			distortionUV.y *= 0.5;
+			distortionUV.x *= 1.5;
+			distortionUV.y *= 0.75;
 			distortionUV *= 0.4f;
-			//distortionUV *= (2.0 - kSizeScale);
-			distortionUV *= kSizeScaleRcp;
-			distortionUV *= kViewSize;
+			distortionUV *= 1.5f;
+			distortionUV = MapToRange(distortionUV, 0.0, 1.0, -1.0, 1.0);
+			distortionUV += CameraDesc.xy;
+			distortionUV.x *= ScreenRatio;
+			distortionUV = MapToRange(distortionUV, -1.0, 1.0, 0.0, 1.0);
 			vec3 distortionNoise = textureLod(NoiseTexture, distortionUV.xy, 0.f).rgb;
 			distortionNoise = (distortionNoise * 2.f) - 1.f;
 			distortionUV = vsOutTexCoords;
@@ -371,10 +394,12 @@ export function GetShaderSourceCombinerPassPS() {
 			{
 				distortionNoise.r = mix(distortionNoise.g, distortionNoise.r, t - 1.f);
 			}
-			vec3 heat = textureLod(FlameTexture, (texCoords - vec2(0.f, (0.25f * kSizeScale) / kViewSize.y )), 0.f).rgb;
+			float heatOffset = 0.5;
+			heatOffset /= (1.f - CameraDesc.z);
+			vec3 heat = textureLod(FlameTexture, (texCoords - vec2(0.0, heatOffset)), 0.f).rgb;
 			distortionNoise.x *= 0.0025;
 			distortionNoise.y *= 0.001;
-			//distortionNoise *= 0.5f;
+			distortionNoise *= 0.75f;
 			distortionNoise *= 10.f;
 			distortionNoise *= clamp(dot(heat.rgb, vec3(0.333f)), 0.f, 1.f);
 			//OutColor = vec4(distortionNoise.rg, 0.f, 1.f); return;
@@ -391,24 +416,6 @@ export function GetShaderSourceCombinerPassPS() {
 
 			vec2 spotlightSamplingUV = vec2(texCoords.x, texCoords.y);
 
-			/* if(kViewSize.x > 1.0)
-			{
-				const vec2 centerUV = vec2(0.5);
-
-				spotlightSamplingUV.x -= centerUV.x;
-    			spotlightSamplingUV.y -= centerUV.y;
-
-    			// Apply clockwise rotation
-				const float angle = -0.7f;
-    			spotlightSamplingUV.x = spotlightSamplingUV.x * cos(angle) + spotlightSamplingUV.y * (-sin(angle));
-    			spotlightSamplingUV.y = spotlightSamplingUV.x * sin(angle) + spotlightSamplingUV.y * cos(angle);
-
-    			// Translate back to the original position
-    			spotlightSamplingUV.x += centerUV.x;
-    			spotlightSamplingUV.y += centerUV.y;
-			} */
-
-			
 			float light = textureLod(SpotlightTexture, spotlightSamplingUV, 0.f).r;
 			//float light = 1.f;
 			float lightInitial = light;
@@ -431,15 +438,16 @@ export function GetShaderSourceCombinerPassPS() {
 			//smoke noise
 			{
 				vec2 noiseUV = texCoords;
-				//noiseUV *= (2.0 - kSizeScale);
-				noiseUV *= kSizeScaleRcp;
-				noiseUV *= kViewSize;
+				noiseUV = MapToRange(noiseUV, 0.0, 1.0, -1.0, 1.0);
+				noiseUV += CameraDesc.xy;
+				noiseUV.x *= ScreenRatio;
+				noiseUV = MapToRange(noiseUV, -1.0, 1.0, 0.0, 1.0);
 				noiseUV.x -= Time * 0.0043f;
 				noiseUV.y -= Time * 0.0093f;
 				vec4 smokeNoise = textureLod(SmokeNoiseTexture, noiseUV, 0.f);
 				float smokeNoiseChannel = 1.f;
 				{
-					float tx = mod(Time, 9.f) / 3.f;
+					float tx = mod(Time + CameraDesc.z + CameraDesc.w, 9.f) / 3.f;
 					if(tx < 1.f)
 					{
 						smokeNoise.r = mix(smokeNoise.r, smokeNoise.g, tx);
@@ -456,6 +464,7 @@ export function GetShaderSourceCombinerPassPS() {
 
 				smokeNoise.r = Contrast(smokeNoise.r, mix(0.05, 0.25, 1.f - lightInitial)) * 2.f;
 				smokeNoise.r *= min(1.f, texCoords.y + 0.3f);
+				//smokeNoise.r *= 5.f; //TODO:Depends on cur fire
 				smoke.rgba = smoke.rgba * 1.f + vec4(vec3(smokeNoise.r) * 0.15, smokeNoise.r * 0.15) * clamp(1.f - smoke.a, 0.0, 1.f);
 			}
 			smoke.rgb *= 0.75f;
@@ -488,8 +497,15 @@ export function GetShaderSourceCombinerPassPS() {
 			smoke.rgb *= 0.85f;
 
 			float smokeScale = 1.f;
-			//smokeScale *= (texCoords.y * kViewSize.y * (kSizeScale));
-			smokeScale *= clamp(length((texCoords.xy * kViewSize.xy * (2.0 - kSizeScale)) - vec2(0.5) * kViewSize.xy * (2.0 - kSizeScale)), 0.25f, 1.f);
+			{
+				vec2 texCoordsScaled = texCoords.xy;
+				texCoordsScaled = MapToRange(texCoordsScaled, 0.0, 1.0, -1.0, 1.0);
+				texCoordsScaled /= (1.f - CameraDesc.z);
+				texCoordsScaled *= 3.0f;
+				texCoordsScaled *= CameraDesc.w;
+				texCoordsScaled.x *= ScreenRatio;
+				smokeScale *= clamp(length(texCoordsScaled), 0.25, 1.f);
+			}
 			smokeScale *= 2.0f;
 			//smokeScale = min(1.5f, smokeScale);
 
@@ -521,9 +537,9 @@ export function GetShaderSourceCombinerPassPS() {
 			//final.rgb = pow(final.rgb, vec3(1.f/2.2f));
 			vec3 colorFilter1 = vec3(0.3, 0.52, 1.0);
 			float luma = clamp(dot(final.rgb, vec3(0.33)), 0.0, 1.0);
+			//float luma = dot(final.rgb, vec3(0.2126, 0.7152, 0.0722)); // Using proper luminance values
 			vec3 colorFilter2 = vec3(1.0, 1.0, 0.75);
 			colorFilter1 = mix(colorFilter1, colorFilter2, luma);
-			//float luma = dot(final.rgb, vec3(0.2126, 0.7152, 0.0722)); // Using proper luminance values
 			float gradParam = luma;
 			
 			const float gradThres = 0.15;

@@ -247,8 +247,8 @@ export class RFirePlanePass {
         this.VisualizerUniformParametersLocationList = GetUniformParametersList(gl, this.VisualizerShaderProgram);
 
         this.VisualizerFlameColorLUT = CreateTexture(gl, 4, "assets/flameColorLUT5.png");
-        this.CurrentImageTextureSrc = "assets/example.jpg";
-        //this.CurrentImageTextureSrc = "assets/apeBlue.png";
+        //this.CurrentImageTextureSrc = "assets/example.jpg";
+        this.CurrentImageTextureSrc = "assets/apeBlue.png";
         //this.CurrentImageTextureSrc = "assets/example2.png";
         this.VisualizerImageTexture = CreateTexture(gl, 5, this.CurrentImageTextureSrc, true, true);
         this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg", true);

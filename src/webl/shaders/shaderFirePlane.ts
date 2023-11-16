@@ -864,7 +864,7 @@ export function GetShaderSourceFireVisualizerPS() {
 	
 		vec3 finalColor = max(surfaceColor, fireColor);
 
-		#if 1 //ASH DISSOLVE EFFECT 
+		#if PAPER //ASH DISSOLVE EFFECT 
 		if(curFire > 0.1f)
 		{
 			if(curFire > 1.f || curFuel > 0.1f)
