@@ -72,9 +72,10 @@ function NftList() {
                 setShowSpinner(false);
                 console.log(nfts);
                 const convertedNfts = nfts.map((nft) => {
+                    const ipfsHash = nft.url.replace("ipfs://", "");
                     return {
                         name: nft.name,
-                        logoURI: nft.url,
+                        logoURI: "https://ipfs.io/ipfs/" + ipfsHash,
                     };
                 });
                 setNFTList(convertedNfts);
