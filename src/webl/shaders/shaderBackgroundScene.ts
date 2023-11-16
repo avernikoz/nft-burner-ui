@@ -943,7 +943,7 @@ export function GetShaderSourceLightFlareRenderPS() {
 		float light = texture(SpotlightTexture, flippedUVs.xy).r;
 
 
-		outSpotlightColor = vec3(light * 2.0f);
+		outSpotlightColor = vec3(light * 1.5f);
 
 	}`;
 }
