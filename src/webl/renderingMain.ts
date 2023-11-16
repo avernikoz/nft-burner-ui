@@ -632,8 +632,9 @@ export function RenderMain() {
                     const yawRange = { min: -Math.PI / 4, max: 0.0 };
                     GSceneDesc.FirePlane.OrientationEuler.yaw = MathLerp(yawRange.min, yawRange.max, t);
                     //Apply pitch rotation based on user input pos
-                    t = MathMapToRange(GUserInputDesc.InputPosNDCCur.y, -1.0, 1.0, 1.0, 0.0);
-                    const pitchRange = { min: -Math.PI / 6, max: Math.PI / 6 };
+                    //t = MathMapToRange(GUserInputDesc.InputPosNDCCur.y, -1.0, 1.0, 1.0, 0.0);
+                    t = FirePlaneAnimationController.PitchInterpolationParameter;
+                    const pitchRange = { min: -Math.PI / 13, max: Math.PI / 13 };
                     GSceneDesc.FirePlane.OrientationEuler.pitch = MathLerp(pitchRange.min, pitchRange.max, t);
                 }
 
@@ -664,6 +665,7 @@ export function RenderMain() {
                 gl.blendFunc(gl.ONE, gl.ONE);
                 gl.blendEquation(gl.FUNC_ADD);
                 SpotlightRenderPass.RenderFlare(gl);
+
                 gl.disable(gl.BLEND);
 
                 BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
@@ -692,6 +694,8 @@ export function RenderMain() {
                         GRenderTargets.SpotlightTexture!,
                     );
                 }
+
+                SpotlightRenderPass.RenderSourceSprite(gl);
 
                 //Control UI
                 {

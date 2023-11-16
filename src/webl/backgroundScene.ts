@@ -13,6 +13,8 @@ import {
     GetShaderSourceSpotlightRenderPS,
     GetShaderSourceLightFlareRenderPS,
     GetShaderSourceLightFlareRenderVS,
+    GetShaderSourceLightSourceSpriteRenderVS,
+    GetShaderSourceLightSourceSpriteRenderPS,
 } from "./shaders/shaderBackgroundScene";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { GTime } from "./utils";
@@ -114,13 +116,19 @@ export class RSpotlightRenderPass {
 
     public ShaderProgramFlare;
 
+    public ShaderProgramSourceSprite;
+
     public UniformParametersLocationList;
 
     public UniformParametersLocationListFlare;
 
+    public UniformParametersLocationListSourceSprite;
+
     public SpotlightTexture;
 
     public LightFlareTexture;
+
+    public LightSourceTexture;
 
     constructor(gl: WebGL2RenderingContext) {
         //================================================ Floor Render
@@ -136,16 +144,23 @@ export class RSpotlightRenderPass {
             GetShaderSourceLightFlareRenderVS(),
             GetShaderSourceLightFlareRenderPS(),
         );
+        this.ShaderProgramSourceSprite = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceLightSourceSpriteRenderVS(),
+            GetShaderSourceLightSourceSpriteRenderPS(),
+        );
 
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
         this.UniformParametersLocationListFlare = GetUniformParametersList(gl, this.ShaderProgramFlare);
+        this.UniformParametersLocationListSourceSprite = GetUniformParametersList(gl, this.ShaderProgramSourceSprite);
 
         const spotlightTextureId = Math.floor(Math.random() * 8);
         this.SpotlightTexture = CreateTexture(gl, 4, `assets/spotlightCut` + spotlightTextureId + `.png`);
         //this.SpotlightTexture = CreateTexture(gl, 5, "assets/example.jpg");
 
         this.LightFlareTexture = CreateTexture(gl, 4, `assets/background/lightGlare0.png`);
+        this.LightSourceTexture = CreateTexture(gl, 4, `assets/background/spotlightMask0.png`);
     }
 
     RenderVolumetricLight(gl: WebGL2RenderingContext) {
@@ -213,6 +228,45 @@ export class RSpotlightRenderPass {
         gl.uniform1i(this.UniformParametersLocationListFlare.SpotlightTexture, 1);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    RenderSourceSprite(gl: WebGL2RenderingContext) {
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.ShaderProgramSourceSprite);
+
+        //Constants
+        gl.uniform4f(
+            this.UniformParametersLocationListSourceSprite.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationListSourceSprite.ScreenRatio, GScreenDesc.ScreenRatio);
+        const flareSize = { x: 0.5, y: 0.5 };
+        gl.uniform2f(this.UniformParametersLocationListSourceSprite.SpotlightScale, flareSize.x, flareSize.y);
+        gl.uniform3f(
+            this.UniformParametersLocationListSourceSprite.SpotlightPos,
+            GSceneDesc.Spotlight.Position.x,
+            GSceneDesc.Spotlight.Position.y,
+            GSceneDesc.Spotlight.Position.z,
+        );
+        const spDir = GSceneDesc.Spotlight.GetDirection();
+        gl.uniform3f(this.UniformParametersLocationListSourceSprite.SpotlightDirection, spDir.x, spDir.y, spDir.z);
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this.LightSourceTexture);
+        gl.uniform1i(this.UniformParametersLocationListSourceSprite.SpotlightTexture, 1);
+
+        // Enable face culling
+        gl.enable(gl.CULL_FACE);
+        gl.cullFace(gl.BACK);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        gl.disable(gl.CULL_FACE);
     }
 }
 

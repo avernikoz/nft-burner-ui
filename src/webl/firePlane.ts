@@ -284,8 +284,8 @@ export class RFirePlanePass {
             `assets/background/` + matName + `DFS` + fileFormat,
             true,
         );
-        this.NormalsTexture = CreateTexture(gl, 7, `assets/background/` + matName + `NRM` + fileFormat, true);
-        this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/` + matName + `RGH` + fileFormat, true);
+        this.NormalsTexture = CreateTexture(gl, 7, `assets/background/` + matName + `NRM` + fileFormat, true, true);
+        //this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/` + matName + `RGH` + fileFormat, true);
 
         //this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/oxidCopperRGH.png");
 

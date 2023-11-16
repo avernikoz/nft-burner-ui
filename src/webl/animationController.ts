@@ -15,7 +15,11 @@ export class AnimationController {
 
     YawAnimationNumCyclesPerSec = 0.07;
 
+    PitchAnimationNumCyclesPerSec = 0.03;
+
     YawInterpolationParameter = 0;
+
+    PitchInterpolationParameter = 0;
 
     constructor(intialPosition: Vector3, minPos: Vector3, maxPos: Vector3) {
         this.Position = intialPosition;
@@ -35,6 +39,8 @@ export class AnimationController {
 
         this.YawInterpolationParameter =
             (Math.sin(GTime.Cur * Math.PI * 2 * this.YawAnimationNumCyclesPerSec) + 1.0) * 0.5;
+        this.PitchInterpolationParameter =
+            (Math.sin(GTime.Cur * Math.PI * 2 * this.PitchAnimationNumCyclesPerSec) + 1.0) * 0.5;
     }
 
     UpdateObjectPosition(objectPos: Vector3, accelerationScale: number) {
