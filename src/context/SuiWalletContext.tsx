@@ -7,9 +7,5 @@ require("@suiet/wallet-kit/style.css");
 export const SuiWalletContext: FC<PropsWithChildren> = (props) => {
     const { children } = props;
 
-    return (
-        <WalletProvider autoConnect chains={[SuiMainnetChain]}>
-            {children}
-        </WalletProvider>
-    );
+    return <WalletProvider chains={[SuiMainnetChain]}>{children}</WalletProvider>;
 };

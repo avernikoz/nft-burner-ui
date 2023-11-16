@@ -76,7 +76,7 @@ function App() {
                     <canvas id="demo-canvas">
                         Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
                     </canvas>
-                    <div id="demo-canvas"></div>
+                    {/* <div id="demo-canvas"></div> */}
                 </SuiWalletContext>
             </EVMWalletContext>
         </SolanaWalletContext>

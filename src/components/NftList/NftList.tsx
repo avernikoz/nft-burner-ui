@@ -68,6 +68,7 @@ function NftList() {
                 setNFTList(nfts);
             });
         } else if (suietWallet.connected && suietWallet.address) {
+            console.log("hello");
             SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address }).then((nfts) => {
                 const convertedNfts = nfts.map((nft) => {
                     return {
