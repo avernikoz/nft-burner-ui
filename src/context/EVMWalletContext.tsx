@@ -1,11 +1,13 @@
 import "@rainbow-me/rainbowkit/styles.css";
 
 import React, { FC, PropsWithChildren } from "react";
-import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
+import { connectorsForWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { configureChains, createConfig, WagmiConfig } from "wagmi";
 import { mainnet, polygon, optimism, arbitrum } from "wagmi/chains";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
+
+import { coinbaseWallet, metaMaskWallet, phantomWallet, walletConnectWallet } from "@rainbow-me/rainbowkit/wallets";
 
 if (typeof process.env.REACT_APP_ALCHEMY_ID !== "string" || process.env.REACT_APP_ALCHEMY_ID.length === 0) {
     throw new Error("Empty REACT_APP_ALCHEMY_ID");
@@ -23,14 +25,32 @@ const { chains, publicClient } = configureChains(
     [alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_ID }), publicProvider()],
 );
 
-const { connectors } = getDefaultWallets({
-    appName: "Burner",
-    projectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID,
-    chains,
-});
+// const { connectors } = getDefaultWallets({
+//     appName: "Burner",
+//     projectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID,
+//     chains,
+// });
+
+const connectors = connectorsForWallets([
+    {
+        groupName: "My Wallets",
+        wallets: [
+            metaMaskWallet({
+                projectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID,
+                chains: [mainnet, polygon, arbitrum, optimism],
+            }),
+            coinbaseWallet({ appName: "My RainbowKit App", chains: [mainnet, polygon, arbitrum, optimism] }),
+            phantomWallet({ chains: [mainnet, polygon, arbitrum, optimism] }),
+            walletConnectWallet({
+                chains: [mainnet, polygon, arbitrum, optimism],
+                projectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID,
+            }),
+        ],
+    },
+])();
 
 const wagmiConfig = createConfig({
-    // autoConnect: true,
+    //autoConnect: true,
     connectors,
     publicClient,
 });

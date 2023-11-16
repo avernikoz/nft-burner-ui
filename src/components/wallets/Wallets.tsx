@@ -160,6 +160,11 @@ function Wallets() {
         },
     ];
 
+    useEffect(() => {
+        disconnect();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // effect for change tab view in dialog
     useEffect(() => {
         const isEvmNetwork = activeIndex <= lastEvmIndex;

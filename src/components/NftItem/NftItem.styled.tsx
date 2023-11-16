@@ -1,15 +1,17 @@
 import { keyframes, styled } from "styled-components";
 
-const burnAnimation = keyframes`
+const fireAnimation = keyframes`
     0% {
-        transform: scale(1);
+        opacity: 0.5;
+    }
+    50% {
         opacity: 1;
     }
     100% {
-        transform: scale(1.5);
-        opacity: 0;
+        opacity: 0.5;
     }
 `;
+
 export const BurnEffect = styled.div`
     transform: scale(0.5);
     opacity: 0;
@@ -27,9 +29,10 @@ export const Card = styled.div`
     overflow: hidden;
     transition: box-shadow 0.3s ease-in-out;
 
-    &:active {
-        /* animation: ${burnAnimation} 0.5s forwards; */
-        /* opacity: 0.5; */
+    &.active {
+        animation: ${fireAnimation} 1.5s infinite;
+        background: radial-gradient(circle, #ff5722 0%, #ff9800 100%);
+        z-index: 1;
     }
 
     &:hover {

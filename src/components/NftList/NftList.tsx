@@ -3,10 +3,11 @@ import NftItem, { INft } from "../NftItem/NftItem";
 import { List } from "./NftList.styled";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
-import { useAccount as useWagmiAccount } from "wagmi";
+import { useAccount } from "wagmi";
 import {
     ALCHEMY_MULTICHAIN_CLIENT_INSTANCE,
     SOLANA_NFT_CLIENT_INSTANCE,
+    SUI_NFT_CLIENT_INSTANCE,
     // SUI_NFT_CLIENT_INSTANCE,
 } from "../../config/nft.config";
 // import { ALLOWED_EVM_CHAINS } from "@avernikoz/nft-sdk/dist/networks/evm/common/const";
@@ -14,17 +15,26 @@ import {
 import { useEthersSigner } from "./variables";
 import { evm } from "@avernikoz/nft-sdk";
 import { arbitrum, optimism, polygon } from "viem/chains";
+import { ProgressSpinner } from "primereact/progressspinner";
 
 function NftList() {
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const solanaConnection = useConnection();
-    const wagmiAccount = useWagmiAccount();
     const signer = useEthersSigner();
     const [NFTList, setNFTList] = useState<INft[]>([]);
+    const wagmiAccount = useAccount();
+    const [userConnected, setUserConnected] = useState<boolean>(false);
+    const [showSpinner, setShowSpinner] = useState<boolean>(false);
+
     useEffect(() => {
+        console.log(wagmiAccount.isConnected, wagmiAccount.address, signer);
+        console.log(solanaWallet.connected && solanaWallet.publicKey);
         if (wagmiAccount.isConnected && wagmiAccount.address && signer) {
+            setUserConnected(true);
+            setShowSpinner(true);
             wagmiAccount.connector?.getChainId().then((id) => {
+                setShowSpinner(false);
                 if (id === polygon.id) {
                     ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
                         network: evm.ALLOWED_EVM_CHAINS.Polygon,
@@ -51,14 +61,24 @@ function NftList() {
                 }
             });
         } else if (solanaWallet.connected && solanaWallet.publicKey) {
+            setUserConnected(true);
+            setShowSpinner(true);
             SOLANA_NFT_CLIENT_INSTANCE.getNFTs(solanaWallet.publicKey).then((nfts: Required<INft[]>) => {
+                setShowSpinner(false);
                 setNFTList(nfts);
             });
         } else if (suietWallet.connected && suietWallet.address) {
-            // SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address }).then((nfts: Required<INft[]>) => {
-            //     setNFTList(nfts);
-            // });
+            SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address }).then((nfts) => {
+                const convertedNfts = nfts.map((nft) => {
+                    return {
+                        name: nft.name,
+                        logoURI: nft.url,
+                    };
+                });
+                setNFTList(convertedNfts);
+            });
         } else {
+            setNFTList([]);
         }
     }, [
         signer,
@@ -67,16 +87,25 @@ function NftList() {
         solanaWallet.publicKey,
         suietWallet.address,
         suietWallet.connected,
+        wagmiAccount.isConnected,
         wagmiAccount.address,
         wagmiAccount.connector,
-        wagmiAccount.isConnected,
     ]);
 
     return (
         <List>
-            {NFTList.map((item, i) => (
-                <NftItem item={item} key={i}></NftItem>
-            ))}
+            {userConnected === false && <h3>Connect your wallet</h3>}
+            {showSpinner === false ? (
+                <div className="nft-list">
+                    {NFTList.map((item, i) => (
+                        <NftItem item={item} key={i}></NftItem>
+                    ))}
+                </div>
+            ) : (
+                <div className="spinner">
+                    <ProgressSpinner />
+                </div>
+            )}
         </List>
     );
 }

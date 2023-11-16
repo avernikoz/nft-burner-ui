@@ -22,7 +22,7 @@ function NftItem(props: { item: INft }) {
         }
     };
     return (
-        <Card onClick={handleCardClick}>
+        <Card className={isActive ? "active" : ""} onClick={handleCardClick}>
             {isActive ? <BurnEffect /> : null}
             <CardImage ref={imgRef} src={item.logoURI} alt={item.name} />
             <CardTitle>{item.name}</CardTitle>
