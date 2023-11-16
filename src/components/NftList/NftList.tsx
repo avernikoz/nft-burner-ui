@@ -8,9 +8,7 @@ import {
     ALCHEMY_MULTICHAIN_CLIENT_INSTANCE,
     SOLANA_NFT_CLIENT_INSTANCE,
     SUI_NFT_CLIENT_INSTANCE,
-    // SUI_NFT_CLIENT_INSTANCE,
 } from "../../config/nft.config";
-// import { ALLOWED_EVM_CHAINS } from "@avernikoz/nft-sdk/dist/networks/evm/common/const";
 
 import { useEthersSigner } from "./variables";
 import { evm } from "@avernikoz/nft-sdk";
@@ -68,8 +66,11 @@ function NftList() {
                 setNFTList(nfts);
             });
         } else if (suietWallet.connected && suietWallet.address) {
-            console.log("hello");
+            setUserConnected(true);
+            setShowSpinner(true);
             SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address }).then((nfts) => {
+                setShowSpinner(false);
+                console.log(nfts);
                 const convertedNfts = nfts.map((nft) => {
                     return {
                         name: nft.name,
@@ -96,6 +97,7 @@ function NftList() {
     return (
         <List>
             {userConnected === false && <h3>Connect your wallet</h3>}
+            {userConnected === true && NftList.length === 0 && <h3>Buy NFT and BURN them!</h3>}
             {showSpinner === false ? (
                 <div className="nft-list">
                     {NFTList.map((item, i) => (
