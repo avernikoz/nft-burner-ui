@@ -982,7 +982,7 @@ export function GetShaderSourceLightSourceSpriteRenderVS() {
 			void main()
 			{
 				vec3 pos = vec3(VertexBuffer.xy, 0.0f);
-				pos.xy *= 0.125;
+				pos.xy *= 0.12;
 				pos = rotatePoint(pos, -SpotlightDirection);
 				pos.xy += (SpotlightPos.xy);
 				pos.xy -= normalize(SpotlightPos.xy) * 0.05;

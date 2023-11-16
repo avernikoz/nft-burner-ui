@@ -608,26 +608,53 @@ export function RenderMain() {
             RenderStateMachine.AdvanceTransitionParameter();
 
             StateControllers.forEach((controller) => {
-                controller.ClearState();
+                controller.OnUpdate();
             });
+            let newState = RenderStateMachine.currentState;
+            //Check for clicked states UIs
+            for (let i = 0; i < numStateControllers; i++) {
+                if (StateControllers[i].bSelectedThisFrame) {
+                    newState = i;
+                }
+                if (
+                    StateControllers[i].bIntersectionThisFrame &&
+                    StateControllers[i].bIntersectionThisFrame !== StateControllers[i].bIntersectionPrevFrame
+                ) {
+                    GAudioEngine.PlayClickSound();
+                }
+            }
+            if (newState != RenderStateMachine.currentState) {
+                //...
+                GAudioEngine.PlayIntroSound();
+
+                GRenderingStateMachine.SetRenderingState(newState);
+            }
+
+            /* StateControllers.forEach((controller) => {
+                controller.ClearState();
+            }); */
             StateControllers[RenderStateMachine.currentState].bSelectedThisFrame = true;
             StateControllers[RenderStateMachine.currentState].bIntersectionThisFrame = true;
 
-            if (GAreAllTexturesLoaded() && GSettings.bRunSimulation) {
+            if (
+                GAreAllTexturesLoaded() &&
+                (GFirstRenderingFrame || RenderStateMachine.currentState !== ERenderingState.Preloading)
+            ) {
                 if (GFirstRenderingFrame) {
-                    GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory, true);
+                    GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory, false);
                     GFirstRenderingFrame = false;
                 }
 
                 ApplyCameraControl();
 
-                FirePlaneAnimationController.UpdateSelf();
-                GSceneDesc.FirePlane.PositionOffset = FirePlaneAnimationController.UpdateObjectPosition(
-                    GSceneDesc.FirePlane.PositionOffset,
-                    0.25,
-                );
-                //Update orientation
-                {
+                if (RenderStateMachine.currentState == ERenderingState.Inventory) {
+                    //Animate Fire Plane
+                    FirePlaneAnimationController.UpdateSelf();
+                    GSceneDesc.FirePlane.PositionOffset = FirePlaneAnimationController.UpdateObjectPosition(
+                        GSceneDesc.FirePlane.PositionOffset,
+                        0.25,
+                    );
+
                     let t = FirePlaneAnimationController.YawInterpolationParameter;
                     const yawRange = { min: -Math.PI / 4, max: 0.0 };
                     GSceneDesc.FirePlane.OrientationEuler.yaw = MathLerp(yawRange.min, yawRange.max, t);
@@ -636,6 +663,11 @@ export function RenderMain() {
                     t = FirePlaneAnimationController.PitchInterpolationParameter;
                     const pitchRange = { min: -Math.PI / 13, max: Math.PI / 13 };
                     GSceneDesc.FirePlane.OrientationEuler.pitch = MathLerp(pitchRange.min, pitchRange.max, t);
+                } else {
+                    GSceneDesc.FirePlane.PositionOffset.z = 0.0;
+                    GSceneDesc.FirePlane.OrientationEuler.pitch = 0.0;
+                    GSceneDesc.FirePlane.OrientationEuler.yaw = 0.0;
+                    GSceneDesc.FirePlane.OrientationEuler.roll = 0.0;
                 }
 
                 if (RenderStateMachine.currentState === ERenderingState.Inventory) {
@@ -656,8 +688,8 @@ export function RenderMain() {
                     AshesParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
                     SmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
                     AfterBurnSmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-                    DustParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
                 }
+                DustParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
                 BindRenderTarget(gl, GRenderTargets.SpotlightFramebuffer!, GScreenDesc.RenderTargetSize, true);
                 SpotlightRenderPass.RenderVolumetricLight(gl);
@@ -790,7 +822,7 @@ export function RenderMain() {
             GUserInputDesc.bPointerInputActiveThisFrame = false;
 
             if (gl !== null) {
-                if (CheckGL(gl)) {
+                if (CheckGL(gl) && GSettings.bRunSimulation) {
                     requestAnimationFrame(RenderLoop);
                 }
             }

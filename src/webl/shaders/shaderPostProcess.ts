@@ -415,7 +415,7 @@ export function GetShaderSourceCombinerPassPS() {
 			//light *= light;
 			//light = Contrast(light, 1.05);
 			//light = light * 2.5f;
-			light = light * 4.5f;
+			light = light * 5.0f;
 			light += 0.05; 
 
 			//light = 0.0f;
