@@ -20,11 +20,11 @@ import {
     GAreAllTexturesLoaded,
 } from "./resourcesUtils";
 import {
-    AssignSceneDescription,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     AssignSceneDescriptions,
     EnableSceneDescUI,
     GSceneDesc,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     GSceneStateDescsArray,
     GScreenDesc,
 } from "./scene";
@@ -36,11 +36,27 @@ import { GUserInputDesc, RegisterUserInput } from "./input";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Vector2 } from "./types";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { GTime, MathClamp, MathMapToRange, MathVector2Normalize, UpdateTime, showError } from "./utils";
+import {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    GTime,
+    MathClamp,
+    MathLerp,
+    MathMapToRange,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    MathSmoothstep,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    MathVector2Normalize,
+    MathVector3Add,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    MathVector3Negate,
+    UpdateTime,
+    showError,
+} from "./utils";
 import { ApplyCameraControl, SetupCameraControlThroughInput } from "./shaders/controller";
 import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./spatialController";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
+import { AnimationController } from "./animationController";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -364,11 +380,6 @@ export function RenderMain() {
         } else {
             GScreenDesc.ViewRatioXY.y = window.innerHeight / window.innerWidth;
         }
-        {
-            //Additional scale for square and wide screens
-            const addScale = MathClamp(-0.25 * (GScreenDesc.ViewRatioXY.y - 1.0) + 0.25, 0.0, 0.25);
-            GScreenDesc.FirePlaneSizeScaleNDC = GScreenDesc.FirePlaneSizeScaleNDC - addScale;
-        }
     }
 
     // Call the resizeCanvas function initially and whenever the window is resized
@@ -461,13 +472,20 @@ export function RenderMain() {
     const FirePlaneSizePixels = { x: 512, y: 512 };
     const FirePlanePass = new RFirePlanePass(gl, FirePlaneSizePixels);
 
+    const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
+    const FirePlaneAnimationController = new AnimationController(
+        firePlanePos,
+        MathVector3Add(firePlanePos, { x: 0, y: -0.05, z: 0.0 }),
+        MathVector3Add(firePlanePos, { x: 0, y: 0.05, z: 0.0 }),
+    );
+
     if (GScreenDesc.bWideScreen) {
-        EmberParticlesDesc.inDownwardForceScale = 2.5;
+        /* EmberParticlesDesc.inDownwardForceScale = 2.5;
         AfterBurnAshesParticlesDesc.inDownwardForceScale = 2.5;
-        SmokeParticlesDesc.inDownwardForceScale = 2.5;
+        SmokeParticlesDesc.inDownwardForceScale = 2.5; */
     }
 
-    const bPaperMaterial = true;
+    const bPaperMaterial = false;
     const bAshesInEmbersPass = 0 && bPaperMaterial;
     if (bPaperMaterial) {
         //FlameParticlesDesc.inDefaultSize.y *= 0.9;
@@ -517,6 +535,15 @@ export function RenderMain() {
         true,
         `assets/background/spotLightIcon2.png`,
         `assets/background/spotLightIcon2Inv.png`,
+    );
+
+    const ConnectWalletButtonController = new SpatialControlPoint(
+        gl,
+        { x: -0.75, y: 0.0 },
+        0.35,
+        false,
+        `assets/background/connectButton.png`,
+        `assets/background/connectButton1.png`,
     );
 
     let GFirstRenderingFrame = true;
@@ -572,8 +599,6 @@ export function RenderMain() {
 
             const RenderStateMachine = GRenderingStateMachine.GetInstance();
 
-            RenderStateMachine.AdvanceTransitionParameter();
-
             //Handle State transition if present
             if (RenderStateMachine.transitionParameter <= 1.0) {
                 AssignSceneDescriptions(
@@ -582,22 +607,86 @@ export function RenderMain() {
                     RenderStateMachine.transitionParameter,
                 );
             } else {
-                AssignSceneDescription(GSceneStateDescsArray[RenderStateMachine.currentState]);
+                //AssignSceneDescription(GSceneStateDescsArray[RenderStateMachine.currentState]);
+            }
+            RenderStateMachine.AdvanceTransitionParameter();
+
+            let newState = RenderStateMachine.currentState;
+            if (RenderStateMachine.currentState == ERenderingState.Intro) {
+                ConnectWalletButtonController.OnUpdate();
+                if (ConnectWalletButtonController.bSelectedThisFrame) {
+                    newState = ERenderingState.Inventory;
+                }
+                if (
+                    ConnectWalletButtonController.bIntersectionThisFrame &&
+                    ConnectWalletButtonController.bIntersectionThisFrame !==
+                        ConnectWalletButtonController.bIntersectionPrevFrame
+                ) {
+                    GAudioEngine.PlayClickSound();
+                }
             }
 
             StateControllers.forEach((controller) => {
-                controller.ClearState();
+                controller.OnUpdate();
             });
+            //Check for clicked states UIs
+            for (let i = 0; i < numStateControllers; i++) {
+                if (StateControllers[i].bSelectedThisFrame) {
+                    newState = i;
+                }
+                if (
+                    StateControllers[i].bIntersectionThisFrame &&
+                    StateControllers[i].bIntersectionThisFrame !== StateControllers[i].bIntersectionPrevFrame
+                ) {
+                    GAudioEngine.PlayClickSound();
+                }
+            }
+            if (newState != RenderStateMachine.currentState) {
+                //...
+                GAudioEngine.PlayIntroSound();
+
+                GRenderingStateMachine.SetRenderingState(newState);
+            }
+
+            /* StateControllers.forEach((controller) => {
+                controller.ClearState();
+            }); */
             StateControllers[RenderStateMachine.currentState].bSelectedThisFrame = true;
             StateControllers[RenderStateMachine.currentState].bIntersectionThisFrame = true;
 
-            if (GAreAllTexturesLoaded() && GSettings.bRunSimulation) {
+            if (
+                GAreAllTexturesLoaded() &&
+                (GFirstRenderingFrame || RenderStateMachine.currentState !== ERenderingState.Preloading)
+            ) {
                 if (GFirstRenderingFrame) {
-                    GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, true);
+                    GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory, false);
                     GFirstRenderingFrame = false;
                 }
 
                 ApplyCameraControl();
+
+                if (RenderStateMachine.currentState == ERenderingState.Inventory) {
+                    //Animate Fire Plane
+                    FirePlaneAnimationController.UpdateSelf();
+                    GSceneDesc.FirePlane.PositionOffset = FirePlaneAnimationController.UpdateObjectPosition(
+                        GSceneDesc.FirePlane.PositionOffset,
+                        0.25,
+                    );
+
+                    let t = FirePlaneAnimationController.YawInterpolationParameter;
+                    const yawRange = { min: -Math.PI / 4, max: 0.0 };
+                    GSceneDesc.FirePlane.OrientationEuler.yaw = MathLerp(yawRange.min, yawRange.max, t);
+                    //Apply pitch rotation based on user input pos
+                    //t = MathMapToRange(GUserInputDesc.InputPosNDCCur.y, -1.0, 1.0, 1.0, 0.0);
+                    t = FirePlaneAnimationController.PitchInterpolationParameter;
+                    const pitchRange = { min: -Math.PI / 13, max: Math.PI / 13 };
+                    GSceneDesc.FirePlane.OrientationEuler.pitch = MathLerp(pitchRange.min, pitchRange.max, t);
+                } else {
+                    GSceneDesc.FirePlane.PositionOffset.z = 0.0;
+                    GSceneDesc.FirePlane.OrientationEuler.pitch = 0.0;
+                    GSceneDesc.FirePlane.OrientationEuler.yaw = 0.0;
+                    GSceneDesc.FirePlane.OrientationEuler.roll = 0.0;
+                }
 
                 if (RenderStateMachine.currentState === ERenderingState.Inventory) {
                     SpotlightPositionController.OnUpdate();
@@ -617,8 +706,8 @@ export function RenderMain() {
                     AshesParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
                     SmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
                     AfterBurnSmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-                    DustParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
                 }
+                DustParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
                 BindRenderTarget(gl, GRenderTargets.SpotlightFramebuffer!, GScreenDesc.RenderTargetSize, true);
                 SpotlightRenderPass.RenderVolumetricLight(gl);
@@ -626,6 +715,7 @@ export function RenderMain() {
                 gl.blendFunc(gl.ONE, gl.ONE);
                 gl.blendEquation(gl.FUNC_ADD);
                 SpotlightRenderPass.RenderFlare(gl);
+
                 gl.disable(gl.BLEND);
 
                 BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
@@ -654,6 +744,10 @@ export function RenderMain() {
                         GRenderTargets.SpotlightTexture!,
                     );
                 }
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.ONE, gl.ONE);
+                gl.blendEquation(gl.MAX);
+                SpotlightRenderPass.RenderSourceSprite(gl);
 
                 //Control UI
                 {
@@ -662,6 +756,10 @@ export function RenderMain() {
                     gl.blendEquation(gl.MAX);
                     if (RenderStateMachine.currentState === ERenderingState.Inventory) {
                         SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
+                    }
+
+                    if (RenderStateMachine.currentState == ERenderingState.Intro) {
+                        SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
                     }
 
                     StateControllers.forEach((controller) => {
@@ -748,7 +846,7 @@ export function RenderMain() {
             GUserInputDesc.bPointerInputActiveThisFrame = false;
 
             if (gl !== null) {
-                if (CheckGL(gl)) {
+                if (CheckGL(gl) && GSettings.bRunSimulation) {
                     requestAnimationFrame(RenderLoop);
                 }
             }

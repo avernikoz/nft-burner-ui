@@ -258,13 +258,29 @@ export function GetShaderSourceFireVisualizerVS() {
 		uniform vec4 CameraDesc;
 		uniform float ScreenRatio;
 		uniform vec3 FirePlanePositionOffset;
+		uniform vec3 OrientationEuler;
 	
 		out vec2 vsOutTexCoords;
 		out vec3 interpolatorWorldSpacePos;
+
+		vec3 rotateVectorWithEuler(vec3 v, float pitch, float yaw, float roll) {
+			// Rotation matrix for roll, pitch, and yaw
+			mat3 rotationMatrix = mat3(
+				cos(yaw)*cos(roll) - sin(pitch)*sin(yaw)*sin(roll), -cos(pitch)*sin(roll), cos(roll)*sin(yaw) + cos(yaw)*sin(pitch)*sin(roll),
+				cos(yaw)*sin(roll) + sin(pitch)*sin(yaw)*cos(roll),  cos(pitch)*cos(roll), sin(yaw)*sin(roll) - cos(yaw)*sin(pitch)*cos(roll),
+			   -cos(pitch)*sin(yaw), sin(pitch), cos(pitch)*cos(yaw)
+			);
+		
+			// Rotate the vector
+			vec3 rotatedVector = rotationMatrix * v;
+		
+			return rotatedVector;
+		}
 	
 		void main()
 		{
 			vec3 pos = vec3(VertexBuffer.xy, 0.0f);
+			pos = rotateVectorWithEuler(pos, OrientationEuler.x, OrientationEuler.y, OrientationEuler.z);
 			pos += FirePlanePositionOffset;
 			interpolatorWorldSpacePos = pos;
 			pos.xyz -= CameraDesc.xyz;
@@ -287,6 +303,7 @@ export function GetShaderSourceFireVisualizerPS() {
 	uniform vec4 CameraDesc;
 	uniform float ScreenRatio;
 	uniform vec3 FirePlanePositionOffset;
+	uniform vec3 OrientationEuler;
 	uniform vec3 SpotlightPos;
 
 	uniform float NoiseTextureInterpolator;
@@ -314,6 +331,20 @@ export function GetShaderSourceFireVisualizerPS() {
 
 	in vec2 vsOutTexCoords;
 	in vec3 interpolatorWorldSpacePos;
+
+	vec3 rotateVectorWithEuler(vec3 v, float pitch, float yaw, float roll) {
+		// Rotation matrix for roll, pitch, and yaw
+		mat3 rotationMatrix = mat3(
+			cos(yaw)*cos(roll) - sin(pitch)*sin(yaw)*sin(roll), -cos(pitch)*sin(roll), cos(roll)*sin(yaw) + cos(yaw)*sin(pitch)*sin(roll),
+			cos(yaw)*sin(roll) + sin(pitch)*sin(yaw)*cos(roll),  cos(pitch)*cos(roll), sin(yaw)*sin(roll) - cos(yaw)*sin(pitch)*cos(roll),
+		   -cos(pitch)*sin(yaw), sin(pitch), cos(pitch)*cos(yaw)
+		);
+	
+		// Rotate the vector
+		vec3 rotatedVector = rotationMatrix * v;
+	
+		return rotatedVector;
+	}
 
 	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
 	{
@@ -485,6 +516,7 @@ export function GetShaderSourceFireVisualizerPS() {
 		//Normal
 		vec3 normal = texture(NormalsTexture, (3.f - RoughnessScaleAddContrastMin.z) * materialSamplingUV.xy).rgb;
 		normal = DecodeNormalTexture(normal, NormalHarshness);
+		normal = normalize(rotateVectorWithEuler(normal, OrientationEuler.x, OrientationEuler.y, OrientationEuler.z));
 		
 		//Vignette
 		highp vec2 ndcSpace = vec2(vsOutTexCoords.x * 2.f - 1.f, vsOutTexCoords.y * 2.f - 1.f);
@@ -832,7 +864,7 @@ export function GetShaderSourceFireVisualizerPS() {
 	
 		vec3 finalColor = max(surfaceColor, fireColor);
 
-		#if 1 //ASH DISSOLVE EFFECT 
+		#if PAPER //ASH DISSOLVE EFFECT 
 		if(curFire > 0.1f)
 		{
 			if(curFire > 1.f || curFuel > 0.1f)

@@ -417,10 +417,11 @@ export class RFlamePostProcessPass {
 
     constructor(gl: WebGL2RenderingContext) {
         //Create Shader Program
+        const randValsVec = { x: Math.random(), y: Math.random(), z: Math.random() };
         this.shaderProgram = CreateShaderProgramVSPS(
             gl,
             ShaderSourceFullscreenPassVS,
-            GetShaderSourceFlamePostProcessPS(),
+            GetShaderSourceFlamePostProcessPS(randValsVec),
         );
 
         //Shader Parameters
@@ -446,6 +447,15 @@ export class RFlamePostProcessPass {
 
         //Constants
         gl.uniform1f(this.UniformParametersLocationList.Time, GTime.Cur);
+
+        gl.uniform4f(
+            this.UniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
 
         //Textures
         gl.activeTexture(gl.TEXTURE0 + 1);

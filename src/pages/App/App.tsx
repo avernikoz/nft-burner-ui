@@ -15,6 +15,7 @@ function App() {
     useEffect(() => {
         if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
         } else {
+            console.debug("[App] RenderMain call");
             RenderMain();
         }
     }, []);

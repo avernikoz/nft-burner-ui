@@ -889,9 +889,11 @@ export function GetShaderSourceLightFlareRenderVS() {
 			void main()
 			{
 				vec3 pos = vec3(VertexBuffer.xy, 0.0f);
-				pos.y -= 0.01f;
+				//pos.y -= 0.01f;
 				pos.xy *= SpotlightScale * 0.75;
+				pos.x *= 2.f;
 				pos.xy += SpotlightPos.xy;
+				pos.xy -= normalize(SpotlightPos.xy) * 0.05;
 				pos.z += SpotlightPos.z;
 				pos.xyz -= CameraDesc.xyz;
 	
@@ -941,7 +943,127 @@ export function GetShaderSourceLightFlareRenderPS() {
 		float light = texture(SpotlightTexture, flippedUVs.xy).r;
 
 
-		outSpotlightColor = vec3(light * 2.0f);
+		outSpotlightColor = vec3(light * 1.0f);
+
+	}`;
+}
+
+export function GetShaderSourceLightSourceSpriteRenderVS() {
+    return /* glsl */ `#version 300 es
+	
+			precision highp float;
+		
+			layout(location = 0) in vec2 VertexBuffer;
+	
+			uniform vec4 CameraDesc;
+			uniform float ScreenRatio;
+			uniform vec3 SpotlightPos;
+			uniform vec3 SpotlightDirection;
+			uniform vec2 SpotlightScale;
+		
+			out vec2 vsOutTexCoords;
+
+			mat3 rotate_object(vec3 direction) {
+				vec3 zaxis = normalize(direction);
+				vec3 xaxis = normalize(cross(vec3(0.0, 1.0, 0.0), zaxis));
+				vec3 yaxis = cross(zaxis, xaxis);
+				return mat3(
+					(xaxis),
+					(yaxis),
+					(zaxis)
+				);
+			}
+
+			vec3 rotatePoint(vec3 point, vec3 new_normal) {
+				mat3 rotMat = rotate_object(new_normal);
+				return rotMat * point;
+			}
+		
+			void main()
+			{
+				vec3 pos = vec3(VertexBuffer.xy, 0.0f);
+				pos.xy *= 0.12;
+				pos = rotatePoint(pos, -SpotlightDirection);
+				pos.xy += (SpotlightPos.xy);
+				pos.xy -= normalize(SpotlightPos.xy) * 0.05;
+				pos.z += SpotlightPos.z;
+				pos.xyz -= CameraDesc.xyz;
+	
+				pos.xy *= CameraDesc.w;
+				pos.x /= ScreenRatio;
+	
+				gl_Position = vec4(pos.xy, 0.0, (1.f + pos.z));
+				vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
+			}`;
+}
+export function GetShaderSourceLightSourceSpriteRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outSpotlightColor;
+
+	uniform sampler2D SpotlightTexture;
+
+	in vec2 vsOutTexCoords;
+
+	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	{
+		///Translate to origin, scale by ranges ratio, translate to new position
+		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
+	vec2 MapToRange(vec2 uv, float t0, float t1, float newt0, float newt1)
+	{
+		uv.x = MapToRange(uv.x, t0, t1, newt0, newt1);
+		uv.y = MapToRange(uv.y, t0, t1, newt0, newt1);
+		return uv;
+	}
+
+	float Contrast(float color, float contrast)
+	{
+		return max(float(0.f), contrast * (color - 0.5f) + 0.5f);
+	}
+
+	void main()
+	{
+		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+		if(vsOutTexCoords.y > 0.5)
+		{
+			//outSpotlightColor = 1.0f; return;
+		}
+		vec3 light = vec3(1.f);
+		//light = texture(SpotlightTexture, flippedUVs.xy).rgb * 5.f;
+
+		float s = length(vsOutTexCoords - vec2(0.5));
+		float s2 = s;
+		if(s2 > 0.5)
+		{
+			s2 += 0.5f;
+			//light = vec3(0.0f);
+		}
+		//light *= pow(1.f - clamp(s2, 0.0, 1.0), 2.f);
+
+		const float fadeStart = 0.3;
+		const float fadeSize = 0.2;
+		if(s > fadeStart)
+		{
+			s = MapToRange(s, fadeStart, fadeStart + fadeSize, 0.0, 1.0);
+			s = clamp(s, 0.0, 1.0);
+			s = 1.f - s;
+			/* s *= s;
+			s *= s; */
+			light *= s;
+		}
+		
+		
+		/* if(s > 0.7)
+		{
+			float m = MapToRange(s, 0.7, 1.0, 1.0, 0.0);
+			light *= m * m;
+		} */
+
+		outSpotlightColor = vec3(min(vec3(1.0), light * 2.0f));
 
 	}`;
 }
