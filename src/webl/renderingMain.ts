@@ -537,6 +537,15 @@ export function RenderMain() {
         `assets/background/spotLightIcon2Inv.png`,
     );
 
+    const ConnectWalletButtonController = new SpatialControlPoint(
+        gl,
+        { x: -0.75, y: 0.0 },
+        0.35,
+        false,
+        `assets/background/connectButton.png`,
+        `assets/background/connectButton1.png`,
+    );
+
     let GFirstRenderingFrame = true;
 
     function ApplySpotlightControlFromGUI() {
@@ -602,10 +611,24 @@ export function RenderMain() {
             }
             RenderStateMachine.AdvanceTransitionParameter();
 
+            let newState = RenderStateMachine.currentState;
+            if (RenderStateMachine.currentState == ERenderingState.Intro) {
+                ConnectWalletButtonController.OnUpdate();
+                if (ConnectWalletButtonController.bSelectedThisFrame) {
+                    newState = ERenderingState.Inventory;
+                }
+                if (
+                    ConnectWalletButtonController.bIntersectionThisFrame &&
+                    ConnectWalletButtonController.bIntersectionThisFrame !==
+                        ConnectWalletButtonController.bIntersectionPrevFrame
+                ) {
+                    GAudioEngine.PlayClickSound();
+                }
+            }
+
             StateControllers.forEach((controller) => {
                 controller.OnUpdate();
             });
-            let newState = RenderStateMachine.currentState;
             //Check for clicked states UIs
             for (let i = 0; i < numStateControllers; i++) {
                 if (StateControllers[i].bSelectedThisFrame) {
@@ -733,6 +756,10 @@ export function RenderMain() {
                     gl.blendEquation(gl.MAX);
                     if (RenderStateMachine.currentState === ERenderingState.Inventory) {
                         SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
+                    }
+
+                    if (RenderStateMachine.currentState == ERenderingState.Intro) {
+                        SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
                     }
 
                     StateControllers.forEach((controller) => {
