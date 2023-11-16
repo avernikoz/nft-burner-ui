@@ -607,11 +607,14 @@ export function RenderMain() {
             }
             RenderStateMachine.AdvanceTransitionParameter();
 
+            console.time("stateControllersOnUpdate");
             StateControllers.forEach((controller) => {
                 controller.OnUpdate();
             });
+            console.timeEnd("stateControllersOnUpdate");
             let newState = RenderStateMachine.currentState;
             //Check for clicked states UIs
+            console.time("playclicksound");
             for (let i = 0; i < numStateControllers; i++) {
                 if (StateControllers[i].bSelectedThisFrame) {
                     newState = i;
@@ -623,12 +626,15 @@ export function RenderMain() {
                     GAudioEngine.PlayClickSound();
                 }
             }
+            console.timeEnd("playclicksound");
+            console.time("playintrosound");
             if (newState != RenderStateMachine.currentState) {
                 //...
                 GAudioEngine.PlayIntroSound();
 
                 GRenderingStateMachine.SetRenderingState(newState);
             }
+            console.timeEnd("playintrosound");
 
             /* StateControllers.forEach((controller) => {
                 controller.ClearState();
@@ -636,6 +642,7 @@ export function RenderMain() {
             StateControllers[RenderStateMachine.currentState].bSelectedThisFrame = true;
             StateControllers[RenderStateMachine.currentState].bIntersectionThisFrame = true;
 
+            console.time("bigif");
             if (
                 GAreAllTexturesLoaded() &&
                 (GFirstRenderingFrame || RenderStateMachine.currentState !== ERenderingState.Preloading)
@@ -818,12 +825,15 @@ export function RenderMain() {
                     SpatialControlUIVisualizer.Render(gl, controller);
                 });
             }
+            console.timeEnd("bigif");
 
             GUserInputDesc.bPointerInputActiveThisFrame = false;
 
             if (gl !== null) {
                 if (CheckGL(gl) && GSettings.bRunSimulation) {
+                    console.time("requestAnimationFrame");
                     requestAnimationFrame(RenderLoop);
+                    console.timeEnd("requestAnimationFrame");
                 }
             }
         }
