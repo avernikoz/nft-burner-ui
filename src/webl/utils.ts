@@ -51,6 +51,12 @@ export function MathVector3Normalize(vec: Vector3) {
 export function MathVector3Negate(a: Vector3, b: Vector3) {
     return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
 }
+export function MathVector3Add(a: Vector3, b: Vector3) {
+    return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
+}
+export function MathVector3Multiply(vec: Vector3, scale: number) {
+    return { x: vec.x * scale, y: vec.y * scale, z: vec.z * scale };
+}
 
 export function MathMapToRange(t: number, t0: number, t1: number, newt0: number, newt1: number) {
     ///Translate to origin, scale by ranges ratio, translate to new position

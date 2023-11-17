@@ -479,7 +479,7 @@ export function GetParticleRenderInstancedVS(
 
 			if(IsParticleDead())
 			{
-				gl_Position = vec4(-10, -10, -10, 1.0);
+				gl_Position = vec4(-1000, -1000, -1000, 1.0);
 			}
 			else
 			{	
@@ -576,7 +576,7 @@ export function GetParticleRenderInstancedVS(
 
 				if(scale < 0.2f)
 				{
-				  gl_Position = vec4(-10, -10, -10, 1.0);
+				  gl_Position = vec4(-1000, -1000, -1000, 1.0);
 				  return;
 				}
 

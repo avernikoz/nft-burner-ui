@@ -22,13 +22,15 @@ function NftList() {
     const signer = useEthersSigner();
     const [NFTList, setNFTList] = useState<INft[]>([]);
     const wagmiAccount = useAccount();
+    const [activeNft, setActiveNft] = useState<number | null>(null);
     const [userConnected, setUserConnected] = useState<boolean>(false);
     const [showSpinner, setShowSpinner] = useState<boolean>(false);
 
+    const handleItemClick = (id: number) => {
+        setActiveNft(id);
+    };
+
     useEffect(() => {
-        console.log(wagmiAccount.isConnected, wagmiAccount.address, signer);
-        console.log(solanaWallet.connected, solanaWallet.publicKey);
-        console.log(suietWallet.connected, suietWallet.address);
         if (wagmiAccount.isConnected && wagmiAccount.address && signer) {
             setUserConnected(true);
             setShowSpinner(true);
@@ -39,7 +41,13 @@ function NftList() {
                         network: evm.ALLOWED_EVM_CHAINS.Polygon,
                         owner: signer,
                     }).then((data) => {
-                        console.log(data);
+                        const convertedNfts = data.ownedNfts.map((nft) => {
+                            return {
+                                name: nft.title,
+                                logoURI: nft.rawMetadata?.image ?? "../../assets/svg/empty.jpg",
+                            };
+                        });
+                        setNFTList(convertedNfts);
                     });
                 }
                 if (id === optimism.id) {
@@ -47,7 +55,13 @@ function NftList() {
                         network: evm.ALLOWED_EVM_CHAINS.Optimism,
                         owner: signer,
                     }).then((data) => {
-                        console.log(data);
+                        const convertedNfts = data.ownedNfts.map((nft) => {
+                            return {
+                                name: nft.title,
+                                logoURI: nft.rawMetadata?.image ?? "../../assets/svg/empty.jpg",
+                            };
+                        });
+                        setNFTList(convertedNfts);
                     });
                 }
                 if (id === arbitrum.id) {
@@ -55,7 +69,13 @@ function NftList() {
                         network: evm.ALLOWED_EVM_CHAINS.Arbitrum,
                         owner: signer,
                     }).then((data) => {
-                        console.log(data);
+                        const convertedNfts = data.ownedNfts.map((nft) => {
+                            return {
+                                name: nft.title,
+                                logoURI: nft.rawMetadata?.image ?? "../../assets/svg/empty.jpg",
+                            };
+                        });
+                        setNFTList(convertedNfts);
                     });
                 }
             });
@@ -105,12 +125,18 @@ function NftList() {
 
     return (
         <List>
-            {userConnected === false && <h3>Connect your wallet</h3>}
-            {userConnected === true && NftList.length === 0 && <h3>Buy NFT and BURN them!</h3>}
-            {showSpinner === false ? (
+            {!userConnected ? <h3>Connect your wallet</h3> : <h3>Choose NFT to burn</h3>}
+            {/* {userConnected && NftList.length == 0 ? <h3>Buy NFT and BURN them!</h3> : null} */}
+            {!showSpinner ? (
                 <div className="nft-list">
                     {NFTList.map((item, i) => (
-                        <NftItem item={item} key={i}></NftItem>
+                        <NftItem
+                            item={item}
+                            key={i}
+                            id={i}
+                            isActive={i == activeNft}
+                            onClick={() => handleItemClick(i)}
+                        ></NftItem>
                     ))}
                 </div>
             ) : (

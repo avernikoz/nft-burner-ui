@@ -1,29 +1,29 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 
-import { BurnEffect, Card, CardImage, CardTitle } from "./NftItem.styled";
+import { Card, CardImage, CardTitle } from "./NftItem.styled";
 import { IMAGE_STORE_SINGLETON_INSTANCE } from "../../config/config";
+import FireParticles from "../FireParticle/FireParticle";
 
 export interface INft {
     name: string;
     logoURI: string;
 }
 
-function NftItem(props: { item: INft }) {
+function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: (id: number) => void }) {
     const { item } = props;
-    const [isActive, setIsActive] = useState(false);
     const imgRef = useRef<HTMLImageElement>(null);
 
     const handleCardClick = () => {
         if (imgRef.current) {
-            console.log(isActive);
             IMAGE_STORE_SINGLETON_INSTANCE.setImageUrl(item.logoURI);
             IMAGE_STORE_SINGLETON_INSTANCE.setImage(imgRef?.current);
-            setIsActive(!isActive);
+            props.onClick(props.id);
         }
     };
     return (
-        <Card className={isActive ? "active" : ""} onClick={handleCardClick}>
-            {isActive ? <BurnEffect /> : null}
+        <Card className={props.isActive ? "active" : ""} onClick={handleCardClick}>
+            {/* {props.isActive ? <BurnEffect /> : null} */}
+            {props.isActive ? <FireParticles /> : null}
             <CardImage ref={imgRef} src={item.logoURI} alt={item.name} crossOrigin="anonymous" />
             <CardTitle>{item.name}</CardTitle>
         </Card>

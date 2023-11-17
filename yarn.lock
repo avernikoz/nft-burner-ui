@@ -49,10 +49,10 @@
   resolved "https://registry.yarnpkg.com/@apocentre/alias-sampling/-/alias-sampling-0.5.3.tgz#897ff181b48ad7b2bcb4ecf29400214888244f08"
   integrity sha512-7UDWIIF9hIeJqfKXkNIzkVandlwLf1FWTSdrb9iXvOP8oF544JRXQjCbiTmCv2c9n44n/FIWtehhBfNuAx2CZA==
 
-"@avernikoz/nft-sdk@^2.0.1":
-  version "2.0.1"
-  resolved "https://npm.pkg.github.com/download/@avernikoz/nft-sdk/2.0.1/750c93152a0a9f3c009fb331081d5306d7c5c00c#750c93152a0a9f3c009fb331081d5306d7c5c00c"
-  integrity sha512-mUXtWWDuF60C8PcDLG7gDt05br6bQ27r6r5oJtTekD7N+kayNwPiGTjEsTVL8xc7mC3gypXSs+Z+0kmoJ3+VYw==
+"@avernikoz/nft-sdk@2.0.3":
+  version "2.0.3"
+  resolved "https://npm.pkg.github.com/download/@avernikoz/nft-sdk/2.0.3/47d1531059f6e65c458bfbc3d499859cfdc0c98c#47d1531059f6e65c458bfbc3d499859cfdc0c98c"
+  integrity sha512-jfdL+cVjCTtF4bGkqE8/Za4N7PdcrXAYtUaGgfNxlhDHIfu5XjmQIQ/QZZQisn7kiqb0ZwDRQiiiy93vtVrogA==
   dependencies:
     "@metaplex-foundation/js" "^0.19.5"
     "@metaplex-foundation/mpl-token-metadata" "2.13.0"

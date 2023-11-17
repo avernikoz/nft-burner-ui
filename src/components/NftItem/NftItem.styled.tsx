@@ -28,10 +28,10 @@ export const Card = styled.div`
     border-radius: 10px;
     overflow: hidden;
     transition: box-shadow 0.3s ease-in-out;
+    cursor: pointer;
 
     &.active {
         animation: ${fireAnimation} 1.5s infinite;
-        background: radial-gradient(circle, #ff5722 0%, #ff9800 100%);
         z-index: 1;
     }
 
