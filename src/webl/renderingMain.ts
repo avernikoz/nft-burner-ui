@@ -366,8 +366,8 @@ export function RenderMain() {
     SetupCameraControlThroughInput();
 
     function GetWindowSizeCurrent(): Vector2 {
-        //const dpr = MathClamp(window.devicePixelRatio, 1, 3);
-        return { x: Math.round(window.innerWidth /* * dpr */), y: Math.round(window.innerHeight /* * dpr */) };
+        const dpr = MathClamp(window.devicePixelRatio, 1, 3);
+        return { x: Math.round(window.innerWidth * dpr), y: Math.round(window.innerHeight * dpr) };
     }
 
     function OnWindowResize() {
@@ -375,8 +375,12 @@ export function RenderMain() {
         GScreenDesc.WindowSize = GetWindowSizeCurrent();
         canvas.width = GScreenDesc.WindowSize.x;
         canvas.height = GScreenDesc.WindowSize.y;
-        const dpr = MathClamp(window.devicePixelRatio, 1, 3);
-        GScreenDesc.RenderTargetSize = { x: GScreenDesc.WindowSize.x * dpr, y: GScreenDesc.WindowSize.y * dpr };
+        /* canvas.style.width = GScreenDesc.WindowSize.x + "px";
+        canvas.style.height = GScreenDesc.WindowSize.y + "px"; */
+        canvas.style.display = "block";
+        canvas.style.width = "100vw";
+        canvas.style.height = "100vw";
+        GScreenDesc.RenderTargetSize = { x: GScreenDesc.WindowSize.x, y: GScreenDesc.WindowSize.y };
         GScreenDesc.ScreenRatio = window.innerWidth / window.innerHeight;
         GScreenDesc.bWideScreen = GScreenDesc.ScreenRatio > 1.0;
         GScreenDesc.ViewRatioXY = { x: 1.0, y: 1.0 };
@@ -388,7 +392,23 @@ export function RenderMain() {
     }
 
     // Call the resizeCanvas function initially and whenever the window is resized
+    //GetWindowSizeCurrent();
     OnWindowResize();
+
+    /* function OnWindowResizeObserverCallback(entries) {
+        const entry = entries[0];
+        if (entry.devicePixelContentBoxSize) {
+            GScreenDesc.WindowSize.x = entry.devicePixelContentBoxSize[0].inlineSize;
+            GScreenDesc.WindowSize.y = entry.devicePixelContentBoxSize[0].blockSize;
+        } else if (entry.contentBoxSize) {
+            // fallback for Safari that will not always be correct
+            GScreenDesc.WindowSize.x = Math.round(entry.contentBoxSize[0].inlineSize * devicePixelRatio);
+            GScreenDesc.WindowSize.y = Math.round(entry.contentBoxSize[0].blockSize * devicePixelRatio);
+        }
+    }
+
+    const observer = new ResizeObserver(OnWindowResizeObserverCallback);
+    observer.observe(canvas); */
 
     if (!canvas) {
         showError("Canvas Error");
