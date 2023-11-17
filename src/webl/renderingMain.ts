@@ -366,7 +366,7 @@ export function RenderMain() {
     SetupCameraControlThroughInput();
 
     function GetWindowSizeCurrent(): Vector2 {
-        const dpr = MathClamp(window.devicePixelRatio, 1, 3);
+        //const dpr = MathClamp(window.devicePixelRatio, 1, 3);
         return { x: Math.round(window.innerWidth /* * dpr */), y: Math.round(window.innerHeight /* * dpr */) };
     }
 
