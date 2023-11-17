@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { ReactComponent as TwitchLogo } from "../../assets/svg/twitch.svg";
 
 import "./App.css";
 import { RenderMain } from "../../webl/renderingMain";
@@ -13,12 +14,12 @@ import NftList from "../../components/NftList/NftList";
 import { Button } from "primereact/button";
 
 function App() {
-    useEffect(() => {
-        if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
-        } else {
-            RenderMain();
-        }
-    }, []);
+    // useEffect(() => {
+    //     if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
+    //     } else {
+    //         RenderMain();
+    //     }
+    // }, []);
 
     return (
         <SolanaWalletContext>
@@ -45,22 +46,16 @@ function App() {
                                                 icon="pi pi-twitter "
                                                 rounded
                                                 text
-                                                raised
                                                 severity="info"
                                                 aria-label="Notification"
                                             />
-                                            <Button rounded text raised severity="help" aria-label="Favorite">
-                                                <img
-                                                    alt="logo"
-                                                    src="public/assets/svg/twitch.png"
-                                                    className="h-2rem"
-                                                ></img>
+                                            <Button rounded text severity="help" aria-label="Favorite">
+                                                <TwitchLogo></TwitchLogo>
                                             </Button>
                                             <Button
                                                 icon="pi pi-youtube"
                                                 rounded
                                                 text
-                                                raised
                                                 severity="danger"
                                                 aria-label="Cancel"
                                             />
@@ -73,10 +68,10 @@ function App() {
                             <FullScreenButton />
                         </Footer>
                     </div>
-                    <canvas id="demo-canvas">
+                    {/* <canvas id="demo-canvas">
                         Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
-                    </canvas>
-                    {/* <div id="demo-canvas"></div> */}
+                    </canvas> */}
+                    <div id="demo-canvas"></div>
                 </SuiWalletContext>
             </EVMWalletContext>
         </SolanaWalletContext>

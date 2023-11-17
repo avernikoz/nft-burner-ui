@@ -27,7 +27,8 @@ function NftList() {
 
     useEffect(() => {
         console.log(wagmiAccount.isConnected, wagmiAccount.address, signer);
-        console.log(solanaWallet.connected && solanaWallet.publicKey);
+        console.log(solanaWallet.connected, solanaWallet.publicKey);
+        console.log(suietWallet.connected, suietWallet.address);
         if (wagmiAccount.isConnected && wagmiAccount.address && signer) {
             setUserConnected(true);
             setShowSpinner(true);
@@ -72,15 +73,22 @@ function NftList() {
                 setShowSpinner(false);
                 console.log(nfts);
                 const convertedNfts = nfts.map((nft) => {
-                    const ipfsHash = nft.url.replace("ipfs://", "");
+                    if (nft.url.includes("ipfs://")) {
+                        const ipfsHash = nft.url.replace("ipfs://", "");
+                        return {
+                            name: nft.name,
+                            logoURI: "https://ipfs.io/ipfs/" + ipfsHash,
+                        };
+                    }
                     return {
                         name: nft.name,
-                        logoURI: "https://ipfs.io/ipfs/" + ipfsHash,
+                        logoURI: nft.url,
                     };
                 });
                 setNFTList(convertedNfts);
             });
         } else {
+            setUserConnected(false);
             setNFTList([]);
         }
     }, [
