@@ -375,11 +375,11 @@ export function RenderMain() {
         GScreenDesc.WindowSize = GetWindowSizeCurrent();
         canvas.width = GScreenDesc.WindowSize.x;
         canvas.height = GScreenDesc.WindowSize.y;
-        /* canvas.style.width = GScreenDesc.WindowSize.x + "px";
-        canvas.style.height = GScreenDesc.WindowSize.y + "px"; */
+        canvas.style.width = window.innerWidth + "px";
+        canvas.style.height = window.innerHeight + "px";
         canvas.style.display = "block";
-        canvas.style.width = "100vw";
-        canvas.style.height = "100vw";
+        /* canvas.style.width = "100vw";
+        canvas.style.height = "100vw"; */
         GScreenDesc.RenderTargetSize = { x: GScreenDesc.WindowSize.x, y: GScreenDesc.WindowSize.y };
         GScreenDesc.ScreenRatio = window.innerWidth / window.innerHeight;
         GScreenDesc.bWideScreen = GScreenDesc.ScreenRatio > 1.0;
