@@ -367,7 +367,7 @@ export function RenderMain() {
 
     function GetWindowSizeCurrent(): Vector2 {
         const dpr = MathClamp(window.devicePixelRatio, 1, 3);
-        return { x: Math.round(window.innerWidth * dpr), y: Math.round(window.innerHeight * dpr) };
+        return { x: Math.round(window.innerWidth /* * dpr */), y: Math.round(window.innerHeight /* * dpr */) };
     }
 
     function OnWindowResize() {
@@ -375,8 +375,8 @@ export function RenderMain() {
         GScreenDesc.WindowSize = GetWindowSizeCurrent();
         canvas.width = GScreenDesc.WindowSize.x;
         canvas.height = GScreenDesc.WindowSize.y;
-
-        GScreenDesc.RenderTargetSize = { x: GScreenDesc.WindowSize.x, y: GScreenDesc.WindowSize.y };
+        const dpr = MathClamp(window.devicePixelRatio, 1, 3);
+        GScreenDesc.RenderTargetSize = { x: GScreenDesc.WindowSize.x * dpr, y: GScreenDesc.WindowSize.y * dpr };
         GScreenDesc.ScreenRatio = window.innerWidth / window.innerHeight;
         GScreenDesc.bWideScreen = GScreenDesc.ScreenRatio > 1.0;
         GScreenDesc.ViewRatioXY = { x: 1.0, y: 1.0 };
