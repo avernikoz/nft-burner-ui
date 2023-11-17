@@ -164,9 +164,20 @@ export class RFirePlanePass {
 
     RoughnessParams = { Scale: 1.0, Add: 0.0, Contrast: 1.0, Min: 0.0 }; //Use variadic contrast [from 1 to 2]
 
-    ShadingParams = { SpecularIntensity: 0.7, SpecularPower: 8.0, DiffuseIntensity: 1.0 };
+    ShadingParams = { SpecularIntensity: 0.6, SpecularPower: 8.0, DiffuseIntensity: 1.05 };
 
     MaterialUVOffset = { x: 0.0, y: 0.0 };
+
+    Reset(gl: WebGL2RenderingContext) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[0]);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+        //Fill Fuel texture with 1.f
+        const clearColor0 = new Float32Array([0.0, 0.0, 0.0, 0.0]);
+        const clearColor1 = new Float32Array([1.0, 1.0, 1.0, 1.0]);
+        gl.clearBufferfv(gl.COLOR, 0, clearColor0);
+        gl.clearBufferfv(gl.COLOR, 1, clearColor1);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+    }
 
     constructor(gl: WebGL2RenderingContext, inRenderTargetSize = { x: 512, y: 512 }) {
         this.RenderTargetSize = inRenderTargetSize;
@@ -330,7 +341,7 @@ export class RFirePlanePass {
             folder.add(this.RoughnessParams, "Contrast", 0, 20).name("RGHContrast").step(0.01);
             folder.add(this.RoughnessParams, "Min", 0, 1).name("RGHMin").step(0.01);
 
-            folder.add(this.ShadingParams, "DiffuseIntensity", 0.75, 1.25).name("DFSIntensity").step(0.01);
+            folder.add(this.ShadingParams, "DiffuseIntensity", 0.75, 3).name("DFSIntensity").step(0.01);
             folder.add(this.ShadingParams, "SpecularIntensity", 0, 2).name("SPCIntensity").step(0.01);
             folder.add(this.ShadingParams, "SpecularPower", 0, 64).name("SPCPower").step(2.0);
         }
@@ -364,6 +375,17 @@ export class RFirePlanePass {
             this.bFirstBoot = false;
         }
         this.ApplyFirePass.Execute(gl, curInputPos, sizeScale, MathVector2Normalize(curInputDir));
+    }
+
+    ApplyFireAuto(gl: WebGL2RenderingContext, pos: Vector2, size: number) {
+        const curInputPos = pos;
+        const curInputDir = { x: 1, y: 1 };
+
+        const curSourceIndex = this.CurrentFireTextureIndex;
+        //Raster particle to current fire texture
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[curSourceIndex]);
+        gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
+        this.ApplyFirePass.Execute(gl, curInputPos, size, MathVector2Normalize(curInputDir));
     }
 
     UpdateFire(gl: WebGL2RenderingContext) {

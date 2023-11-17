@@ -26,6 +26,14 @@ export class GRenderingStateMachine {
         }
     }
 
+    MarkNewStateProcessed() {
+        this.bNewStateWasProcessed = true;
+    }
+
+    public bWasNewStateProcessed(): boolean {
+        return this.bNewStateWasProcessed;
+    }
+
     public get currentState(): ERenderingState {
         return this.StateCurrent;
     }
@@ -40,6 +48,10 @@ export class GRenderingStateMachine {
 
     public get transitionSpeed(): number {
         return this.TransitionSpeed;
+    }
+
+    public get bCanBurn(): boolean {
+        return this.currentState === ERenderingState.Burning || this.currentState === ERenderingState.Intro;
     }
 
     ///==================================================================
@@ -58,6 +70,8 @@ export class GRenderingStateMachine {
             this.StateCurrent = newState;
 
             this.TransitionParameter = bImmeadiateTransition ? 1.0 : 0.0;
+
+            this.bNewStateWasProcessed = false;
         }
     }
 
@@ -68,4 +82,6 @@ export class GRenderingStateMachine {
     private TransitionParameter: number; //[0,1]
 
     private TransitionSpeed: number; //[0,1]
+
+    public bNewStateWasProcessed = false; //when state change event should be processed  once
 }

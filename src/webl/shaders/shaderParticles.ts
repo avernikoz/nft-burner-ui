@@ -123,6 +123,8 @@ function scGetVectorFieldForce(scale: number) {
 			randVel = clamp(randVel, vec2(-clampValue), vec2(clampValue));
 
 
+			//randVel = normalize(vec2(-1, 0.0)) * 35.f * 0.5;
+
 			curVel += randVel * DeltaTime;`
         );
     } else {

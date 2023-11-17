@@ -26,7 +26,7 @@ export const FlameParticlesDesc = {
 
 export const EmberParticlesDesc = {
     inName: "Ember Particles",
-    inNumSpawners2D: 32,
+    inNumSpawners2D: 48,
     inNumParticlesPerSpawner: 1,
     inSpawnRange: { x: 0.9, y: 1000.0 },
     inParticleLife: 2.8,
@@ -55,16 +55,16 @@ export const SmokeParticlesDesc = {
     inNumLoops: 1.0,
     inTextureFileName: "assets/sprites/Explosion01-nofire_5x5.png",
     inFlipbookSizeRC: { x: 5.0, y: 5.0 },
-    inDefaultSize: { x: 2.0 * 0.45, y: 2.125 * 0.45 },
+    inDefaultSize: { x: 2.0 * 0.275, y: 2.125 * 0.275 },
     inSizeRangeMinMax: { x: 0.7, y: 1.0 },
     inSizeClampMax: { x: 0.7, y: 0.7 },
     inInitialVelocityScale: 5.0,
     inVelocityFieldForceScale: 20.0,
     inBuoyancyForceScale: 10, //TODO:Increase dynamically when overall temperature is high
     inDownwardForceScale: 0.25,
-    inRandomSizeChangeSpeed: 0.02,
+    inRandomSizeChangeSpeed: 0.01,
     inAlphaScale: 0.25,
-    inEAlphaFade: 2,
+    inEAlphaFade: 1,
     inbOriginAtCenter: true,
     inBrightness: 1.0,
     inEFadeInOutMode: 1,

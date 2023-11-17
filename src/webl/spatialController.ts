@@ -49,8 +49,8 @@ export class SpatialControlPoint {
         this.bSelectedThisFrame = false;
         this.bDraggable = inbIsDraggable;
 
-        this.ColorTexture0 = CreateTexture(gl, 4, defaultTextureLocation, true);
-        this.ColorTexture1 = CreateTexture(gl, 4, activeTextureLocation, true);
+        this.ColorTexture0 = CreateTexture(gl, 4, defaultTextureLocation);
+        this.ColorTexture1 = CreateTexture(gl, 4, activeTextureLocation);
     }
 
     ClearState() {

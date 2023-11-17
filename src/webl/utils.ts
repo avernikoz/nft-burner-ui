@@ -4,25 +4,6 @@ export function showError(errorText: string) {
     console.log(errorText);
 }
 
-/* 
-Time
-*/
-export const GTime = {
-    Last: 0,
-    Cur: 0.01,
-    Delta: 0.01,
-    DeltaMs: 1,
-};
-export function GetCurrentTimeSec() {
-    return performance.now() / 1000.0;
-}
-export function UpdateTime() {
-    GTime.Cur = GetCurrentTimeSec();
-    GTime.Delta = GTime.Cur - GTime.Last;
-    GTime.DeltaMs = GTime.Delta * 1000.0;
-    GTime.Last = GTime.Cur;
-}
-
 export function MathGetVectorLength(vec2: Vector2) {
     return Math.sqrt(vec2.x * vec2.x + vec2.y * vec2.y);
 }
@@ -86,4 +67,24 @@ export function MathIntersectionSphereSphere(pos1: Vector2, radius1: number, pos
     const distance = Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
 
     return distance <= radius1 + radius2;
+}
+
+/* 
+Time
+*/
+export const GTime = {
+    Last: 0,
+    Cur: 0.01,
+    Delta: 0.01,
+    DeltaMs: 1,
+};
+export function GetCurrentTimeSec() {
+    return performance.now() / 1000.0;
+}
+export function UpdateTime() {
+    GTime.Cur = GetCurrentTimeSec();
+    GTime.Delta = GTime.Cur - GTime.Last;
+    GTime.Delta = MathClamp(GTime.Delta, 1.0 / 300.0, 1.0 / 30.0);
+    GTime.DeltaMs = GTime.Delta * 1000.0;
+    GTime.Last = GTime.Cur;
 }
