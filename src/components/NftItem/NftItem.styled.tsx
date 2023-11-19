@@ -1,16 +1,4 @@
-import { keyframes, styled } from "styled-components";
-
-const fireAnimation = keyframes`
-    0% {
-        opacity: 0.5;
-    }
-    50% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0.5;
-    }
-`;
+import { styled } from "styled-components";
 
 export const BurnEffect = styled.div`
     transform: scale(0.5);
@@ -27,12 +15,17 @@ export const Card = styled.div`
     border: 1px solid #ccc;
     border-radius: 10px;
     overflow: hidden;
+    margin: auto;
     transition: box-shadow 0.3s ease-in-out;
     cursor: pointer;
 
     &.active {
-        animation: ${fireAnimation} 1.5s infinite;
         z-index: 1;
+        img {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
     }
 
     &:hover {
@@ -41,6 +34,7 @@ export const Card = styled.div`
 
     &:hover div {
         opacity: 1;
+        z-index: 100;
     }
 `;
 

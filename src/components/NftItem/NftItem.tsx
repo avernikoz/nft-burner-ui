@@ -5,6 +5,7 @@ import { IMAGE_STORE_SINGLETON_INSTANCE } from "../../config/config";
 import FireParticles from "../FireParticle/FireParticle";
 
 export interface INft {
+    id?: number;
     name: string;
     logoURI: string;
 }

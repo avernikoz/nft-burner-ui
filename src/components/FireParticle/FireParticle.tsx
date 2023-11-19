@@ -1,7 +1,6 @@
 import { styled, keyframes } from "styled-components";
 import React from "react";
 
-// Define the rise animation
 const rise = keyframes`
   0% {
     opacity: 0;
@@ -16,7 +15,6 @@ const rise = keyframes`
   }
 `;
 
-// Define the Fire and Particle components
 const Fire = styled.div`
     font-size: 24px;
     filter: blur(0.02em);
@@ -24,6 +22,7 @@ const Fire = styled.div`
     position: relative;
     width: 10em;
     height: 12em;
+    z-index: 80;
 `;
 
 const Particle = styled.div<{ index: number }>`
