@@ -343,7 +343,6 @@ export class RBackgroundRenderPass {
             const folder = GDatGUI.addFolder("Plane Transform");
             folder.open();
             folder.add(this.FloorTransform, "FloorTexScale", 0.01, 10);
-            folder.add(this.FloorTransform, "FloorTexScale", 0.01, 10).name("FloorTexScale").step(0.01);
             //folder.add(this.FloorTransform.LightTexScale, "y", 0.01, 10).name("LightTexScaleY").step(0.01);
             folder.add(this.FloorTransform, "FloorBrightness", 0.01, 5);
         }

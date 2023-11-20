@@ -390,6 +390,7 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			
 			//Color
 			vec3 imageColor = texture(ColorTexture, materialSamplingUV.xy).rgb;
+			//imageColor.rgb = imageColor * vec3(0.01, 0.2, 0.13);
 			
 			//imageColor = vec3(0.3);
 			//OutColor = vec4(imageColor, 1.0); return;
@@ -465,12 +466,11 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 						reflectionColor *= s;
 
 						//distance fade
-						s = clamp(MapToRange(interpolatorWorldSpacePos.z, planeWorldPosZ, -5.0, 1.0, 0.0), 0.0, 1.0);
+						s = clamp(MapToRange(interpolatorWorldSpacePos.z, planeWorldPosZ, -3.5, 1.0, 0.0), 0.0, 1.0);
 						reflectionColor *= s;
 
 						reflectionColor *= (1.0f - clamp((roughness), 0.0, 1.0));
-						reflectionColor *= 2.f;
-						reflectionColor *= 2.f;
+						reflectionColor *= 4.f;
 
 						float reflNDotL = max(0.5, dot(normal, reflectionVec));
 						reflectionColor *= reflNDotL;
@@ -701,11 +701,36 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			colorFinal +=  nDotL * specularCur * specularIntensityCur * (1.f - roughness) * SpotlightFalloff * attenuation;
 		#endif//PBR
 
-			colorFinal.rgb += imageColor * reflectionColor * 1.f;
+			//viewSpace fade
+			vec3 posNDC = interpolatorWorldSpacePos;
+			posNDC.xyz -= CameraDesc.xyz;
+			posNDC.xy *= CameraDesc.w;
+			posNDC.x /= ScreenRatio;
+			posNDC.xy /= (1.f + posNDC.z);
+			const float reflViewSpaceFadeThres = 0.5;
+			if(abs(posNDC.x) > reflViewSpaceFadeThres)
+			{
+				float m = MapToRange(abs(posNDC.x), reflViewSpaceFadeThres, 1.0, 1.0, 0.0);
+				reflectionColor.rgb *= m;
+			}
+
+			colorFinal.rgb += max(vec3(0.25), imageColor) * reflectionColor * 1.f;
 			vec3 virtualPointLightsColor = vec3(1.f, 0.5f, 0.1f);
-			colorFinal.rgb += imageColor * virtualPointLightsColor * virtualPointLightsIntensityFinal;
+			colorFinal.rgb += imageColor * virtualPointLightsColor * virtualPointLightsIntensityFinal * 2.f;
 			colorFinal.rgb *= shadow;
 
+			
+			const float viewSpaceFadeThres = 0.7;
+			if(abs(posNDC.x) > viewSpaceFadeThres)
+			{
+				float m = MapToRange(abs(posNDC.x), viewSpaceFadeThres, 1.0, 1.0, 0.0);
+				colorFinal.rgb *= m;
+			}
+			if(abs(posNDC.y) > viewSpaceFadeThres + 0.1)
+			{
+				float m = MapToRange(abs(posNDC.y), viewSpaceFadeThres + 0.1, 1.0, 1.0, 0.0);
+				colorFinal.rgb *= m;
+			}
 			
 	
 			OutColor = vec4(colorFinal.rgb, 1);
