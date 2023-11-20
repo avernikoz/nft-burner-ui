@@ -6,6 +6,9 @@ import reportWebVitals from "./utils/reportWebVitals";
 import { PrimeReactProvider } from "primereact/api";
 import "primeicons/primeicons.css";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
+import { SolanaWalletContext } from "./context/SolanaWalletContext";
+import { EVMWalletContext } from "./context/EVMWalletContext";
+import { SuiWalletContext } from "./context/SuiWalletContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
@@ -13,7 +16,13 @@ root.render(
     // <React.StrictMode>
 
     <PrimeReactProvider>
-        <App />
+        <SolanaWalletContext>
+            <EVMWalletContext>
+                <SuiWalletContext>
+                    <App />
+                </SuiWalletContext>
+            </EVMWalletContext>
+        </SolanaWalletContext>
     </PrimeReactProvider>,
     // </React.StrictMode>,
 );
