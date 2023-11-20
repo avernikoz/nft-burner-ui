@@ -1,5 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ReactComponent as TwitchLogo } from "../../assets/svg/twitch.svg";
+import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
+import { useAccount as useWagmiAccount } from "wagmi";
 
 import "./App.css";
 import { RenderMain } from "../../webl/renderingMain";
@@ -15,6 +18,11 @@ import NftList from "../../components/NftList/NftList";
 import { Button } from "primereact/button";
 
 function App() {
+    const suietWallet = suietUseWallet();
+    const solanaWallet = solanaUseWallet();
+    const wagmiAccount = useWagmiAccount();
+    const [connected, setConnected] = useState<boolean>(false);
+
     useEffect(() => {
         if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
         } else {
@@ -22,6 +30,25 @@ function App() {
             RenderMain();
         }
     }, []);
+
+    useEffect(() => {
+        if (wagmiAccount.isConnected && wagmiAccount.address) {
+            setConnected(true);
+        } else if (solanaWallet.connected && solanaWallet.publicKey) {
+            setConnected(true);
+        } else if (suietWallet.connected && suietWallet.address) {
+            setConnected(true);
+        } else {
+            setConnected(false);
+        }
+    }, [
+        solanaWallet.connected,
+        solanaWallet.publicKey,
+        suietWallet.address,
+        suietWallet.connected,
+        wagmiAccount.address,
+        wagmiAccount.isConnected,
+    ]);
 
     return (
         <>
@@ -36,39 +63,41 @@ function App() {
                                     <Wallets />
                                 </ToastProvider>
                             </div>
-
-                            <BodyContainer>
-                                <div className="half">
-                                    <NftList></NftList>
-                                    <div className="control">
-                                        <div className="control__burn">
-                                            <Button label="Burn NFT" severity="danger" rounded />
-                                        </div>
-                                        <div className="control__social">
-                                            <Button label="Chedule Burn" severity="warning" rounded />
-                                            <div className="control__social--media">
-                                                <Button
-                                                    icon="pi pi-twitter "
-                                                    rounded
-                                                    text
-                                                    severity="info"
-                                                    aria-label="Notification"
-                                                />
-                                                <Button rounded text severity="help" aria-label="Favorite">
-                                                    <TwitchLogo></TwitchLogo>
-                                                </Button>
-                                                <Button
-                                                    icon="pi pi-youtube"
-                                                    rounded
-                                                    text
-                                                    severity="danger"
-                                                    aria-label="Cancel"
-                                                />
+                            {connected && (
+                                <BodyContainer>
+                                    <div className="half">
+                                        <NftList></NftList>
+                                        <div className="control">
+                                            <div className="control__burn">
+                                                <Button label="Burn NFT" severity="danger" rounded />
+                                            </div>
+                                            <div className="control__social">
+                                                <Button label="Chedule Burn" severity="warning" rounded />
+                                                <div className="control__social--media">
+                                                    <Button
+                                                        icon="pi pi-twitter "
+                                                        rounded
+                                                        text
+                                                        severity="info"
+                                                        aria-label="Notification"
+                                                    />
+                                                    <Button rounded text severity="help" aria-label="Favorite">
+                                                        <TwitchLogo></TwitchLogo>
+                                                    </Button>
+                                                    <Button
+                                                        icon="pi pi-youtube"
+                                                        rounded
+                                                        text
+                                                        severity="danger"
+                                                        aria-label="Cancel"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </BodyContainer>
+                                </BodyContainer>
+                            )}
+
                             <Footer>
                                 <FullScreenButton />
                             </Footer>

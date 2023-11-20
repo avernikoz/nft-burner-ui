@@ -16,6 +16,7 @@ import DialogWalletList from "./components/DialogWalletList/DialogWalletList";
 import { ethers } from "ethers";
 import { createMenuItems } from "./variables";
 import { ToastContext } from "../ToastProvider/ToastProvider";
+import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 
 function Wallets() {
     const [visible, setVisible] = useState(false);
@@ -33,6 +34,7 @@ function Wallets() {
     const connect = useCallback(
         (acc: IAccount) => {
             localStorage.setItem("activeIndex", JSON.stringify(activeIndex));
+            GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory);
             setVisible(false);
             setAccount(acc);
         },
