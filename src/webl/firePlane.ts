@@ -264,8 +264,8 @@ export class RFirePlanePass {
         this.VisualizerImageTexture = CreateTexture(gl, 5, this.CurrentImageTextureSrc, true, true);
         this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg", true);
 
-        //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
-        this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise128.png");
+        this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
+        //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise128.png");
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/cracksNoise.png");
 
         this.VisualizerFirePlaneNoiseTexture = CreateTexture(gl, 7, "assets/fireNoise.png");

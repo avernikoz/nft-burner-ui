@@ -149,7 +149,8 @@ function scParticleSampleFlipbook(condition: boolean) {
 		colorFinal = texture(ColorTexture, uv).rgba;
 
 		#if 1//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
-		if(ceil(interpolatorFrameIndex) < float(FlipbookSizeRC.x * FlipbookSizeRC.y))
+		float numFrames = float(FlipbookSizeRC.x * FlipbookSizeRC.y);
+		//if(ceil(interpolatorFrameIndex) < numFrames)
 		{
 			flipBookIndex1D = uint(ceil(interpolatorFrameIndex));
 			FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
@@ -506,8 +507,8 @@ export function GetParticleRenderInstancedVS(
 				if(NumLoops > 1.f)
 				{
 				  //animationParameterNorm = fract((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops));
-				  animationParameterNorm = mod((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops), 1.f);
-				  //animationParameterNorm = fract((inAge) / (ParticleLife / NumLoops));
+				  //animationParameterNorm = mod((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops), 1.f);
+				  animationParameterNorm = fract((inAge) / (ParticleLife / NumLoops));
 				}
 				float TotalFlipFrames = FlipbookSizeRC.x * FlipbookSizeRC.y;
 				interpolatorFrameIndex = (animationParameterNorm * TotalFlipFrames);
@@ -692,48 +693,47 @@ function scSmokeSpecificShading(alphaScale = 0.25) {
         scParticleSampleFlipbook(true) +
         /* glsl */ `
 
-		
-		//float alphaScale = 0.4f;
-		//colorFinal.a *= (alphaScale);
 		const float alphaScale = float(` +
         alphaScale +
         /* glsl */ `);
-
-		/* float t = mod(CurTime, 20.f) * 0.1;
-		if(t < 1.f)
-		{
-			alphaScale *= t;
-		}
-		else
-		{
-			alphaScale *= (2.f - t);
-		} */
 
 		colorFinal.a *= (alphaScale + colorFinal.r * 0.75);
 
 		#if 1
 		float radialDistanceScale = length(interpolatorTexCoords - vec2(0.5, 0.5));
-		//radialDistanceScale *= 2.f;
-		/* if(radialDistanceScale > 0.5f)
-		{
-			radialDistanceScale = 1.f;
-		}
-		else
-		{
-			radialDistanceScale = 0.f;
-		} */
 		radialDistanceScale = (1.f - clamp(radialDistanceScale, 0.f, 1.f));
-
-		colorFinal.a *= radialDistanceScale;
+		colorFinal.a *= radialDistanceScale * radialDistanceScale;
 		#endif
 
-		
 		float brightness = mix(0.35, 0.15, interpolatorAge);
 		colorFinal.rgb *= brightness;
 		
 		colorFinal.rgb *= colorFinal.a;
+		`
+    );
+}
 
+function scAfterBurnSmokeSpecificShading(alphaScale = 0.25) {
+    return (
+        scParticleSampleFlipbook(true) +
+        /* glsl */ `
+
+		const float alphaScale = float(` +
+        alphaScale +
+        /* glsl */ `);
+
+		colorFinal.a *= (alphaScale + colorFinal.r * 0.75);
+
+		#if 1
+		float radialDistanceScale = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		radialDistanceScale = (1.f - clamp(radialDistanceScale, 0.f, 1.f));
+		colorFinal.a *= pow(radialDistanceScale, 5.f);
+		#endif
+
+		float brightness = mix(0.35, 0.15, interpolatorAge);
+		colorFinal.rgb *= brightness;
 		
+		colorFinal.rgb *= colorFinal.a;
 		`
     );
 }
@@ -917,6 +917,8 @@ function scGetBasedOnShadingMode(
             return scEmbersSpecificShading();
         case EParticleShadingMode.Smoke:
             return scSmokeSpecificShading(alphaScale);
+        case EParticleShadingMode.AfterBurnSmoke:
+            return scAfterBurnSmokeSpecificShading(alphaScale);
         case EParticleShadingMode.Ashes:
             return scAshesSpecificShading();
         case EParticleShadingMode.Dust:

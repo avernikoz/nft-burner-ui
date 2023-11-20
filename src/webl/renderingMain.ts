@@ -378,8 +378,6 @@ export function RenderMain() {
         canvas.style.width = window.innerWidth + "px";
         canvas.style.height = window.innerHeight + "px";
         canvas.style.display = "block";
-        /* canvas.style.width = "100vw";
-        canvas.style.height = "100vw"; */
         GScreenDesc.RenderTargetSize = { x: GScreenDesc.WindowSize.x, y: GScreenDesc.WindowSize.y };
         GScreenDesc.ScreenRatio = window.innerWidth / window.innerHeight;
         GScreenDesc.bWideScreen = GScreenDesc.ScreenRatio > 1.0;
@@ -392,23 +390,7 @@ export function RenderMain() {
     }
 
     // Call the resizeCanvas function initially and whenever the window is resized
-    //GetWindowSizeCurrent();
     OnWindowResize();
-
-    /* function OnWindowResizeObserverCallback(entries) {
-        const entry = entries[0];
-        if (entry.devicePixelContentBoxSize) {
-            GScreenDesc.WindowSize.x = entry.devicePixelContentBoxSize[0].inlineSize;
-            GScreenDesc.WindowSize.y = entry.devicePixelContentBoxSize[0].blockSize;
-        } else if (entry.contentBoxSize) {
-            // fallback for Safari that will not always be correct
-            GScreenDesc.WindowSize.x = Math.round(entry.contentBoxSize[0].inlineSize * devicePixelRatio);
-            GScreenDesc.WindowSize.y = Math.round(entry.contentBoxSize[0].blockSize * devicePixelRatio);
-        }
-    }
-
-    const observer = new ResizeObserver(OnWindowResizeObserverCallback);
-    observer.observe(canvas); */
 
     if (!canvas) {
         showError("Canvas Error");
@@ -540,10 +522,11 @@ export function RenderMain() {
     const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
-    SmokeParticlesDesc.inAlphaScale = 0.15 + Math.random() * 0.7;
+    SmokeParticlesDesc.inAlphaScale = 0.25 + Math.random() * 0.7;
     SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(5.0, 20.0, Math.random());
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
+    AfterBurnSmokeParticlesDesc.inAlphaScale = 0.25 + Math.random() * 0.5;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const AfterBurnSmokeParticles = new ParticlesEmitter(gl, AfterBurnSmokeParticlesDesc);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

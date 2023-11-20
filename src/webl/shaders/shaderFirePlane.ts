@@ -1,3 +1,5 @@
+import { MathLerp } from "../utils";
+
 export const ShaderSourceApplyFireVS = /* glsl */ `#version 300 es
 
 	precision highp float;
@@ -293,7 +295,8 @@ export function GetShaderSourceFireVisualizerVS() {
 		}`;
 }
 export function GetShaderSourceFireVisualizerPS() {
-    return /* glsl */ `#version 300 es
+    return (
+        /* glsl */ `#version 300 es
 	
 	precision highp float;
 	precision highp sampler2D;
@@ -454,7 +457,7 @@ export function GetShaderSourceFireVisualizerPS() {
 	}
 
 	#define PAPER 0
-	#define WOOD 1
+	#define WOOD 0
 
 	void main()
 	{
@@ -615,10 +618,14 @@ export function GetShaderSourceFireVisualizerPS() {
 		float afterBurnEmbers = 0.0;
 	#else
 		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * 1.5;
-		float afterBurnEmbers = texture(AfterBurnTexture, vsOutTexCoords.xy).r;
+		const float kRandomOffset = float(` +
+        MathLerp(0.01, 0.5, Math.random()) +
+        /* glsl */ `);
+		float afterBurnEmbers = texture(AfterBurnTexture, vsOutTexCoords.xy + vec2(kRandomOffset, 0.0)).r;
+		afterBurnEmbers = afterBurnEmbers * clamp(pow(length(vsOutTexCoords.xy - vec2(0.5) * 1.0f), 1.f), 0.0, 1.0);
+		//afterBurnEmbers = 1.f - afterBurnEmbers;
 	#endif
 		
-		//afterBurnNoise = 1.f - afterBurnNoise;
 		vec3 embersColor = vec3(afterBurnEmbers, afterBurnEmbers * 0.2, afterBurnEmbers * 0.1);
 		float emberScale = 1.f;
 	#if 1 //NOISE EMBERS SCALE
@@ -652,7 +659,7 @@ export function GetShaderSourceFireVisualizerPS() {
 		{
 			emberScale = mix(noiseVec.z, noiseVec.x, t - 2.f);
 		}
-		emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.f, 2.f);
+		emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.25f, 2.f);
 		#endif
 		
 		
@@ -670,7 +677,10 @@ export function GetShaderSourceFireVisualizerPS() {
 
 	#if 1 //BURNED IMAGE
 		vec3 burnedImageTexture = vec3(0.f);
-		const float BurnedImageSharpness = 0.05f;
+		const float kRandomValue = float(` +
+        MathLerp(0.01, 0.1, Math.random()) +
+        /* glsl */ `);
+		const float BurnedImageSharpness = kRandomValue;
 		float h = BurnedImageSharpness * 0.1;
 		vec3 n = textureLod(ImageTexture, flippedUVs + vec2(0, h), 0.f).rgb;
 		vec3 e = textureLod(ImageTexture, flippedUVs + vec2(h, 0), 0.f).rgb;
@@ -891,5 +901,6 @@ export function GetShaderSourceFireVisualizerPS() {
 
 		OutFirePlane = vec4(finalColor.rgb, 1);
 
-	}`;
+	}`
+    );
 }

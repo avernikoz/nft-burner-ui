@@ -135,7 +135,9 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 		vec4 flame = textureLod(FlameTexture, texCoords.xy, MipLevel);
 		vec4 firePlane = textureLod(FirePlaneTexture, texCoords.xy, MipLevel);
 		#if 1
-		vec4 Color = vec4(max(flame.rgb, firePlane.rgb).rgb, 1.f);
+		vec4 Color = vec4(max(flame.rgb * 1.25f, firePlane.rgb).rgb, 1.f);
+		//vec4 Color = vec4((flame.rgb * 1.5f + firePlane.rgb).rgb, 1.f);
+		//vec4 Color = vec4((flame.rgb + firePlane.rgb).rgb, 1.f);
 		#else
 		vec3 spotLight = vec3(1.0) * textureLod(SpotlightTexture, texCoords.xy, MipLevel).r * 0.5;
 		vec4 Color = vec4(max(spotLight, max(flame.rgb, firePlane.rgb)), 1.f);
@@ -271,7 +273,7 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 		flameNoiseUV = MapToRange(flameNoiseUV, -1.0, 1.0, 0.0, 1.0);
 
 		//Translate
-		const float flameSpeed = 0.35f + (kRandomValues.y * 0.5); //TODO: USE VARYING SPEED [0.25,0.75]
+		const float flameSpeed = 0.25f + (kRandomValues.y * 0.5); //TODO: USE VARYING SPEED [0.25,0.75]
 		flameNoiseUV.y -= Time * flameSpeed;
 		flameNoiseUV.x += Time * 0.05f;
 
