@@ -120,16 +120,17 @@ function NftList() {
             setUserConnected(false);
             setNFTList([]);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         signer,
         solanaConnection.connection,
         solanaWallet.connected,
-        solanaWallet.publicKey,
         suietWallet.address,
         suietWallet.connected,
         wagmiAccount.isConnected,
         wagmiAccount.address,
         wagmiAccount.connector,
+        solanaWallet.publicKey,
     ]);
 
     // const itemTemplate = (item: INft) => {

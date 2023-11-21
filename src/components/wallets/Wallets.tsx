@@ -49,11 +49,15 @@ function Wallets() {
             await suietWallet.disconnect();
         }
         if (solanaWallet.connected) {
-            solanaWallet.publicKey = null;
-            solanaWallet.connected = false;
-            solanaWallet.disconnect().catch((error) => {
-                console.error("Failed to disconnect from Solana Wallet:", error);
-            });
+            solanaWallet
+                .disconnect()
+                .then(() => {
+                    solanaWallet.publicKey = null;
+                    solanaWallet.connected = false;
+                })
+                .catch((error) => {
+                    console.error("Failed to disconnect from Solana Wallet:", error);
+                });
         }
 
         setActiveRainbowConnector(null);

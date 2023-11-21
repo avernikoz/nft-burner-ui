@@ -16,6 +16,14 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
 
     useEffect(() => {
         console.log(connected, publicKey);
+        console.log(selectedOption);
+        console.log(wallet);
+        console.log(wallet);
+        console.log(connection);
+    }, []);
+
+    useEffect(() => {
+        console.log(connected, publicKey);
 
         if (connected && publicKey) {
             connection.getBalance(new PublicKey(publicKey)).then(
