@@ -15,13 +15,16 @@ import {
     GetShaderSourceLightFlareRenderVS,
     GetShaderSourceLightSourceSpriteRenderVS,
     GetShaderSourceLightSourceSpriteRenderPS,
+    GetShaderSourceGenericSpriteRenderVS,
+    GetShaderSourceGenericSpriteRenderPS,
 } from "./shaders/shaderBackgroundScene";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
-import { GTime } from "./utils";
+import { GTime, MathLerp, MathMapToRange } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
         SpotlightPos: gl.getUniformLocation(shaderProgram, "SpotlightPos"),
+
         SpotlightDirection: gl.getUniformLocation(shaderProgram, "SpotlightDirection"),
         SpotlightDesc: gl.getUniformLocation(shaderProgram, "SpotlightDesc"),
         SpotlightScale: gl.getUniformLocation(shaderProgram, "SpotlightScale"),
@@ -46,6 +49,10 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         PointLightsTexture: gl.getUniformLocation(shaderProgram, "PointLightsTexture"),
         PuddleTexture: gl.getUniformLocation(shaderProgram, "PuddleTexture"),
         OilTexture: gl.getUniformLocation(shaderProgram, "OilTexture"),
+
+        Position: gl.getUniformLocation(shaderProgram, "Position"),
+        Orientation: gl.getUniformLocation(shaderProgram, "Orientation"),
+        Scale: gl.getUniformLocation(shaderProgram, "Scale"),
     };
     return params;
 }
@@ -87,9 +94,6 @@ export class SceneLights {
     }
 
     Update(gl: WebGL2RenderingContext, firePlaneTexture: WebGLTexture) {
-        gl.bindTexture(gl.TEXTURE_2D, firePlaneTexture);
-        gl.generateMipmap(gl.TEXTURE_2D);
-
         gl.viewport(0.0, 0.0, this.kNumLights2D, this.kNumLights2D);
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.LightsBufferFramebuffer);
 
@@ -267,6 +271,97 @@ export class RSpotlightRenderPass {
         gl.drawArrays(gl.TRIANGLES, 0, 6);
 
         gl.disable(gl.CULL_FACE);
+    }
+}
+
+export class RBurntStampVisualizer {
+    ShaderProgram;
+
+    UniformParametersLocationList;
+
+    ColorTexture;
+
+    Position = { x: 0.0, y: 0.0, z: 0.0 };
+
+    Orientation = { pitch: 0.0, yaw: 0.0, roll: 0.0 };
+
+    Scale = 1.0;
+
+    constructor(gl: WebGL2RenderingContext) {
+        //================================================ Floor Render
+
+        //Create Shader Program
+        this.ShaderProgram = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceGenericSpriteRenderVS(),
+            GetShaderSourceGenericSpriteRenderPS(),
+        );
+
+        //Shader Parameters
+        this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
+
+        this.ColorTexture = CreateTexture(gl, 7, "assets/background/burntStamp.png");
+
+        const offsetMax = 0.25;
+        this.Position.x = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);
+        this.Position.y = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);
+
+        const rollOffsetMax = Math.PI / 4;
+        this.FinalOrientation = MathMapToRange(Math.random(), 0.0, 1.0, -rollOffsetMax, rollOffsetMax);
+    }
+
+    Render(gl: WebGL2RenderingContext) {
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.ShaderProgram);
+
+        //Constants
+        gl.uniform4f(
+            this.UniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform1f(this.UniformParametersLocationList.Scale, this.Scale);
+        gl.uniform3f(this.UniformParametersLocationList.Position, this.Position.x, this.Position.y, this.Position.z);
+        gl.uniform3f(
+            this.UniformParametersLocationList.Orientation,
+            this.Orientation.pitch,
+            this.Orientation.yaw,
+            this.Orientation.roll,
+        );
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this.ColorTexture);
+        gl.uniform1i(this.UniformParametersLocationList.ColorTexture, 1);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    AnimationT = 0.0;
+
+    AnimationSpeed = 5.0;
+
+    PositionStart = -5;
+
+    FinalOrientation = 0.0;
+
+    AnimationFinishedEventProcessed = false;
+
+    RunAnimation() {
+        if (this.AnimationT <= 1.0) {
+            this.Position.z = MathLerp(this.PositionStart, 0.0, this.AnimationT);
+            this.Orientation.roll = MathLerp(
+                this.FinalOrientation - Math.PI / 2,
+                this.FinalOrientation,
+                this.AnimationT,
+            );
+
+            this.AnimationT += GTime.Delta * this.AnimationSpeed;
+        }
     }
 }
 

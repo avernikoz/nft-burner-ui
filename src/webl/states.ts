@@ -2,9 +2,11 @@ import { GTime } from "./utils";
 
 export enum ERenderingState {
     Preloading = 0,
-    Intro = 1,
-    Inventory = 2,
-    Burning = 3,
+    Intro,
+    Inventory,
+    BurningReady,
+    BurningNow,
+    BurningFinished,
 }
 
 export class GRenderingStateMachine {
@@ -51,7 +53,20 @@ export class GRenderingStateMachine {
     }
 
     public get bCanBurn(): boolean {
-        return this.currentState === ERenderingState.Burning || this.currentState === ERenderingState.Intro;
+        return (
+            this.currentState === ERenderingState.BurningReady ||
+            this.currentState === ERenderingState.BurningNow ||
+            this.currentState === ERenderingState.BurningFinished ||
+            this.currentState === ERenderingState.Intro
+        );
+    }
+
+    public get bHasSceneDesc(): boolean {
+        return (
+            this.currentState === ERenderingState.Intro ||
+            this.currentState === ERenderingState.Inventory ||
+            this.currentState === ERenderingState.BurningReady
+        );
     }
 
     ///==================================================================

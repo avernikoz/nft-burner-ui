@@ -79,7 +79,7 @@ export class SpatialControlPoint {
                 this.Radius,
             );
 
-            if (GUserInputDesc.bPointerInputPressed && this.bIntersectionThisFrame) {
+            if (GUserInputDesc.bPointerInputPressedThisFrame && this.bIntersectionThisFrame) {
                 this.bSelectedThisFrame = true;
                 this.bDragState = true && this.bDraggable;
             }

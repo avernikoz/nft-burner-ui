@@ -69,6 +69,39 @@ export function MathIntersectionSphereSphere(pos1: Vector2, radius1: number, pos
     return distance <= radius1 + radius2;
 }
 
+export function uint16ToFloat16(uint16Value: number): number {
+    // Extracting components
+    const sign = (uint16Value & 0x8000) >> 15;
+    const exponent = (uint16Value & 0x7c00) >> 10;
+    const fraction = uint16Value & 0x03ff;
+
+    // Reconstructing the float32 value
+    let floatValue;
+
+    if (exponent === 0) {
+        if (fraction === 0) {
+            // +/- 0
+            floatValue = sign ? -0 : 0;
+        } else {
+            // Denormalized number
+            floatValue = Math.pow(2, -14) * (fraction / Math.pow(2, 10)) * (sign ? -1 : 1);
+        }
+    } else if (exponent === 0x1f) {
+        if (fraction === 0) {
+            // +/- Infinity
+            floatValue = sign ? -Infinity : Infinity;
+        } else {
+            // NaN
+            floatValue = NaN;
+        }
+    } else {
+        // Normalized number
+        floatValue = Math.pow(2, exponent - 15) * (1 + fraction / Math.pow(2, 10)) * (sign ? -1 : 1);
+    }
+
+    return floatValue;
+}
+
 /* 
 Time
 */

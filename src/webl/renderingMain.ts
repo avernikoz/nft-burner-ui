@@ -1,4 +1,4 @@
-import { RBackgroundRenderPass, RSpotlightRenderPass } from "./backgroundScene";
+import { RBackgroundRenderPass, RBurntStampVisualizer, RSpotlightRenderPass } from "./backgroundScene";
 import { RFirePlanePass } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUI, DrawUISingleton } from "./helpers/gui";
@@ -51,12 +51,14 @@ import {
     MathVector3Negate,
     UpdateTime,
     showError,
+    uint16ToFloat16,
 } from "./utils";
 import { ApplyCameraControl, SetupCameraControlThroughInput } from "./shaders/controller";
 import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./spatialController";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController } from "./animationController";
+import { AudioEngine } from "./audioEngine";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -258,73 +260,6 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
     GRenderTargets.SpotlightFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.SpotlightTexture!);
 }
 
-class AudioEngine {
-    public audioContext;
-
-    private clickAudioBuffer: AudioBuffer | null;
-
-    private introAudioBuffer: AudioBuffer | null;
-
-    constructor() {
-        this.clickAudioBuffer = null;
-        this.introAudioBuffer = null;
-        if (window.AudioContext) {
-            this.audioContext = new AudioContext();
-        } else {
-            //console.error("Web Audio API is not supported in this browser");
-        }
-    }
-
-    async loadSounds() {
-        this.clickAudioBuffer = await this.loadAudioBuffer("assets/background/audio/bassShot.mp3");
-        this.introAudioBuffer = await this.loadAudioBuffer("assets/background/audio/intro.mp3");
-    }
-
-    async loadAudioBuffer(url: string): Promise<AudioBuffer> {
-        try {
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch audio file: ${response.status} - ${response.statusText}`);
-            }
-
-            const audioData = await response.arrayBuffer();
-            return await this.audioContext!.decodeAudioData(audioData);
-        } catch (error) {
-            console.error(`Error loading audio file from ${url}:`, error);
-            throw error; // Propagate the error to the caller
-        }
-    }
-
-    PlayClickSound() {
-        if (this.audioContext != null) {
-            const source = this.audioContext.createBufferSource();
-            if (this.clickAudioBuffer) {
-                source.buffer = this.clickAudioBuffer;
-                source.connect(this.audioContext.destination);
-                source.start();
-            }
-
-            /* const oscillator = this.audioContext.createOscillator();
-            oscillator.frequency.value = 140;
-            oscillator.connect(this.audioContext.destination);
-            oscillator.start();
-            oscillator.stop(this.audioContext.currentTime + 0.1); */
-        }
-    }
-
-    PlayIntroSound() {
-        if (this.audioContext != null) {
-            const source = this.audioContext.createBufferSource();
-            if (this.introAudioBuffer) {
-                source.buffer = this.introAudioBuffer;
-                source.connect(this.audioContext.destination);
-                source.start();
-            }
-        }
-    }
-}
-
 export function RenderMain() {
     const canvas = getCanvas();
 
@@ -346,21 +281,21 @@ export function RenderMain() {
     canvas.addEventListener("mousedown", (e) => {
         e.preventDefault();
         RegisterUserInput(canvas, e);
-        GUserInputDesc.bPointerInputPressed = true;
+        GUserInputDesc.bPointerInputPressedThisFrame = true;
     });
     canvas.addEventListener("mouseup", (e) => {
         e.preventDefault();
-        GUserInputDesc.bPointerInputPressed = false;
+        GUserInputDesc.bPointerInputPressedThisFrame = false;
     });
 
     canvas.addEventListener("touchstart", (e) => {
         RegisterUserInput(canvas, e);
         e.preventDefault();
-        GUserInputDesc.bPointerInputPressed = true;
+        GUserInputDesc.bPointerInputPressedThisFrame = true;
     });
     canvas.addEventListener("touchend", (e) => {
         e.preventDefault();
-        GUserInputDesc.bPointerInputPressed = false;
+        GUserInputDesc.bPointerInputPressedThisFrame = false;
     });
 
     SetupCameraControlThroughInput();
@@ -417,7 +352,7 @@ export function RenderMain() {
 
     //States Controllers
     const stateControllerSize = 0.05;
-    const numStateControllers = 4;
+    const numStateControllers = 6;
     const stateControllersViewSpaceStart = -0.25;
     const stateControllersViewSpaceLength = 0.5;
     const distBBetwenControllers = stateControllersViewSpaceLength / (numStateControllers - 1);
@@ -460,6 +395,24 @@ export function RenderMain() {
         `assets/background/stateIcon3.png`,
         `assets/background/stateIcon31.png`,
     );
+    curStateControllerPos += distBBetwenControllers;
+    StateControllers[4] = new SpatialControlPoint(
+        gl,
+        { x: curStateControllerPos, y: -0.75 },
+        stateControllerSize,
+        false,
+        `assets/background/stateIcon3.png`,
+        `assets/background/stateIcon31.png`,
+    );
+    curStateControllerPos += distBBetwenControllers;
+    StateControllers[5] = new SpatialControlPoint(
+        gl,
+        { x: curStateControllerPos, y: -0.75 },
+        stateControllerSize,
+        false,
+        `assets/background/stateIcon3.png`,
+        `assets/background/stateIcon31.png`,
+    );
 
     AllocateCommonRenderingResources(gl);
 
@@ -471,9 +424,22 @@ export function RenderMain() {
     //GUI
     DrawUI(GSettings);
 
+    //CurFire CPU
+    const CGConstants = {
+        CurFireValueCPUArr: new Uint16Array(1),
+        CurFireValueCPU: 0.0,
+    };
+    {
+        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
+        if (GDatGUI) {
+            GDatGUI.add(CGConstants, "CurFireValueCPU").listen().step(0.001);
+        }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const BackGroundRenderPass = new RBackgroundRenderPass(gl);
     const SpotlightRenderPass = new RSpotlightRenderPass(gl);
+    const BurntStampSprite = new RBurntStampVisualizer(gl);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FirePlaneSizePixels = { x: 512, y: 512 };
@@ -595,6 +561,10 @@ export function RenderMain() {
         }
     }
 
+    //Allocate SceneDesc for all Burning States
+    GSceneStateDescsArray[ERenderingState.BurningReady + 1] = GSceneStateDescsArray[ERenderingState.BurningReady];
+    GSceneStateDescsArray[ERenderingState.BurningReady + 2] = GSceneStateDescsArray[ERenderingState.BurningReady];
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
         if (gl !== null && GRenderTargets.FirePlaneTexture !== null && GPostProcessPasses.CopyPresemt !== null) {
@@ -622,6 +592,7 @@ export function RenderMain() {
             } else {
                 //AssignSceneDescription(GSceneStateDescsArray[RenderStateMachine.currentState]);
             }
+
             RenderStateMachine.AdvanceTransitionParameter();
 
             let newState = RenderStateMachine.currentState;
@@ -656,7 +627,7 @@ export function RenderMain() {
             }
             if (newState != RenderStateMachine.currentState) {
                 //...
-                GAudioEngine.PlayIntroSound();
+                //GAudioEngine.PlayIntroSound();
 
                 GRenderingStateMachine.SetRenderingState(newState);
             }
@@ -672,7 +643,7 @@ export function RenderMain() {
                 (GFirstRenderingFrame || RenderStateMachine.currentState !== ERenderingState.Preloading)
             ) {
                 if (GFirstRenderingFrame) {
-                    GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory, false);
+                    GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady, true);
                     GFirstRenderingFrame = false;
                 }
 
@@ -710,11 +681,23 @@ export function RenderMain() {
                             FirePlanePass.ApplyFireAuto(gl, { x: 0.0, y: -0.5 }, 0.05);
                         }
                     } else {
-                        if (
-                            GUserInputDesc.bPointerInputPressed &&
-                            !SpotlightPositionController.bIntersectionThisFrame
-                        ) {
-                            FirePlanePass.ApplyFireFromInput(gl);
+                        if (RenderStateMachine.currentState !== ERenderingState.BurningFinished) {
+                            if (
+                                GUserInputDesc.bPointerInputPressedThisFrame &&
+                                !SpotlightPositionController.bIntersectionThisFrame
+                            ) {
+                                FirePlanePass.ApplyFireFromInput(gl);
+                            }
+
+                            if (GUserInputDesc.bPointerInputPressedThisFrame) {
+                                if (!GUserInputDesc.bPointerInputPressedPrevFrame) {
+                                    GAudioEngine.PlayLighterStartSound();
+                                } else {
+                                    GAudioEngine.PlayLighterGasSound();
+                                }
+                            } else {
+                                GAudioEngine.ForceStopLighterGasSound();
+                            }
                         }
                     }
                 } else {
@@ -725,7 +708,36 @@ export function RenderMain() {
 
                 FirePlanePass.UpdateFire(gl);
 
-                BackGroundRenderPass.PointLights.Update(gl, FirePlanePass.GetCurFireTexture()!);
+                const curFireTexture = FirePlanePass.GetCurFireTexture()!;
+                gl.bindTexture(gl.TEXTURE_2D, curFireTexture);
+                gl.generateMipmap(gl.TEXTURE_2D);
+                BackGroundRenderPass.PointLights.Update(gl, curFireTexture);
+
+                //read cur fire value
+                if (1) {
+                    const curFireTextureFramebuffer = FirePlanePass.GetCurFireTextureHighestMipFramebuffer();
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, curFireTextureFramebuffer);
+                    //CGConstants.CurFireValueCPUArr = new Float32Array(1);
+                    gl.readPixels(0, 0, 1, 1, gl.RED, gl.HALF_FLOAT, CGConstants.CurFireValueCPUArr, 0);
+                    CGConstants.CurFireValueCPU = uint16ToFloat16(CGConstants.CurFireValueCPUArr.at(0)!);
+                }
+
+                //Change states depending on cur temperature
+                if (
+                    RenderStateMachine.currentState === ERenderingState.BurningReady &&
+                    CGConstants.CurFireValueCPU > 0.05
+                ) {
+                    GRenderingStateMachine.SetRenderingState(ERenderingState.BurningNow);
+                } else if (RenderStateMachine.currentState === ERenderingState.BurningNow) {
+                    if (CGConstants.CurFireValueCPU < 0.05) {
+                        GRenderingStateMachine.SetRenderingState(ERenderingState.BurningFinished);
+                    }
+                }
+
+                if (CGConstants.CurFireValueCPU > 0.01) {
+                    const curBurnVolume = MathMapToRange(CGConstants.CurFireValueCPU, 0.0, 2.0, 0.3, 1.0);
+                    GAudioEngine.PlayBurningSound(curBurnVolume);
+                }
 
                 FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
                 EmberParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
@@ -769,6 +781,20 @@ export function RenderMain() {
                         BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
                         GRenderTargets.SpotlightTexture!,
                     );
+
+                    if (RenderStateMachine.currentState === ERenderingState.BurningFinished) {
+                        //Render BURNT Stamp
+                        BurntStampSprite.RunAnimation();
+                        if (BurntStampSprite.AnimationT >= 0.95 && !BurntStampSprite.AnimationFinishedEventProcessed) {
+                            GAudioEngine.PlayStampSound();
+                            BurntStampSprite.AnimationFinishedEventProcessed = true;
+                        }
+                        gl.enable(gl.BLEND);
+                        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                        gl.blendEquation(gl.FUNC_ADD);
+                        BurntStampSprite.Render(gl);
+                        gl.disable(gl.BLEND);
+                    }
                 }
                 gl.enable(gl.BLEND);
                 gl.blendFunc(gl.ONE, gl.ONE);
@@ -855,6 +881,15 @@ export function RenderMain() {
                         y: canvas.height,
                     },
                 );
+
+                //Render BURNT Stamp
+                /* {
+                    gl.enable(gl.BLEND);
+                    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                    gl.blendEquation(gl.FUNC_ADD);
+                    BurntStampSprite.Render(gl);
+                    gl.disable(gl.BLEND);
+                } */
             } else {
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -868,6 +903,7 @@ export function RenderMain() {
             }
 
             GUserInputDesc.bPointerInputActiveThisFrame = false;
+            GUserInputDesc.bPointerInputPressedPrevFrame = GUserInputDesc.bPointerInputPressedThisFrame;
 
             RenderStateMachine.MarkNewStateProcessed();
 

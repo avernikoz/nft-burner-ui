@@ -118,6 +118,8 @@ export class RFirePlanePass {
 
     public FrameBuffer;
 
+    public FireTextureHighestMIPFrameBuffer;
+
     public FireTexture;
 
     public FuelTexture;
@@ -220,6 +222,30 @@ export class RFirePlanePass {
         gl.clearBufferfv(gl.COLOR, 1, clearColor1);
         gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
 
+        FrameBufferCheck(gl, "RFirePlanePass");
+
+        //To read fire value
+        const highestMipLevel = Math.log2(inRenderTargetSize.x);
+        this.FireTextureHighestMIPFrameBuffer = [];
+        this.FireTextureHighestMIPFrameBuffer[0] = gl.createFramebuffer();
+        this.FireTextureHighestMIPFrameBuffer[1] = gl.createFramebuffer();
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FireTextureHighestMIPFrameBuffer[0]);
+        gl.framebufferTexture2D(
+            gl.READ_FRAMEBUFFER,
+            gl.COLOR_ATTACHMENT0,
+            gl.TEXTURE_2D,
+            this.FireTexture[0],
+            highestMipLevel,
+        );
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FireTextureHighestMIPFrameBuffer[1]);
+        gl.framebufferTexture2D(
+            gl.READ_FRAMEBUFFER,
+            gl.COLOR_ATTACHMENT0,
+            gl.TEXTURE_2D,
+            this.FireTexture[1],
+            highestMipLevel,
+        );
         FrameBufferCheck(gl, "RFirePlanePass");
 
         this.CurrentFireTextureIndex = 0;
@@ -588,5 +614,9 @@ export class RFirePlanePass {
 
     GetCurFireTexture() {
         return this.FireTexture[this.CurrentFireTextureIndex];
+    }
+
+    GetCurFireTextureHighestMipFramebuffer() {
+        return this.FireTextureHighestMIPFrameBuffer[this.CurrentFireTextureIndex];
     }
 }

@@ -2,10 +2,11 @@ export const GUserInputDesc = {
     InputPosNDCCur: { x: 0, y: 0 },
     InputPosNDCPrev: { x: 0, y: 0 },
     bPointerInputActiveThisFrame: false,
-    bPointerInputPressed: false,
+    bPointerInputPressedThisFrame: false,
+    bPointerInputPressedPrevFrame: false,
     InactiveTimerFunc: setTimeout(function () {
         GUserInputDesc.bPointerInputActiveThisFrame = false;
-        GUserInputDesc.bPointerInputPressed = false;
+        GUserInputDesc.bPointerInputPressedThisFrame = false;
         GUserInputDesc.InputPosNDCPrev.x = GUserInputDesc.InputPosNDCCur.x;
         GUserInputDesc.InputPosNDCPrev.y = GUserInputDesc.InputPosNDCCur.y;
     }, 2000), //time threshold for inactivity in milliseconds

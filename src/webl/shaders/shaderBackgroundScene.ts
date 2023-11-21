@@ -1130,3 +1130,69 @@ export function GetShaderSourceLightSourceSpriteRenderPS() {
 
 	}`;
 }
+
+export function GetShaderSourceGenericSpriteRenderVS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	
+	layout(location = 0) in vec2 VertexBuffer;
+
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	uniform vec3 Position;
+	uniform vec3 Orientation;
+	uniform float Scale;
+
+	out vec2 vsOutTexCoords;
+
+	vec3 rotateVectorWithEuler(vec3 v, float pitch, float yaw, float roll) {
+		// Rotation matrix for roll, pitch, and yaw
+		mat3 rotationMatrix = mat3(
+			cos(yaw)*cos(roll) - sin(pitch)*sin(yaw)*sin(roll), -cos(pitch)*sin(roll), cos(roll)*sin(yaw) + cos(yaw)*sin(pitch)*sin(roll),
+			cos(yaw)*sin(roll) + sin(pitch)*sin(yaw)*cos(roll),  cos(pitch)*cos(roll), sin(yaw)*sin(roll) - cos(yaw)*sin(pitch)*cos(roll),
+		   -cos(pitch)*sin(yaw), sin(pitch), cos(pitch)*cos(yaw)
+		);
+	
+		// Rotate the vector
+		vec3 rotatedVector = rotationMatrix * v;
+	
+		return rotatedVector;
+	}
+
+	void main()
+	{
+		vec3 pos = vec3(VertexBuffer.xy, 0.0f);
+		pos = rotateVectorWithEuler(pos, Orientation.x, Orientation.y, Orientation.z);
+		pos.xy *= Scale;
+		pos += Position;
+		pos.xyz -= CameraDesc.xyz;
+
+		pos.xy *= CameraDesc.w;
+		pos.x /= ScreenRatio;
+
+		gl_Position = vec4(pos.xy, 0.0, (1.f + pos.z));
+		vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
+	}`;
+}
+
+export function GetShaderSourceGenericSpriteRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec4 outColor;
+
+	uniform sampler2D ColorTexture;
+
+	in vec2 vsOutTexCoords;
+
+	void main()
+	{
+		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+		vec4 color = texture(ColorTexture, flippedUVs.xy);
+		color.rgb *= 3.f;
+		outColor = color;
+	}`;
+}
