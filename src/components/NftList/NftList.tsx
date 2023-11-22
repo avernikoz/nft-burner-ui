@@ -49,9 +49,16 @@ function NftList() {
                             owner: signer,
                         }).then((data) => {
                             const convertedNfts = data.ownedNfts.map((nft, index) => {
+                                let ipfsHash = nft.rawMetadata?.image;
+                                if (!ipfsHash) {
+                                    ipfsHash = "../../assets/svg/empty.jpg";
+                                }
+                                if (ipfsHash.includes("ipfs://")) {
+                                    ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
+                                }
                                 return {
                                     name: nft.title,
-                                    logoURI: nft.rawMetadata?.image ?? "../../assets/svg/empty.jpg",
+                                    logoURI: ipfsHash,
                                     id: index,
                                 };
                             });
@@ -64,9 +71,16 @@ function NftList() {
                             owner: signer,
                         }).then((data) => {
                             const convertedNfts = data.ownedNfts.map((nft, index) => {
+                                let ipfsHash = nft.rawMetadata?.image;
+                                if (!ipfsHash) {
+                                    ipfsHash = "../../assets/svg/empty.jpg";
+                                }
+                                if (ipfsHash.includes("ipfs://")) {
+                                    ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
+                                }
                                 return {
                                     name: nft.title,
-                                    logoURI: nft.rawMetadata?.image ?? "../../assets/svg/empty.jpg",
+                                    logoURI: ipfsHash,
                                     id: index,
                                 };
                             });
@@ -79,9 +93,16 @@ function NftList() {
                             owner: signer,
                         }).then((data) => {
                             const convertedNfts = data.ownedNfts.map((nft, index) => {
+                                let ipfsHash = nft.rawMetadata?.image;
+                                if (!ipfsHash) {
+                                    ipfsHash = "../../assets/svg/empty.jpg";
+                                }
+                                if (ipfsHash.includes("ipfs://")) {
+                                    ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
+                                }
                                 return {
                                     name: nft.title,
-                                    logoURI: nft.rawMetadata?.image ?? "../../assets/svg/empty.jpg",
+                                    logoURI: ipfsHash,
                                     id: index,
                                 };
                             });
