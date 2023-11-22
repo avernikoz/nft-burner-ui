@@ -11,6 +11,8 @@ import { ToastProvider } from "../../components/ToastProvider/ToastProvider";
 import { GlobalStyles } from "../../config/globalStyles";
 import NftList from "../../components/NftList/NftList";
 import Control from "../../components/Control/Control";
+import { NftProvider } from "../../components/NftProvider/NftProvider";
+import { RenderMain } from "../../webl/renderingMain";
 
 function App() {
     const suietWallet = suietUseWallet();
@@ -49,25 +51,27 @@ function App() {
         <>
             <GlobalStyles />
 
-            <div className="App">
-                <div className="WalletConnectionHeader">
-                    <ToastProvider>
-                        <Wallets />
-                    </ToastProvider>
-                </div>
-                {connected && (
-                    <BodyContainer>
-                        <div className="half">
-                            <NftList></NftList>
-                            <Control></Control>
+            <ToastProvider>
+                <NftProvider>
+                    <div className="App">
+                        <div className="WalletConnectionHeader">
+                            <Wallets />
                         </div>
-                    </BodyContainer>
-                )}
+                        {connected && (
+                            <BodyContainer>
+                                <div className="half">
+                                    <NftList></NftList>
+                                    <Control></Control>
+                                </div>
+                            </BodyContainer>
+                        )}
 
-                <Footer>
-                    <FullScreenButton />
-                </Footer>
-            </div>
+                        <Footer>
+                            <FullScreenButton />
+                        </Footer>
+                    </div>
+                </NftProvider>
+            </ToastProvider>
             {/* <canvas id="demo-canvas">
                 Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
             </canvas> */}

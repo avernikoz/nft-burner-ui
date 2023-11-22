@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
-import NftItem, { INft } from "../NftItem/NftItem";
+import NftItem from "../NftItem/NftItem";
+import { INft } from "../../utils/types";
 import { List } from "./NftList.styled";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
@@ -19,6 +20,7 @@ import { FixedSizeGrid as Grid } from "react-window";
 // eslint-disable-next-line import/no-unresolved
 import { AutoSizer } from "react-virtualized";
 import { ToastContext } from "../ToastProvider/ToastProvider";
+import { NftContext } from "../NftProvider/NftProvider";
 
 function NftList() {
     const suietWallet = suietUseWallet();
@@ -31,9 +33,11 @@ function NftList() {
     const [userConnected, setUserConnected] = useState<boolean>(false);
     const [showSpinner, setShowSpinner] = useState<boolean>(false);
     const toastController = useContext(ToastContext);
+    const NftController = useContext(NftContext);
 
-    const handleItemClick = (id: number) => {
-        setActiveNft(id);
+    const handleItemClick = (nft: INft) => {
+        setActiveNft(nft.id ?? null);
+        NftController?.setActiveNft(nft);
     };
 
     useEffect(() => {
@@ -53,6 +57,10 @@ function NftList() {
                                     name: nft.title,
                                     logoURI: nft.rawMetadata?.image ?? "../../assets/svg/empty.jpg",
                                     id: index,
+                                    contractAddress: nft.contract.address,
+                                    contractType: nft.contract.tokenType,
+                                    nftTokenId: nft.tokenId,
+                                    owner: signer,
                                 };
                             });
                             setNFTList(convertedNfts);
@@ -121,6 +129,7 @@ function NftList() {
                 });
             } else {
                 setUserConnected(false);
+                setActiveNft(null);
                 setNFTList([]);
             }
         } catch (error) {
@@ -183,7 +192,7 @@ function NftList() {
                     key={index}
                     id={index}
                     isActive={index == activeNft}
-                    onClick={() => handleItemClick(index)}
+                    onClick={() => handleItemClick(item)}
                 />
             </div>
         );

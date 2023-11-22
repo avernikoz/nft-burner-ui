@@ -19,7 +19,7 @@ export const SolanaWalletContext: FC<PropsWithChildren> = (props) => {
     const { children } = props;
     const network = WalletAdapterNetwork.Mainnet;
     // TODO ASAP IMPORTANT: Add custom RPC
-    const endpoint = "https://solana-mainnet.rpc.extrnode.com";
+    const endpoint = "https://api.mainnet-beta.solana.com";
 
     const wallets = useMemo(
         () => [

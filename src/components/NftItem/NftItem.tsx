@@ -3,14 +3,9 @@ import React, { useRef } from "react";
 import { Card, CardImage, CardTitle } from "./NftItem.styled";
 import { IMAGE_STORE_SINGLETON_INSTANCE } from "../../config/config";
 import FireParticles from "../FireParticle/FireParticle";
+import { INft } from "../../utils/types";
 
-export interface INft {
-    id?: number;
-    name: string;
-    logoURI: string;
-}
-
-function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: (id: number) => void }) {
+function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: () => void }) {
     const { item } = props;
     const imgRef = useRef<HTMLImageElement>(null);
 
@@ -18,7 +13,7 @@ function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: (i
         if (imgRef.current) {
             IMAGE_STORE_SINGLETON_INSTANCE.setImageUrl(item.logoURI);
             IMAGE_STORE_SINGLETON_INSTANCE.setImage(imgRef?.current);
-            props.onClick(props.id);
+            props.onClick();
         }
     };
     return (
