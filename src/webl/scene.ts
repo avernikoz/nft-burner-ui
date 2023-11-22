@@ -4,9 +4,8 @@ import { DrawUISingleton } from "./helpers/gui";
 import { MathLerp, MathLerpVec3, MathSmoothstep, MathVector3Negate, MathVector3Normalize } from "./utils";
 
 export const GScreenDesc = {
-    ViewportSize: { x: 512, y: 512 },
-    RenderTargetSize: { x: 512, y: 512 }, //TODO: Set min max allowed resolution, add half size support, dynamic RT size support
-    ViewportMin: 512,
+    WindowSize: { x: 512, y: 512 }, //size displayed on the page
+    RenderTargetSize: { x: 512, y: 512 }, //drawingBuffer size //TODO: Set min max allowed resolution, add half size support, dynamic RT size support
     ScreenRatio: 16.0 / 9.0,
     bWideScreen: true,
     ViewRatioXY: { x: 16.0 / 9.0, y: 1.0 }, //Used for pre-ViewportTransform, For WideScreen: y = 1, for Narrow Screen: x = 1

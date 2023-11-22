@@ -2,9 +2,11 @@ import { GTime } from "./utils";
 
 export enum ERenderingState {
     Preloading = 0,
-    Intro = 1,
-    Inventory = 2,
-    Burning = 3,
+    Intro,
+    Inventory,
+    BurningReady,
+    BurningNow,
+    BurningFinished,
 }
 
 export class GRenderingStateMachine {
@@ -26,6 +28,14 @@ export class GRenderingStateMachine {
         }
     }
 
+    MarkNewStateProcessed() {
+        this.bNewStateWasProcessed = true;
+    }
+
+    public bWasNewStateProcessed(): boolean {
+        return this.bNewStateWasProcessed;
+    }
+
     public get currentState(): ERenderingState {
         return this.StateCurrent;
     }
@@ -40,6 +50,23 @@ export class GRenderingStateMachine {
 
     public get transitionSpeed(): number {
         return this.TransitionSpeed;
+    }
+
+    public get bCanBurn(): boolean {
+        return (
+            this.currentState === ERenderingState.BurningReady ||
+            this.currentState === ERenderingState.BurningNow ||
+            this.currentState === ERenderingState.BurningFinished ||
+            this.currentState === ERenderingState.Intro
+        );
+    }
+
+    public get bHasSceneDesc(): boolean {
+        return (
+            this.currentState === ERenderingState.Intro ||
+            this.currentState === ERenderingState.Inventory ||
+            this.currentState === ERenderingState.BurningReady
+        );
     }
 
     ///==================================================================
@@ -58,6 +85,8 @@ export class GRenderingStateMachine {
             this.StateCurrent = newState;
 
             this.TransitionParameter = bImmeadiateTransition ? 1.0 : 0.0;
+
+            this.bNewStateWasProcessed = false;
         }
     }
 
@@ -68,4 +97,6 @@ export class GRenderingStateMachine {
     private TransitionParameter: number; //[0,1]
 
     private TransitionSpeed: number; //[0,1]
+
+    public bNewStateWasProcessed = false; //when state change event should be processed  once
 }
