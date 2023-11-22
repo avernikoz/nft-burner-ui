@@ -21,6 +21,7 @@ import { FixedSizeGrid as Grid } from "react-window";
 import { AutoSizer } from "react-virtualized";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { NftContext } from "../NftProvider/NftProvider";
+import { ALLOWED_EVM_CHAINS } from "@avernikoz/nft-sdk/dist/networks/evm/common";
 
 function NftList() {
     const suietWallet = suietUseWallet();
@@ -61,6 +62,7 @@ function NftList() {
                                     contractType: nft.contract.tokenType,
                                     nftTokenId: nft.tokenId,
                                     owner: signer,
+                                    evm: ALLOWED_EVM_CHAINS.Polygon,
                                 };
                             });
                             setNFTList(convertedNfts);

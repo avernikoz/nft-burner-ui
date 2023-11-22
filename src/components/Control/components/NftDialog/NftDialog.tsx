@@ -10,10 +10,11 @@ export enum NFTContractStandard {
 function NftDialog(props: { nft: INft | null; visible: boolean; setVisible: () => void }) {
     const [isHolding, setIsHolding] = useState<boolean>(false);
     const [submit, setSubmit] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { nft, visible, setVisible } = props;
 
-    const handleHold = () => {
+    const handleHold = async () => {
         console.log(isHolding);
         setSubmit(true);
         if (
@@ -21,9 +22,12 @@ function NftDialog(props: { nft: INft | null; visible: boolean; setVisible: () =
             nft?.contractType &&
             nft?.nftTokenId &&
             nft?.owner &&
+            nft?.evm &&
             (nft.contractType == NFTContractStandard.ERC1155 || nft.contractType == NFTContractStandard.ERC721)
         ) {
-            ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.burnNFT({
+            setLoading(true);
+            await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.pay({ network: nft.evm, amount: 0.0001 });
+            await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.burnNFT({
                 collection: {
                     contractAddress: nft?.contractAddress,
                     contractType: nft?.contractType,
@@ -31,6 +35,7 @@ function NftDialog(props: { nft: INft | null; visible: boolean; setVisible: () =
                 nftTokenId: nft?.nftTokenId,
                 owner: nft?.owner,
             });
+            setLoading(false);
         }
     };
 
@@ -65,7 +70,7 @@ function NftDialog(props: { nft: INft | null; visible: boolean; setVisible: () =
             <div className="card">
                 <p>NFT price: 2200$</p>
                 <p>Burner fee commission: 5$</p>
-                {submit && <ProgressBar mode="indeterminate" style={{ height: "6px", width: "100%" }}></ProgressBar>}
+                {loading && <ProgressBar mode="indeterminate" style={{ height: "6px", width: "100%" }}></ProgressBar>}
             </div>
 
             <FillButton
