@@ -38,7 +38,7 @@ function NftList() {
 
     useEffect(() => {
         try {
-            const proxy = process.env.CORS_PROXY;
+            const proxy = process.env.REACT_CORS_PROXY_URL;
             if (wagmiAccount.isConnected && wagmiAccount.address && signer) {
                 setUserConnected(true);
                 setShowSpinner(true);
