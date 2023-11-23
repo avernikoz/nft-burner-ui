@@ -38,6 +38,7 @@ function NftList() {
 
     useEffect(() => {
         try {
+            const proxy = process.env.CORS_PROXY;
             if (wagmiAccount.isConnected && wagmiAccount.address && signer) {
                 setUserConnected(true);
                 setShowSpinner(true);
@@ -52,6 +53,9 @@ function NftList() {
                                 let ipfsHash = nft.rawMetadata?.image;
                                 if (!ipfsHash) {
                                     ipfsHash = "../../assets/svg/empty.jpg";
+                                }
+                                if (ipfsHash.includes("https://")) {
+                                    ipfsHash = proxy + ipfsHash;
                                 }
                                 if (ipfsHash.includes("ipfs://")) {
                                     ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
@@ -75,6 +79,9 @@ function NftList() {
                                 if (!ipfsHash) {
                                     ipfsHash = "../../assets/svg/empty.jpg";
                                 }
+                                if (ipfsHash.includes("https://")) {
+                                    ipfsHash = proxy + ipfsHash;
+                                }
                                 if (ipfsHash.includes("ipfs://")) {
                                     ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
                                 }
@@ -96,6 +103,9 @@ function NftList() {
                                 let ipfsHash = nft.rawMetadata?.image;
                                 if (!ipfsHash) {
                                     ipfsHash = "../../assets/svg/empty.jpg";
+                                }
+                                if (ipfsHash.includes("https://")) {
+                                    ipfsHash = proxy + ipfsHash;
                                 }
                                 if (ipfsHash.includes("ipfs://")) {
                                     ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
@@ -124,17 +134,16 @@ function NftList() {
                     setShowSpinner(false);
                     console.log(nfts);
                     const convertedNfts = nfts.map((nft, index) => {
-                        if (nft.url.includes("ipfs://")) {
-                            const ipfsHash = nft.url.replace("ipfs://", "");
-                            return {
-                                name: nft.name,
-                                logoURI: "https://ipfs.io/ipfs/" + ipfsHash,
-                                id: index,
-                            };
+                        let ipfsHash = nft.url;
+                        if (ipfsHash.includes("https://")) {
+                            ipfsHash = proxy + ipfsHash;
+                        }
+                        if (ipfsHash.includes("ipfs://")) {
+                            ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
                         }
                         return {
                             name: nft.name,
-                            logoURI: nft.url,
+                            logoURI: ipfsHash,
                             id: index,
                         };
                     });
