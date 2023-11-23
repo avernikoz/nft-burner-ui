@@ -1,7 +1,4 @@
 import React, { useContext, useEffect, useState } from "react";
-import NftItem from "../NftItem/NftItem";
-import { INft } from "../../utils/types";
-import { List } from "./NftList.styled";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useAccount } from "wagmi";
@@ -13,7 +10,7 @@ import {
 
 import { useEthersSigner } from "./variables";
 import { evm } from "@avernikoz/nft-sdk";
-import { arbitrum, optimism, polygon } from "viem/chains";
+import { arbitrum, mainnet, optimism, polygon } from "viem/chains";
 import { ProgressSpinner } from "primereact/progressspinner";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { FixedSizeGrid as Grid } from "react-window";
@@ -21,7 +18,9 @@ import { FixedSizeGrid as Grid } from "react-window";
 import { AutoSizer } from "react-virtualized";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { NftContext } from "../NftProvider/NftProvider";
-import { ALLOWED_EVM_CHAINS } from "@avernikoz/nft-sdk/dist/networks/evm/common";
+import NftItem from "../NftItem/NftItem";
+import { INft, ALLOWED_EVM_CHAINS } from "../../utils/types";
+import { List } from "./NftList.styled";
 
 function NftList() {
     const suietWallet = suietUseWallet();
@@ -48,6 +47,33 @@ function NftList() {
                 setShowSpinner(true);
                 wagmiAccount.connector?.getChainId().then((id) => {
                     setShowSpinner(false);
+                    if (id === mainnet.id) {
+                        ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
+                            network: evm.ALLOWED_EVM_CHAINS.Ethereum,
+                            owner: signer,
+                        }).then((data) => {
+                            const convertedNfts = data.ownedNfts.map((nft, index) => {
+                                let ipfsHash = nft.rawMetadata?.image;
+                                if (!ipfsHash) {
+                                    ipfsHash = "../../assets/svg/empty.jpg";
+                                }
+                                if (ipfsHash.includes("ipfs://")) {
+                                    ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
+                                }
+                                return {
+                                    name: nft.title,
+                                    logoURI: ipfsHash,
+                                    id: index,
+                                    contractAddress: nft.contract.address,
+                                    contractType: nft.contract.tokenType,
+                                    nftTokenId: nft.tokenId,
+                                    owner: signer,
+                                    evm: ALLOWED_EVM_CHAINS.Ethereum,
+                                };
+                            });
+                            setNFTList(convertedNfts);
+                        });
+                    }
                     if (id === polygon.id) {
                         ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
                             network: evm.ALLOWED_EVM_CHAINS.Polygon,
@@ -92,6 +118,12 @@ function NftList() {
                                     name: nft.title,
                                     logoURI: ipfsHash,
                                     id: index,
+
+                                    contractAddress: nft.contract.address,
+                                    contractType: nft.contract.tokenType,
+                                    nftTokenId: nft.tokenId,
+                                    owner: signer,
+                                    evm: ALLOWED_EVM_CHAINS.Optimism,
                                 };
                             });
                             setNFTList(convertedNfts);
@@ -114,19 +146,33 @@ function NftList() {
                                     name: nft.title,
                                     logoURI: ipfsHash,
                                     id: index,
+
+                                    contractAddress: nft.contract.address,
+                                    contractType: nft.contract.tokenType,
+                                    nftTokenId: nft.tokenId,
+                                    owner: signer,
+                                    evm: ALLOWED_EVM_CHAINS.Arbitrum,
                                 };
                             });
                             setNFTList(convertedNfts);
                         });
                     }
                 });
+                return;
             } else if (solanaWallet.connected && solanaWallet.publicKey) {
                 setUserConnected(true);
                 setShowSpinner(true);
-                SOLANA_NFT_CLIENT_INSTANCE.getNFTs(solanaWallet.publicKey).then((nfts: Required<INft[]>) => {
+                SOLANA_NFT_CLIENT_INSTANCE.getNFTs(solanaWallet.publicKey).then((nfts) => {
                     setShowSpinner(false);
-                    setNFTList(nfts.map((item, i) => ({ ...item, id: i })));
+                    const mappedNFts: INft[] = nfts.map((item, i) => ({
+                        logoURI: item.logoURI,
+                        name: item.name,
+                        id: i,
+                        solanaAccount: item.accounts,
+                    }));
+                    setNFTList(mappedNFts);
                 });
+                return;
             } else if (suietWallet.connected && suietWallet.address) {
                 setUserConnected(true);
                 setShowSpinner(true);
@@ -134,22 +180,22 @@ function NftList() {
                     setShowSpinner(false);
                     console.log(nfts);
                     const convertedNfts = nfts.map((nft, index) => {
-                        if (nft.url.includes("ipfs://")) {
-                            const ipfsHash = nft.url.replace("ipfs://", "");
-                            return {
-                                name: nft.name,
-                                logoURI: "https://ipfs.io/ipfs/" + ipfsHash,
-                                id: index,
-                            };
+                        let ipfsHash = nft.url;
+                        if (ipfsHash.includes("ipfs://")) {
+                            ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
                         }
                         return {
                             name: nft.name,
-                            logoURI: nft.url,
+                            logoURI: ipfsHash,
                             id: index,
+                            nftId: nft.nftId,
+                            kioskId: nft.kioskId,
+                            nftType: nft.nftType,
                         };
                     });
                     setNFTList(convertedNfts);
                 });
+                return;
             } else {
                 setUserConnected(false);
                 setActiveNft(null);
@@ -174,6 +220,7 @@ function NftList() {
         wagmiAccount.connector,
         solanaWallet.publicKey,
         toastController,
+        NftController?.setActiveNft,
     ]);
 
     // const itemTemplate = (item: INft) => {

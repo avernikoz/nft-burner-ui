@@ -13,8 +13,14 @@ function Control() {
     const NftController = useContext(NftContext);
 
     useEffect(() => {
-        setNft(NftController?.getActiveNft() ?? null);
-    }, [NftController]);
+        if (!nft) {
+            setNft(null);
+        }
+    }, [nft]);
+
+    useEffect(() => {
+        setNft(NftController?.activeNft ?? null);
+    }, [NftController?.activeNft]);
 
     return (
         <>
@@ -33,6 +39,9 @@ function Control() {
                         visible={visible}
                         setVisible={() => {
                             setVisible(false);
+                        }}
+                        setNft={() => {
+                            setNft(null);
                         }}
                     ></NftDialog>
                 </div>

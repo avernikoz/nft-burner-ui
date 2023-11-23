@@ -2,20 +2,29 @@ import { useRef, useState } from "react";
 import { FillButton, StyledDialog } from "./NftDialog.styled";
 import { ProgressBar } from "primereact/progressbar";
 import { INft } from "../../../../utils/types";
-import { ALCHEMY_MULTICHAIN_CLIENT_INSTANCE } from "../../../../config/nft.config";
+import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import {
+    ALCHEMY_MULTICHAIN_CLIENT_INSTANCE,
+    SOLANA_NFT_CLIENT_INSTANCE,
+    SUI_NFT_CLIENT_INSTANCE,
+} from "../../../../config/nft.config";
+import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
+
 export enum NFTContractStandard {
     ERC1155 = "ERC1155",
     ERC721 = "ERC721",
 }
-function NftDialog(props: { nft: INft | null; visible: boolean; setVisible: () => void }) {
-    const [isHolding, setIsHolding] = useState<boolean>(false);
+
+function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boolean; setVisible: () => void }) {
     const [submit, setSubmit] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const { nft, visible, setVisible } = props;
+    const { nft, visible, setVisible, setNft } = props;
+    const { signAndExecuteTransactionBlock } = suietUseWallet();
+    const solanaWallet = solanaUseWallet();
+    const solanaConnection = useConnection();
 
     const handleHold = async () => {
-        console.log(isHolding);
         setSubmit(true);
         if (
             nft?.contractAddress &&
@@ -36,17 +45,52 @@ function NftDialog(props: { nft: INft | null; visible: boolean; setVisible: () =
                 owner: nft?.owner,
             });
             setLoading(false);
+            setNft();
+        }
+        if (nft?.nftId && nft?.kioskId && nft?.nftType) {
+            setLoading(true);
+            console.log(nft);
+            const payRes = await SUI_NFT_CLIENT_INSTANCE.pay({ amount: 0.01 });
+            const burnRes = await SUI_NFT_CLIENT_INSTANCE.burnNFT({
+                nft: {
+                    nftId: nft.nftId,
+                    kioskId: nft.kioskId,
+                    nftType: nft.nftType,
+                },
+                transaction: payRes.transaction,
+            });
+            await signAndExecuteTransactionBlock({
+                transactionBlock: burnRes.transaction,
+            });
+            setLoading(false);
+            setNft();
+        }
+        if (nft?.solanaAccount && solanaWallet.publicKey) {
+            setLoading(true);
+            console.log(nft);
+            const payRes = await SOLANA_NFT_CLIENT_INSTANCE.pay({
+                amount: 0.01,
+                owner: solanaWallet.publicKey,
+            });
+            const burnRes = await SOLANA_NFT_CLIENT_INSTANCE.burnNFT({
+                owner: solanaWallet.publicKey,
+                nft: nft.solanaAccount,
+                transaction: payRes,
+            });
+
+            const transactionResult = solanaWallet.sendTransaction(burnRes, solanaConnection.connection);
+            console.log(transactionResult);
+            setLoading(false);
+            setNft();
         }
     };
 
     const handleMouseDown = () => {
-        setIsHolding(true);
         timeoutRef.current = setTimeout(() => handleHold(), 2000);
     };
 
     const handleMouseUp = (event: React.MouseEvent) => {
         event.preventDefault();
-        setIsHolding(false);
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }

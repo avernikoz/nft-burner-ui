@@ -10,6 +10,7 @@ interface NftProviderProps {
 interface INftController {
     getActiveNft: () => INft | null;
     setActiveNft: (nft: INft) => void;
+    activeNft: INft | null;
 }
 
 export const NftProvider: React.FC<NftProviderProps> = ({ children }) => {
@@ -22,6 +23,7 @@ export const NftProvider: React.FC<NftProviderProps> = ({ children }) => {
         setActiveNft: (nft: INft) => {
             setActiveNft(nft);
         },
+        activeNft,
     };
 
     return <NftContext.Provider value={nftController}>{children}</NftContext.Provider>;
