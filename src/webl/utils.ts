@@ -4,6 +4,10 @@ export function showError(errorText: string) {
     console.log(errorText);
 }
 
+export function MathAlignToPowerOf2(num: number): number {
+    return Math.pow(2, Math.ceil(Math.log2(num)));
+}
+
 export function MathGetVectorLength(vec2: Vector2) {
     return Math.sqrt(vec2.x * vec2.x + vec2.y * vec2.y);
 }

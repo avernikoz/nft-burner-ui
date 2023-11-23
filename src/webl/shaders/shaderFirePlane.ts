@@ -288,7 +288,12 @@ export function GetShaderSourceFireVisualizerVS() {
 			pos.xyz -= CameraDesc.xyz;
 
 			pos.xy *= CameraDesc.w;
+
+			//pos = vec3(VertexBuffer.xy, 0.0f);
+
 			pos.x /= ScreenRatio;
+			/* pos.xy *= 0.5f;
+			pos.x += 0.5f; */
 
 			gl_Position = vec4(pos.xy, 0.0, (1.f + pos.z));
 			vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range

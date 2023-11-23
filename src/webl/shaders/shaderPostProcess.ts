@@ -659,6 +659,24 @@ export function GetShaderSourceCombinerPassPS() {
 			// Add noise to the color
 			final.rgb += noise;
 
+			#if 1//ALIGNMENT DEBUG
+			if(ScreenRatio >= 1.0)
+			{
+				if(texCoords.x > 0.499 && texCoords.x < 0.501)
+				{
+					final.rgb = vec3(0.0, 1.0, 1.0);
+				}
+			}
+			else
+			{
+				if(texCoords.y > 0.499 && texCoords.y < 0.501)
+				{
+					final.rgb = vec3(0.0, 1.0, 1.0);
+				}
+			}
+			#endif
+			
+
 			OutColor = vec4(final.rgb, 1);
 		}`
     );

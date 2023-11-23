@@ -7,6 +7,8 @@ export enum ERenderingState {
     BurningReady,
     BurningNow,
     BurningFinished,
+    //===
+    NUM,
 }
 
 export class GRenderingStateMachine {

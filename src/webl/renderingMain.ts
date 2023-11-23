@@ -20,6 +20,7 @@ import {
     GAreAllTexturesLoaded,
 } from "./resourcesUtils";
 import {
+    AssignSceneDescription,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     AssignSceneDescriptions,
     EnableSceneDescUI,
@@ -27,6 +28,8 @@ import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     GSceneStateDescsArray,
     GScreenDesc,
+    InitializeSceneStateDescsArr,
+    UpdateSceneStateDescsArr,
 } from "./scene";
 import { CheckGL } from "./shaderUtils";
 import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
@@ -39,6 +42,7 @@ import { Vector2 } from "./types";
 import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     GTime,
+    MathAlignToPowerOf2,
     MathClamp,
     MathLerp,
     MathMapToRange,
@@ -173,9 +177,17 @@ const GPostProcessPasses: {
 
 //TODO: Backup texture for reallocation, to avoid flickering when window is resized
 function SetupBloomPostProcessPass(gl: WebGL2RenderingContext) {
-    //generate intermediate texture for Blur
-    //TODO: Specify target MIP resolution instead, and deduce MIP Index from it
-    //const TextureSizeForBloom = 128;
+    const desiredBloomTexSize = 64; //aligned to smallest screen side
+
+    const alignedRTSize = {
+        x: MathAlignToPowerOf2(GScreenDesc.RenderTargetSize.x),
+        y: MathAlignToPowerOf2(GScreenDesc.RenderTargetSize.y),
+    };
+
+    GPostProcessPasses.RenderTargetMIPForBloom = Math.log2(
+        (GScreenDesc.ScreenRatio < 1 ? alignedRTSize.x : alignedRTSize.y) / desiredBloomTexSize,
+    );
+
     const bloomTextureSize = {
         x: GScreenDesc.RenderTargetSize.x / Math.pow(2.0, GPostProcessPasses.RenderTargetMIPForBloom),
         y: GScreenDesc.RenderTargetSize.y / Math.pow(2.0, GPostProcessPasses.RenderTargetMIPForBloom),
@@ -529,8 +541,8 @@ export function RenderMain() {
         if (SpotlightPositionController.bIntersectionThisFrame) {
             //Control Spotlight
             const controllerPosNDC = {
-                x: SpotlightPositionController.Position.x / GScreenDesc.ScreenRatio,
-                y: SpotlightPositionController.Position.y,
+                x: SpotlightPositionController.PositionViewSpace.x / GScreenDesc.ScreenRatio,
+                y: SpotlightPositionController.PositionViewSpace.y,
             };
             const xRange = 3.0;
             const spotLightXMapped = MathMapToRange(controllerPosNDC.x, -1.0, 1.0, -xRange, xRange);
@@ -561,13 +573,15 @@ export function RenderMain() {
         }
     }
 
-    //Allocate SceneDesc for all Burning States
-    GSceneStateDescsArray[ERenderingState.BurningReady + 1] = GSceneStateDescsArray[ERenderingState.BurningReady];
-    GSceneStateDescsArray[ERenderingState.BurningReady + 2] = GSceneStateDescsArray[ERenderingState.BurningReady];
+    InitializeSceneStateDescsArr();
+    UpdateSceneStateDescsArr();
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
         if (gl !== null && GRenderTargets.FirePlaneTexture !== null && GPostProcessPasses.CopyPresemt !== null) {
+            const RenderStateMachine = GRenderingStateMachine.GetInstance();
+            const bNewRenderStateThisFrame = RenderStateMachine.bWasNewStateProcessed();
+
             //Handle possible resize
             const windowSizeCur = GetWindowSizeCurrent();
             if (canvas.width !== windowSizeCur.x || canvas.height !== windowSizeCur.y) {
@@ -575,12 +589,13 @@ export function RenderMain() {
                 OnWindowResize();
                 AllocateMainRenderTargets(gl);
                 SetupBloomPostProcessPass(gl);
+                UpdateSceneStateDescsArr();
+                if (RenderStateMachine.transitionParameter > 1.0) {
+                    AssignSceneDescription(GSceneStateDescsArray[RenderStateMachine.currentState]);
+                }
             }
 
             UpdateTime();
-
-            const RenderStateMachine = GRenderingStateMachine.GetInstance();
-            const bNewRenderStateThisFrame = RenderStateMachine.bWasNewStateProcessed();
 
             //Handle State transition if present
             if (RenderStateMachine.transitionParameter <= 1.0) {
@@ -597,6 +612,16 @@ export function RenderMain() {
 
             let newState = RenderStateMachine.currentState;
             if (RenderStateMachine.currentState == ERenderingState.Intro) {
+                //Connect wallet button position alignment
+                {
+                    if (GScreenDesc.ViewRatioXY.x > 1) {
+                        ConnectWalletButtonController.PositionViewSpace.x = -0.5 * GScreenDesc.ViewRatioXY.x;
+                        ConnectWalletButtonController.PositionViewSpace.y = 0.0;
+                    } else {
+                        ConnectWalletButtonController.PositionViewSpace.x = 0.0;
+                        ConnectWalletButtonController.PositionViewSpace.y = 0.5;
+                    }
+                }
                 ConnectWalletButtonController.OnUpdate();
                 if (ConnectWalletButtonController.bSelectedThisFrame) {
                     newState = ERenderingState.Inventory;
@@ -659,11 +684,16 @@ export function RenderMain() {
 
                     let t = FirePlaneAnimationController.YawInterpolationParameter;
                     const yawRange = { min: -Math.PI / 4, max: 0.0 };
+                    if (GScreenDesc.ScreenRatio < 1.0) {
+                        yawRange.min *= 0.25;
+                        yawRange.max = Math.abs(yawRange.min);
+                    }
                     GSceneDesc.FirePlane.OrientationEuler.yaw = MathLerp(yawRange.min, yawRange.max, t);
-                    //Apply pitch rotation based on user input pos
-                    //t = MathMapToRange(GUserInputDesc.InputPosNDCCur.y, -1.0, 1.0, 1.0, 0.0);
                     t = FirePlaneAnimationController.PitchInterpolationParameter;
                     const pitchRange = { min: -Math.PI / 13, max: Math.PI / 13 };
+                    if (GScreenDesc.ScreenRatio < 1.0) {
+                        pitchRange.min = 0.0;
+                    }
                     GSceneDesc.FirePlane.OrientationEuler.pitch = MathLerp(pitchRange.min, pitchRange.max, t);
                 } else {
                     GSceneDesc.FirePlane.PositionOffset.z = 0.0;
@@ -678,7 +708,7 @@ export function RenderMain() {
                 if (RenderStateMachine.bCanBurn) {
                     if (RenderStateMachine.currentState === ERenderingState.Intro) {
                         if (bNewRenderStateThisFrame) {
-                            FirePlanePass.ApplyFireAuto(gl, { x: 0.0, y: -0.5 }, 0.05);
+                            //FirePlanePass.ApplyFireAuto(gl, { x: 0.0, y: -0.5 }, 0.05);
                         }
                     } else {
                         if (RenderStateMachine.currentState !== ERenderingState.BurningFinished) {

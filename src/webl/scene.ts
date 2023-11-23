@@ -1,6 +1,7 @@
 //Objects positions are described in View Space, pre-Viewport Transform performed only on .x
 
 import { DrawUISingleton } from "./helpers/gui";
+import { ERenderingState } from "./states";
 import { MathLerp, MathLerpVec3, MathSmoothstep, MathVector3Negate, MathVector3Normalize } from "./utils";
 
 export const GScreenDesc = {
@@ -61,50 +62,81 @@ export type SceneStateDescription = {
     FloorHeight: number;
 };
 
-export const GSceneStateDescsArray = [
-    //Dummy
-    {
-        CameraPosition: { x: -1.6, y: 0.0, z: -3.61 },
-        SpotlightPosition: { x: -2.88, y: 1.57, z: -1.71 },
-        SpotlightFocusPosition: { x: 0, y: 1.03, z: 1.5 },
-        FloorHeight: -1,
-        CameraZoom: 2,
-    },
+export const GSceneStateDescsArray: SceneStateDescription[] = new Array(ERenderingState.NUM).fill({
+    CameraPosition: { x: 0, y: 0.0, z: -4.0 },
+    SpotlightPosition: { x: 0.0, y: 2.5, z: -1.0 },
+    SpotlightFocusPosition: { x: 0.0, y: 0.0, z: 1.5 },
+    FloorHeight: -1,
+    CameraZoom: 2,
+});
+
+export function InitializeSceneStateDescsArr() {
     //Intro
-    {
+    GSceneStateDescsArray[ERenderingState.Intro] = {
         CameraPosition: { x: -1.6, y: 0.0, z: -3.61 },
         SpotlightPosition: { x: -2.88, y: 1.57, z: -1.71 },
         SpotlightFocusPosition: { x: 0, y: 1.03, z: 1.5 },
         FloorHeight: -1,
         CameraZoom: 2,
-    },
+    };
+
     //Inventory
-    {
+    GSceneStateDescsArray[ERenderingState.Inventory] = {
         CameraPosition: { x: -1.5, y: 0.0, z: -6.0 },
         SpotlightPosition: { x: -1.43, y: -1.33, z: -1.0 },
         SpotlightFocusPosition: { x: 0, y: 1.0, z: 0.0 },
         FloorHeight: -2,
         CameraZoom: 4,
-    },
-    /* {
-        CameraPosition: { x: -1.23, y: 0.0, z: -2.5 },
-        SpotlightPosition: { x: -1.81, y: 1.65, z: -1.71 },
-        SpotlightFocusPosition: { x: 0, y: 0.03, z: 1.5 },
-        FloorHeight: -2,
-		CameraZoom : 2,
-    }, */
+    };
+
     //Burn
-    {
+    GSceneStateDescsArray[ERenderingState.BurningReady] = {
         CameraPosition: { x: 0, y: 0.0, z: -4.0 },
         SpotlightPosition: { x: 0.0, y: 2.5, z: -1.0 },
         SpotlightFocusPosition: { x: 0.0, y: 0.0, z: 1.5 },
         FloorHeight: -1,
         CameraZoom: 2,
-    },
-];
+    };
+    GSceneStateDescsArray[ERenderingState.BurningReady + 1] = GSceneStateDescsArray[ERenderingState.BurningReady];
+    GSceneStateDescsArray[ERenderingState.BurningReady + 2] = GSceneStateDescsArray[ERenderingState.BurningReady];
+}
+
+export function UpdateSceneStateDescsArr() {
+    //some states require camera offset and depth that depends on screen ratio:
+
+    function ComputeCameraOffsetForCurState(inDesiredScale: number, inState: ERenderingState) {
+        const cameraOffset = { x: 0.0, y: 0.0, z: 0.0 };
+        inDesiredScale *= GScreenDesc.ViewRatioXY.x > 1 ? 1.0 : 0.75;
+        cameraOffset.z = (1.0 / inDesiredScale) * GSceneStateDescsArray[inState].CameraZoom - 1;
+        if (GScreenDesc.ViewRatioXY.x > 1) {
+            cameraOffset.x = 0.5 / inDesiredScale;
+            GSceneStateDescsArray[inState].CameraPosition.x = -cameraOffset.x * GScreenDesc.ViewRatioXY.x;
+            GSceneStateDescsArray[inState].CameraPosition.y = 0.0;
+        } else {
+            cameraOffset.y = 0.5 / inDesiredScale;
+            GSceneStateDescsArray[inState].CameraPosition.y =
+                (inState === ERenderingState.Inventory ? -1.0 : 1.0) * cameraOffset.y * 1.0;
+            GSceneStateDescsArray[inState].CameraPosition.x = 0.0;
+        }
+
+        GSceneStateDescsArray[inState].CameraPosition.z = -cameraOffset.z;
+    }
+
+    //Intro
+    {
+        ComputeCameraOffsetForCurState(0.5, ERenderingState.Intro);
+    }
+
+    //Inventory
+    {
+        ComputeCameraOffsetForCurState(0.5, ERenderingState.Inventory);
+    }
+}
 
 export function AssignSceneDescription(inSceneDesc: SceneStateDescription): void {
-    GSceneDesc.Camera.Position = inSceneDesc.CameraPosition;
+    GSceneDesc.Camera.Position.x = inSceneDesc.CameraPosition.x;
+    GSceneDesc.Camera.Position.y = inSceneDesc.CameraPosition.y;
+    GSceneDesc.Camera.Position.z = inSceneDesc.CameraPosition.z;
     GSceneDesc.Camera.ZoomScale = inSceneDesc.CameraZoom;
     GSceneDesc.Spotlight.Position.x = inSceneDesc.SpotlightPosition.x;
     GSceneDesc.Spotlight.Position.y = inSceneDesc.SpotlightPosition.y;
