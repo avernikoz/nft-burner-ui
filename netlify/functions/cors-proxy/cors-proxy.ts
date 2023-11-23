@@ -2,6 +2,8 @@ import { Handler } from "@netlify/functions";
 import fetch from "node-fetch";
 
 // TODO: Add CORS for the CORS proxy
+// TODO: Add cache policy
+// TODO: Add custom URL for proxy
 
 export const handler: Handler = async (event, context) => {
     const rawUrl = event.rawUrl;
