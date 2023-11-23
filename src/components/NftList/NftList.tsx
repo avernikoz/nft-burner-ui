@@ -57,6 +57,9 @@ function NftList() {
                                 if (!ipfsHash) {
                                     ipfsHash = "../../assets/svg/empty.jpg";
                                 }
+                                if (ipfsHash.includes("https://")) {
+                                    ipfsHash = "http://localhost:8888/.netlify/functions/cors-proxy/" + ipfsHash;
+                                }
                                 if (ipfsHash.includes("ipfs://")) {
                                     ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
                                 }
@@ -84,6 +87,10 @@ function NftList() {
                                 if (!ipfsHash) {
                                     ipfsHash = "../../assets/svg/empty.jpg";
                                 }
+                                if (ipfsHash.includes("https://")) {
+                                    console.log(ipfsHash);
+                                    ipfsHash = "http://localhost:8888/.netlify/functions/cors-proxy/" + ipfsHash;
+                                }
                                 if (ipfsHash.includes("ipfs://")) {
                                     ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
                                 }
@@ -108,8 +115,12 @@ function NftList() {
                         }).then((data) => {
                             const convertedNfts = data.ownedNfts.map((nft, index) => {
                                 let ipfsHash = nft.rawMetadata?.image;
+
                                 if (!ipfsHash) {
                                     ipfsHash = "../../assets/svg/empty.jpg";
+                                }
+                                if (ipfsHash.includes("https://")) {
+                                    ipfsHash = "http://localhost:8888/.netlify/functions/cors-proxy/" + ipfsHash;
                                 }
                                 if (ipfsHash.includes("ipfs://")) {
                                     ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
@@ -138,6 +149,9 @@ function NftList() {
                                 let ipfsHash = nft.rawMetadata?.image;
                                 if (!ipfsHash) {
                                     ipfsHash = "../../assets/svg/empty.jpg";
+                                }
+                                if (ipfsHash.includes("https://")) {
+                                    ipfsHash = "http://localhost:8888/.netlify/functions/cors-proxy/" + ipfsHash;
                                 }
                                 if (ipfsHash.includes("ipfs://")) {
                                     ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
@@ -181,6 +195,9 @@ function NftList() {
                     console.log(nfts);
                     const convertedNfts = nfts.map((nft, index) => {
                         let ipfsHash = nft.url;
+                        if (ipfsHash.includes("https://")) {
+                            ipfsHash = "http://localhost:8888/.netlify/functions/cors-proxy/" + ipfsHash;
+                        }
                         if (ipfsHash.includes("ipfs://")) {
                             ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
                         }
@@ -218,7 +235,9 @@ function NftList() {
         wagmiAccount.isConnected,
         wagmiAccount.address,
         wagmiAccount.connector,
-        solanaWallet.publicKey,
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        solanaWallet.publicKey?.toString(),
+        solanaWallet.disconnect,
         toastController,
     ]);
 

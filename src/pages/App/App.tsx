@@ -29,6 +29,8 @@ function App() {
     }, []);
 
     useEffect(() => {
+        console.log(solanaWallet.connected, solanaWallet.publicKey);
+
         if (wagmiAccount.isConnected && wagmiAccount.address) {
             setConnected(true);
         } else if (solanaWallet.connected && solanaWallet.publicKey) {
@@ -40,11 +42,12 @@ function App() {
         }
     }, [
         solanaWallet.connected,
-        solanaWallet.publicKey,
         suietWallet.address,
         suietWallet.connected,
         wagmiAccount.address,
         wagmiAccount.isConnected,
+        solanaWallet.publicKey,
+        solanaWallet.disconnecting,
     ]);
 
     return (

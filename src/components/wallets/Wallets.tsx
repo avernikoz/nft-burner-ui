@@ -49,11 +49,16 @@ function Wallets() {
             await suietWallet.disconnect();
         }
         if (solanaWallet.connected) {
-            solanaWallet
+            solanaWallet.wallet?.adapter
                 .disconnect()
                 .then(() => {
+                    console.log(solanaWallet.publicKey);
+                    console.log(solanaWallet.connected);
                     solanaWallet.publicKey = null;
                     solanaWallet.connected = false;
+                    console.log(solanaWallet.publicKey);
+                    console.log(solanaWallet.connected);
+                    solanaWallet.disconnect();
                 })
                 .catch((error) => {
                     console.error("Failed to disconnect from Solana Wallet:", error);
@@ -206,6 +211,7 @@ function Wallets() {
             if (data.account) {
                 fetchBalance({
                     address: data.account,
+                    formatUnits: "ether",
                 }).then((balance) => {
                     connect({
                         id: data.account,
