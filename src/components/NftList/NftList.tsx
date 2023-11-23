@@ -19,6 +19,7 @@ import { FixedSizeGrid as Grid } from "react-window";
 // eslint-disable-next-line import/no-unresolved
 import { AutoSizer } from "react-virtualized";
 import { ToastContext } from "../ToastProvider/ToastProvider";
+import { NFT_IMAGES_CORS_PROXY_URL } from "../../config/proxy.config";
 
 function NftList() {
     const suietWallet = suietUseWallet();
@@ -38,7 +39,7 @@ function NftList() {
 
     useEffect(() => {
         try {
-            const proxy = process.env.REACT_CORS_PROXY_URL;
+            const proxy = NFT_IMAGES_CORS_PROXY_URL;
             if (wagmiAccount.isConnected && wagmiAccount.address && signer) {
                 setUserConnected(true);
                 setShowSpinner(true);
