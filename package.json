@@ -23,11 +23,12 @@
         "@babel/traverse": "7.23.2",
         "browserify-sign": "4.2.2",
         "styled-components": "^5",
-        "axios": "^1.6.0"
+        "axios": "^1.6.0",
+        "@mysten/sui.js": "0.41.1"
     },
     "dependencies": {
         "@avernikoz/nft-sdk": "2.0.3",
-        "@mysten/sui.js": "0.42.0",
+        "@mysten/sui.js": "0.41.1",
         "@rainbow-me/rainbowkit": "^1.1.1",
         "@solana/wallet-adapter-base": "^0.9.23",
         "@solana/wallet-adapter-react": "^0.15.35",
