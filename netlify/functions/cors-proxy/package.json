@@ -1,0 +1,21 @@
+{
+    "name": "cors-proxy",
+    "version": "1.0.0",
+    "description": "netlify functions:create - cors-proxy in typescript",
+    "main": "cors-proxy.ts",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "netlify",
+        "serverless",
+        "typescript"
+    ],
+    "author": "Netlify",
+    "license": "MIT",
+    "dependencies": {
+        "@netlify/functions": "^2.4.0",
+        "@types/node": "^18.0.0",
+        "typescript": "^5.3.2"
+    }
+}
