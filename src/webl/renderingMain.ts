@@ -761,6 +761,7 @@ export function RenderMain() {
                 } else if (RenderStateMachine.currentState === ERenderingState.BurningNow) {
                     if (CGConstants.CurFireValueCPU < 0.05) {
                         GRenderingStateMachine.SetRenderingState(ERenderingState.BurningFinished);
+                        //all callback calls here...
                     }
                 }
 
