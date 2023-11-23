@@ -44,6 +44,7 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 nftTokenId: nft?.nftTokenId,
                 owner: nft?.owner,
             });
+            setVisible();
             setLoading(false);
             setNft();
         }
@@ -62,6 +63,7 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
             await signAndExecuteTransactionBlock({
                 transactionBlock: burnRes.transaction,
             });
+            setVisible();
             setLoading(false);
             setNft();
         }
@@ -78,8 +80,9 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 transaction: payRes,
             });
 
-            const transactionResult = solanaWallet.sendTransaction(burnRes, solanaConnection.connection);
+            const transactionResult = await solanaWallet.sendTransaction(burnRes, solanaConnection.connection);
             console.log(transactionResult);
+            setVisible();
             setLoading(false);
             setNft();
         }

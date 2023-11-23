@@ -220,7 +220,6 @@ function NftList() {
         wagmiAccount.connector,
         solanaWallet.publicKey,
         toastController,
-        NftController?.setActiveNft,
     ]);
 
     // const itemTemplate = (item: INft) => {
