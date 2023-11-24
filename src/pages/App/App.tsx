@@ -52,18 +52,17 @@ function App() {
         solanaWallet.publicKey,
         solanaWallet.disconnecting,
     ]);
-
+    const downloadRecording = () => {
+        const link = document.createElement("a");
+        if (mediaBlobUrl) {
+            link.href = mediaBlobUrl;
+            link.download = "screen_recording.webm";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
     useEffect(() => {
-        const downloadRecording = () => {
-            const link = document.createElement("a");
-            if (mediaBlobUrl) {
-                link.href = mediaBlobUrl;
-                link.download = "screen_recording.webm";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        };
         if (NftController?.nftStatus === ENftBurnStatus.BURNED) {
             startRecording();
             setTimeout(() => {
@@ -94,6 +93,9 @@ function App() {
                             <div className="half">
                                 <NftList></NftList>
                                 <Control></Control>
+                                <button onClick={startRecording}>Start Recording</button>
+                                <button onClick={stopRecording}>Stop Recording</button>
+                                <button onClick={downloadRecording}>Download Recording</button>
                             </div>
                         </BodyContainer>
                     )}
