@@ -659,7 +659,7 @@ export function GetShaderSourceCombinerPassPS() {
 			// Add noise to the color
 			final.rgb += noise;
 
-			#if 1//ALIGNMENT DEBUG
+			#if 0//ALIGNMENT DEBUG
 			if(ScreenRatio >= 1.0)
 			{
 				if(texCoords.x > 0.499 && texCoords.x < 0.501)

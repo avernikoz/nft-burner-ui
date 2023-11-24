@@ -18,6 +18,7 @@ import {
     CreateFramebufferWithAttachment,
     CreateTextureRT,
     GAreAllTexturesLoaded,
+    ReadPixelsAsync,
 } from "./resourcesUtils";
 import {
     AssignSceneDescription,
@@ -437,14 +438,22 @@ export function RenderMain() {
     DrawUI(GSettings);
 
     //CurFire CPU
-    const CGConstants = {
-        CurFireValueCPUArr: new Uint16Array(1),
+    const GGpuReadData = {
+        CurFireValueCPUArrBuffer: new Uint16Array(1),
         CurFireValueCPU: 0.0,
+        ReadbackBuffer: gl.createBuffer(),
+        InitReadbackBuffer: function () {
+            gl.bindBuffer(gl.PIXEL_PACK_BUFFER, this.ReadbackBuffer);
+            gl.bufferData(gl.PIXEL_PACK_BUFFER, this.CurFireValueCPUArrBuffer.byteLength, gl.STREAM_READ);
+            gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+        },
     };
+    GGpuReadData.InitReadbackBuffer();
+
     {
         const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
         if (GDatGUI) {
-            GDatGUI.add(CGConstants, "CurFireValueCPU").listen().step(0.001);
+            GDatGUI.add(GGpuReadData, "CurFireValueCPU").listen().step(0.001);
         }
     }
 
@@ -743,30 +752,21 @@ export function RenderMain() {
                 gl.generateMipmap(gl.TEXTURE_2D);
                 BackGroundRenderPass.PointLights.Update(gl, curFireTexture);
 
-                //read cur fire value
-                if (1) {
-                    const curFireTextureFramebuffer = FirePlanePass.GetCurFireTextureHighestMipFramebuffer();
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, curFireTextureFramebuffer);
-                    //CGConstants.CurFireValueCPUArr = new Float32Array(1);
-                    gl.readPixels(0, 0, 1, 1, gl.RED, gl.HALF_FLOAT, CGConstants.CurFireValueCPUArr, 0);
-                    CGConstants.CurFireValueCPU = uint16ToFloat16(CGConstants.CurFireValueCPUArr.at(0)!);
-                }
-
                 //Change states depending on cur temperature
                 if (
                     RenderStateMachine.currentState === ERenderingState.BurningReady &&
-                    CGConstants.CurFireValueCPU > 0.05
+                    GGpuReadData.CurFireValueCPU > 0.05
                 ) {
                     GRenderingStateMachine.SetRenderingState(ERenderingState.BurningNow);
                 } else if (RenderStateMachine.currentState === ERenderingState.BurningNow) {
-                    if (CGConstants.CurFireValueCPU < 0.05) {
+                    if (GGpuReadData.CurFireValueCPU < 0.05) {
                         GRenderingStateMachine.SetRenderingState(ERenderingState.BurningFinished);
                         //all callback calls here...
                     }
                 }
 
-                if (CGConstants.CurFireValueCPU > 0.01) {
-                    const curBurnVolume = MathMapToRange(CGConstants.CurFireValueCPU, 0.0, 2.0, 0.3, 1.0);
+                if (GGpuReadData.CurFireValueCPU > 0.01) {
+                    const curBurnVolume = MathMapToRange(GGpuReadData.CurFireValueCPU, 0.0, 2.0, 0.3, 1.0);
                     GAudioEngine.PlayBurningSound(curBurnVolume);
                 }
 
@@ -937,6 +937,25 @@ export function RenderMain() {
             GUserInputDesc.bPointerInputPressedPrevFrame = GUserInputDesc.bPointerInputPressedThisFrame;
 
             RenderStateMachine.MarkNewStateProcessed();
+
+            //read cur fire value
+            {
+                const curFireTextureFramebuffer = FirePlanePass.GetCurFireTextureHighestMipFramebuffer();
+                gl.bindFramebuffer(gl.FRAMEBUFFER, curFireTextureFramebuffer);
+                //gl.readPixels(0, 0, 1, 1, gl.RED, gl.HALF_FLOAT, GGpuReadData.CurFireValueCPUArrBuffer, 0);
+                ReadPixelsAsync(
+                    gl,
+                    GGpuReadData.ReadbackBuffer!,
+                    0,
+                    0,
+                    1,
+                    1,
+                    gl.RED,
+                    gl.HALF_FLOAT,
+                    GGpuReadData.CurFireValueCPUArrBuffer,
+                );
+                GGpuReadData.CurFireValueCPU = uint16ToFloat16(GGpuReadData.CurFireValueCPUArrBuffer.at(0)!);
+            }
 
             if (gl !== null) {
                 if (CheckGL(gl) && GSettings.bRunSimulation) {
