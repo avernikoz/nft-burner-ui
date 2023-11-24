@@ -15,6 +15,7 @@ import { RenderMain } from "../../webl/renderingMain";
 import { NftContext } from "../../components/NftProvider/NftProvider";
 import { ENftBurnStatus } from "../../utils/types";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
+import { useReactMediaRecorder } from "react-media-recorder";
 
 function App() {
     const suietWallet = suietUseWallet();
@@ -22,6 +23,7 @@ function App() {
     const wagmiAccount = useWagmiAccount();
     const [showUI, setShowUI] = useState<boolean>(false);
     const NftController = useContext(NftContext);
+    const { startRecording, stopRecording, mediaBlobUrl } = useReactMediaRecorder({ screen: true });
 
     useEffect(() => {
         if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
@@ -52,10 +54,26 @@ function App() {
     ]);
 
     useEffect(() => {
+        const downloadRecording = () => {
+            const link = document.createElement("a");
+            if (mediaBlobUrl) {
+                link.href = mediaBlobUrl;
+                link.download = "screen_recording.webm";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        };
         if (NftController?.nftStatus === ENftBurnStatus.BURNED) {
+            startRecording();
+            setTimeout(() => {
+                stopRecording();
+                downloadRecording();
+            }, 15000);
             GRenderingStateMachine.SetRenderingState(ERenderingState.Burning);
             setShowUI(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [NftController?.nftStatus]);
 
     return (
