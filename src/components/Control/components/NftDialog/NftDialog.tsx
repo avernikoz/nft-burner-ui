@@ -35,7 +35,10 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
             (nft.contractType == NFTContractStandard.ERC1155 || nft.contractType == NFTContractStandard.ERC721)
         ) {
             setLoading(true);
-            await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.pay({ network: nft.evm, amount: 0.0001 });
+            const payTransaction = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.pay({ network: nft.evm, amount: 0.01 });
+            console.log(payTransaction);
+
+            await nft.owner.sendTransaction(payTransaction);
             await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.burnNFT({
                 collection: {
                     contractAddress: nft?.contractAddress,
@@ -44,6 +47,7 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 nftTokenId: nft?.nftTokenId,
                 owner: nft?.owner,
             });
+
             setVisible();
             setLoading(false);
             setNft();
