@@ -4,15 +4,15 @@ import { styled, keyframes } from "styled-components";
 
 export const StyledDialog = styled(Dialog)`
     .p-dialog-header {
-        /* background-color: #8d8d8d; */
-        /* color: white; */
+        background-color: #8d8d8d;
+        color: white;
     }
     .p-dialog-content {
-        /* background-color: #505050; */
+        background-color: #505050;
         display: flex;
         flex-direction: column;
         align-items: center;
-        /* color: white; */
+        color: white;
 
         img {
             border-radius: 10px;
@@ -22,13 +22,15 @@ export const StyledDialog = styled(Dialog)`
         p {
             font-size: 18px;
             margin: 10px 0;
+            color: white;
         }
         .card {
             margin: 0.5rem;
             padding: 0.5rem;
             border-radius: 10px;
-            border: 1px #494949 solid;
+            border: 1px #adadad solid;
             min-width: 250px;
+            color: white;
         }
     }
 

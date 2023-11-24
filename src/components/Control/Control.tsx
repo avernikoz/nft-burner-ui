@@ -4,7 +4,7 @@ import { ReactComponent as TwitchLogo } from "../../assets/svg/twitch.svg";
 import { useContext, useEffect, useState } from "react";
 import NftDialog from "./components/NftDialog/NftDialog";
 import { NftContext } from "../NftProvider/NftProvider";
-import { INft } from "../../utils/types";
+import { ENftBurnStatus, INft } from "../../utils/types";
 
 function Control() {
     const [visible, setVisible] = useState<boolean>(false);
@@ -19,6 +19,7 @@ function Control() {
     }, [nft]);
 
     useEffect(() => {
+        console.log(NftController?.activeNft);
         setNft(NftController?.activeNft ?? null);
     }, [NftController?.activeNft]);
 
@@ -41,7 +42,7 @@ function Control() {
                             setVisible(false);
                         }}
                         setNft={() => {
-                            setNft(null);
+                            NftController?.setNftStatus(ENftBurnStatus.BURNED);
                         }}
                     ></NftDialog>
                 </div>

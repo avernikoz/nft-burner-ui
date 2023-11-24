@@ -9,6 +9,7 @@ import "primereact/resources/themes/lara-light-indigo/theme.css";
 import { SolanaWalletContext } from "./context/SolanaWalletContext";
 import { EVMWalletContext } from "./context/EVMWalletContext";
 import { SuiWalletContext } from "./context/SuiWalletContext";
+import { NftProvider } from "./components/NftProvider/NftProvider";
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
@@ -19,7 +20,9 @@ root.render(
         <SolanaWalletContext>
             <EVMWalletContext>
                 <SuiWalletContext>
-                    <App />
+                    <NftProvider>
+                        <App />
+                    </NftProvider>
                 </SuiWalletContext>
             </EVMWalletContext>
         </SolanaWalletContext>

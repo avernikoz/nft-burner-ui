@@ -9,6 +9,12 @@ export enum ALLOWED_EVM_CHAINS {
     Arbitrum = "Arbitrum",
 }
 
+export enum ENftBurnStatus {
+    BURNED = "burned",
+    SELECTED = "selected",
+    EPMTY = "empty",
+}
+
 export interface INft {
     id?: number;
     name: string;

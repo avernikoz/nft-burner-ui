@@ -36,7 +36,6 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
         ) {
             setLoading(true);
             const payTransaction = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.pay({ network: nft.evm, amount: 0.01 });
-            console.log(payTransaction);
 
             await nft.owner.sendTransaction(payTransaction);
             await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.burnNFT({
@@ -73,7 +72,6 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
         }
         if (nft?.solanaAccount && solanaWallet.publicKey) {
             setLoading(true);
-            console.log(nft);
             const payRes = await SOLANA_NFT_CLIENT_INSTANCE.pay({
                 amount: 0.01,
                 owner: solanaWallet.publicKey,
@@ -84,8 +82,7 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 transaction: payRes,
             });
 
-            const transactionResult = await solanaWallet.sendTransaction(burnRes, solanaConnection.connection);
-            console.log(transactionResult);
+            await solanaWallet.sendTransaction(burnRes, solanaConnection.connection);
             setVisible();
             setLoading(false);
             setNft();

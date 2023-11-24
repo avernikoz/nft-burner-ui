@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { useAccount as useWagmiAccount } from "wagmi";
@@ -11,14 +11,17 @@ import { ToastProvider } from "../../components/ToastProvider/ToastProvider";
 import { GlobalStyles } from "../../config/globalStyles";
 import NftList from "../../components/NftList/NftList";
 import Control from "../../components/Control/Control";
-import { NftProvider } from "../../components/NftProvider/NftProvider";
 import { RenderMain } from "../../webl/renderingMain";
+import { NftContext } from "../../components/NftProvider/NftProvider";
+import { ENftBurnStatus } from "../../utils/types";
+import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 
 function App() {
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const wagmiAccount = useWagmiAccount();
-    const [connected, setConnected] = useState<boolean>(false);
+    const [showUI, setShowUI] = useState<boolean>(false);
+    const NftController = useContext(NftContext);
 
     useEffect(() => {
         if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
@@ -29,16 +32,14 @@ function App() {
     }, []);
 
     useEffect(() => {
-        console.log(solanaWallet.connected, solanaWallet.publicKey);
-
         if (wagmiAccount.isConnected && wagmiAccount.address) {
-            setConnected(true);
+            setShowUI(true);
         } else if (solanaWallet.connected && solanaWallet.publicKey) {
-            setConnected(true);
+            setShowUI(true);
         } else if (suietWallet.connected && suietWallet.address) {
-            setConnected(true);
+            setShowUI(true);
         } else {
-            setConnected(false);
+            setShowUI(false);
         }
     }, [
         solanaWallet.connected,
@@ -50,30 +51,35 @@ function App() {
         solanaWallet.disconnecting,
     ]);
 
+    useEffect(() => {
+        if (NftController?.nftStatus === ENftBurnStatus.BURNED) {
+            GRenderingStateMachine.SetRenderingState(ERenderingState.Burning);
+            setShowUI(false);
+        }
+    }, [NftController?.nftStatus]);
+
     return (
         <>
             <GlobalStyles />
 
             <ToastProvider>
-                <NftProvider>
-                    <div className="App">
-                        <div className="WalletConnectionHeader">
-                            <Wallets />
-                        </div>
-                        {connected && (
-                            <BodyContainer>
-                                <div className="half">
-                                    <NftList></NftList>
-                                    <Control></Control>
-                                </div>
-                            </BodyContainer>
-                        )}
-
-                        <Footer>
-                            <FullScreenButton />
-                        </Footer>
+                <div className="App">
+                    <div className="WalletConnectionHeader">
+                        <Wallets />
                     </div>
-                </NftProvider>
+                    {showUI && (
+                        <BodyContainer>
+                            <div className="half">
+                                <NftList></NftList>
+                                <Control></Control>
+                            </div>
+                        </BodyContainer>
+                    )}
+
+                    <Footer>
+                        <FullScreenButton />
+                    </Footer>
+                </div>
             </ToastProvider>
             <canvas id="demo-canvas">
                 Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
