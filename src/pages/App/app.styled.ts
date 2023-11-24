@@ -27,6 +27,6 @@ export const BodyContainer = styled.div`
         border: 1px solid #acacac;
         border-radius: 15px;
         height: 80vh;
-        width: 100%;
+        max-width: 650px;
     }
 `;

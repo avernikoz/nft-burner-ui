@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { FillButton, StyledDialog } from "./NftDialog.styled";
 import { ProgressBar } from "primereact/progressbar";
 import { INft } from "../../../../utils/types";
@@ -9,6 +9,7 @@ import {
     SUI_NFT_CLIENT_INSTANCE,
 } from "../../../../config/nft.config";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
+import { ToastContext } from "../../../ToastProvider/ToastProvider";
 
 export enum NFTContractStandard {
     ERC1155 = "ERC1155",
@@ -23,69 +24,79 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
     const { signAndExecuteTransactionBlock } = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const solanaConnection = useConnection();
+    const toastController = useContext(ToastContext);
 
     const handleHold = async () => {
         setSubmit(true);
-        if (
-            nft?.contractAddress &&
-            nft?.contractType &&
-            nft?.nftTokenId &&
-            nft?.owner &&
-            nft?.evm &&
-            (nft.contractType == NFTContractStandard.ERC1155 || nft.contractType == NFTContractStandard.ERC721)
-        ) {
-            setLoading(true);
-            const payTransaction = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.pay({ network: nft.evm, amount: 0.01 });
+        try {
+            if (
+                nft?.contractAddress &&
+                nft?.contractType &&
+                nft?.nftTokenId &&
+                nft?.owner &&
+                nft?.evm &&
+                (nft.contractType == NFTContractStandard.ERC1155 || nft.contractType == NFTContractStandard.ERC721)
+            ) {
+                setLoading(true);
+                const payTransaction = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.pay({ network: nft.evm, amount: 0.01 });
 
-            await nft.owner.sendTransaction(payTransaction);
-            await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.burnNFT({
-                collection: {
-                    contractAddress: nft?.contractAddress,
-                    contractType: nft?.contractType,
-                },
-                nftTokenId: nft?.nftTokenId,
-                owner: nft?.owner,
-            });
+                await nft.owner.sendTransaction(payTransaction);
+                await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.burnNFT({
+                    collection: {
+                        contractAddress: nft?.contractAddress,
+                        contractType: nft?.contractType,
+                    },
+                    nftTokenId: nft?.nftTokenId,
+                    owner: nft?.owner,
+                });
 
-            setVisible();
-            setLoading(false);
-            setNft();
-        }
-        if (nft?.nftId && nft?.kioskId && nft?.nftType) {
-            setLoading(true);
-            console.log(nft);
-            const payRes = await SUI_NFT_CLIENT_INSTANCE.pay({ amount: 0.01 });
-            const burnRes = await SUI_NFT_CLIENT_INSTANCE.burnNFT({
-                nft: {
-                    nftId: nft.nftId,
-                    kioskId: nft.kioskId,
-                    nftType: nft.nftType,
-                },
-                transaction: payRes.transaction,
-            });
-            await signAndExecuteTransactionBlock({
-                transactionBlock: burnRes.transaction,
-            });
-            setVisible();
-            setLoading(false);
-            setNft();
-        }
-        if (nft?.solanaAccount && solanaWallet.publicKey) {
-            setLoading(true);
-            const payRes = await SOLANA_NFT_CLIENT_INSTANCE.pay({
-                amount: 0.01,
-                owner: solanaWallet.publicKey,
-            });
-            const burnRes = await SOLANA_NFT_CLIENT_INSTANCE.burnNFT({
-                owner: solanaWallet.publicKey,
-                nft: nft.solanaAccount,
-                transaction: payRes,
-            });
+                setVisible();
+                setLoading(false);
+                setNft();
+            }
+            if (nft?.nftId && nft?.kioskId && nft?.nftType) {
+                setLoading(true);
+                console.log(nft);
+                const payRes = await SUI_NFT_CLIENT_INSTANCE.pay({ amount: 0.01 });
+                const burnRes = await SUI_NFT_CLIENT_INSTANCE.burnNFT({
+                    nft: {
+                        nftId: nft.nftId,
+                        kioskId: nft.kioskId,
+                        nftType: nft.nftType,
+                    },
+                    transaction: payRes.transaction,
+                });
+                await signAndExecuteTransactionBlock({
+                    transactionBlock: burnRes.transaction,
+                });
+                setVisible();
+                setLoading(false);
+                setNft();
+            }
+            if (nft?.solanaAccount && solanaWallet.publicKey) {
+                setLoading(true);
+                const payRes = await SOLANA_NFT_CLIENT_INSTANCE.pay({
+                    amount: 0.01,
+                    owner: solanaWallet.publicKey,
+                });
+                const burnRes = await SOLANA_NFT_CLIENT_INSTANCE.burnNFT({
+                    owner: solanaWallet.publicKey,
+                    nft: nft.solanaAccount,
+                    transaction: payRes,
+                });
 
-            await solanaWallet.sendTransaction(burnRes, solanaConnection.connection);
-            setVisible();
-            setLoading(false);
-            setNft();
+                await solanaWallet.sendTransaction(burnRes, solanaConnection.connection);
+
+                setVisible();
+                setLoading(false);
+                setNft();
+            }
+        } catch (error) {
+            if (error instanceof Error) {
+                toastController?.showError("Failed to connect: " + error.message);
+            } else {
+                toastController?.showError("Failed to connect: " + error);
+            }
         }
     };
 

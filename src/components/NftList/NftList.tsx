@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
-import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
+import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { useAccount } from "wagmi";
 import {
     ALCHEMY_MULTICHAIN_CLIENT_INSTANCE,
@@ -25,7 +25,6 @@ import { List } from "./NftList.styled";
 function NftList() {
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
-    const solanaConnection = useConnection();
     const signer = useEthersSigner();
     const [NFTList, setNFTList] = useState<INft[]>([]);
     const wagmiAccount = useAccount();
@@ -38,11 +37,11 @@ function NftList() {
     const handleItemClick = (nft: INft) => {
         setActiveNft(nft.id ?? null);
         NftController?.setActiveNft(nft);
+        NftController?.setNftStatus(ENftBurnStatus.SELECTED);
     };
 
     useEffect(() => {
         try {
-            console.log(NftController?.nftStatus);
             if (
                 NftController?.nftStatus === ENftBurnStatus.BURNED ||
                 NftController?.nftStatus === ENftBurnStatus.EPMTY

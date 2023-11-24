@@ -1,4 +1,4 @@
-import { createContext, useRef, useState } from "react";
+import { createContext, useState } from "react";
 import { ENftBurnStatus, INft } from "../../utils/types";
 
 export const NftContext = createContext<INftController | null>(null);
@@ -17,21 +17,21 @@ interface INftController {
 
 export const NftProvider: React.FC<NftProviderProps> = ({ children }) => {
     const [nftStatus, setNftStatus] = useState<ENftBurnStatus>(ENftBurnStatus.EPMTY);
-    const activeNft = useRef<INft | null>(null);
+    const [activeNft, setActiveNft] = useState<INft | null>(null);
 
     const nftController = {
         getActiveNft: () => {
-            return activeNft.current;
+            return activeNft;
         },
         setActiveNft: (nft: INft) => {
-            console.log(nft);
-
-            activeNft.current = nft;
+            setActiveNft(nft);
         },
-        activeNft: activeNft.current,
+        activeNft: activeNft,
         nftStatus,
         setNftStatus: (nft: ENftBurnStatus) => {
-            setNftStatus(nft);
+            if (nftStatus !== nft) {
+                setNftStatus(nft);
+            }
         },
     };
 

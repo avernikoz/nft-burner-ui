@@ -65,7 +65,11 @@ function App() {
             <ToastProvider>
                 <div className="App">
                     <div className="WalletConnectionHeader">
-                        <Wallets />
+                        <Wallets
+                            hideUI={() => {
+                                setShowUI(false);
+                            }}
+                        />
                     </div>
                     {showUI && (
                         <BodyContainer>

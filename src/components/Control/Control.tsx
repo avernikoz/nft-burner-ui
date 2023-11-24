@@ -13,13 +13,6 @@ function Control() {
     const NftController = useContext(NftContext);
 
     useEffect(() => {
-        if (!nft) {
-            setNft(null);
-        }
-    }, [nft]);
-
-    useEffect(() => {
-        console.log(NftController?.activeNft);
         setNft(NftController?.activeNft ?? null);
     }, [NftController?.activeNft]);
 

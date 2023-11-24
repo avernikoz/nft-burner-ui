@@ -12,7 +12,6 @@ export const Card = styled.div`
     width: 200px;
     height: 220px;
     position: relative;
-    border: 1px solid #ccc;
     border-radius: 10px;
     overflow: hidden;
     margin: auto;

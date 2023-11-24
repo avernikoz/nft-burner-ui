@@ -18,7 +18,7 @@ import { createMenuItems } from "./variables";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 
-function Wallets() {
+function Wallets(props: { hideUI: () => void }) {
     const [visible, setVisible] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
     const [activeRainbowConnector, setActiveRainbowConnector] = useState<Connector | null>(null);
@@ -52,13 +52,9 @@ function Wallets() {
             solanaWallet.wallet?.adapter
                 .disconnect()
                 .then(() => {
-                    console.log(solanaWallet.publicKey);
-                    console.log(solanaWallet.connected);
-                    solanaWallet.publicKey = null;
                     solanaWallet.connected = false;
-                    console.log(solanaWallet.publicKey);
-                    console.log(solanaWallet.connected);
-                    solanaWallet.disconnect();
+                    solanaWallet.publicKey = null;
+                    props.hideUI();
                 })
                 .catch((error) => {
                     console.error("Failed to disconnect from Solana Wallet:", error);
@@ -67,7 +63,7 @@ function Wallets() {
 
         setActiveRainbowConnector(null);
         setAccount(null);
-    }, [wagmiAccount.isConnected, suietWallet, solanaWallet]);
+    }, [wagmiAccount.isConnected, suietWallet, solanaWallet, props]);
 
     useEffect(() => {
         // Handle disconnect wallet in case wallet `A` was connected and then user
