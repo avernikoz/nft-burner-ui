@@ -16,11 +16,24 @@ function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: ()
             props.onClick();
         }
     };
+
+    const handleImageError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+        const target = event.target as HTMLImageElement;
+        target.onerror = null;
+        target.src = "path_to_default_image";
+    };
+
     return (
         <Card className={props.isActive ? "active" : ""} onClick={handleCardClick}>
             {/* {props.isActive ? <BurnEffect /> : null} */}
             {props.isActive ? <FireParticles /> : null}
-            <CardImage ref={imgRef} src={item.logoURI} alt={item.name} crossOrigin="anonymous" />
+            <CardImage
+                ref={imgRef}
+                src={item.logoURI}
+                alt={item.name}
+                crossOrigin="anonymous"
+                onError={handleImageError}
+            />
             <CardTitle>{item.name}</CardTitle>
         </Card>
     );

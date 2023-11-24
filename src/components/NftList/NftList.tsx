@@ -41,6 +41,19 @@ function NftList() {
         NftController?.setNftStatus(ENftBurnStatus.SELECTED);
     };
 
+    const checkImageExists = (imageUrl: string) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = function () {
+                resolve(true);
+            };
+            img.onerror = function () {
+                reject(false);
+            };
+            img.src = imageUrl;
+        });
+    };
+
     useEffect(() => {
         try {
             if (
@@ -52,7 +65,6 @@ function NftList() {
                     setUserConnected(true);
                     setShowSpinner(true);
                     wagmiAccount.connector?.getChainId().then((id) => {
-                        setShowSpinner(false);
                         if (id === mainnet.id) {
                             ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
                                 network: evm.ALLOWED_EVM_CHAINS.Ethereum,
@@ -80,6 +92,7 @@ function NftList() {
                                         evm: ALLOWED_EVM_CHAINS.Ethereum,
                                     };
                                 });
+                                setShowSpinner(false);
                                 setNFTList(convertedNfts);
                             });
                         }
@@ -88,7 +101,7 @@ function NftList() {
                                 network: evm.ALLOWED_EVM_CHAINS.Polygon,
                                 owner: signer,
                             }).then((data) => {
-                                const convertedNfts = data.ownedNfts.map((nft, index) => {
+                                let convertedNfts = data.ownedNfts.map((nft, index) => {
                                     let ipfsHash = nft.rawMetadata?.image;
                                     if (!ipfsHash) {
                                         ipfsHash = "../../assets/svg/empty.jpg";
@@ -110,7 +123,16 @@ function NftList() {
                                         evm: ALLOWED_EVM_CHAINS.Polygon,
                                     };
                                 });
-                                setNFTList(convertedNfts);
+                                const promises = convertedNfts.map((nft) => {
+                                    return checkImageExists(nft.logoURI)
+                                        .then(() => true)
+                                        .catch(() => false);
+                                });
+                                Promise.all(promises).then((results) => {
+                                    convertedNfts = convertedNfts.filter((nft, index) => results[index]);
+                                    setNFTList(convertedNfts);
+                                    setShowSpinner(false);
+                                });
                             });
                         }
                         if (id === optimism.id) {
@@ -142,6 +164,7 @@ function NftList() {
                                         evm: ALLOWED_EVM_CHAINS.Optimism,
                                     };
                                 });
+                                setShowSpinner(false);
                                 setNFTList(convertedNfts);
                             });
                         }
@@ -173,6 +196,7 @@ function NftList() {
                                         evm: ALLOWED_EVM_CHAINS.Arbitrum,
                                     };
                                 });
+                                setShowSpinner(false);
                                 setNFTList(convertedNfts);
                             });
                         }
