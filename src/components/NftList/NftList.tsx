@@ -21,6 +21,7 @@ import { NftContext } from "../NftProvider/NftProvider";
 import NftItem from "../NftItem/NftItem";
 import { INft, ALLOWED_EVM_CHAINS, ENftBurnStatus } from "../../utils/types";
 import { List } from "./NftList.styled";
+import { NFT_IMAGES_CORS_PROXY_URL } from "../../config/proxy.config";
 
 function NftList() {
     const suietWallet = suietUseWallet();
@@ -46,6 +47,7 @@ function NftList() {
                 NftController?.nftStatus === ENftBurnStatus.BURNED ||
                 NftController?.nftStatus === ENftBurnStatus.EPMTY
             ) {
+                const proxy = NFT_IMAGES_CORS_PROXY_URL;
                 if (wagmiAccount.isConnected && wagmiAccount.address && signer) {
                     setUserConnected(true);
                     setShowSpinner(true);
@@ -92,8 +94,7 @@ function NftList() {
                                         ipfsHash = "../../assets/svg/empty.jpg";
                                     }
                                     if (ipfsHash.includes("https://")) {
-                                        console.log(ipfsHash);
-                                        ipfsHash = "http://localhost:8888/.netlify/functions/cors-proxy/" + ipfsHash;
+                                        ipfsHash = proxy + ipfsHash;
                                     }
                                     if (ipfsHash.includes("ipfs://")) {
                                         ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
@@ -124,7 +125,7 @@ function NftList() {
                                         ipfsHash = "../../assets/svg/empty.jpg";
                                     }
                                     if (ipfsHash.includes("https://")) {
-                                        ipfsHash = "http://localhost:8888/.netlify/functions/cors-proxy/" + ipfsHash;
+                                        ipfsHash = proxy + ipfsHash;
                                     }
                                     if (ipfsHash.includes("ipfs://")) {
                                         ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
@@ -155,7 +156,7 @@ function NftList() {
                                         ipfsHash = "../../assets/svg/empty.jpg";
                                     }
                                     if (ipfsHash.includes("https://")) {
-                                        ipfsHash = "http://localhost:8888/.netlify/functions/cors-proxy/" + ipfsHash;
+                                        ipfsHash = proxy + ipfsHash;
                                     }
                                     if (ipfsHash.includes("ipfs://")) {
                                         ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
@@ -200,7 +201,7 @@ function NftList() {
                         const convertedNfts = nfts.map((nft, index) => {
                             let ipfsHash = nft.url;
                             if (ipfsHash.includes("https://")) {
-                                ipfsHash = "http://localhost:8888/.netlify/functions/cors-proxy/" + ipfsHash;
+                                ipfsHash = proxy + ipfsHash;
                             }
                             if (ipfsHash.includes("ipfs://")) {
                                 ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
