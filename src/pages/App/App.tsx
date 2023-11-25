@@ -23,7 +23,8 @@ function App() {
     const wagmiAccount = useWagmiAccount();
     const [showUI, setShowUI] = useState<boolean>(false);
     const NftController = useContext(NftContext);
-    const { startRecording, stopRecording, mediaBlobUrl } = useReactMediaRecorder({ screen: true });
+    const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRecorder({ screen: true });
+    const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
 
     useEffect(() => {
         if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
@@ -52,28 +53,25 @@ function App() {
         solanaWallet.publicKey,
         solanaWallet.disconnecting,
     ]);
-    const downloadRecording = () => {
-        const link = document.createElement("a");
-        if (mediaBlobUrl) {
-            link.href = mediaBlobUrl;
-            link.download = "screen_recording.webm";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    };
+
     useEffect(() => {
-        if (NftController?.nftStatus === ENftBurnStatus.BURNED) {
+        if (
+            NftController?.nftStatus === ENftBurnStatus.BURNED ||
+            NftController?.nftStatus === ENftBurnStatus.SELECTED
+        ) {
             startRecording();
-            setTimeout(() => {
-                stopRecording();
-                downloadRecording();
-            }, 15000);
             GRenderingStateMachine.SetRenderingState(ERenderingState.Burning);
-            setShowUI(false);
+            //setShowUI(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [NftController?.nftStatus]);
+
+    useEffect(() => {
+        if (status === "stopped") {
+            stopRecording();
+            setRecordedVideo(mediaBlobUrl ?? null);
+        }
+    }, [mediaBlobUrl, status, stopRecording]);
 
     return (
         <>
@@ -93,9 +91,11 @@ function App() {
                             <div className="half">
                                 <NftList></NftList>
                                 <Control></Control>
-                                <button onClick={startRecording}>Start Recording</button>
-                                <button onClick={stopRecording}>Stop Recording</button>
-                                <button onClick={downloadRecording}>Download Recording</button>
+                                {recordedVideo && (
+                                    <a href={recordedVideo} download>
+                                        Download
+                                    </a>
+                                )}
                             </div>
                         </BodyContainer>
                     )}

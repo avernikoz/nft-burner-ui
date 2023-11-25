@@ -28,5 +28,9 @@ export const BodyContainer = styled.div`
         border-radius: 15px;
         height: 80vh;
         max-width: 650px;
+        a {
+            background-color: red;
+            height: 50px;
+        }
     }
 `;
