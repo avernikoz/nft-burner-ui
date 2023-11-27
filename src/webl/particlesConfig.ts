@@ -141,7 +141,7 @@ export const DustParticlesDesc = {
     inBuoyancyForceScale: 0.0,
     inDownwardForceScale: 2.0,
     inbOriginAtCenter: true,
-    inbRandomInitialPosition: true,
+    inEInitialPositionMode: 1,
     inRandomSpawnThres: 0.5,
     inEAlphaFade: 1,
     inEFadeInOutMode: 0,

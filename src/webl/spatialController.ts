@@ -66,8 +66,8 @@ export class SpatialControlPoint {
         //Construct client pointer intersection sphere
         const clientSphereRadius = 0.01; //might switch to ray
         const clientSpherePosViewSpace = {
-            x: GUserInputDesc.InputPosNDCCur.x * GScreenDesc.ScreenRatio,
-            y: GUserInputDesc.InputPosNDCCur.y,
+            x: GUserInputDesc.InputPosCurNDC.x * GScreenDesc.ScreenRatio,
+            y: GUserInputDesc.InputPosCurNDC.y,
         };
 
         if (!this.bDragState || !this.bDraggable) {
@@ -79,7 +79,7 @@ export class SpatialControlPoint {
                 this.Radius,
             );
 
-            if (GUserInputDesc.bPointerInputPressedThisFrame && this.bIntersectionThisFrame) {
+            if (GUserInputDesc.bPointerInputPressedCurFrame && this.bIntersectionThisFrame) {
                 this.bSelectedThisFrame = true;
                 this.bDragState = true && this.bDraggable;
             }

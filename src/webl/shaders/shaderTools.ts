@@ -8,8 +8,10 @@ export function GetShaderSourceSingleFlameRenderVS() {
 
 	uniform vec4 CameraDesc;
 	uniform float ScreenRatio;
+	uniform float Time;
 	uniform vec3 Position;
 	uniform vec2 Velocity;
+	uniform vec2 FadeInOutParameters;
 	
 
 	out vec2 vsOutTexCoords;
@@ -19,6 +21,19 @@ export function GetShaderSourceSingleFlameRenderVS() {
 	{
 		///Translate to origin, scale by ranges ratio, translate to new position
 		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
+
+	float bellFunction(float x) {
+		// Adjust the parameters for the desired shape of the bump
+		float peakValue = 1.0;  // Peak value of the bump
+		float center = 0.5;     // Center of the bump
+		float width = 0.2;      // Width of the bump
+	
+		// Gaussian function formula
+		float exponent = -((x - center) * (x - center)) / (2.0 * width * width);
+		float result = peakValue * exp(exponent);
+	
+		return result;
 	}
 
 	void main()
@@ -48,6 +63,16 @@ export function GetShaderSourceSingleFlameRenderVS() {
 			//shrink
 			pos.y *= 1.f - clamp(abs(Velocity.x) * 35.0, 0.0, 1.0);
 		}
+
+		if(FadeInOutParameters.x < 1.0)
+		{
+			//fade in
+			pos.y *= FadeInOutParameters.x + bellFunction(FadeInOutParameters.x) * 0.75;
+			//pos.y += bellFunction(FadeInOutParameters.x) * 0.05;
+		}
+
+		pos.y += sin(Time) * 0.01;
+
 		pos.xy /= (1.f - CameraDesc.z);
 		pos.xy *= CameraDesc.w;
 		pos.xy += Position.xy;
@@ -71,6 +96,7 @@ export function GetShaderSourceAnimatedSpriteRenderPS() {
 
 	uniform float AnimationFrameIndex;
 	uniform float Time;
+	uniform vec2 FadeInOutParameters;
 
 	uniform sampler2D ColorTexture;
 	uniform sampler2D LUTTexture;
@@ -95,7 +121,7 @@ export function GetShaderSourceAnimatedSpriteRenderPS() {
 		//outColor = vec4(vsOutTexCoords.yyy, 1.0); return;
 
 		vec4 colorFinal = vec4(1.0);
-		#if 1
+	#if 1
 		const vec2 FlipbookSizeRC = vec2(16.0, 4.0);
 		{
 			vec2 frameSize = 1.f / (FlipbookSizeRC);
@@ -174,10 +200,20 @@ export function GetShaderSourceAnimatedSpriteRenderPS() {
 		colorFinal.rgb *= MapToRange(redScaleParam, 0.75, 1.0, 1.6, 1.25);
 		colorFinal.r *= redScaleParam;
 
-	  	#endif
+	  	#endif////ARTIFICIAL COLOR
 
 	  #endif
 
+		if(FadeInOutParameters.y < 1.0)
+		{
+			float fadeThres = FadeInOutParameters.y;
+			if(vsOutTexCoords.y > fadeThres)
+			{
+				float m = MapToRange(vsOutTexCoords.y, fadeThres, fadeThres + 0.1, 1.0, 0.);
+				colorFinal.rgb *= m * m * m;
+
+			}
+		}
 
 		outColor = colorFinal;
 	}`;

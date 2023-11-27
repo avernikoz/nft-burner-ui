@@ -1,6 +1,5 @@
 //Objects positions are described in View Space, pre-Viewport Transform performed only on .x
 
-import { DrawUISingleton } from "./helpers/gui";
 import { ERenderingState } from "./states";
 import { MathLerp, MathLerpVec3, MathSmoothstep, MathVector3Negate, MathVector3Normalize } from "./utils";
 
@@ -173,11 +172,10 @@ export function AssignSceneDescriptions(
     AssignSceneDescription(sceneDescIntermediate);
 }
 
-export function EnableSceneDescUI() {
-    const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-    if (GDatGUI) {
-        const folder = GDatGUI.addFolder("SceneDesc");
-        folder.open();
+export function GSceneDescSubmitDebugUI(datGui: dat.GUI) {
+    {
+        const folder = datGui.addFolder("SceneDesc");
+        //folder.open();
         /* folder.add(GSceneDesc.FirePlane.PositionOffset, "x", -2, 5).name("PlanePosX").step(0.01);
         folder.add(GSceneDesc.FirePlane.PositionOffset, "y", -3, 10).name("PlanePosY").step(0.01);
         folder.add(GSceneDesc.FirePlane.PositionOffset, "z", -10, 2).name("PlanePosZ").step(0.01); */
@@ -197,7 +195,7 @@ export function EnableSceneDescUI() {
         folder.add(GSceneDesc.Floor, "SizeScale", -2, 5).name("FloorSizeScale").step(0.01);
 
         const spotlightFolder = folder.addFolder("Spotlight");
-        spotlightFolder.open();
+        //spotlightFolder.open();
         spotlightFolder.add(GSceneDesc.Spotlight.SizeScale, "x", -2, 5).name("LightSizeX").step(0.01);
         spotlightFolder.add(GSceneDesc.Spotlight.SizeScale, "y", -2, 5).name("LightSizeY").step(0.01).listen();
         spotlightFolder.add(GSceneDesc.Spotlight.Position, "x", -3, 10).name("LightPosX").step(0.01).listen();

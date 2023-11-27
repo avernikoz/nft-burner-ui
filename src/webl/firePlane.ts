@@ -1,4 +1,3 @@
-import { DrawUISingleton } from "./helpers/gui";
 import { CreateTexture, CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
@@ -357,14 +356,11 @@ export class RFirePlanePass {
         }
         this.MaterialUVOffset.x = Math.random() * matOffsetSign.x;
         this.MaterialUVOffset.y = Math.random() * matOffsetSign.y;
-
-        this.DrawUI();
     }
 
-    DrawUI() {
-        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-        if (GDatGUI) {
-            const folder = GDatGUI.addFolder("Shading");
+    SubmitDebugUI(datGui: dat.GUI) {
+        {
+            const folder = datGui.addFolder("Fire Surface Shading");
             //folder.open();
 
             folder.add(this.RoughnessParams, "Scale", 0, 20).name("RGHScale").step(0.01);
@@ -389,13 +385,13 @@ export class RFirePlanePass {
     }
 
     ApplyFireFromInput(gl: WebGL2RenderingContext) {
-        const curInputPos = GUserInputDesc.InputPosNDCCur;
+        const curInputPos = GUserInputDesc.InputPosCurNDC;
         const curInputDir = { x: 0, y: 0 };
-        curInputDir.x = GUserInputDesc.InputPosNDCCur.x - GUserInputDesc.InputPosNDCPrev.x;
-        curInputDir.y = GUserInputDesc.InputPosNDCCur.y - GUserInputDesc.InputPosNDCPrev.y;
+        curInputDir.x = GUserInputDesc.InputPosCurNDC.x - GUserInputDesc.InputPosPrevNDC.x;
+        curInputDir.y = GUserInputDesc.InputPosCurNDC.y - GUserInputDesc.InputPosPrevNDC.y;
         const inputDirLength = MathGetVectorLength(curInputDir);
         let sizeScale;
-        if (GUserInputDesc.bPointerInputActiveThisFrame == false) {
+        if (GUserInputDesc.bPointerInputMoving == false) {
             sizeScale = 0.005;
             curInputDir.x = 0;
             curInputDir.y = 1;

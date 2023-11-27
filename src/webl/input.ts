@@ -1,23 +1,30 @@
+import { GScreenDesc } from "./scene";
+import { MathLerp } from "./utils";
+
 export const GUserInputDesc = {
-    InputPosNDCCur: { x: 0, y: 0 },
-    InputPosNDCPrev: { x: 0, y: 0 },
-    InputVelocityNDCCur: { x: 0, y: 0 },
-    InputVelocityNDCPrev: { x: 0, y: 0 },
-    bPointerInputActiveThisFrame: false,
-    bPointerInputPressedThisFrame: false,
+    InputPosCurNDC: { x: 0, y: 0 },
+    InputPosPrevNDC: { x: 0, y: 0 },
+    InputVelocityCurNDC: { x: 0, y: 0 },
+    InputVelocityPrevNDC: { x: 0, y: 0 },
+    InputPosCurViewSpace: { x: 0, y: 0 },
+    InputPosPrevViewSpace: { x: 0, y: 0 },
+    InputVelocityCurViewSpace: { x: 0, y: 0 },
+    InputVelocityPrevViewSpace: { x: 0, y: 0 },
+    bPointerInputMoving: false,
+    bPointerInputPressedCurFrame: false,
     bPointerInputPressedPrevFrame: false,
     FReset: function () {
-        GUserInputDesc.bPointerInputActiveThisFrame = false;
-        //GUserInputDesc.bPointerInputPressedThisFrame = false;
-        GUserInputDesc.InputPosNDCPrev.x = GUserInputDesc.InputPosNDCCur.x;
-        GUserInputDesc.InputPosNDCPrev.y = GUserInputDesc.InputPosNDCCur.y;
-        /* GUserInputDesc.InputVelocityNDCCur = { x: 0.0, y: 0.0 };
-        GUserInputDesc.InputVelocityNDCPrev = { x: 0.0, y: 0.0 }; */
+        GUserInputDesc.bPointerInputMoving = false;
     },
     kInactivityTimeMs: 1000,
     InactivityTimerID: setTimeout(() => {
         GUserInputDesc.FReset();
-    }, 1000),
+    }, 1),
+};
+
+const VariablesInner = {
+    InputPosCurNDC: { x: 0, y: 0 },
+    bPointerInputPressed: false,
 };
 
 export function RegisterUserInput(canvas: HTMLCanvasElement, event: MouseEvent | TouchEvent) {
@@ -34,22 +41,61 @@ export function RegisterUserInput(canvas: HTMLCanvasElement, event: MouseEvent |
     }
 
     if (clientX !== undefined && clientY !== undefined) {
-        const mouseX = ((clientX - rect.left) / canvas.clientWidth) * 2 - 1;
-        const mouseY = (1.0 - (clientY - rect.top) / canvas.clientHeight) * 2 - 1;
-        GUserInputDesc.InputVelocityNDCPrev.x = GUserInputDesc.InputVelocityNDCCur.x;
-        GUserInputDesc.InputVelocityNDCPrev.y = GUserInputDesc.InputVelocityNDCCur.y;
-        GUserInputDesc.InputPosNDCPrev.x = GUserInputDesc.InputPosNDCCur.x;
-        GUserInputDesc.InputPosNDCPrev.y = GUserInputDesc.InputPosNDCCur.y;
-        GUserInputDesc.InputPosNDCCur.x = mouseX;
-        GUserInputDesc.InputPosNDCCur.y = mouseY;
-        GUserInputDesc.InputVelocityNDCCur.x = GUserInputDesc.InputPosNDCCur.x - GUserInputDesc.InputPosNDCPrev.x;
-        GUserInputDesc.InputVelocityNDCCur.y = GUserInputDesc.InputPosNDCCur.y - GUserInputDesc.InputPosNDCPrev.y;
-        GUserInputDesc.bPointerInputActiveThisFrame = true;
+        const inputX = ((clientX - rect.left) / canvas.clientWidth) * 2 - 1;
+        const inputY = (1.0 - (clientY - rect.top) / canvas.clientHeight) * 2 - 1;
+        VariablesInner.InputPosCurNDC.x = inputX;
+        VariablesInner.InputPosCurNDC.y = inputY;
+
+        GUserInputDesc.bPointerInputMoving = true;
         clearTimeout(GUserInputDesc.InactivityTimerID);
         GUserInputDesc.InactivityTimerID = setTimeout(() => {
             GUserInputDesc.FReset();
         }, GUserInputDesc.kInactivityTimeMs);
     }
+}
+
+export function UserInputUpdatePerFrame() {
+    //Ask system for current Input State
+    GUserInputDesc.bPointerInputPressedPrevFrame = GUserInputDesc.bPointerInputPressedCurFrame;
+    GUserInputDesc.bPointerInputPressedCurFrame = VariablesInner.bPointerInputPressed;
+
+    //Ask system for current InputPos
+    GUserInputDesc.InputPosPrevNDC.x = GUserInputDesc.InputPosCurNDC.x;
+    GUserInputDesc.InputPosPrevNDC.y = GUserInputDesc.InputPosCurNDC.y;
+    GUserInputDesc.InputPosCurNDC.x = VariablesInner.InputPosCurNDC.x;
+    GUserInputDesc.InputPosCurNDC.y = VariablesInner.InputPosCurNDC.y;
+
+    //View Space
+    GUserInputDesc.InputPosPrevViewSpace.x = GUserInputDesc.InputPosCurViewSpace.x;
+    GUserInputDesc.InputPosPrevViewSpace.y = GUserInputDesc.InputPosCurViewSpace.y;
+
+    GUserInputDesc.InputPosCurViewSpace = {
+        x: GUserInputDesc.InputPosCurNDC.x * GScreenDesc.ScreenRatio,
+        y: GUserInputDesc.InputPosCurNDC.y,
+    };
+
+    //Update Velocity
+    GUserInputDesc.InputVelocityPrevNDC.x = GUserInputDesc.InputVelocityCurNDC.x;
+    GUserInputDesc.InputVelocityPrevNDC.y = GUserInputDesc.InputVelocityCurNDC.y;
+
+    GUserInputDesc.InputVelocityCurNDC.x = GUserInputDesc.InputPosCurNDC.x - GUserInputDesc.InputPosPrevNDC.x;
+    GUserInputDesc.InputVelocityCurNDC.y = GUserInputDesc.InputPosCurNDC.y - GUserInputDesc.InputPosPrevNDC.y;
+
+    //View Space
+    GUserInputDesc.InputVelocityPrevViewSpace.x = GUserInputDesc.InputVelocityCurViewSpace.x;
+    GUserInputDesc.InputVelocityPrevViewSpace.y = GUserInputDesc.InputVelocityCurViewSpace.y;
+
+    //View space velocity smoothed out
+    GUserInputDesc.InputVelocityCurViewSpace.x = MathLerp(
+        GUserInputDesc.InputPosCurViewSpace.x - GUserInputDesc.InputPosPrevViewSpace.x,
+        GUserInputDesc.InputVelocityPrevViewSpace.x,
+        0.75,
+    );
+    GUserInputDesc.InputVelocityCurViewSpace.y = MathLerp(
+        GUserInputDesc.InputPosCurViewSpace.y - GUserInputDesc.InputPosPrevViewSpace.y,
+        GUserInputDesc.InputVelocityPrevViewSpace.y,
+        0.75,
+    );
 }
 
 export function InitUserInputEvents(canvas: HTMLCanvasElement) {
@@ -66,20 +112,20 @@ export function InitUserInputEvents(canvas: HTMLCanvasElement) {
     canvas.addEventListener("mousedown", (e) => {
         e.preventDefault();
         RegisterUserInput(canvas, e);
-        GUserInputDesc.bPointerInputPressedThisFrame = true;
+        VariablesInner.bPointerInputPressed = true;
     });
     canvas.addEventListener("mouseup", (e) => {
         e.preventDefault();
-        GUserInputDesc.bPointerInputPressedThisFrame = false;
+        VariablesInner.bPointerInputPressed = false;
     });
 
     canvas.addEventListener("touchstart", (e) => {
         RegisterUserInput(canvas, e);
         e.preventDefault();
-        GUserInputDesc.bPointerInputPressedThisFrame = true;
+        VariablesInner.bPointerInputPressed = true;
     });
     canvas.addEventListener("touchend", (e) => {
         e.preventDefault();
-        GUserInputDesc.bPointerInputPressedThisFrame = false;
+        VariablesInner.bPointerInputPressed = false;
     });
 }

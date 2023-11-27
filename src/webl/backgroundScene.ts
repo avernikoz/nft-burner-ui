@@ -1,4 +1,3 @@
-import { DrawUISingleton } from "./helpers/gui";
 import { CreateTexture, CreateTextureRT } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
@@ -53,6 +52,10 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         Position: gl.getUniformLocation(shaderProgram, "Position"),
         Orientation: gl.getUniformLocation(shaderProgram, "Orientation"),
         Scale: gl.getUniformLocation(shaderProgram, "Scale"),
+
+        ToolPosition: gl.getUniformLocation(shaderProgram, "ToolPosition"),
+        ToolRadius: gl.getUniformLocation(shaderProgram, "ToolRadius"),
+        ToolColor: gl.getUniformLocation(shaderProgram, "ToolColor"),
     };
     return params;
 }
@@ -426,15 +429,12 @@ export class RBackgroundRenderPass {
         // this.ColorTexture = CreateTexture(gl, 5, "assets/background/goldRGH.png", true, true);
 
         this.PointLights = new SceneLights(gl);
-
-        this.DrawUI();
     }
 
-    DrawUI() {
-        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-        if (GDatGUI) {
-            const folder = GDatGUI.addFolder("Plane Transform");
-            folder.open();
+    SubmitDebugUI(datGui: dat.GUI) {
+        {
+            const folder = datGui.addFolder("Plane Transform");
+            //folder.open();
             folder.add(this.FloorTransform, "FloorTexScale", 0.01, 10);
             //folder.add(this.FloorTransform.LightTexScale, "y", 0.01, 10).name("LightTexScaleY").step(0.01);
             folder.add(this.FloorTransform, "FloorBrightness", 0.01, 5);
@@ -480,6 +480,21 @@ export class RBackgroundRenderPass {
             this.UniformParametersLocationListFloor.ProjectedLightSizeScale,
             GSceneDesc.Spotlight.ProjectedLightSizeScale.x,
             GSceneDesc.Spotlight.ProjectedLightSizeScale.y,
+        );
+
+        //Tool
+        gl.uniform3f(
+            this.UniformParametersLocationListFloor.ToolPosition,
+            GSceneDesc.Tool.Position.x,
+            GSceneDesc.Tool.Position.y,
+            GSceneDesc.Tool.Position.z,
+        );
+        gl.uniform1f(this.UniformParametersLocationListFloor.ToolRadius, GSceneDesc.Tool.Radius);
+        gl.uniform3f(
+            this.UniformParametersLocationListFloor.ToolColor,
+            GSceneDesc.Tool.Color.r,
+            GSceneDesc.Tool.Color.g,
+            GSceneDesc.Tool.Color.b,
         );
 
         //Textures

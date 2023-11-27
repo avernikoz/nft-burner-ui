@@ -25,8 +25,9 @@ import {
     AssignSceneDescription,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     AssignSceneDescriptions,
-    EnableSceneDescUI,
     GSceneDesc,
+    GSceneDescSubmitDebugUI,
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     GSceneStateDescsArray,
     GScreenDesc,
@@ -36,7 +37,7 @@ import {
 import { CheckGL } from "./shaderUtils";
 import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
 
-import { GUserInputDesc, InitUserInputEvents } from "./input";
+import { GUserInputDesc, InitUserInputEvents, UserInputUpdatePerFrame } from "./input";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Vector2 } from "./types";
@@ -206,15 +207,6 @@ function SetupPostProcessPasses(gl: WebGL2RenderingContext) {
     GPostProcessPasses.Combiner = new RCombinerPass(gl);
     GPostProcessPasses.FlamePostProcess = new RFlamePostProcessPass(gl);
     SetupBloomPostProcessPass(gl);
-
-    //Draw UI
-    const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-    if (GDatGUI) {
-        //const folder = GDatGUI.addFolder(name);
-        //folder.open();
-
-        GDatGUI.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses");
-    }
 }
 
 const GRenderTargets: {
@@ -410,28 +402,6 @@ export function RenderMain() {
         `assets/background/stateIcon31.png`,
     );
 
-    //===================
-    // 		DEBUG UI
-    //===================
-    function InitMainDebugUI() {
-        // Create a GUI instance
-        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-        if (GDatGUI) {
-            GDatGUI.close();
-
-            GDatGUI.add(GSettings, "bRunSimulation").name("Run Simulation"); // 'Enable Feature' is the label for the checkbox
-
-            GDatGUI.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
-            GDatGUI.add(GTime, "Cur").name("CurTime").listen().step(0.0001);
-
-            GDatGUI.add(GScreenDesc, "ScreenRatio").name("ScreenRatio").listen().step(0.01);
-            GDatGUI.add(GScreenDesc.WindowSize, "y").name("Resolution").listen().step(0.01);
-        }
-    }
-    InitMainDebugUI();
-
-    EnableSceneDescUI();
-
     //==============================
     // 		ALLOCATE RESOURCES
     //==============================
@@ -453,13 +423,6 @@ export function RenderMain() {
         StateRef: { bReadingPixels: false } as AsyncPixelReadingState,
     };
     GGpuReadData.InitReadbackBuffer();
-
-    {
-        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-        if (GDatGUI) {
-            GDatGUI.add(GGpuReadData, "CurFireValueCPU").listen().step(0.001);
-        }
-    }
 
     //==============================
     // 		INIT RENDERERS
@@ -607,8 +570,44 @@ export function RenderMain() {
     InitializeSceneStateDescsArr();
     UpdateSceneStateDescsArr();
 
-    let GFirstRenderingFrame = true;
+    //===================
+    // 		DEBUG UI
+    //===================
+    const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
+    if (GDatGUI) {
+        //For global vars
+        {
+            GDatGUI.close();
 
+            const folder = GDatGUI.addFolder("Main");
+
+            folder.add(GSettings, "bRunSimulation").name("Run Simulation"); // 'Enable Feature' is the label for the checkbox
+
+            folder.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
+            folder.add(GTime, "Cur").name("CurTime").listen().step(0.0001);
+
+            folder.add(GScreenDesc, "ScreenRatio").name("ScreenRatio").listen().step(0.01);
+            folder.add(GScreenDesc.WindowSize, "y").name("Resolution").listen().step(0.01);
+
+            folder.add(GGpuReadData, "CurFireValueCPU").listen().step(0.001);
+
+            folder.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses");
+        }
+
+        GSceneDescSubmitDebugUI(GDatGUI);
+
+        BurningSurface.SubmitDebugUI(GDatGUI);
+        BackGroundRenderPass.SubmitDebugUI(GDatGUI);
+        CurTool.SubmitDebugUI(GDatGUI);
+    }
+
+    //=============================================================================================================================
+    //
+    // 														RENDER LOOP
+    //
+    //=============================================================================================================================
+
+    let GFirstRenderingFrame = true;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
         if (gl !== null && GRenderTargets.FirePlaneTexture !== null && GPostProcessPasses.CopyPresemt !== null) {
@@ -631,6 +630,8 @@ export function RenderMain() {
             }
 
             UpdateTime();
+
+            UserInputUpdatePerFrame();
 
             //============================
             // 		SCENE STATE UPDATE
@@ -726,8 +727,7 @@ export function RenderMain() {
                 //=========================
                 // 		TOOL UPDATE
                 //=========================
-                CurTool.UpdateMain();
-                CurTool.bActiveThisFrame = false;
+                CurTool.UpdateMain(gl, BurningSurface);
 
                 if (RenderStateMachine.bCanBurn) {
                     if (RenderStateMachine.currentState === ERenderingState.Intro) {
@@ -737,15 +737,12 @@ export function RenderMain() {
                     } else {
                         if (RenderStateMachine.currentState !== ERenderingState.BurningFinished) {
                             if (
-                                GUserInputDesc.bPointerInputPressedThisFrame &&
+                                GUserInputDesc.bPointerInputPressedCurFrame &&
                                 !SpotlightPositionController.bIntersectionThisFrame
                             ) {
-                                CurTool.bActiveThisFrame = true;
-
-                                CurTool.RenderToFireSurface(gl, BurningSurface);
                             }
 
-                            if (GUserInputDesc.bPointerInputPressedThisFrame) {
+                            if (GUserInputDesc.bPointerInputPressedCurFrame) {
                                 if (!GUserInputDesc.bPointerInputPressedPrevFrame) {
                                     GAudioEngine.PlayLighterStartSound();
                                 } else {
@@ -761,8 +758,6 @@ export function RenderMain() {
                         BurningSurface.Reset(gl);
                     }
                 }
-
-                CurTool.UpdateIfActive();
 
                 //=========================
                 // BURNING SURFACE UPDATE
@@ -932,6 +927,7 @@ export function RenderMain() {
                 BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, GScreenDesc.RenderTargetSize, true);
                 if (CurTool.bActiveThisFrame) {
                     CurTool.Render(gl);
+                    CurTool.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 }
 
                 if (1 || RenderStateMachine.bCanBurn) {
@@ -984,6 +980,9 @@ export function RenderMain() {
                 SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 if (!bAshesInEmbersPass) {
                     AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+                }
+                if (CurTool.bActiveThisFrame) {
+                    CurTool.SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 }
 
                 //======================
@@ -1042,17 +1041,6 @@ export function RenderMain() {
                 StateControllers.forEach((controller) => {
                     SpatialControlUIVisualizer.Render(gl, controller);
                 });
-            }
-
-            //Update Input
-            {
-                //Velocity Damp
-                GUserInputDesc.InputVelocityNDCCur.x *= 0.9;
-                GUserInputDesc.InputVelocityNDCCur.y *= 0.9;
-                GUserInputDesc.InputVelocityNDCPrev.x *= 0.9;
-                GUserInputDesc.InputVelocityNDCPrev.y *= 0.9;
-                GUserInputDesc.bPointerInputActiveThisFrame = false;
-                GUserInputDesc.bPointerInputPressedPrevFrame = GUserInputDesc.bPointerInputPressedThisFrame;
             }
 
             RenderStateMachine.MarkNewStateProcessed();
