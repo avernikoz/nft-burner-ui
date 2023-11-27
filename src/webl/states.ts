@@ -63,7 +63,7 @@ export class GRenderingStateMachine {
         );
     }
 
-    public get bHasSceneDesc(): boolean {
+    public get bCurStateHasSceneDesc(): boolean {
         return (
             this.currentState === ERenderingState.Intro ||
             this.currentState === ERenderingState.Inventory ||

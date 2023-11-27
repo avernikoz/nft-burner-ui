@@ -336,7 +336,11 @@ export class ParticlesEmitter {
             this.ColorTexture = CreateTexture(gl, 4, inTextureFileName, true);
         }
 
-        this.FlameColorLUTTexture = CreateTexture(gl, 5, "assets/flameColorLUT5.png", true);
+        if (inESpecificShadingMode === EParticleShadingMode.Flame) {
+            this.FlameColorLUTTexture = CreateTexture(gl, 5, "assets/flameColorLUT5.png", true);
+        } else {
+            this.FlameColorLUTTexture = null;
+        }
 
         this.ParticleInstancedRenderShaderProgram = CreateShaderProgramVSPS(
             gl,
@@ -536,9 +540,11 @@ export class ParticlesEmitter {
             gl.uniform1i(this.ParticleRenderUniformParametersLocationList.ColorTexture, 4);
         }
 
-        gl.activeTexture(gl.TEXTURE0 + 5);
-        gl.bindTexture(gl.TEXTURE_2D, this.FlameColorLUTTexture);
-        gl.uniform1i(this.ParticleRenderUniformParametersLocationList.FlameColorLUT, 5);
+        if (this.FlameColorLUTTexture) {
+            gl.activeTexture(gl.TEXTURE0 + 5);
+            gl.bindTexture(gl.TEXTURE_2D, this.FlameColorLUTTexture);
+            gl.uniform1i(this.ParticleRenderUniformParametersLocationList.FlameColorLUT, 5);
+        }
 
         gl.activeTexture(gl.TEXTURE0 + 1);
         gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);

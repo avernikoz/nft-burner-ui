@@ -172,6 +172,9 @@ async function GetBufferSubDataAsync(
 
     return dstBuffer;
 }
+export interface AsyncPixelReadingState {
+    bReadingPixels: boolean;
+}
 export async function ReadPixelsAsync(
     gl: WebGL2RenderingContext,
     intermediateBuffer: WebGLBuffer,
@@ -182,13 +185,24 @@ export async function ReadPixelsAsync(
     format: GLenum,
     type: GLenum,
     dest: ArrayBufferView,
+    stateRef: AsyncPixelReadingState,
 ) {
-    //Read pixels into intermediate GPU buffer
-    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, intermediateBuffer);
-    gl.readPixels(x, y, width, height, format, type, 0);
-    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+    if (stateRef.bReadingPixels) {
+        return;
+    }
 
-    await GetBufferSubDataAsync(gl, gl.PIXEL_PACK_BUFFER, intermediateBuffer, 0, dest);
+    stateRef.bReadingPixels = true;
+
+    try {
+        //Read pixels into intermediate GPU buffer
+        gl.bindBuffer(gl.PIXEL_PACK_BUFFER, intermediateBuffer);
+        gl.readPixels(x, y, width, height, format, type, 0);
+        gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+
+        await GetBufferSubDataAsync(gl, gl.PIXEL_PACK_BUFFER, intermediateBuffer, 0, dest);
+    } finally {
+        stateRef.bReadingPixels = false;
+    }
 
     //return dest;
 }

@@ -1,4 +1,4 @@
-import { Vector2, Vector3 } from "./types";
+import { Color, Vector2, Vector3 } from "./types";
 
 export function showError(errorText: string) {
     console.log(errorText);
@@ -63,6 +63,13 @@ export function MathLerpVec3(start: Vector3, end: Vector3, t: number): Vector3 {
         x: MathLerp(start.x, end.x, t),
         y: MathLerp(start.y, end.y, t),
         z: MathLerp(start.z, end.z, t),
+    };
+}
+export function MathLerpColor(start: Color, end: Color, t: number): Color {
+    return {
+        r: MathLerp(start.r, end.r, t),
+        g: MathLerp(start.g, end.g, t),
+        b: MathLerp(start.b, end.b, t),
     };
 }
 

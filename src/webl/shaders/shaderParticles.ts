@@ -3,16 +3,6 @@ import { Vector2 } from "../types";
 
 //sc_ - ShaderCode
 
-//
-/* function scTranslateToBaseAtOrigin(condition: boolean) {
-    if (condition) {
-        return  `const float scaleOffsetAmount = 0.9f;
-			pos.y += (scale / kViewSize.y) * scaleOffsetAmount;`;
-    } else {
-        return ``;
-    }
-} */
-
 function scGetRandomInitialVelocity(randomVelocityScale: number) {
     if (randomVelocityScale > 0) {
         return (
@@ -503,6 +493,7 @@ export function GetParticleRenderInstancedVS(
 				interpolatorAge = ageNorm;
   
 
+				//TODO: Do it on per-particle update stage and load it in PS without using interpolators
 				float animationParameterNorm = ageNorm;
 				if(NumLoops > 1.f)
 				{

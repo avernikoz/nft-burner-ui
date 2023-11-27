@@ -52,6 +52,12 @@ export const GSceneDesc = {
             );
         },
     },
+
+    Tool: {
+        Position: { x: 0.0, y: 0.0, z: -1.0 }, //World Space
+        Radius: 0,
+        Color: { r: 0.0, g: 0.0, b: 0.0 },
+    },
 };
 
 export type SceneStateDescription = {
@@ -94,7 +100,7 @@ export function InitializeSceneStateDescsArr() {
         CameraPosition: { x: 0, y: 0.0, z: -4.0 },
         SpotlightPosition: { x: 0.0, y: 2.5, z: -1.0 },
         SpotlightFocusPosition: { x: 0.0, y: 0.0, z: 1.5 },
-        FloorHeight: -1,
+        FloorHeight: -1.75,
         CameraZoom: 2,
     };
     GSceneStateDescsArray[ERenderingState.BurningReady + 1] = GSceneStateDescsArray[ERenderingState.BurningReady];

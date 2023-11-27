@@ -302,7 +302,7 @@ export class RBurntStampVisualizer {
 
         this.ColorTexture = CreateTexture(gl, 7, "assets/background/burntStamp.png");
 
-        const offsetMax = 0.25;
+        const offsetMax = 0.05;
         this.Position.x = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);
         this.Position.y = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);
 
@@ -397,8 +397,6 @@ export class RBackgroundRenderPass {
             gl,
             GetShaderSourceBackgroundFloorRenderPerspectiveVS(),
             GetShaderSourceBackgroundFloorRenderPerspectivePS(),
-            /* GetShaderSourceBackgroundFloorRenderVS(GScreenDesc.FirePlaneSizeScaleNDC, GScreenDesc.ViewRatioXY),
-            GetShaderSourceBackgroundFloorRenderPS(GScreenDesc.FirePlaneSizeScaleNDC, GScreenDesc.ViewRatioXY), */
         );
 
         //Shader Parameters

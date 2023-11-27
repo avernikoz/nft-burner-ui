@@ -251,11 +251,11 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 		//OutColor = vec4(distortionNoise.r, distortionNoise.r,distortionNoise.r, 1.0);return;
 
 		distortionNoise *= 1.25f;
-		distortionNoise *= (1.f + kRandomValues.x * 0.5);
+		distortionNoise *= (1.f + kRandomValues.x * 0.75);
 		flameSamplingUV.x += distortionNoise.r * 0.0075;
 		flameSamplingUV.y += distortionNoise.g * 0.001;
 
-		flameSamplingUV.x -= (0.5 - vsOutTexCoords.x) * 0.1 * (vsOutTexCoords.y * vsOutTexCoords.y); 
+		//flameSamplingUV.x -= (0.5 - vsOutTexCoords.x) * 0.1 * (vsOutTexCoords.y * vsOutTexCoords.y); 
 
 		flameNoiseUV = flameSamplingUV;
 
@@ -273,7 +273,7 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 		flameNoiseUV = MapToRange(flameNoiseUV, -1.0, 1.0, 0.0, 1.0);
 
 		//Translate
-		const float flameSpeed = 0.25f + (kRandomValues.y * 0.5); //TODO: USE VARYING SPEED [0.25,0.75]
+		const float flameSpeed = 0.25f + (kRandomValues.y * 0.5); 
 		flameNoiseUV.y -= Time * flameSpeed;
 		flameNoiseUV.x += Time * 0.05f;
 
