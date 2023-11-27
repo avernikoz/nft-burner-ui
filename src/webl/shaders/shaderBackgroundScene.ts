@@ -390,6 +390,7 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			
 			//Color
 			vec3 imageColor = texture(ColorTexture, materialSamplingUV.xy).rgb;
+			//imageColor.rgb = imageColor * vec3(0.01, 0.2, 0.13);
 			
 			//imageColor = vec3(0.3);
 			//OutColor = vec4(imageColor, 1.0); return;
@@ -465,12 +466,11 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 						reflectionColor *= s;
 
 						//distance fade
-						s = clamp(MapToRange(interpolatorWorldSpacePos.z, planeWorldPosZ, -5.0, 1.0, 0.0), 0.0, 1.0);
+						s = clamp(MapToRange(interpolatorWorldSpacePos.z, planeWorldPosZ, -3.5, 1.0, 0.0), 0.0, 1.0);
 						reflectionColor *= s;
 
 						reflectionColor *= (1.0f - clamp((roughness), 0.0, 1.0));
-						reflectionColor *= 2.f;
-						reflectionColor *= 2.f;
+						reflectionColor *= 4.f;
 
 						float reflNDotL = max(0.5, dot(normal, reflectionVec));
 						reflectionColor *= reflNDotL;
@@ -510,9 +510,9 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 		#endif
 			//SpotlightFalloff = 1.f;
 
-			vec3 spotlightColor = vec3(SpotlightFalloff);
+			vec3 spotlightFalloffVec3 = vec3(SpotlightFalloff);
 
-			#if 0//PROJECTION
+		#if 0//PROJECTION
 			vec3 lightSpacePos = interpolatorLightSpacePos;
 			lightSpacePos.xy /= (1.f + lightSpacePos.z);
 			lightSpacePos.xy *= ProjectedLightSizeScale;
@@ -522,25 +522,25 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			if(all(lessThan(lightSpacePos.xy, vec2(1.0))) && all(greaterThanEqual(lightSpacePos.xy, vec2(0.0)))) 
 			{
 				vec3 sc = texture(SpotlightTexture, lightSpacePos.xy).rgb;
-				spotlightColor = sc;
+				spotlightFalloffVec3 = sc;
 				//OutColor = vec4(1.0, 0.0, 0.0, 1.0); return;
 			}
 			else
 			{
-				spotlightColor = vec3(0.0);
+				spotlightFalloffVec3 = vec3(0.0);
 			}
-			#endif
+		#endif
+
+			const vec3 planeCenterWS = vec3(0.0, 0.0, 0.0);
+			vec3 planeExtentWS = vec3(1.0, 1.0, 0.01);
 
 			float shadow = 1.f; 
 		#if 1//SHADOW
-			const vec3 planeCenter = vec3(0.0, 0.0, 0.0);
-			vec3 planeExtent = vec3(1.0, 1.0, 0.01);
-		
 			//construct vertices
-			vec3 vLeftDown = vec3(planeCenter.x - planeExtent.x, planeCenter.y - planeExtent.y, 0.0);
-			vec3 vLeftUp = vec3(planeCenter.x - planeExtent.x, planeCenter.y + planeExtent.y, 0.0);
-			vec3 vRightUp = vec3(planeCenter.x + planeExtent.x, planeCenter.y + planeExtent.y, 0.0);
-			vec3 vRightDown = vec3(planeCenter.x + planeExtent.x, planeCenter.y - planeExtent.y, 0.0);
+			vec3 vLeftDown = vec3(planeCenterWS.x - planeExtentWS.x, planeCenterWS.y - planeExtentWS.y, 0.0);
+			vec3 vLeftUp = vec3(planeCenterWS.x - planeExtentWS.x, planeCenterWS.y + planeExtentWS.y, 0.0);
+			vec3 vRightUp = vec3(planeCenterWS.x + planeExtentWS.x, planeCenterWS.y + planeExtentWS.y, 0.0);
+			vec3 vRightDown = vec3(planeCenterWS.x + planeExtentWS.x, planeCenterWS.y - planeExtentWS.y, 0.0);
 			vec2 uvLeftDown = vec2(0.0, 0.0);
 			vec2 uvLeftUp = vec2(0.0, 1.0);
 			vec2 uvRightUp = vec2(1.0, 1.0);
@@ -597,7 +597,9 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 				float dToOccluder = length(triIntersectionRes.intersectionPoint - interpolatorWorldSpacePos);
 				dToOccluder = clamp(dToOccluder * 0.5, 0.0, 1.0);
 				//OutColor = vec4(dToOccluder, 0.0, 0.0, 1.0); return;
-				float horizonPenumbra = 1.f - (dToSource * 0.25 + dToOccluder * dToOccluder * 0.5) ; //higher value sharper penumbra
+				const float dSourceFade = 0.25f; 
+				const float dOccluderFade = 0.5f; 
+				float horizonPenumbra = 1.f - (dToSource * dSourceFade + dToOccluder * dToOccluder * dOccluderFade) ; //higher value sharper penumbra
 				vec2 rectSpacePos = hitTriangleUV * 2.f - 1.f;
 				if(abs(rectSpacePos.x) > horizonPenumbra)
 				{
@@ -642,19 +644,49 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			
 		#endif//SHADOW
 
+		float virtualPointLightsIntensityFinal = 0.0f;
+		#if 1 //VIRTUAL POINT LIGHTS
+		{
+			//get each light pos in view space
+			const int NumLights2D = 4;
+
+			float distanceBetweenLightsNDC = (planeExtentWS.x * 2.f) / float(NumLights2D);
+        	float domainStart = (planeCenterWS.x - planeExtentWS.x) + distanceBetweenLightsNDC * 0.5f;
+
+			for(int y = 0; y < NumLights2D; y++)
+			{
+				for(int x = 0; x < NumLights2D; x++)
+				{
+					ivec2 lightIndex2D = ivec2(x,y);
+					vec3 lightPosWS;
+					lightPosWS.x = domainStart + float(lightIndex2D.x) * distanceBetweenLightsNDC;
+        			lightPosWS.y = domainStart + float(lightIndex2D.y) * distanceBetweenLightsNDC;
+					lightPosWS.z = planeCenterWS.z;
+
+					float curLightIntensity = texelFetch(PointLightsTexture, lightIndex2D, 0).r;
+
+					vec3 vToCurLight = /* normalize */(lightPosWS - interpolatorWorldSpacePos);
+					float distance = length(vToCurLight);
+					vToCurLight = normalize(vToCurLight);
+					const float VirtualLightRadius = 3.0f;
+					float attenuation = clamp(1.f - (distance / VirtualLightRadius), 0.f, 1.f);
+
+					float lightScaleDiffuseFromNormal = max(0.0, dot(normal, vToCurLight));
+
+					virtualPointLightsIntensityFinal += curLightIntensity * attenuation * lightScaleDiffuseFromNormal;
+
+				}
+			}
+		}
+	#endif
+
 		#if 1 //PBR
 			normal = normalize(vec3(normal.x, normal.y, normal.z * -0.5));
 			const float roughnessMin = 0.05; 
 			colorFinal = CalculateLightPBR(normal, SpotlightPos, camPos, interpolatorWorldSpacePos, imageColor, clamp(roughness, roughnessMin, 1.0), 0.0);
 			//colorFinal *= 0.5f;
 			colorFinal *= attenuation;
-			colorFinal *= spotlightColor;
-
-			
-			//colorFinal = min(vec3(1.0), colorFinal);
-			colorFinal *= shadow;
-
-			colorFinal.rgb += imageColor * reflectionColor * 1.f;
+			colorFinal *= spotlightFalloffVec3;
 		#else
 			//Diffuse
 			float nDotL = max(0.0, dot(normal, vToLight));
@@ -668,6 +700,37 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			const float specularIntensityCur = 1.0f;
 			colorFinal +=  nDotL * specularCur * specularIntensityCur * (1.f - roughness) * SpotlightFalloff * attenuation;
 		#endif//PBR
+
+			//viewSpace fade
+			vec3 posNDC = interpolatorWorldSpacePos;
+			posNDC.xyz -= CameraDesc.xyz;
+			posNDC.xy *= CameraDesc.w;
+			posNDC.x /= ScreenRatio;
+			posNDC.xy /= (1.f + posNDC.z);
+			const float reflViewSpaceFadeThres = 0.5;
+			if(abs(posNDC.x) > reflViewSpaceFadeThres)
+			{
+				float m = MapToRange(abs(posNDC.x), reflViewSpaceFadeThres, 1.0, 1.0, 0.0);
+				reflectionColor.rgb *= m;
+			}
+
+			colorFinal.rgb += max(vec3(0.25), imageColor) * reflectionColor * 1.f;
+			vec3 virtualPointLightsColor = vec3(1.f, 0.5f, 0.1f);
+			colorFinal.rgb += imageColor * virtualPointLightsColor * virtualPointLightsIntensityFinal * 2.f;
+			colorFinal.rgb *= shadow;
+
+			
+			const float viewSpaceFadeThres = 0.7;
+			if(abs(posNDC.x) > viewSpaceFadeThres)
+			{
+				float m = MapToRange(abs(posNDC.x), viewSpaceFadeThres, 1.0, 1.0, 0.0);
+				colorFinal.rgb *= m;
+			}
+			if(abs(posNDC.y) > viewSpaceFadeThres + 0.1)
+			{
+				float m = MapToRange(abs(posNDC.y), viewSpaceFadeThres + 0.1, 1.0, 1.0, 0.0);
+				colorFinal.rgb *= m;
+			}
 			
 	
 			OutColor = vec4(colorFinal.rgb, 1);
@@ -1065,5 +1128,71 @@ export function GetShaderSourceLightSourceSpriteRenderPS() {
 
 		outSpotlightColor = vec3(min(vec3(1.0), light * 2.0f));
 
+	}`;
+}
+
+export function GetShaderSourceGenericSpriteRenderVS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	
+	layout(location = 0) in vec2 VertexBuffer;
+
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	uniform vec3 Position;
+	uniform vec3 Orientation;
+	uniform float Scale;
+
+	out vec2 vsOutTexCoords;
+
+	vec3 rotateVectorWithEuler(vec3 v, float pitch, float yaw, float roll) {
+		// Rotation matrix for roll, pitch, and yaw
+		mat3 rotationMatrix = mat3(
+			cos(yaw)*cos(roll) - sin(pitch)*sin(yaw)*sin(roll), -cos(pitch)*sin(roll), cos(roll)*sin(yaw) + cos(yaw)*sin(pitch)*sin(roll),
+			cos(yaw)*sin(roll) + sin(pitch)*sin(yaw)*cos(roll),  cos(pitch)*cos(roll), sin(yaw)*sin(roll) - cos(yaw)*sin(pitch)*cos(roll),
+		   -cos(pitch)*sin(yaw), sin(pitch), cos(pitch)*cos(yaw)
+		);
+	
+		// Rotate the vector
+		vec3 rotatedVector = rotationMatrix * v;
+	
+		return rotatedVector;
+	}
+
+	void main()
+	{
+		vec3 pos = vec3(VertexBuffer.xy, 0.0f);
+		pos = rotateVectorWithEuler(pos, Orientation.x, Orientation.y, Orientation.z);
+		pos.xy *= Scale;
+		pos += Position;
+		pos.xyz -= CameraDesc.xyz;
+
+		pos.xy *= CameraDesc.w;
+		pos.x /= ScreenRatio;
+
+		gl_Position = vec4(pos.xy, 0.0, (1.f + pos.z));
+		vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
+	}`;
+}
+
+export function GetShaderSourceGenericSpriteRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec4 outColor;
+
+	uniform sampler2D ColorTexture;
+
+	in vec2 vsOutTexCoords;
+
+	void main()
+	{
+		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+		vec4 color = texture(ColorTexture, flippedUVs.xy);
+		color.rgb *= 3.f;
+		outColor = color;
 	}`;
 }

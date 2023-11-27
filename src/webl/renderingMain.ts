@@ -1,4 +1,4 @@
-import { RBackgroundRenderPass, RSpotlightRenderPass } from "./backgroundScene";
+import { RBackgroundRenderPass, RBurntStampVisualizer, RSpotlightRenderPass } from "./backgroundScene";
 import { RFirePlanePass } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUI, DrawUISingleton } from "./helpers/gui";
@@ -51,12 +51,14 @@ import {
     MathVector3Negate,
     UpdateTime,
     showError,
+    uint16ToFloat16,
 } from "./utils";
 import { ApplyCameraControl, SetupCameraControlThroughInput } from "./shaders/controller";
 import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./spatialController";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController } from "./animationController";
+import { AudioEngine } from "./audioEngine";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -258,73 +260,6 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
     GRenderTargets.SpotlightFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.SpotlightTexture!);
 }
 
-class AudioEngine {
-    public audioContext;
-
-    private clickAudioBuffer: AudioBuffer | null;
-
-    private introAudioBuffer: AudioBuffer | null;
-
-    constructor() {
-        this.clickAudioBuffer = null;
-        this.introAudioBuffer = null;
-        if (window.AudioContext) {
-            this.audioContext = new AudioContext();
-        } else {
-            //console.error("Web Audio API is not supported in this browser");
-        }
-    }
-
-    async loadSounds() {
-        this.clickAudioBuffer = await this.loadAudioBuffer("assets/background/audio/bassShot.mp3");
-        this.introAudioBuffer = await this.loadAudioBuffer("assets/background/audio/intro.mp3");
-    }
-
-    async loadAudioBuffer(url: string): Promise<AudioBuffer> {
-        try {
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch audio file: ${response.status} - ${response.statusText}`);
-            }
-
-            const audioData = await response.arrayBuffer();
-            return await this.audioContext!.decodeAudioData(audioData);
-        } catch (error) {
-            console.error(`Error loading audio file from ${url}:`, error);
-            throw error; // Propagate the error to the caller
-        }
-    }
-
-    PlayClickSound() {
-        if (this.audioContext != null) {
-            const source = this.audioContext.createBufferSource();
-            if (this.clickAudioBuffer) {
-                source.buffer = this.clickAudioBuffer;
-                source.connect(this.audioContext.destination);
-                source.start();
-            }
-
-            /* const oscillator = this.audioContext.createOscillator();
-            oscillator.frequency.value = 140;
-            oscillator.connect(this.audioContext.destination);
-            oscillator.start();
-            oscillator.stop(this.audioContext.currentTime + 0.1); */
-        }
-    }
-
-    PlayIntroSound() {
-        if (this.audioContext != null) {
-            const source = this.audioContext.createBufferSource();
-            if (this.introAudioBuffer) {
-                source.buffer = this.introAudioBuffer;
-                source.connect(this.audioContext.destination);
-                source.start();
-            }
-        }
-    }
-}
-
 export function RenderMain() {
     const canvas = getCanvas();
 
@@ -346,32 +281,39 @@ export function RenderMain() {
     canvas.addEventListener("mousedown", (e) => {
         e.preventDefault();
         RegisterUserInput(canvas, e);
-        GUserInputDesc.bPointerInputPressed = true;
+        GUserInputDesc.bPointerInputPressedThisFrame = true;
     });
     canvas.addEventListener("mouseup", (e) => {
         e.preventDefault();
-        GUserInputDesc.bPointerInputPressed = false;
+        GUserInputDesc.bPointerInputPressedThisFrame = false;
     });
 
     canvas.addEventListener("touchstart", (e) => {
         RegisterUserInput(canvas, e);
         e.preventDefault();
-        GUserInputDesc.bPointerInputPressed = true;
+        GUserInputDesc.bPointerInputPressedThisFrame = true;
     });
     canvas.addEventListener("touchend", (e) => {
         e.preventDefault();
-        GUserInputDesc.bPointerInputPressed = false;
+        GUserInputDesc.bPointerInputPressedThisFrame = false;
     });
 
     SetupCameraControlThroughInput();
 
-    function OnWindowResize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+    function GetWindowSizeCurrent(): Vector2 {
+        const dpr = MathClamp(window.devicePixelRatio, 1, 3);
+        return { x: Math.round(window.innerWidth * dpr), y: Math.round(window.innerHeight * dpr) };
+    }
 
-        GScreenDesc.ViewportSize = { x: window.innerWidth, y: window.innerHeight };
-        GScreenDesc.RenderTargetSize = { x: window.innerWidth, y: window.innerHeight };
-        GScreenDesc.ViewportMin = Math.min(window.innerWidth, window.innerHeight);
+    function OnWindowResize() {
+        console.log("Window Resized");
+        GScreenDesc.WindowSize = GetWindowSizeCurrent();
+        canvas.width = GScreenDesc.WindowSize.x;
+        canvas.height = GScreenDesc.WindowSize.y;
+        canvas.style.width = window.innerWidth + "px";
+        canvas.style.height = window.innerHeight + "px";
+        canvas.style.display = "block";
+        GScreenDesc.RenderTargetSize = { x: GScreenDesc.WindowSize.x, y: GScreenDesc.WindowSize.y };
         GScreenDesc.ScreenRatio = window.innerWidth / window.innerHeight;
         GScreenDesc.bWideScreen = GScreenDesc.ScreenRatio > 1.0;
         GScreenDesc.ViewRatioXY = { x: 1.0, y: 1.0 };
@@ -410,7 +352,7 @@ export function RenderMain() {
 
     //States Controllers
     const stateControllerSize = 0.05;
-    const numStateControllers = 4;
+    const numStateControllers = 6;
     const stateControllersViewSpaceStart = -0.25;
     const stateControllersViewSpaceLength = 0.5;
     const distBBetwenControllers = stateControllersViewSpaceLength / (numStateControllers - 1);
@@ -453,6 +395,24 @@ export function RenderMain() {
         `assets/background/stateIcon3.png`,
         `assets/background/stateIcon31.png`,
     );
+    curStateControllerPos += distBBetwenControllers;
+    StateControllers[4] = new SpatialControlPoint(
+        gl,
+        { x: curStateControllerPos, y: -0.75 },
+        stateControllerSize,
+        false,
+        `assets/background/stateIcon3.png`,
+        `assets/background/stateIcon31.png`,
+    );
+    curStateControllerPos += distBBetwenControllers;
+    StateControllers[5] = new SpatialControlPoint(
+        gl,
+        { x: curStateControllerPos, y: -0.75 },
+        stateControllerSize,
+        false,
+        `assets/background/stateIcon3.png`,
+        `assets/background/stateIcon31.png`,
+    );
 
     AllocateCommonRenderingResources(gl);
 
@@ -464,9 +424,22 @@ export function RenderMain() {
     //GUI
     DrawUI(GSettings);
 
+    //CurFire CPU
+    const CGConstants = {
+        CurFireValueCPUArr: new Uint16Array(1),
+        CurFireValueCPU: 0.0,
+    };
+    {
+        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
+        if (GDatGUI) {
+            GDatGUI.add(CGConstants, "CurFireValueCPU").listen().step(0.001);
+        }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const BackGroundRenderPass = new RBackgroundRenderPass(gl);
     const SpotlightRenderPass = new RSpotlightRenderPass(gl);
+    const BurntStampSprite = new RBurntStampVisualizer(gl);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FirePlaneSizePixels = { x: 512, y: 512 };
@@ -503,6 +476,7 @@ export function RenderMain() {
         AfterBurnAshesParticlesDesc.inVelocityFieldForceScale = 50;
         AfterBurnAshesParticlesDesc.inInitialVelocityScale = 1.0;
         EmberParticlesDesc.inVelocityFieldForceScale = 50;
+        EmberParticlesDesc.inNumSpawners2D = 32;
         SmokeParticlesDesc.inVelocityFieldForceScale = 30;
 
         //DustParticlesDesc.inVelocityFieldForceScale = 50;
@@ -514,8 +488,11 @@ export function RenderMain() {
     const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
+    SmokeParticlesDesc.inAlphaScale = 0.25 + Math.random() * 0.7;
+    SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(5.0, 20.0, Math.random());
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
+    AfterBurnSmokeParticlesDesc.inAlphaScale = 0.25 + Math.random() * 0.5;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const AfterBurnSmokeParticles = new ParticlesEmitter(gl, AfterBurnSmokeParticlesDesc);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -584,11 +561,16 @@ export function RenderMain() {
         }
     }
 
+    //Allocate SceneDesc for all Burning States
+    GSceneStateDescsArray[ERenderingState.BurningReady + 1] = GSceneStateDescsArray[ERenderingState.BurningReady];
+    GSceneStateDescsArray[ERenderingState.BurningReady + 2] = GSceneStateDescsArray[ERenderingState.BurningReady];
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
         if (gl !== null && GRenderTargets.FirePlaneTexture !== null && GPostProcessPasses.CopyPresemt !== null) {
             //Handle possible resize
-            if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+            const windowSizeCur = GetWindowSizeCurrent();
+            if (canvas.width !== windowSizeCur.x || canvas.height !== windowSizeCur.y) {
                 //Resize
                 OnWindowResize();
                 AllocateMainRenderTargets(gl);
@@ -598,6 +580,7 @@ export function RenderMain() {
             UpdateTime();
 
             const RenderStateMachine = GRenderingStateMachine.GetInstance();
+            const bNewRenderStateThisFrame = RenderStateMachine.bWasNewStateProcessed();
 
             //Handle State transition if present
             if (RenderStateMachine.transitionParameter <= 1.0) {
@@ -609,6 +592,7 @@ export function RenderMain() {
             } else {
                 //AssignSceneDescription(GSceneStateDescsArray[RenderStateMachine.currentState]);
             }
+
             RenderStateMachine.AdvanceTransitionParameter();
 
             let newState = RenderStateMachine.currentState;
@@ -643,7 +627,7 @@ export function RenderMain() {
             }
             if (newState != RenderStateMachine.currentState) {
                 //...
-                GAudioEngine.PlayIntroSound();
+                //GAudioEngine.PlayIntroSound();
 
                 GRenderingStateMachine.SetRenderingState(newState);
             }
@@ -659,7 +643,7 @@ export function RenderMain() {
                 (GFirstRenderingFrame || RenderStateMachine.currentState !== ERenderingState.Preloading)
             ) {
                 if (GFirstRenderingFrame) {
-                    GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory, false);
+                    GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady, true);
                     GFirstRenderingFrame = false;
                 }
 
@@ -688,25 +672,79 @@ export function RenderMain() {
                     GSceneDesc.FirePlane.OrientationEuler.roll = 0.0;
                 }
 
-                if (RenderStateMachine.currentState === ERenderingState.Inventory) {
-                    SpotlightPositionController.OnUpdate();
-                    ApplySpotlightControlFromGUI();
-                }
+                SpotlightPositionController.OnUpdate();
+                ApplySpotlightControlFromGUI();
 
-                if (RenderStateMachine.currentState === ERenderingState.Burning) {
-                    if (GUserInputDesc.bPointerInputPressed && !SpotlightPositionController.bIntersectionThisFrame) {
-                        FirePlanePass.ApplyFireFromInput(gl);
+                if (RenderStateMachine.bCanBurn) {
+                    if (RenderStateMachine.currentState === ERenderingState.Intro) {
+                        if (bNewRenderStateThisFrame) {
+                            FirePlanePass.ApplyFireAuto(gl, { x: 0.0, y: -0.5 }, 0.05);
+                        }
+                    } else {
+                        if (RenderStateMachine.currentState !== ERenderingState.BurningFinished) {
+                            if (
+                                GUserInputDesc.bPointerInputPressedThisFrame &&
+                                !SpotlightPositionController.bIntersectionThisFrame
+                            ) {
+                                FirePlanePass.ApplyFireFromInput(gl);
+                            }
+
+                            if (GUserInputDesc.bPointerInputPressedThisFrame) {
+                                if (!GUserInputDesc.bPointerInputPressedPrevFrame) {
+                                    GAudioEngine.PlayLighterStartSound();
+                                } else {
+                                    GAudioEngine.PlayLighterGasSound();
+                                }
+                            } else {
+                                GAudioEngine.ForceStopLighterGasSound();
+                            }
+                        }
                     }
-                    FirePlanePass.UpdateFire(gl);
-
-                    BackGroundRenderPass.PointLights.Update(gl, FirePlanePass.GetCurFireTexture()!);
-
-                    FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-                    EmberParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-                    AshesParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-                    SmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
-                    AfterBurnSmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+                } else {
+                    if (bNewRenderStateThisFrame) {
+                        FirePlanePass.Reset(gl);
+                    }
                 }
+
+                FirePlanePass.UpdateFire(gl);
+
+                const curFireTexture = FirePlanePass.GetCurFireTexture()!;
+                gl.bindTexture(gl.TEXTURE_2D, curFireTexture);
+                gl.generateMipmap(gl.TEXTURE_2D);
+                BackGroundRenderPass.PointLights.Update(gl, curFireTexture);
+
+                //read cur fire value
+                if (1) {
+                    const curFireTextureFramebuffer = FirePlanePass.GetCurFireTextureHighestMipFramebuffer();
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, curFireTextureFramebuffer);
+                    //CGConstants.CurFireValueCPUArr = new Float32Array(1);
+                    gl.readPixels(0, 0, 1, 1, gl.RED, gl.HALF_FLOAT, CGConstants.CurFireValueCPUArr, 0);
+                    CGConstants.CurFireValueCPU = uint16ToFloat16(CGConstants.CurFireValueCPUArr.at(0)!);
+                }
+
+                //Change states depending on cur temperature
+                if (
+                    RenderStateMachine.currentState === ERenderingState.BurningReady &&
+                    CGConstants.CurFireValueCPU > 0.05
+                ) {
+                    GRenderingStateMachine.SetRenderingState(ERenderingState.BurningNow);
+                } else if (RenderStateMachine.currentState === ERenderingState.BurningNow) {
+                    if (CGConstants.CurFireValueCPU < 0.05) {
+                        GRenderingStateMachine.SetRenderingState(ERenderingState.BurningFinished);
+                    }
+                }
+
+                if (CGConstants.CurFireValueCPU > 0.01) {
+                    const curBurnVolume = MathMapToRange(CGConstants.CurFireValueCPU, 0.0, 2.0, 0.3, 1.0);
+                    GAudioEngine.PlayBurningSound(curBurnVolume);
+                }
+
+                FlameParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+                EmberParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+                AshesParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+                SmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+                AfterBurnSmokeParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
+
                 DustParticles.Update(gl, FirePlanePass.GetCurFireTexture()!);
 
                 BindRenderTarget(gl, GRenderTargets.SpotlightFramebuffer!, GScreenDesc.RenderTargetSize, true);
@@ -743,6 +781,20 @@ export function RenderMain() {
                         BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
                         GRenderTargets.SpotlightTexture!,
                     );
+
+                    if (RenderStateMachine.currentState === ERenderingState.BurningFinished) {
+                        //Render BURNT Stamp
+                        BurntStampSprite.RunAnimation();
+                        if (BurntStampSprite.AnimationT >= 0.95 && !BurntStampSprite.AnimationFinishedEventProcessed) {
+                            GAudioEngine.PlayStampSound();
+                            BurntStampSprite.AnimationFinishedEventProcessed = true;
+                        }
+                        gl.enable(gl.BLEND);
+                        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                        gl.blendEquation(gl.FUNC_ADD);
+                        BurntStampSprite.Render(gl);
+                        gl.disable(gl.BLEND);
+                    }
                 }
                 gl.enable(gl.BLEND);
                 gl.blendFunc(gl.ONE, gl.ONE);
@@ -754,9 +806,7 @@ export function RenderMain() {
                     gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ONE, gl.ONE);
                     gl.blendEquation(gl.MAX);
-                    if (RenderStateMachine.currentState === ERenderingState.Inventory) {
-                        SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
-                    }
+                    SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
 
                     if (RenderStateMachine.currentState == ERenderingState.Intro) {
                         SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
@@ -769,7 +819,7 @@ export function RenderMain() {
                 }
 
                 let flameSourceTextureRef = GRenderTargets.FlameTexture;
-                if (RenderStateMachine.currentState === ERenderingState.Burning) {
+                if (1 || RenderStateMachine.bCanBurn) {
                     BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, GScreenDesc.RenderTargetSize, true);
                     FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
 
@@ -831,6 +881,15 @@ export function RenderMain() {
                         y: canvas.height,
                     },
                 );
+
+                //Render BURNT Stamp
+                /* {
+                    gl.enable(gl.BLEND);
+                    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                    gl.blendEquation(gl.FUNC_ADD);
+                    BurntStampSprite.Render(gl);
+                    gl.disable(gl.BLEND);
+                } */
             } else {
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -844,6 +903,9 @@ export function RenderMain() {
             }
 
             GUserInputDesc.bPointerInputActiveThisFrame = false;
+            GUserInputDesc.bPointerInputPressedPrevFrame = GUserInputDesc.bPointerInputPressedThisFrame;
+
+            RenderStateMachine.MarkNewStateProcessed();
 
             if (gl !== null) {
                 if (CheckGL(gl) && GSettings.bRunSimulation) {
