@@ -41,6 +41,7 @@ export const EParticleShadingMode = {
     Smoke: 3,
     Ashes: 4,
     Dust: 5,
+    AfterBurnSmoke: 6,
 };
 
 export class ParticlesEmitter {
@@ -121,10 +122,11 @@ export class ParticlesEmitter {
             inInitialTranslate = { x: 0.0, y: 0.0 },
             inbMotionBasedTransform = false,
             inbRandomInitialPosition = false,
-            inRandomSpawnThres = 1.0,
+            inRandomSpawnThres = 1.0, //higher value - less chances to spawn
             inEAlphaFade = 0, //0:disabled, 1:smooth, 2:fast
             inEFadeInOutMode = 1, //0-disabled //1-fadeIn only //2-fadeOut only 3-enable all
             inESpecificShadingMode = EParticleShadingMode.Default,
+            inInitSpawnPosOffset = { x: 0.0, y: 0.0 },
         },
     ) {
         this.NumSpawners2D = inNumSpawners2D;
@@ -142,13 +144,16 @@ export class ParticlesEmitter {
         //Allocate Initial Positions Buffer
         const initialPositionsBufferCPU = new Float32Array(this.NumActiveParticles * 2);
         //Generate Initial Positions
-        const distanceBetweenParticlesNDC = 2 / (this.NumSpawners2D - 1.0);
-        const domainStart = -1.0;
+        const distanceBetweenParticlesNDC = {
+            x: (2 - inInitSpawnPosOffset.x * 2) / (this.NumSpawners2D - 1.0),
+            y: (2 - inInitSpawnPosOffset.y * 2) / (this.NumSpawners2D - 1.0),
+        };
+        const domainStart = { x: -1.0 + inInitSpawnPosOffset.x, y: -1.0 + inInitSpawnPosOffset.y };
         let count = 0;
         for (let y = 0; y < this.NumSpawners2D; y++) {
             for (let x = 0; x < this.NumSpawners2D; x++) {
-                const posX = domainStart + x * distanceBetweenParticlesNDC;
-                const posY = domainStart + y * distanceBetweenParticlesNDC;
+                const posX = domainStart.x + x * distanceBetweenParticlesNDC.x;
+                const posY = domainStart.y + y * distanceBetweenParticlesNDC.y;
                 for (let i = 0; i < this.NumParticlesPerSpawner; i++) {
                     initialPositionsBufferCPU[count] = posX;
                     initialPositionsBufferCPU[count + 1] = posY;

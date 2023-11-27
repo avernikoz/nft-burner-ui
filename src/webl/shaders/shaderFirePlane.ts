@@ -1,3 +1,5 @@
+import { MathLerp } from "../utils";
+
 export const ShaderSourceApplyFireVS = /* glsl */ `#version 300 es
 
 	precision highp float;
@@ -293,7 +295,8 @@ export function GetShaderSourceFireVisualizerVS() {
 		}`;
 }
 export function GetShaderSourceFireVisualizerPS() {
-    return /* glsl */ `#version 300 es
+    return (
+        /* glsl */ `#version 300 es
 	
 	precision highp float;
 	precision highp sampler2D;
@@ -380,6 +383,10 @@ export function GetShaderSourceFireVisualizerPS() {
 	{
 	    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 	}
+	float FresnelSchlick(float cosTheta, float F0)
+	{
+	    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+	}
 
 	float NormalDistributionGGX(vec3 N, vec3 H, float roughness)
 	{
@@ -416,7 +423,7 @@ export function GetShaderSourceFireVisualizerPS() {
 	    return ggx1 * ggx2;
 	}
 
-	vec3 CalculateLightPBR(vec3 n, vec3 lightPos, vec3 camPos, vec3 pixelPos, vec3 albedo, float roughness, float metalness)
+	vec3 CalculateLightPBR(vec3 n, vec3 lightPos, vec3 camPos, vec3 pixelPos, vec3 albedo, float roughness, float lightMask, float metalness)
 	{
 		vec3 v = normalize(camPos - pixelPos);
 		vec3 l = normalize(lightPos - pixelPos);
@@ -444,13 +451,13 @@ export function GetShaderSourceFireVisualizerPS() {
 		vec3 kS = F;
 		vec3 kD = vec3(1.0) - kS;
 
-		float NdotL = max(dot(n, l), 0.0);   
-    	return (kD * albedo * DiffuseIntensity /* / PI */ + specular * SpecularIntensityAndPower.x) * radiance * NdotL; //final Radiance
+		float NdotL = max(dot(n, l), 0.1);   
+    	return (kD * albedo * DiffuseIntensity * lightMask /* / PI */ + specular * SpecularIntensityAndPower.x * lightMask) * radiance * NdotL; //final Radiance
 
 	}
 
 	#define PAPER 0
-	#define WOOD 1
+	#define WOOD 0
 
 	void main()
 	{
@@ -521,9 +528,11 @@ export function GetShaderSourceFireVisualizerPS() {
 		//Vignette
 		highp vec2 ndcSpace = vec2(vsOutTexCoords.x * 2.f - 1.f, vsOutTexCoords.y * 2.f - 1.f);
 		float vignette = 1.f - min(1.f, 0.5 * length(vec2((ndcSpace.x * 1.5), ndcSpace.y * 0.75)));
-		vignette = min(1.f, 0.0 + vignette * 2.0f);
+		vignette = min(1.f, 0.1 + vignette * 2.0f);
 		//imageColor.rgb = vec3(1.f - vignette);
+		vignette *= max(0.75, vsOutTexCoords.y);
 		//vignette = 1.f;
+
 
 		#if 1//Rect Heightmap
 		{
@@ -541,15 +550,11 @@ export function GetShaderSourceFireVisualizerPS() {
 				vec3 heightNormal = vec3(-dx, -dy, normal.z * 0.1);
 				heightNormal = normalize(heightNormal);
 				normal = normalize(mix(heightNormal, normal, s));
-				//vignette *= max(0.1, height);
 				//imageColor = vec3(height);
 			}
 		}
 		#endif
 		
-		vignette *= max(0.75, vsOutTexCoords.y);
-		
-
 		const float specFadeThres = 0.9975;
 		if(vsOutTexCoords.y > specFadeThres)
 		{
@@ -567,7 +572,7 @@ export function GetShaderSourceFireVisualizerPS() {
 			normal = normalize(normal);
 		}
 
-		const float ambientLight = 0.1f;
+		const float ambientLight = 0.2f;
 		float spotlightMask = 1.0f;
 
 		float nDotL = dot(normal, vToLight);
@@ -576,6 +581,10 @@ export function GetShaderSourceFireVisualizerPS() {
 			nDotL *= 0.1;
 		}
 		nDotL = max(ambientLight, abs(nDotL));
+
+		vec3 camPos = CameraDesc.xyz;
+    	vec3 vToCam = normalize(camPos - interpolatorWorldSpacePos);
+		vec3 halfVec = normalize(vToLight + vToCam);
 
 		//Diffuse
 		{
@@ -589,17 +598,15 @@ export function GetShaderSourceFireVisualizerPS() {
 
 			//spotlightMask = 2.0f;
 
-			lightingDiffuseFinal += nDotL * spotlightMask * vignette * DiffuseIntensity;
+			lightingDiffuseFinal += min(2.f, nDotL * spotlightMask * vignette * DiffuseIntensity);
 		}
 		
 		//Specular
-		vec3 camPos = CameraDesc.xyz;
-    	vec3 vToCam = normalize(camPos - interpolatorWorldSpacePos);
-		vec3 halfVec = normalize(vToLight + vToCam);
+		
 		float specularPowerScaledCur = mix(2.0, SpecularIntensityAndPower.y, 1.f - roughness) * 8.f;
 		float specular = pow(max(0.f, dot(halfVec, normal)), specularPowerScaledCur);
 		//float specular = pow(max(0.f, dot(halfVec, normal)), SpecularIntensityAndPower.y * 8.f);
-		lightingSpecFinal += specular * SpecularIntensityAndPower.x * max(0.75,(1.f - roughness)) * nDotL * spotlightMask;
+		lightingSpecFinal += min(5.f, specular * SpecularIntensityAndPower.x * max(0.75,(1.f - roughness)) * nDotL * spotlightMask);
 
 
 		//After Burn Embers
@@ -611,10 +618,14 @@ export function GetShaderSourceFireVisualizerPS() {
 		float afterBurnEmbers = 0.0;
 	#else
 		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * 1.5;
-		float afterBurnEmbers = texture(AfterBurnTexture, vsOutTexCoords.xy).r;
+		const float kRandomOffset = float(` +
+        MathLerp(0.01, 0.5, Math.random()) +
+        /* glsl */ `);
+		float afterBurnEmbers = texture(AfterBurnTexture, vsOutTexCoords.xy + vec2(kRandomOffset, 0.0)).r;
+		afterBurnEmbers = afterBurnEmbers * clamp(pow(length(vsOutTexCoords.xy - vec2(0.5) * 1.0f), 1.f), 0.0, 1.0);
+		//afterBurnEmbers = 1.f - afterBurnEmbers;
 	#endif
 		
-		//afterBurnNoise = 1.f - afterBurnNoise;
 		vec3 embersColor = vec3(afterBurnEmbers, afterBurnEmbers * 0.2, afterBurnEmbers * 0.1);
 		float emberScale = 1.f;
 	#if 1 //NOISE EMBERS SCALE
@@ -648,7 +659,7 @@ export function GetShaderSourceFireVisualizerPS() {
 		{
 			emberScale = mix(noiseVec.z, noiseVec.x, t - 2.f);
 		}
-		emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.f, 2.f);
+		emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.25f, 2.f);
 		#endif
 		
 		
@@ -666,7 +677,10 @@ export function GetShaderSourceFireVisualizerPS() {
 
 	#if 1 //BURNED IMAGE
 		vec3 burnedImageTexture = vec3(0.f);
-		const float BurnedImageSharpness = 0.05f;
+		const float kRandomValue = float(` +
+        MathLerp(0.01, 0.1, Math.random()) +
+        /* glsl */ `);
+		const float BurnedImageSharpness = kRandomValue;
 		float h = BurnedImageSharpness * 0.1;
 		vec3 n = textureLod(ImageTexture, flippedUVs + vec2(0, h), 0.f).rgb;
 		vec3 e = textureLod(ImageTexture, flippedUVs + vec2(h, 0), 0.f).rgb;
@@ -757,10 +771,13 @@ export function GetShaderSourceFireVisualizerPS() {
 		if(surfaceColor.r <= 1.f || curFuel > 0.99f)
 		{
 			
+			#if 1
 			surfaceColor = surfaceColor * lightingDiffuseFinal;
 			surfaceColor += lightingSpecFinal;
-
-			//surfaceColor = CalculateLightPBR(normal, lightPos, camPos, interpolatorWorldSpacePos, surfaceColor * spotlightMask * vignette, clamp(roughness, 0.1, 1.0), 0.0);
+			#else
+			const float minRoughness = 0.25f;
+			surfaceColor = CalculateLightPBR(normal, lightPos, camPos, interpolatorWorldSpacePos, surfaceColor * vignette, clamp(roughness, minRoughness, 1.0), spotlightMask, 0.0);
+			#endif
 		}
 
 		const float shadowFadeThres = 0.01;
@@ -860,7 +877,7 @@ export function GetShaderSourceFireVisualizerPS() {
 
 	#endif
 
-		fireColor = clamp(fireColor, 0.f, 1.f);
+		fireColor = clamp(fireColor, 0.f, 1.25f);
 	
 		vec3 finalColor = max(surfaceColor, fireColor);
 
@@ -884,5 +901,6 @@ export function GetShaderSourceFireVisualizerPS() {
 
 		OutFirePlane = vec4(finalColor.rgb, 1);
 
-	}`;
+	}`
+    );
 }

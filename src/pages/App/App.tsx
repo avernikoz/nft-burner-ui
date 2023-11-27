@@ -14,6 +14,7 @@ import Control from "../../components/Control/Control";
 import { RenderMain } from "../../webl/renderingMain";
 import { NftContext } from "../../components/NftProvider/NftProvider";
 import { ENftBurnStatus } from "../../utils/types";
+import { useReactMediaRecorder } from "react-media-recorder";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 
 function App() {
@@ -22,6 +23,8 @@ function App() {
     const wagmiAccount = useWagmiAccount();
     const [showUI, setShowUI] = useState<boolean>(false);
     const NftController = useContext(NftContext);
+    const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRecorder({ screen: true });
+    const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
 
     useEffect(() => {
         if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
@@ -52,11 +55,23 @@ function App() {
     ]);
 
     useEffect(() => {
-        if (NftController?.nftStatus === ENftBurnStatus.BURNED) {
-            GRenderingStateMachine.SetRenderingState(ERenderingState.Burning);
-            setShowUI(false);
+        if (
+            NftController?.nftStatus === ENftBurnStatus.BURNED ||
+            NftController?.nftStatus === ENftBurnStatus.SELECTED
+        ) {
+            startRecording();
+            GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady);
+            //setShowUI(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [NftController?.nftStatus]);
+
+    useEffect(() => {
+        if (status === "stopped") {
+            stopRecording();
+            setRecordedVideo(mediaBlobUrl ?? null);
+        }
+    }, [mediaBlobUrl, status, stopRecording]);
 
     return (
         <>
@@ -76,6 +91,11 @@ function App() {
                             <div className="half">
                                 <NftList></NftList>
                                 <Control></Control>
+                                {recordedVideo && (
+                                    <a href={recordedVideo} download>
+                                        Download
+                                    </a>
+                                )}
                             </div>
                         </BodyContainer>
                     )}

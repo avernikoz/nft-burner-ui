@@ -39,6 +39,6 @@ export function DrawUI(GSettings: { bRunSimulation: boolean }) {
         GDatGUI.add(GTime, "Cur").name("CurTime").listen().step(0.0001);
 
         GDatGUI.add(GScreenDesc, "ScreenRatio").name("ScreenRatio").listen().step(0.01);
-        GDatGUI.add(GScreenDesc.ViewportSize, "y").name("Resolution").listen().step(0.01);
+        GDatGUI.add(GScreenDesc.WindowSize, "y").name("Resolution").listen().step(0.01);
     }
 }
