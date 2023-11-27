@@ -3,16 +3,6 @@ import { Vector2 } from "../types";
 
 //sc_ - ShaderCode
 
-//
-/* function scTranslateToBaseAtOrigin(condition: boolean) {
-    if (condition) {
-        return  `const float scaleOffsetAmount = 0.9f;
-			pos.y += (scale / kViewSize.y) * scaleOffsetAmount;`;
-    } else {
-        return ``;
-    }
-} */
-
 function scGetRandomInitialVelocity(randomVelocityScale: number) {
     if (randomVelocityScale > 0) {
         return (
@@ -39,8 +29,8 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
     }
 }
 
-function scGetInitialPosition(condition: boolean) {
-    if (condition) {
+function scGetInitialPosition(EInitialPositionMode: number) {
+    if (EInitialPositionMode == 1) {
         return /* glsl */ `
 			{
 				//random position
@@ -54,6 +44,8 @@ function scGetInitialPosition(condition: boolean) {
 				outPosition = noisePos.xy /* + uvPos.xy * 0.01 */;
 			  }
 		`;
+    } else if (EInitialPositionMode == 2) {
+        return /* glsl */ `outPosition = EmitterPosition;`;
     } else {
         return /* glsl */ `outPosition = inDefaultPosition;`;
     }
@@ -174,8 +166,9 @@ export function GetParticleUpdateShaderVS(
     velocityFieldForceScale: number,
     buoyancyForceScale: number,
     downwardForceScale: number,
-    bRandomPosition: boolean,
+    EInitialPositionMode: number, //0:default, 1:random, 2:from Emitter Pos constant
     randomSpawnThres: number,
+    bOneShotParticle: boolean,
 ) {
     return (
         /* glsl */ `#version 300 es
@@ -194,6 +187,8 @@ export function GetParticleUpdateShaderVS(
 	  uniform float DeltaTime;
 	  uniform float CurTime;
 	  uniform float ParticleLife;
+	  uniform vec2 EmitterPosition; 
+
 	  uniform sampler2D NoiseTexture;
 	  uniform sampler2D NoiseTextureHQ;
 	  uniform sampler2D FireTexture;
@@ -208,7 +203,8 @@ export function GetParticleUpdateShaderVS(
 	  //check if particle should never be drawn again
 	  bool IsParticleDead()
 	  {
-		  return (inAge < 0.f);
+		 //dead particles are set to -1.0
+		 return (inAge < -0.5f);
 	  }
   
 	  float MapToRange(float t, float t0, float t1, float newt0, float newt1)
@@ -230,6 +226,12 @@ export function GetParticleUpdateShaderVS(
 		  }
 		  else
 		  {
+
+
+			const int bOneShotParticle = ` +
+        (bOneShotParticle ? 1 : 0) +
+        /* glsl */ `;
+
 			  //Get Cur Fire based on Pos
 			  vec2 fireUV = (inDefaultPosition + 1.f) * 0.5f;
 			  float curFire = texture(FireTexture, fireUV.xy).r;
@@ -247,17 +249,25 @@ export function GetParticleUpdateShaderVS(
 			  bool bAllowNewSpawn = false;
 			  bool bAllowUpdate = false;
 			  bool bOutdatedParticle = inAge > ParticleLife;
+			  if(inAge < 0.0 && inAge > -1.0)
+			  {
+				 //one shot particles have initial range of -0.25 and are allowed to spawn once
+				 bAllowNewSpawn = true;
+			  }
 			  float curAge = inAge;
   
 			  if(bIsInSpawnRange)
 			  {
 				  if(bOutdatedParticle)
 				  {
-					  bAllowNewSpawn = true;
+					if(!bAllowNewSpawn)//only one shot particle might have set this to true
+					{
+						bAllowNewSpawn = true && (bOneShotParticle == 0);
+					}
 				  }
 				  else
 				  {
-					  bAllowUpdate = true;
+					bAllowUpdate = true;
 				  }
 			  }
 			  else
@@ -289,7 +299,7 @@ export function GetParticleUpdateShaderVS(
         /* glsl */ `
 
 				  ` +
-        scGetInitialPosition(bRandomPosition) +
+        scGetInitialPosition(EInitialPositionMode) +
         /* glsl */ `
   
 				  ` +
@@ -503,6 +513,7 @@ export function GetParticleRenderInstancedVS(
 				interpolatorAge = ageNorm;
   
 
+				//TODO: Do it on per-particle update stage and load it in PS without using interpolators
 				float animationParameterNorm = ageNorm;
 				if(NumLoops > 1.f)
 				{

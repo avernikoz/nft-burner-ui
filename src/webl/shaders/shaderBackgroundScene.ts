@@ -14,7 +14,7 @@ export function GetShaderSourceBackgroundFloorRenderPerspectiveVS() {
 
 		uniform vec3 SpotlightPos;
 		uniform vec3 SpotlightDirection;
-	
+
 		out vec2 vsOutTexCoords;
 		out vec2 vsOutTexCoords2;
 
@@ -129,6 +129,12 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 		uniform vec2 ProjectedLightSizeScale;
 		uniform float FloorBrightness;
 		uniform float Time;
+
+		
+		uniform vec3 ToolPosition;
+		uniform float ToolRadius;
+		uniform vec3 ToolColor;
+	
 	
 		in vec2 vsOutTexCoords;
 		in vec2 vsOutTexCoords2;
@@ -680,6 +686,25 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 		}
 	#endif
 
+	vec3 ToolLightColor = vec3(0.0);
+		//Tool Light
+		if(ToolRadius > 0.0)
+		{
+			vec3 toolPosWS = vec3(ToolPosition.xy, -0.01);
+			vec3 vToCurLight = /* normalize */(toolPosWS - interpolatorWorldSpacePos);
+			float distanceToCurLight = length(vToCurLight);
+			vToCurLight = normalize(vToCurLight);
+			float lightScaleDiffuseFromNormal = max(0.0, dot(normal, vToCurLight));
+			float attenuation = clamp(1.f - (distanceToCurLight / ToolRadius), 0.f, 1.f);
+			ToolLightColor = imageColor * ToolColor * lightScaleDiffuseFromNormal * attenuation;
+			//specular
+			vec3 halfVecCur = normalize(vToCurLight + vToCam);
+			float specularPowerScaledCur = mix(2.0, 256.0, 1.f - roughness) * 8.f;
+			float specularCur = pow(max(0.f, dot(halfVecCur, normal)), specularPowerScaledCur);
+			const float specularIntensityCur = 0.1f;
+			ToolLightColor += ToolColor * specularCur * specularIntensityCur * max(0.75,(1.f - roughness));
+		}
+
 		#if 1 //PBR
 			normal = normalize(vec3(normal.x, normal.y, normal.z * -0.5));
 			const float roughnessMin = 0.05; 
@@ -718,6 +743,7 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			vec3 virtualPointLightsColor = vec3(1.f, 0.5f, 0.1f);
 			colorFinal.rgb += imageColor * virtualPointLightsColor * virtualPointLightsIntensityFinal * 2.f;
 			colorFinal.rgb *= shadow;
+			colorFinal.rgb += ToolLightColor * max(0.5, shadow) * 0.5;
 
 			
 			const float viewSpaceFadeThres = 0.7;

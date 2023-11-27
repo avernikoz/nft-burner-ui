@@ -1,7 +1,7 @@
 /* Camera Control */
 
-import { GSceneDesc } from "../scene";
-import { GTime } from "../utils";
+import { GSceneDesc } from "./scene";
+import { GTime } from "./utils";
 
 const GController = {
     bCameraMovesForwardThisFrame: false,

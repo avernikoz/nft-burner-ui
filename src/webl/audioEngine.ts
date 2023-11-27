@@ -44,7 +44,7 @@ export class AudioEngine {
             this.burningSoundSourceGain.connect(this.audioContext.destination);
             this.gasSoundSourceGain = this.audioContext.createGain();
             this.gasSoundSourceGain.connect(this.audioContext.destination);
-            this.gasSoundSourceGain.gain.value = 0.25;
+            this.gasSoundSourceGain.gain.value = 0.5;
         }
     }
 

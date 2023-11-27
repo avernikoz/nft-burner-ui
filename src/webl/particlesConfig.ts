@@ -4,7 +4,7 @@ export const FlameParticlesDesc = {
     inName: "Flame Particles",
     inNumSpawners2D: 64,
     inNumParticlesPerSpawner: 1,
-    inSpawnRange: { x: 2.99, y: 1000.0 }, //TODO:depends on temperature
+    inSpawnRange: { x: 4.0, y: 1000.0 }, //TODO:depends on temperature
     inParticleLife: 2.4,
     inNumLoops: 3.0,
     inTextureFileName: "assets/sprites/Flame02_16x4.png",
@@ -29,7 +29,7 @@ export const EmberParticlesDesc = {
     inName: "Ember Particles",
     inNumSpawners2D: 48,
     inNumParticlesPerSpawner: 1,
-    inSpawnRange: { x: 0.9, y: 1000.0 },
+    inSpawnRange: { x: 1.0, y: 1000.0 },
     inParticleLife: 2.8,
     inNumLoops: 1.0,
     inTextureFileName: "",
@@ -141,7 +141,7 @@ export const DustParticlesDesc = {
     inBuoyancyForceScale: 0.0,
     inDownwardForceScale: 2.0,
     inbOriginAtCenter: true,
-    inbRandomInitialPosition: true,
+    inEInitialPositionMode: 1,
     inRandomSpawnThres: 0.5,
     inEAlphaFade: 1,
     inEFadeInOutMode: 0,
