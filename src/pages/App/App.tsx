@@ -14,7 +14,6 @@ import Control from "../../components/Control/Control";
 import { RenderMain } from "../../webl/renderingMain";
 import { NftContext } from "../../components/NftProvider/NftProvider";
 import { ENftBurnStatus } from "../../utils/types";
-import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import { useReactMediaRecorder } from "react-media-recorder";
 
 function App() {
@@ -60,7 +59,7 @@ function App() {
             NftController?.nftStatus === ENftBurnStatus.SELECTED
         ) {
             startRecording();
-            GRenderingStateMachine.SetRenderingState(ERenderingState.Burning);
+            // GRenderingStateMachine.SetRenderingState(ERenderingState.Burning);
             //setShowUI(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
