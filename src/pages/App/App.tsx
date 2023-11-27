@@ -15,6 +15,7 @@ import { RenderMain } from "../../webl/renderingMain";
 import { NftContext } from "../../components/NftProvider/NftProvider";
 import { ENftBurnStatus } from "../../utils/types";
 import { useReactMediaRecorder } from "react-media-recorder";
+import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 
 function App() {
     const suietWallet = suietUseWallet();
@@ -59,7 +60,7 @@ function App() {
             NftController?.nftStatus === ENftBurnStatus.SELECTED
         ) {
             startRecording();
-            // GRenderingStateMachine.SetRenderingState(ERenderingState.Burning);
+            GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady);
             //setShowUI(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
