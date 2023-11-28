@@ -130,3 +130,79 @@ export function CreateFramebufferWithAttachment(gl: WebGL2RenderingContext, text
     FrameBufferCheck(gl, "FrameBuffer");
     return fbo;
 }
+
+//Async Read
+function CPUWaitForGPUAsync(gl: WebGL2RenderingContext, sync: WebGLSync, flags: number, interval_ms: number) {
+    return new Promise<void>((resolve, reject) => {
+        function syncCheck() {
+            const res = gl.clientWaitSync(sync, flags, 0);
+            if (res === gl.WAIT_FAILED) {
+                //Indicates that an error occurred during the execution.
+                reject();
+                return;
+            }
+            if (res === gl.TIMEOUT_EXPIRED) {
+                //Indicates that the timeout time passed and that the sync object did not become signaled.
+                setTimeout(syncCheck, interval_ms); //try again after interval_ms passed
+                return;
+            }
+            resolve();
+        }
+        syncCheck();
+    });
+}
+async function GetBufferSubDataAsync(
+    gl: WebGL2RenderingContext,
+    target: number,
+    buffer: WebGLBuffer,
+    srcByteOffset: number,
+    dstBuffer: ArrayBufferView,
+    /* optional */ dstOffset?: number | undefined,
+    /* optional */ length?: number | undefined,
+) {
+    const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)!;
+    gl.flush();
+
+    await CPUWaitForGPUAsync(gl, sync, 0, 10);
+    gl.deleteSync(sync);
+
+    gl.bindBuffer(target, buffer);
+    gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length);
+    gl.bindBuffer(target, null);
+
+    return dstBuffer;
+}
+export interface AsyncPixelReadingState {
+    bReadingPixels: boolean;
+}
+export async function ReadPixelsAsync(
+    gl: WebGL2RenderingContext,
+    intermediateBuffer: WebGLBuffer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    format: GLenum,
+    type: GLenum,
+    dest: ArrayBufferView,
+    stateRef: AsyncPixelReadingState,
+) {
+    if (stateRef.bReadingPixels) {
+        return;
+    }
+
+    stateRef.bReadingPixels = true;
+
+    try {
+        //Read pixels into intermediate GPU buffer
+        gl.bindBuffer(gl.PIXEL_PACK_BUFFER, intermediateBuffer);
+        gl.readPixels(x, y, width, height, format, type, 0);
+        gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+
+        await GetBufferSubDataAsync(gl, gl.PIXEL_PACK_BUFFER, intermediateBuffer, 0, dest);
+    } finally {
+        stateRef.bReadingPixels = false;
+    }
+
+    //return dest;
+}

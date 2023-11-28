@@ -135,7 +135,9 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 		vec4 flame = textureLod(FlameTexture, texCoords.xy, MipLevel);
 		vec4 firePlane = textureLod(FirePlaneTexture, texCoords.xy, MipLevel);
 		#if 1
-		vec4 Color = vec4(max(flame.rgb, firePlane.rgb).rgb, 1.f);
+		vec4 Color = vec4(max(flame.rgb * 1.25f, firePlane.rgb).rgb, 1.f);
+		//vec4 Color = vec4((flame.rgb * 1.5f + firePlane.rgb).rgb, 1.f);
+		//vec4 Color = vec4((flame.rgb + firePlane.rgb).rgb, 1.f);
 		#else
 		vec3 spotLight = vec3(1.0) * textureLod(SpotlightTexture, texCoords.xy, MipLevel).r * 0.5;
 		vec4 Color = vec4(max(spotLight, max(flame.rgb, firePlane.rgb)), 1.f);
@@ -248,12 +250,12 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 
 		//OutColor = vec4(distortionNoise.r, distortionNoise.r,distortionNoise.r, 1.0);return;
 
-		distortionNoise *= 2.0f;
-		distortionNoise *= (1.f + kRandomValues.x);
+		distortionNoise *= 1.25f;
+		distortionNoise *= (1.f + kRandomValues.x * 0.75);
 		flameSamplingUV.x += distortionNoise.r * 0.0075;
 		flameSamplingUV.y += distortionNoise.g * 0.001;
 
-		flameSamplingUV.x -= (0.5 - vsOutTexCoords.x) * 0.1 * (vsOutTexCoords.y * vsOutTexCoords.y); 
+		//flameSamplingUV.x -= (0.5 - vsOutTexCoords.x) * 0.1 * (vsOutTexCoords.y * vsOutTexCoords.y); 
 
 		flameNoiseUV = flameSamplingUV;
 
@@ -271,7 +273,7 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 		flameNoiseUV = MapToRange(flameNoiseUV, -1.0, 1.0, 0.0, 1.0);
 
 		//Translate
-		const float flameSpeed = 0.35f + (kRandomValues.y * 0.5); //TODO: USE VARYING SPEED [0.25,0.75]
+		const float flameSpeed = 0.25f + (kRandomValues.y * 0.5); 
 		flameNoiseUV.y -= Time * flameSpeed;
 		flameNoiseUV.x += Time * 0.05f;
 
@@ -352,6 +354,89 @@ export function GetShaderSourceCombinerPassPS() {
 		float Contrast(float color, float contrast)
 		{
 			return max(float(0.f), contrast * (color - 0.5f) + 0.5f);
+		}
+
+		//--------------------------------------------------------------------------------------
+		// The tone mapper used in HDRToneMappingCS11
+		//--------------------------------------------------------------------------------------
+		vec3 DX11DSK(vec3 color)
+		{
+		    float  MIDDLE_GRAY = 0.72f;
+		    float  LUM_WHITE = 1.5f;
+		
+		    // Tone mapping
+		    color.rgb *= MIDDLE_GRAY;
+		    color.rgb *= (1.0f + color/LUM_WHITE);
+		    color.rgb /= (1.0f + color);
+		
+		    return color;
+		}
+
+		//--------------------------------------------------------------------------------------
+		// Reinhard
+		//--------------------------------------------------------------------------------------
+		vec3 Reinhard(vec3 color)
+		{
+		    return color/(vec3(1.f)+color);
+		}
+
+		vec3 Reinhard(vec3 color, float k)
+		{
+		    return color/(vec3(k)+color);
+		}
+
+		vec3 ReinhardSq(vec3 hdr)
+		{
+			float k = 0.25;
+		    vec3 reinhard = hdr / (hdr + vec3(k));
+		    return reinhard * reinhard;
+		}
+
+		vec3 Standard(vec3 hdr)
+		{
+		    return Reinhard(hdr * sqrt(hdr), sqrt(4.0 / 27.0));
+		}
+
+		vec3 StandardOld( vec3 hdr )
+		{
+		    return vec3(1.f) - exp2(-hdr);
+		}
+
+		vec3 ToneMapACES( vec3 hdr )
+		{
+		    const float A = 2.51, B = 0.03, C = 2.43, D = 0.59, E = 0.14;
+		    return clamp((hdr * (A * hdr + B)) / (hdr * (C * hdr + D) + E), 0.0, 1.0);
+		}
+
+		vec3 Uncharted2TonemapOp(vec3 x)
+		{
+		    float A = 0.15;
+		    float B = 0.50;
+		    float C = 0.10;
+		    float D = 0.20;
+		    float E = 0.02;
+		    float F = 0.30;
+		
+		    return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+		}
+
+		vec3 Uncharted2Tonemap(vec3 color)
+		{
+		    float W = 11.2;    
+		    return Uncharted2TonemapOp(vec3(2.0) * color) / Uncharted2TonemapOp(vec3(W));
+		}
+
+		vec3 Tonemap(vec3 color, int tonemapper)
+		{
+		    switch (tonemapper)
+		    {
+		    case 0: return Reinhard(color);
+		    case 1: return ReinhardSq(color);
+		    case 2: return Standard(color);
+		    case 3: return StandardOld(color);
+		    case 4: return ToneMapACES(color);
+		    case 5: return Uncharted2Tonemap(color);
+		    }
 		}
 
 		// Function to generate random float between 0 and 1
@@ -439,7 +524,7 @@ export function GetShaderSourceCombinerPassPS() {
 			{
 				vec2 noiseUV = texCoords;
 				noiseUV = MapToRange(noiseUV, 0.0, 1.0, -1.0, 1.0);
-				noiseUV += CameraDesc.xy;
+				noiseUV += CameraDesc.xy * 0.5;
 				noiseUV.x *= ScreenRatio;
 				noiseUV = MapToRange(noiseUV, -1.0, 1.0, 0.0, 1.0);
 				noiseUV.x -= Time * 0.0043f;
@@ -501,7 +586,7 @@ export function GetShaderSourceCombinerPassPS() {
 				vec2 texCoordsScaled = texCoords.xy;
 				texCoordsScaled = MapToRange(texCoordsScaled, 0.0, 1.0, -1.0, 1.0);
 				texCoordsScaled /= (1.f - CameraDesc.z);
-				texCoordsScaled *= 3.0f;
+				texCoordsScaled *= 4.0f;
 				texCoordsScaled *= CameraDesc.w;
 				texCoordsScaled.x *= ScreenRatio;
 				smokeScale *= clamp(length(texCoordsScaled), 0.25, 1.f);
@@ -532,7 +617,6 @@ export function GetShaderSourceCombinerPassPS() {
 
 			const float exposure = 1.f;
 			final.rgb *= exposure;
-
 
 			//final.rgb = pow(final.rgb, vec3(1.f/2.2f));
 			vec3 colorFilter1 = vec3(0.3, 0.52, 1.0);
@@ -574,6 +658,24 @@ export function GetShaderSourceCombinerPassPS() {
 
 			// Add noise to the color
 			final.rgb += noise;
+
+			#if 0//ALIGNMENT DEBUG
+			if(ScreenRatio >= 1.0)
+			{
+				if(texCoords.x > 0.499 && texCoords.x < 0.501)
+				{
+					final.rgb = vec3(0.0, 1.0, 1.0);
+				}
+			}
+			else
+			{
+				if(texCoords.y > 0.499 && texCoords.y < 0.501)
+				{
+					final.rgb = vec3(0.0, 1.0, 1.0);
+				}
+			}
+			#endif
+			
 
 			OutColor = vec4(final.rgb, 1);
 		}`

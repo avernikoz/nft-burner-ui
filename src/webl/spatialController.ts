@@ -11,7 +11,7 @@ import { MathClamp, MathIntersectionSphereSphere } from "./utils";
 export class SpatialControlPoint {
     public Radius;
 
-    public Position;
+    public PositionViewSpace;
 
     public bDragState;
 
@@ -41,7 +41,7 @@ export class SpatialControlPoint {
         activeTextureLocation: string,
     ) {
         this.Radius = inRadius;
-        this.Position = initialPosition;
+        this.PositionViewSpace = initialPosition;
 
         this.bDragState = false;
         this.bIntersectionThisFrame = false;
@@ -49,8 +49,8 @@ export class SpatialControlPoint {
         this.bSelectedThisFrame = false;
         this.bDraggable = inbIsDraggable;
 
-        this.ColorTexture0 = CreateTexture(gl, 4, defaultTextureLocation, true);
-        this.ColorTexture1 = CreateTexture(gl, 4, activeTextureLocation, true);
+        this.ColorTexture0 = CreateTexture(gl, 4, defaultTextureLocation);
+        this.ColorTexture1 = CreateTexture(gl, 4, activeTextureLocation);
     }
 
     ClearState() {
@@ -66,8 +66,8 @@ export class SpatialControlPoint {
         //Construct client pointer intersection sphere
         const clientSphereRadius = 0.01; //might switch to ray
         const clientSpherePosViewSpace = {
-            x: GUserInputDesc.InputPosNDCCur.x * GScreenDesc.ScreenRatio,
-            y: GUserInputDesc.InputPosNDCCur.y,
+            x: GUserInputDesc.InputPosCurNDC.x * GScreenDesc.ScreenRatio,
+            y: GUserInputDesc.InputPosCurNDC.y,
         };
 
         if (!this.bDragState || !this.bDraggable) {
@@ -75,25 +75,25 @@ export class SpatialControlPoint {
             this.bIntersectionThisFrame = MathIntersectionSphereSphere(
                 clientSpherePosViewSpace,
                 clientSphereRadius,
-                this.Position,
+                this.PositionViewSpace,
                 this.Radius,
             );
 
-            if (GUserInputDesc.bPointerInputPressed && this.bIntersectionThisFrame) {
+            if (GUserInputDesc.bPointerInputPressedCurFrame && this.bIntersectionThisFrame) {
                 this.bSelectedThisFrame = true;
                 this.bDragState = true && this.bDraggable;
             }
         } //drag state
         else {
             this.bIntersectionThisFrame = true;
-            this.Position = clientSpherePosViewSpace;
+            this.PositionViewSpace = clientSpherePosViewSpace;
 
-            this.Position.x = MathClamp(
-                this.Position.x,
+            this.PositionViewSpace.x = MathClamp(
+                this.PositionViewSpace.x,
                 -GScreenDesc.ScreenRatio + this.Radius,
                 GScreenDesc.ScreenRatio - this.Radius,
             );
-            this.Position.y = MathClamp(this.Position.y, -1 + this.Radius, 1 - this.Radius);
+            this.PositionViewSpace.y = MathClamp(this.PositionViewSpace.y, -1 + this.Radius, 1 - this.Radius);
 
             if (!this.bSelectedThisFrame) {
                 this.bDragState = false;
@@ -129,7 +129,11 @@ export class RSpatialControllerVisualizationRenderer {
         //Constants
         gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
         gl.uniform1f(this.UniformParametersLocationList.Size, inController.Radius);
-        gl.uniform2f(this.UniformParametersLocationList.Position, inController.Position.x, inController.Position.y);
+        gl.uniform2f(
+            this.UniformParametersLocationList.Position,
+            inController.PositionViewSpace.x,
+            inController.PositionViewSpace.y,
+        );
 
         //Textures
         gl.activeTexture(gl.TEXTURE0 + 1);

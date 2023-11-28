@@ -1,26 +1,11 @@
-import { Vector2, Vector3 } from "./types";
+import { Color, Vector2, Vector3 } from "./types";
 
 export function showError(errorText: string) {
     console.log(errorText);
 }
 
-/* 
-Time
-*/
-export const GTime = {
-    Last: 0,
-    Cur: 0.01,
-    Delta: 0.01,
-    DeltaMs: 1,
-};
-export function GetCurrentTimeSec() {
-    return performance.now() / 1000.0;
-}
-export function UpdateTime() {
-    GTime.Cur = GetCurrentTimeSec();
-    GTime.Delta = GTime.Cur - GTime.Last;
-    GTime.DeltaMs = GTime.Delta * 1000.0;
-    GTime.Last = GTime.Cur;
+export function MathAlignToPowerOf2(num: number): number {
+    return Math.pow(2, Math.ceil(Math.log2(num)));
 }
 
 export function MathGetVectorLength(vec2: Vector2) {
@@ -80,10 +65,70 @@ export function MathLerpVec3(start: Vector3, end: Vector3, t: number): Vector3 {
         z: MathLerp(start.z, end.z, t),
     };
 }
+export function MathLerpColor(start: Color, end: Color, t: number): Color {
+    return {
+        r: MathLerp(start.r, end.r, t),
+        g: MathLerp(start.g, end.g, t),
+        b: MathLerp(start.b, end.b, t),
+    };
+}
 
 export function MathIntersectionSphereSphere(pos1: Vector2, radius1: number, pos2: Vector2, radius2: number) {
     // Assuming spheres are objects with properties x, y, z (center) and radius
     const distance = Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
 
     return distance <= radius1 + radius2;
+}
+
+export function uint16ToFloat16(uint16Value: number): number {
+    // Extracting components
+    const sign = (uint16Value & 0x8000) >> 15;
+    const exponent = (uint16Value & 0x7c00) >> 10;
+    const fraction = uint16Value & 0x03ff;
+
+    // Reconstructing the float32 value
+    let floatValue;
+
+    if (exponent === 0) {
+        if (fraction === 0) {
+            // +/- 0
+            floatValue = sign ? -0 : 0;
+        } else {
+            // Denormalized number
+            floatValue = Math.pow(2, -14) * (fraction / Math.pow(2, 10)) * (sign ? -1 : 1);
+        }
+    } else if (exponent === 0x1f) {
+        if (fraction === 0) {
+            // +/- Infinity
+            floatValue = sign ? -Infinity : Infinity;
+        } else {
+            // NaN
+            floatValue = NaN;
+        }
+    } else {
+        // Normalized number
+        floatValue = Math.pow(2, exponent - 15) * (1 + fraction / Math.pow(2, 10)) * (sign ? -1 : 1);
+    }
+
+    return floatValue;
+}
+
+/* 
+Time
+*/
+export const GTime = {
+    Last: 0,
+    Cur: 0.01,
+    Delta: 0.01,
+    DeltaMs: 1,
+};
+export function GetCurrentTimeSec() {
+    return performance.now() / 1000.0;
+}
+export function UpdateTime() {
+    GTime.Cur = GetCurrentTimeSec();
+    GTime.Delta = GTime.Cur - GTime.Last;
+    GTime.Delta = MathClamp(GTime.Delta, 1.0 / 300.0, 1.0 / 30.0);
+    GTime.DeltaMs = GTime.Delta * 1000.0;
+    GTime.Last = GTime.Cur;
 }

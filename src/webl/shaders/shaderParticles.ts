@@ -3,16 +3,6 @@ import { Vector2 } from "../types";
 
 //sc_ - ShaderCode
 
-//
-/* function scTranslateToBaseAtOrigin(condition: boolean) {
-    if (condition) {
-        return  `const float scaleOffsetAmount = 0.9f;
-			pos.y += (scale / kViewSize.y) * scaleOffsetAmount;`;
-    } else {
-        return ``;
-    }
-} */
-
 function scGetRandomInitialVelocity(randomVelocityScale: number) {
     if (randomVelocityScale > 0) {
         return (
@@ -39,8 +29,8 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
     }
 }
 
-function scGetInitialPosition(condition: boolean) {
-    if (condition) {
+function scGetInitialPosition(EInitialPositionMode: number) {
+    if (EInitialPositionMode == 1) {
         return /* glsl */ `
 			{
 				//random position
@@ -54,6 +44,8 @@ function scGetInitialPosition(condition: boolean) {
 				outPosition = noisePos.xy /* + uvPos.xy * 0.01 */;
 			  }
 		`;
+    } else if (EInitialPositionMode == 2) {
+        return /* glsl */ `outPosition = EmitterPosition;`;
     } else {
         return /* glsl */ `outPosition = inDefaultPosition;`;
     }
@@ -123,6 +115,8 @@ function scGetVectorFieldForce(scale: number) {
 			randVel = clamp(randVel, vec2(-clampValue), vec2(clampValue));
 
 
+			//randVel = normalize(vec2(-1, 0.0)) * 35.f * 0.5;
+
 			curVel += randVel * DeltaTime;`
         );
     } else {
@@ -147,7 +141,8 @@ function scParticleSampleFlipbook(condition: boolean) {
 		colorFinal = texture(ColorTexture, uv).rgba;
 
 		#if 1//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
-		if(ceil(interpolatorFrameIndex) < float(FlipbookSizeRC.x * FlipbookSizeRC.y))
+		float numFrames = float(FlipbookSizeRC.x * FlipbookSizeRC.y);
+		//if(ceil(interpolatorFrameIndex) < numFrames)
 		{
 			flipBookIndex1D = uint(ceil(interpolatorFrameIndex));
 			FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
@@ -171,8 +166,9 @@ export function GetParticleUpdateShaderVS(
     velocityFieldForceScale: number,
     buoyancyForceScale: number,
     downwardForceScale: number,
-    bRandomPosition: boolean,
+    EInitialPositionMode: number, //0:default, 1:random, 2:from Emitter Pos constant
     randomSpawnThres: number,
+    bOneShotParticle: boolean,
 ) {
     return (
         /* glsl */ `#version 300 es
@@ -191,6 +187,8 @@ export function GetParticleUpdateShaderVS(
 	  uniform float DeltaTime;
 	  uniform float CurTime;
 	  uniform float ParticleLife;
+	  uniform vec2 EmitterPosition; 
+
 	  uniform sampler2D NoiseTexture;
 	  uniform sampler2D NoiseTextureHQ;
 	  uniform sampler2D FireTexture;
@@ -205,7 +203,8 @@ export function GetParticleUpdateShaderVS(
 	  //check if particle should never be drawn again
 	  bool IsParticleDead()
 	  {
-		  return (inAge < 0.f);
+		 //dead particles are set to -1.0
+		 return (inAge < -0.5f);
 	  }
   
 	  float MapToRange(float t, float t0, float t1, float newt0, float newt1)
@@ -227,6 +226,12 @@ export function GetParticleUpdateShaderVS(
 		  }
 		  else
 		  {
+
+
+			const int bOneShotParticle = ` +
+        (bOneShotParticle ? 1 : 0) +
+        /* glsl */ `;
+
 			  //Get Cur Fire based on Pos
 			  vec2 fireUV = (inDefaultPosition + 1.f) * 0.5f;
 			  float curFire = texture(FireTexture, fireUV.xy).r;
@@ -244,17 +249,25 @@ export function GetParticleUpdateShaderVS(
 			  bool bAllowNewSpawn = false;
 			  bool bAllowUpdate = false;
 			  bool bOutdatedParticle = inAge > ParticleLife;
+			  if(inAge < 0.0 && inAge > -1.0)
+			  {
+				 //one shot particles have initial range of -0.25 and are allowed to spawn once
+				 bAllowNewSpawn = true;
+			  }
 			  float curAge = inAge;
   
 			  if(bIsInSpawnRange)
 			  {
 				  if(bOutdatedParticle)
 				  {
-					  bAllowNewSpawn = true;
+					if(!bAllowNewSpawn)//only one shot particle might have set this to true
+					{
+						bAllowNewSpawn = true && (bOneShotParticle == 0);
+					}
 				  }
 				  else
 				  {
-					  bAllowUpdate = true;
+					bAllowUpdate = true;
 				  }
 			  }
 			  else
@@ -286,7 +299,7 @@ export function GetParticleUpdateShaderVS(
         /* glsl */ `
 
 				  ` +
-        scGetInitialPosition(bRandomPosition) +
+        scGetInitialPosition(EInitialPositionMode) +
         /* glsl */ `
   
 				  ` +
@@ -500,12 +513,13 @@ export function GetParticleRenderInstancedVS(
 				interpolatorAge = ageNorm;
   
 
+				//TODO: Do it on per-particle update stage and load it in PS without using interpolators
 				float animationParameterNorm = ageNorm;
 				if(NumLoops > 1.f)
 				{
 				  //animationParameterNorm = fract((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops));
-				  animationParameterNorm = mod((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops), 1.f);
-				  //animationParameterNorm = fract((inAge) / (ParticleLife / NumLoops));
+				  //animationParameterNorm = mod((inAge + float(gl_InstanceID % 5) * 0.097f) / (ParticleLife / NumLoops), 1.f);
+				  animationParameterNorm = fract((inAge) / (ParticleLife / NumLoops));
 				}
 				float TotalFlipFrames = FlipbookSizeRC.x * FlipbookSizeRC.y;
 				interpolatorFrameIndex = (animationParameterNorm * TotalFlipFrames);
@@ -690,48 +704,47 @@ function scSmokeSpecificShading(alphaScale = 0.25) {
         scParticleSampleFlipbook(true) +
         /* glsl */ `
 
-		
-		//float alphaScale = 0.4f;
-		//colorFinal.a *= (alphaScale);
 		const float alphaScale = float(` +
         alphaScale +
         /* glsl */ `);
-
-		/* float t = mod(CurTime, 20.f) * 0.1;
-		if(t < 1.f)
-		{
-			alphaScale *= t;
-		}
-		else
-		{
-			alphaScale *= (2.f - t);
-		} */
 
 		colorFinal.a *= (alphaScale + colorFinal.r * 0.75);
 
 		#if 1
 		float radialDistanceScale = length(interpolatorTexCoords - vec2(0.5, 0.5));
-		//radialDistanceScale *= 2.f;
-		/* if(radialDistanceScale > 0.5f)
-		{
-			radialDistanceScale = 1.f;
-		}
-		else
-		{
-			radialDistanceScale = 0.f;
-		} */
 		radialDistanceScale = (1.f - clamp(radialDistanceScale, 0.f, 1.f));
-
-		colorFinal.a *= radialDistanceScale;
+		colorFinal.a *= radialDistanceScale * radialDistanceScale;
 		#endif
 
-		
 		float brightness = mix(0.35, 0.15, interpolatorAge);
 		colorFinal.rgb *= brightness;
 		
 		colorFinal.rgb *= colorFinal.a;
+		`
+    );
+}
 
+function scAfterBurnSmokeSpecificShading(alphaScale = 0.25) {
+    return (
+        scParticleSampleFlipbook(true) +
+        /* glsl */ `
+
+		const float alphaScale = float(` +
+        alphaScale +
+        /* glsl */ `);
+
+		colorFinal.a *= (alphaScale + colorFinal.r * 0.75);
+
+		#if 1
+		float radialDistanceScale = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		radialDistanceScale = (1.f - clamp(radialDistanceScale, 0.f, 1.f));
+		colorFinal.a *= pow(radialDistanceScale, 5.f);
+		#endif
+
+		float brightness = mix(0.35, 0.15, interpolatorAge);
+		colorFinal.rgb *= brightness;
 		
+		colorFinal.rgb *= colorFinal.a;
 		`
     );
 }
@@ -915,6 +928,8 @@ function scGetBasedOnShadingMode(
             return scEmbersSpecificShading();
         case EParticleShadingMode.Smoke:
             return scSmokeSpecificShading(alphaScale);
+        case EParticleShadingMode.AfterBurnSmoke:
+            return scAfterBurnSmokeSpecificShading(alphaScale);
         case EParticleShadingMode.Ashes:
             return scAshesSpecificShading();
         case EParticleShadingMode.Dust:
