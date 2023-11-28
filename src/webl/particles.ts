@@ -41,60 +41,63 @@ export const EParticleShadingMode = {
     Smoke: 3,
     Ashes: 4,
     Dust: 5,
+    AfterBurnSmoke: 6,
 };
 
 export class ParticlesEmitter {
-    public NumSpawners2D;
+    NumSpawners2D;
 
-    public NumParticlesPerSpawner;
+    NumParticlesPerSpawner;
 
-    public ParticleLife;
+    ParticleLife;
 
-    public NumLoops;
+    NumLoops;
 
-    public FlipbookSizeRC: Vector2;
+    FlipbookSizeRC: Vector2;
 
-    public TimeBetweenParticleSpawn: number;
+    TimeBetweenParticleSpawn: number;
 
-    public NumActiveParticles: number;
+    NumActiveParticles: number;
 
-    public InitialPositionsBufferGPU;
+    InitialPositionsBufferGPU;
 
-    public PositionsBufferGPU;
+    PositionsBufferGPU;
 
     //public SizeBufferGPU;
 
-    public VelocitiesBufferGPU;
+    VelocitiesBufferGPU;
 
-    public AgeBufferGPU;
+    AgeBufferGPU;
 
-    public ParticleUpdateVAO;
+    ParticleUpdateVAO;
 
-    public TransformFeedback;
+    TransformFeedback;
 
-    public ParticleUpdateShaderProgram: WebGLProgram;
+    ParticleUpdateShaderProgram: WebGLProgram;
 
-    public NoiseTexture;
+    NoiseTexture;
 
-    public NoiseTextureHQ;
+    NoiseTextureHQ;
 
-    public UniformParametersLocationList;
+    UniformParametersLocationList;
 
-    public CurrentBufferIndex: number;
+    CurrentBufferIndex: number;
 
-    public ParticleRenderVAO;
+    ParticleRenderVAO;
 
-    public ParticleInstancedRenderVAO;
+    ParticleInstancedRenderVAO;
 
-    public ParticleRenderUniformParametersLocationList;
+    ParticleRenderUniformParametersLocationList;
 
-    public ParticleInstancedRenderShaderProgram;
+    ParticleInstancedRenderShaderProgram;
 
-    public ColorTexture;
+    ColorTexture;
 
-    public FlameColorLUTTexture;
+    FlameColorLUTTexture;
 
-    public bUsesTexture;
+    bUsesTexture;
+
+    bOneShotParticle;
 
     constructor(
         gl: WebGL2RenderingContext,
@@ -120,13 +123,16 @@ export class ParticlesEmitter {
             inAlphaScale = 0.25, //Currently smoke shading mode specific
             inInitialTranslate = { x: 0.0, y: 0.0 },
             inbMotionBasedTransform = false,
-            inbRandomInitialPosition = false,
-            inRandomSpawnThres = 1.0,
+            inEInitialPositionMode = 0, //0:default, 1:random, 2:from Emitter Pos constant
+            inRandomSpawnThres = 1.0, //higher value - less chances to spawn
             inEAlphaFade = 0, //0:disabled, 1:smooth, 2:fast
             inEFadeInOutMode = 1, //0-disabled //1-fadeIn only //2-fadeOut only 3-enable all
             inESpecificShadingMode = EParticleShadingMode.Default,
+            inInitSpawnPosOffset = { x: 0.0, y: 0.0 },
+            inbOneShotParticle = false,
         },
     ) {
+        this.bOneShotParticle = inbOneShotParticle;
         this.NumSpawners2D = inNumSpawners2D;
         this.NumParticlesPerSpawner = inNumParticlesPerSpawner;
         this.ParticleLife = inParticleLife;
@@ -142,13 +148,16 @@ export class ParticlesEmitter {
         //Allocate Initial Positions Buffer
         const initialPositionsBufferCPU = new Float32Array(this.NumActiveParticles * 2);
         //Generate Initial Positions
-        const distanceBetweenParticlesNDC = 2 / (this.NumSpawners2D - 1.0);
-        const domainStart = -1.0;
+        const distanceBetweenParticlesNDC = {
+            x: (2 - inInitSpawnPosOffset.x * 2) / (this.NumSpawners2D - 1.0),
+            y: (2 - inInitSpawnPosOffset.y * 2) / (this.NumSpawners2D - 1.0),
+        };
+        const domainStart = { x: -1.0 + inInitSpawnPosOffset.x, y: -1.0 + inInitSpawnPosOffset.y };
         let count = 0;
         for (let y = 0; y < this.NumSpawners2D; y++) {
             for (let x = 0; x < this.NumSpawners2D; x++) {
-                const posX = domainStart + x * distanceBetweenParticlesNDC;
-                const posY = domainStart + y * distanceBetweenParticlesNDC;
+                const posX = domainStart.x + x * distanceBetweenParticlesNDC.x;
+                const posY = domainStart.y + y * distanceBetweenParticlesNDC.y;
                 for (let i = 0; i < this.NumParticlesPerSpawner; i++) {
                     initialPositionsBufferCPU[count] = posX;
                     initialPositionsBufferCPU[count + 1] = posY;
@@ -190,9 +199,9 @@ export class ParticlesEmitter {
             const ageBufferCPU = new Float32Array(this.NumActiveParticles);
             const numSpawners = this.NumSpawners2D * this.NumSpawners2D;
             for (let i = 0; i < numSpawners; i++) {
-                ageBufferCPU[i * this.NumParticlesPerSpawner] = this.ParticleLife + 1.0;
+                ageBufferCPU[i * this.NumParticlesPerSpawner] = this.bOneShotParticle ? 0.0 : this.ParticleLife + 1.0;
                 for (let k = 1; k < this.NumParticlesPerSpawner; k++) {
-                    ageBufferCPU[i * this.NumParticlesPerSpawner + k] = k * this.TimeBetweenParticleSpawn; //so that all particles are considered dead
+                    ageBufferCPU[i * this.NumParticlesPerSpawner + k] = k * this.TimeBetweenParticleSpawn;
                 }
             }
             this.AgeBufferGPU = [];
@@ -283,8 +292,9 @@ export class ParticlesEmitter {
                     inVelocityFieldForceScale,
                     inBuoyancyForceScale,
                     inDownwardForceScale,
-                    inbRandomInitialPosition,
+                    inEInitialPositionMode,
                     inRandomSpawnThres,
+                    inbOneShotParticle,
                 ),
             );
             const shaderPS = CreateShader(gl, gl.FRAGMENT_SHADER, ParticleUpdatePS);
@@ -331,7 +341,11 @@ export class ParticlesEmitter {
             this.ColorTexture = CreateTexture(gl, 4, inTextureFileName, true);
         }
 
-        this.FlameColorLUTTexture = CreateTexture(gl, 5, "assets/flameColorLUT5.png", true);
+        if (inESpecificShadingMode === EParticleShadingMode.Flame) {
+            this.FlameColorLUTTexture = CreateTexture(gl, 5, "assets/flameColorLUT5.png", true);
+        } else {
+            this.FlameColorLUTTexture = null;
+        }
 
         this.ParticleInstancedRenderShaderProgram = CreateShaderProgramVSPS(
             gl,
@@ -477,7 +491,43 @@ export class ParticlesEmitter {
         }
     }
 
-    Update(gl: WebGL2RenderingContext, fireTexture: WebGLTexture) {
+    Reset(gl: WebGL2RenderingContext) {
+        //Position
+        const positionsBufferCPU = new Float32Array(this.NumActiveParticles * 2);
+        for (let i = 0; i < this.NumActiveParticles * 2; i++) {
+            positionsBufferCPU[i] = -10000;
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.PositionsBufferGPU[0]);
+        gl.bufferData(gl.ARRAY_BUFFER, positionsBufferCPU, gl.STREAM_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.PositionsBufferGPU[1]);
+        gl.bufferData(gl.ARRAY_BUFFER, positionsBufferCPU, gl.STREAM_DRAW);
+
+        //Velocity
+        const velocitiesBufferCPU = new Float32Array(this.NumActiveParticles * 2);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.VelocitiesBufferGPU[0]);
+        gl.bufferData(gl.ARRAY_BUFFER, velocitiesBufferCPU, gl.STREAM_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.VelocitiesBufferGPU[1]);
+        gl.bufferData(gl.ARRAY_BUFFER, velocitiesBufferCPU, gl.STREAM_DRAW);
+
+        //Age
+        const ageBufferCPU = new Float32Array(this.NumActiveParticles);
+        const numSpawners = this.NumSpawners2D * this.NumSpawners2D;
+        for (let i = 0; i < numSpawners; i++) {
+            ageBufferCPU[i * this.NumParticlesPerSpawner] = this.bOneShotParticle ? -0.25 : this.ParticleLife + 1.0;
+            for (let k = 1; k < this.NumParticlesPerSpawner; k++) {
+                ageBufferCPU[i * this.NumParticlesPerSpawner + k] = k * this.TimeBetweenParticleSpawn; //so that all particles are considered dead
+            }
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.AgeBufferGPU[0]);
+        gl.bufferData(gl.ARRAY_BUFFER, ageBufferCPU, gl.STREAM_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.AgeBufferGPU[1]);
+        gl.bufferData(gl.ARRAY_BUFFER, ageBufferCPU, gl.STREAM_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        this.CurrentBufferIndex = 0;
+    }
+
+    Update(gl: WebGL2RenderingContext, fireTexture: WebGLTexture, initialEmitterPosition = { x: 0.0, y: 0.0 }) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 
@@ -489,6 +539,11 @@ export class ParticlesEmitter {
         gl.uniform1f(this.UniformParametersLocationList.DeltaTime, GTime.Delta);
         gl.uniform1f(this.UniformParametersLocationList.ParticleLife, this.ParticleLife);
         gl.uniform1f(this.UniformParametersLocationList.CurTime, GTime.Cur);
+        gl.uniform2f(
+            this.UniformParametersLocationList.EmitterPosition,
+            initialEmitterPosition.x,
+            initialEmitterPosition.y,
+        );
 
         gl.activeTexture(gl.TEXTURE0 + 1);
         gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
@@ -531,9 +586,11 @@ export class ParticlesEmitter {
             gl.uniform1i(this.ParticleRenderUniformParametersLocationList.ColorTexture, 4);
         }
 
-        gl.activeTexture(gl.TEXTURE0 + 5);
-        gl.bindTexture(gl.TEXTURE_2D, this.FlameColorLUTTexture);
-        gl.uniform1i(this.ParticleRenderUniformParametersLocationList.FlameColorLUT, 5);
+        if (this.FlameColorLUTTexture) {
+            gl.activeTexture(gl.TEXTURE0 + 5);
+            gl.bindTexture(gl.TEXTURE_2D, this.FlameColorLUTTexture);
+            gl.uniform1i(this.ParticleRenderUniformParametersLocationList.FlameColorLUT, 5);
+        }
 
         gl.activeTexture(gl.TEXTURE0 + 1);
         gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
@@ -590,6 +647,7 @@ export class ParticlesEmitter {
             FireTexture: gl.getUniformLocation(shaderProgram, "FireTexture"),
             ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
             FlameColorLUT: gl.getUniformLocation(shaderProgram, "FlameColorLUT"),
+            EmitterPosition: gl.getUniformLocation(shaderProgram, "EmitterPosition"),
         };
         return params;
     }
