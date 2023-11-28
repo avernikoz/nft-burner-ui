@@ -49,6 +49,7 @@ function App() {
         wagmiAccount.isConnected,
         solanaWallet.publicKey,
         solanaWallet.disconnecting,
+        NftController,
     ]);
 
     useEffect(() => {
