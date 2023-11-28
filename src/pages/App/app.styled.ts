@@ -1,6 +1,10 @@
 import { styled } from "styled-components";
 
 export const Footer = styled.div`
+    @media (max-width: 800px) {
+        display: none;
+    }
+
     Button {
         background-color: transparent;
         position: fixed;
@@ -19,6 +23,15 @@ export const BodyContainer = styled.div`
     position: absolute;
     top: 100px;
     left: 0;
+    height: 80vh;
+
+    @media (max-width: 400px) {
+        height: 50%;
+        width: 100%;
+        position: absolute;
+        bottom: 0;
+        top: auto;
+    }
 
     .half {
         /* grid-column: span 1; */
@@ -26,8 +39,8 @@ export const BodyContainer = styled.div`
         padding: 0.5rem;
         border: 1px solid #acacac;
         border-radius: 15px;
-        height: 80vh;
-        width: 100%;
+        height: 100%;
+        max-width: 650px;
 
         .control {
             display: flex;
