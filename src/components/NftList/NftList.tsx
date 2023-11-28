@@ -44,9 +44,7 @@ function NftList() {
     const checkImageExists = (imageUrl: string) => {
         return new Promise((resolve, reject) => {
             const img = new Image();
-            img.onload = function () {
-                resolve(true);
-            };
+
             img.onerror = function () {
                 reject(false);
             };
@@ -128,7 +126,7 @@ function NftList() {
                                         .then(() => true)
                                         .catch(() => false);
                                 });
-                                Promise.all(promises).then((results) => {
+                                Promise.all(promises).catch((results) => {
                                     convertedNfts = convertedNfts.filter((nft, index) => results[index]);
                                     setNFTList(convertedNfts);
                                     setShowSpinner(false);

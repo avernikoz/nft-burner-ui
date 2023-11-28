@@ -53,7 +53,7 @@ function App() {
 
     useEffect(() => {
         if (NftController?.nftStatus === ENftBurnStatus.BURNED) {
-            GRenderingStateMachine.SetRenderingState(ERenderingState.Burning);
+            GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady);
             setShowUI(false);
         }
     }, [NftController?.nftStatus]);
