@@ -2,7 +2,6 @@ import React, { useRef } from "react";
 
 import { Card, CardImage, CardTitle } from "./NftItem.styled";
 import { IMAGE_STORE_SINGLETON_INSTANCE } from "../../config/config";
-import FireParticles from "../FireParticle/FireParticle";
 import { INft } from "../../utils/types";
 
 function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: () => void }) {
@@ -26,7 +25,7 @@ function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: ()
     return (
         <Card className={props.isActive ? "active" : ""} onClick={handleCardClick}>
             {/* {props.isActive ? <BurnEffect /> : null} */}
-            {props.isActive ? <FireParticles /> : null}
+            {/* {props.isActive ? <FireParticles /> : null} */}
             <CardImage
                 ref={imgRef}
                 src={item.logoURI}

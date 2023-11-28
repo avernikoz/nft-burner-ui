@@ -1,4 +1,4 @@
-import { styled } from "styled-components";
+import { keyframes, styled } from "styled-components";
 
 export const BurnEffect = styled.div`
     transform: scale(0.5);
@@ -8,6 +8,19 @@ export const BurnEffect = styled.div`
         transform 0.3s ease-in-out,
         opacity 0.3s ease-in-out;
 `;
+
+const burnAnimation = keyframes`
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: .5;
+    }
+    100% {
+        opacity: 1;
+    }
+`;
+
 export const Card = styled.div`
     width: 200px;
     height: 220px;
@@ -20,6 +33,7 @@ export const Card = styled.div`
 
     &.active {
         z-index: 1;
+        animation: ${burnAnimation} 1s infinite;
         img {
             position: absolute;
             top: 0;
