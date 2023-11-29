@@ -41,6 +41,7 @@ export const BodyContainer = styled.div`
         height: 80vh;
         max-width: 650px;
         z-index: 10;
+        position: relative;
 
         .control {
             display: flex;

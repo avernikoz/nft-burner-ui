@@ -49,3 +49,7 @@
     right: 20px;
     z-index: 10;
 }
+
+#demo-canvas {
+    z-index: 0;
+}
