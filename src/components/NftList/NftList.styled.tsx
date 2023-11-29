@@ -3,7 +3,7 @@ import { styled } from "styled-components";
 export const List = styled.div`
     width: 100%;
     height: 80%;
-    border-bottom: 1px solid #4d4c4c;
+    // border-bottom: 1px solid #4d4c4c;
 
     h3 {
         color: white;

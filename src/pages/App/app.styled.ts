@@ -19,7 +19,6 @@ export const BodyContainer = styled.div`
     grid-template-columns: 1fr 1fr; */
     width: 50vw;
     padding: 0 1rem;
-    z-index: 10;
     position: absolute;
     top: 100px;
     left: 0;
@@ -41,6 +40,7 @@ export const BodyContainer = styled.div`
         border-radius: 15px;
         height: 80vh;
         max-width: 650px;
+        z-index: 10;
 
         .control {
             display: flex;
