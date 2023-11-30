@@ -34,7 +34,7 @@ export const BodyContainer = styled.div`
 
     .half {
         /* grid-column: span 1; */
-        background-color: rgba(0, 0, 0, 0.3);
+        background-color: rgba(0, 0, 0, 0.1);
         padding: 0.5rem;
         border: 1px solid #acacac;
         border-radius: 15px;

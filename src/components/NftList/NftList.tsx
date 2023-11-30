@@ -53,9 +53,9 @@ function NftList() {
     //     });
     // };
 
-    function imageExists(imageUrl: string) {
-        return fetch(imageUrl, { method: "HEAD" });
-    }
+    // function imageExists(imageUrl: string) {
+    //     return fetch(imageUrl, { method: "HEAD" });
+    // }
 
     useEffect(() => {
         try {
@@ -72,9 +72,9 @@ function NftList() {
                             ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
                                 network: evm.ALLOWED_EVM_CHAINS.Ethereum,
                                 owner: signer,
-                                // options: {
-                                //     excludeFilters: [NftFilters.SPAM],
-                                // },
+                                options: {
+                                    excludeFilters: [NftFilters.SPAM, NftFilters.AIRDROPS],
+                                },
                             }).then((data) => {
                                 const convertedNfts = data.ownedNfts.map((nft, index) => {
                                     let ipfsHash = nft.rawMetadata?.image;
@@ -106,15 +106,18 @@ function NftList() {
                             ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
                                 network: evm.ALLOWED_EVM_CHAINS.Polygon,
                                 owner: signer,
+                                options: {
+                                    excludeFilters: [NftFilters.SPAM, NftFilters.AIRDROPS],
+                                },
                             }).then((data) => {
-                                let convertedNfts = data.ownedNfts.map((nft, index) => {
+                                const convertedNfts = data.ownedNfts.map((nft, index) => {
                                     let ipfsHash = nft.rawMetadata?.image;
                                     if (!ipfsHash) {
                                         ipfsHash = "../../assets/svg/empty.jpg";
                                     }
-                                    // if (ipfsHash.includes("https://")) {
-                                    //     ipfsHash = proxy + ipfsHash;
-                                    // }
+                                    if (ipfsHash.includes("https://")) {
+                                        ipfsHash = proxy + ipfsHash;
+                                    }
                                     if (ipfsHash.includes("ipfs://")) {
                                         ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
                                     }
@@ -148,6 +151,9 @@ function NftList() {
                             ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
                                 network: evm.ALLOWED_EVM_CHAINS.Optimism,
                                 owner: signer,
+                                options: {
+                                    excludeFilters: [NftFilters.SPAM, NftFilters.AIRDROPS],
+                                },
                             }).then((data) => {
                                 const convertedNfts = data.ownedNfts.map((nft, index) => {
                                     let ipfsHash = nft.rawMetadata?.image;
@@ -155,9 +161,9 @@ function NftList() {
                                     if (!ipfsHash) {
                                         ipfsHash = "../../assets/svg/empty.jpg";
                                     }
-                                    // if (ipfsHash.includes("https://")) {
-                                    //     ipfsHash = proxy + ipfsHash;
-                                    // }
+                                    if (ipfsHash.includes("https://")) {
+                                        ipfsHash = proxy + ipfsHash;
+                                    }
                                     if (ipfsHash.includes("ipfs://")) {
                                         ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
                                     }
@@ -181,6 +187,9 @@ function NftList() {
                             ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
                                 network: evm.ALLOWED_EVM_CHAINS.Arbitrum,
                                 owner: signer,
+                                options: {
+                                    excludeFilters: [NftFilters.SPAM, NftFilters.AIRDROPS],
+                                },
                             }).then((data) => {
                                 const convertedNfts = data.ownedNfts.map((nft, index) => {
                                     let ipfsHash = nft.rawMetadata?.image;

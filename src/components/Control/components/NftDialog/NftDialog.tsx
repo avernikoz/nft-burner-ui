@@ -19,6 +19,8 @@ export enum NFTContractStandard {
 function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boolean; setVisible: () => void }) {
     const [submit, setSubmit] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
+    const [price, setPrice] = useState<number>(0.002);
+
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { nft, visible, setVisible, setNft } = props;
     const { signAndExecuteTransactionBlock } = suietUseWallet();
@@ -27,12 +29,31 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
     const toastController = useContext(ToastContext);
 
     useEffect(() => {
-        if(nft?.nftId && nft?.kioskId && nft?.nftType){
-            const payRes = SUI_NFT_CLIENT_INSTANCE.getFloorPrice({ nftCollectionContractType: nft?.nftType, priceApiURL: 'ds' }).then(()=>{
-                
-            });
+        const api = process.env.REACT_APP_SUI_NFT_PRICE_API;
+        try {
+            if (nft?.nftId && nft?.kioskId && nft?.nftType && api) {
+                SUI_NFT_CLIENT_INSTANCE.getFloorPrice({
+                    nftCollectionContractType: nft?.nftType,
+                    priceApiURL: api,
+                }).then(
+                    (res) => {
+                        console.log(res);
+                        setPrice(res.floorPrice);
+                    },
+                    (err) => {
+                        console.log(err);
+                        toastController?.showError("Failed to connect: " + err.message);
+                    },
+                );
+            }
+        } catch (error) {
+            if (error instanceof Error) {
+                toastController?.showError("Failed to connect: " + error.message);
+            } else {
+                toastController?.showError("Failed to connect: " + error);
+            }
         }
-    }, [visible]);
+    }, [nft?.kioskId, nft?.nftId, nft?.nftType, toastController, visible]);
 
     const handleHold = async () => {
         setSubmit(true);
@@ -140,7 +161,7 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
             <p>Tetris</p>
 
             <div className="card">
-                <p>NFT price: 2200$</p>
+                <p>NFT price: {price}</p>
                 <p>Burner fee commission: 5$</p>
                 {loading && <ProgressBar mode="indeterminate" style={{ height: "6px", width: "100%" }}></ProgressBar>}
             </div>
