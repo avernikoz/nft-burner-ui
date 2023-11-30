@@ -23,13 +23,13 @@ function App() {
     const [showUI, setShowUI] = useState<boolean>(false);
     const NftController = useContext(NftContext);
 
-    useEffect(() => {
-        if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
-        } else {
-            console.debug("[App] RenderMain call");
-            RenderMain();
-        }
-    }, []);
+    // useEffect(() => {
+    //     if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
+    //     } else {
+    //         console.debug("[App] RenderMain call");
+    //         RenderMain();
+    //     }
+    // }, []);
 
     useEffect(() => {
         if (wagmiAccount.isConnected && wagmiAccount.address) {
@@ -86,10 +86,10 @@ function App() {
                     </Footer>
                 </div>
             </ToastProvider>
-            <canvas id="demo-canvas">
+            {/* <canvas id="demo-canvas">
                 Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
-            </canvas>
-            {/* <div id="demo-canvas"></div> */}
+            </canvas> */}
+            <div id="demo-canvas"></div>
         </>
     );
 }

@@ -1,4 +1,4 @@
-import { useContext, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { FillButton, StyledDialog } from "./NftDialog.styled";
 import { ProgressBar } from "primereact/progressbar";
 import { INft } from "../../../../utils/types";
@@ -26,6 +26,14 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
     const solanaConnection = useConnection();
     const toastController = useContext(ToastContext);
 
+    useEffect(() => {
+        if(nft?.nftId && nft?.kioskId && nft?.nftType){
+            const payRes = SUI_NFT_CLIENT_INSTANCE.getFloorPrice({ nftCollectionContractType: nft?.nftType, priceApiURL: 'ds' }).then(()=>{
+                
+            });
+        }
+    }, [visible]);
+
     const handleHold = async () => {
         setSubmit(true);
         try {
@@ -38,7 +46,6 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 (nft.contractType == NFTContractStandard.ERC1155 || nft.contractType == NFTContractStandard.ERC721)
             ) {
                 setLoading(true);
-                console.log(nft);
                 const payTransaction = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.pay({
                     network: nft.evm,
                     amount: 0.000001,
@@ -63,7 +70,6 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
             }
             if (nft?.nftId && nft?.kioskId && nft?.nftType) {
                 setLoading(true);
-                console.log(nft);
                 const payRes = await SUI_NFT_CLIENT_INSTANCE.pay({ amount: 0.01 });
                 const burnRes = await SUI_NFT_CLIENT_INSTANCE.burnNFT({
                     nft: {

@@ -22,10 +22,10 @@ export const BodyContainer = styled.div`
     position: absolute;
     top: 100px;
     left: 0;
-    height: 80vh;
+    height: 85vh;
 
-    @media (max-width: 400px) {
-        height: 50%;
+    @media (max-width: 800px) {
+        height: 60%;
         width: 100%;
         position: absolute;
         bottom: 0;
@@ -38,10 +38,14 @@ export const BodyContainer = styled.div`
         padding: 0.5rem;
         border: 1px solid #acacac;
         border-radius: 15px;
-        height: 80vh;
-        max-width: 650px;
+        height: 100%;
+        width: 90%;
         z-index: 10;
         position: relative;
+
+        @media (max-width: 800px) {
+            width: 100%;
+        }
 
         .control {
             display: flex;

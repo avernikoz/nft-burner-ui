@@ -22,6 +22,8 @@ import NftItem from "../NftItem/NftItem";
 import { INft, ALLOWED_EVM_CHAINS, ENftBurnStatus } from "../../utils/types";
 import { List } from "./NftList.styled";
 import { NFT_IMAGES_CORS_PROXY_URL } from "../../config/proxy.config";
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { NftFilters } from "alchemy-sdk";
 
 function NftList() {
     const suietWallet = suietUseWallet();
@@ -44,13 +46,16 @@ function NftList() {
     // const checkImageExists = (imageUrl: string) => {
     //     return new Promise((resolve, reject) => {
     //         const img = new Image();
-
     //         img.onerror = function () {
     //             reject(false);
     //         };
     //         img.src = imageUrl;
     //     });
     // };
+
+    function imageExists(imageUrl: string) {
+        return fetch(imageUrl, { method: "HEAD" });
+    }
 
     useEffect(() => {
         try {
@@ -67,6 +72,9 @@ function NftList() {
                             ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
                                 network: evm.ALLOWED_EVM_CHAINS.Ethereum,
                                 owner: signer,
+                                // options: {
+                                //     excludeFilters: [NftFilters.SPAM],
+                                // },
                             }).then((data) => {
                                 const convertedNfts = data.ownedNfts.map((nft, index) => {
                                     let ipfsHash = nft.rawMetadata?.image;
@@ -99,14 +107,14 @@ function NftList() {
                                 network: evm.ALLOWED_EVM_CHAINS.Polygon,
                                 owner: signer,
                             }).then((data) => {
-                                const convertedNfts = data.ownedNfts.map((nft, index) => {
+                                let convertedNfts = data.ownedNfts.map((nft, index) => {
                                     let ipfsHash = nft.rawMetadata?.image;
                                     if (!ipfsHash) {
                                         ipfsHash = "../../assets/svg/empty.jpg";
                                     }
-                                    if (ipfsHash.includes("https://")) {
-                                        ipfsHash = proxy + ipfsHash;
-                                    }
+                                    // if (ipfsHash.includes("https://")) {
+                                    //     ipfsHash = proxy + ipfsHash;
+                                    // }
                                     if (ipfsHash.includes("ipfs://")) {
                                         ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
                                     }
@@ -125,7 +133,7 @@ function NftList() {
                                 setShowSpinner(false);
 
                                 // const promises = convertedNfts.map((nft) => {
-                                //     return checkImageExists(nft.logoURI)
+                                //     return imageExists(nft.logoURI)
                                 //         .then(() => true)
                                 //         .catch(() => false);
                                 // });
@@ -321,19 +329,22 @@ function NftList() {
             {!showSpinner ? (
                 <div className="virtual-container">
                     <AutoSizer>
-                        {({ height, width }) => (
-                            <Grid
-                                className="nft-list"
-                                columnCount={3} // Number of columns
-                                columnWidth={width / 3} // Width of each item
-                                height={height} // Height of the grid
-                                rowCount={Math.ceil(NFTList.length / 3)} // Number of rows
-                                rowHeight={230} // Height of each item
-                                width={width} // Width of the grid
-                            >
-                                {Cell}
-                            </Grid>
-                        )}
+                        {({ height, width }) => {
+                            const columns = Math.round(width / 230);
+                            return (
+                                <Grid
+                                    className="nft-list"
+                                    columnCount={columns} // Number of columns
+                                    columnWidth={width / columns} // Width of each item
+                                    height={height} // Height of the grid
+                                    rowCount={Math.ceil(NFTList.length / columns)} // Number of rows
+                                    rowHeight={230} // Height of each item
+                                    width={width} // Width of the grid
+                                >
+                                    {Cell}
+                                </Grid>
+                            );
+                        }}
                     </AutoSizer>
                 </div>
             ) : (
