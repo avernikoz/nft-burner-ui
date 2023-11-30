@@ -2,12 +2,12 @@ import { RFirePlanePass } from "./firePlane";
 import { GMeshGenerator } from "./helpers/meshGenerator";
 import { GUserInputDesc } from "./input";
 import { EParticleShadingMode, ParticlesEmitter } from "./particles";
-import { CreateTexture } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
 import { GetShaderSourceAnimatedSpriteRenderPS, GetShaderSourceSingleFlameRenderVS } from "./shaders/shaderTools";
 import { ERenderingState, GRenderingStateMachine } from "./states";
+import { GTexturePool } from "./texturePool";
 import { GTime, MathClamp, MathGetVectorLength, MathLerp, MathLerpColor } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
@@ -118,8 +118,8 @@ export class LighterTool {
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
 
-        this.ColorTexture = CreateTexture(gl, 7, "assets/sprites/Flame02_16x4.png", true);
-        this.LUTTexture = CreateTexture(gl, 5, "assets/flameColorLUT5.png", true);
+        this.ColorTexture = GTexturePool.CreateTexture(gl, false, "assets/sprites/Flame02_16x4.png", true);
+        this.LUTTexture = GTexturePool.CreateTexture(gl, false, "assets/flameColorLUT5.png", true);
 
         this.InitRenderingResources(gl);
 

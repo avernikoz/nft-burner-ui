@@ -1,4 +1,4 @@
-import { CreateTexture, CreateTextureRT } from "./resourcesUtils";
+import { CreateTextureRT } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import {
@@ -18,6 +18,7 @@ import {
     GetShaderSourceGenericSpriteRenderPS,
 } from "./shaders/shaderBackgroundScene";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
+import { GTexturePool } from "./texturePool";
 import { GTime, MathLerp, MathMapToRange } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
@@ -93,7 +94,7 @@ export class SceneLights {
 
         this.UniformParametersLocationListUpdate = GetUniformParametersList(gl, this.ShaderProgramUpdate);
 
-        this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise128.png");
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "assets/perlinNoise128.png");
     }
 
     Update(gl: WebGL2RenderingContext, firePlaneTexture: WebGLTexture) {
@@ -163,11 +164,15 @@ export class RSpotlightRenderPass {
         this.UniformParametersLocationListSourceSprite = GetUniformParametersList(gl, this.ShaderProgramSourceSprite);
 
         const spotlightTextureId = Math.floor(Math.random() * 8);
-        this.SpotlightTexture = CreateTexture(gl, 4, `assets/spotlightCut` + spotlightTextureId + `.png`);
+        this.SpotlightTexture = GTexturePool.CreateTexture(
+            gl,
+            false,
+            `assets/spotlightCut` + spotlightTextureId + `.png`,
+        );
         //this.SpotlightTexture = CreateTexture(gl, 5, "assets/example.jpg");
 
-        this.LightFlareTexture = CreateTexture(gl, 4, `assets/background/lightGlare0.png`);
-        this.LightSourceTexture = CreateTexture(gl, 4, `assets/background/spotlightMask0.png`);
+        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `assets/background/lightGlare0.png`);
+        this.LightSourceTexture = GTexturePool.CreateTexture(gl, false, `assets/background/spotlightMask0.png`);
     }
 
     RenderVolumetricLight(gl: WebGL2RenderingContext) {
@@ -303,7 +308,7 @@ export class RBurntStampVisualizer {
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
 
-        this.ColorTexture = CreateTexture(gl, 7, "assets/background/burntStamp.png");
+        this.ColorTexture = GTexturePool.CreateTexture(gl, false, "assets/background/burntStamp.png");
 
         const offsetMax = 0.05;
         this.Position.x = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);
@@ -405,7 +410,13 @@ export class RBackgroundRenderPass {
         //Shader Parameters
         this.UniformParametersLocationListFloor = GetUniformParametersList(gl, this.ShaderProgramFloor);
 
-        this.SpotlightTexture = CreateTexture(gl, 4, "assets/background/spotlightMask0.png", true, true);
+        this.SpotlightTexture = GTexturePool.CreateTexture(
+            gl,
+            false,
+            "assets/background/spotlightMask0.png",
+            true,
+            true,
+        );
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleBlack1024.png", true, true);
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/hexTilesDFS.jpg", true, true);
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/redConcreteDFS.jpg", true, true);
@@ -415,15 +426,39 @@ export class RBackgroundRenderPass {
         const matName = `goldTiles`;
         const fileFormat = 1 ? `.png` : `.jpg`;
         //const fileFormat = `.jpg`;
-        this.ColorTexture = CreateTexture(gl, 7, `assets/background/` + matName + `DFS` + fileFormat, true, true);
-        this.NormalTexture = CreateTexture(gl, 7, `assets/background/` + matName + `NRM` + fileFormat, true, true);
-        this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/` + matName + `RGH` + fileFormat, true, true);
+        this.ColorTexture = GTexturePool.CreateTexture(
+            gl,
+            false,
+            `assets/background/` + matName + `DFS` + fileFormat,
+            true,
+            true,
+        );
+        this.NormalTexture = GTexturePool.CreateTexture(
+            gl,
+            false,
+            `assets/background/` + matName + `NRM` + fileFormat,
+            true,
+            true,
+        );
+        this.RoughnessTexture = GTexturePool.CreateTexture(
+            gl,
+            false,
+            `assets/background/` + matName + `RGH` + fileFormat,
+            true,
+            true,
+        );
         //this.RoughnessTexture = CreateTexture(gl, 5, "assets/background/goldRGH.png", true, true);
 
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/foil2RGH.png", true, true);
-        this.PuddleTexture = CreateTexture(gl, 5, "assets/background/floorAsphaltHeight.jpg", true, true);
+        this.PuddleTexture = GTexturePool.CreateTexture(
+            gl,
+            false,
+            "assets/background/floorAsphaltHeight.jpg",
+            true,
+            true,
+        );
         //this.PuddleTexture = CreateTexture(gl, 5, "assets/background/floorAsphaltRGH.jpg", true, true);
-        this.OilTexture = CreateTexture(gl, 5, "assets/background/oil/oil4.jpeg", true, true);
+        this.OilTexture = GTexturePool.CreateTexture(gl, false, "assets/background/oil/oil4.jpeg", true, true);
 
         // this.ColorTexture = CreateTexture(gl, 5, "assets/background/copperRGH.png", true, true);
         // this.ColorTexture = CreateTexture(gl, 5, "assets/background/goldRGH.png", true, true);

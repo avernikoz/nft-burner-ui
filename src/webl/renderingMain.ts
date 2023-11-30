@@ -17,7 +17,6 @@ import {
     BindRenderTarget,
     CreateFramebufferWithAttachment,
     CreateTextureRT,
-    GAreAllTexturesLoaded,
     ReadPixelsAsync,
     AsyncPixelReadingState,
 } from "./resourcesUtils";
@@ -69,6 +68,7 @@ import { IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController } from "./animationController";
 import { AudioEngine } from "./audioEngine";
 import { LighterTool } from "./tools";
+import { GTexturePool } from "./texturePool";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -711,7 +711,7 @@ export function RenderMain() {
             }
 
             if (
-                GAreAllTexturesLoaded() &&
+                GTexturePool.AreAllTexturesLoaded() &&
                 (GFirstRenderingFrame || RenderStateMachine.currentState !== ERenderingState.Preloading)
             ) {
                 if (GFirstRenderingFrame) {

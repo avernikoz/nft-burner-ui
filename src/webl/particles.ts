@@ -6,12 +6,12 @@ import {
 } from "./shaders/shaderParticles";
 
 import { CreateShader, CreateShaderProgramVSPS } from "./shaderUtils";
-import { CreateTexture } from "./resourcesUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { getWebGLProgram } from "./helpers/getWebGLProgram";
 import { GTime, showError } from "./utils";
 import { Vector2 } from "./types";
 import { GSceneDesc, GScreenDesc } from "./scene";
+import { GTexturePool } from "./texturePool";
 
 // ====================================================== SHADERS END ======================================================
 
@@ -328,8 +328,8 @@ export class ParticlesEmitter {
         //Noise Texture
         //TODO: Use Static Noise Texture, not a texture per Particle System
         //this.NoiseTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg");
-        this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise32.png");
-        this.NoiseTextureHQ = CreateTexture(gl, 5, "assets/perlinNoise512.png");
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "assets/perlinNoise32.png");
+        this.NoiseTextureHQ = GTexturePool.CreateTexture(gl, false, "assets/perlinNoise512.png");
 
         this.UniformParametersLocationList = this.GetUniformParametersList(gl, this.ParticleUpdateShaderProgram);
 
@@ -338,11 +338,11 @@ export class ParticlesEmitter {
         //========================================================= Allocate Rendering Data
 
         if (this.bUsesTexture) {
-            this.ColorTexture = CreateTexture(gl, 4, inTextureFileName, true);
+            this.ColorTexture = GTexturePool.CreateTexture(gl, false, inTextureFileName, true);
         }
 
         if (inESpecificShadingMode === EParticleShadingMode.Flame) {
-            this.FlameColorLUTTexture = CreateTexture(gl, 5, "assets/flameColorLUT5.png", true);
+            this.FlameColorLUTTexture = GTexturePool.CreateTexture(gl, false, "assets/flameColorLUT5.png", true);
         } else {
             this.FlameColorLUTTexture = null;
         }

@@ -1,9 +1,9 @@
 import { GUserInputDesc } from "./input";
-import { CreateTexture } from "./resourcesUtils";
 import { GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { GetShaderSourceUISpriteRenderPS, GetShaderSourceUISpriteRenderVS } from "./shaders/shaderUI";
+import { GTexturePool } from "./texturePool";
 import { Vector2 } from "./types";
 import { MathClamp, MathIntersectionSphereSphere } from "./utils";
 
@@ -49,8 +49,8 @@ export class SpatialControlPoint {
         this.bSelectedThisFrame = false;
         this.bDraggable = inbIsDraggable;
 
-        this.ColorTexture0 = CreateTexture(gl, 4, defaultTextureLocation);
-        this.ColorTexture1 = CreateTexture(gl, 4, activeTextureLocation);
+        this.ColorTexture0 = GTexturePool.CreateTexture(gl, false, defaultTextureLocation);
+        this.ColorTexture1 = GTexturePool.CreateTexture(gl, false, activeTextureLocation);
     }
 
     ClearState() {
