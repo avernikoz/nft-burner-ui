@@ -1,7 +1,7 @@
 import { styled } from "styled-components";
 
 export const Footer = styled.div`
-    @media (max-width: 800px) {
+    @media screen and (aspect-ratio: 1/1) {
         display: none;
     }
 
@@ -24,12 +24,13 @@ export const BodyContainer = styled.div`
     left: 0;
     height: 85vh;
 
-    @media (max-width: 800px) {
-        height: 60%;
+    @media (max-width: 1000px) {
+        height: 50%;
         width: 100%;
         position: absolute;
         bottom: 0;
         top: auto;
+        padding: 0 0.5rem;
     }
 
     .half {
@@ -43,7 +44,7 @@ export const BodyContainer = styled.div`
         z-index: 10;
         position: relative;
 
-        @media (max-width: 800px) {
+        @media (max-width: 1000px) {
             width: 100%;
         }
 

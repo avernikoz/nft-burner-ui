@@ -152,12 +152,7 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
             style={{ width: "min-content" }}
             onHide={() => setVisible()}
         >
-            <img
-                crossOrigin="anonymous"
-                src={nft?.logoURI}
-                alt={nft?.name}
-                style={{ width: "300px", height: "300px" }}
-            />
+            <img crossOrigin="anonymous" src={nft?.logoURI} alt={nft?.name} />
             <p>Tetris</p>
 
             <div className="card">

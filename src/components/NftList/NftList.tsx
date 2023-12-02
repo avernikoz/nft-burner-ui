@@ -84,7 +84,7 @@ function NftList() {
                             network: chainName,
                             owner: signer,
                             options: {
-                                excludeFilters: [NftFilters.SPAM, NftFilters.AIRDROPS],
+                                // excludeFilters: [NftFilters.SPAM, NftFilters.AIRDROPS],
                             },
                         }).then((data) => {
                             const convertedNfts = data.ownedNfts.map((nft, index) => {
@@ -119,6 +119,7 @@ function NftList() {
                             //         .then(() => true)
                             //         .catch(() => false);
                             // });
+
                             // Promise.all(promises).catch((results) => {
                             //     convertedNfts = convertedNfts.filter((nft, index) => results[index]);
                             //     setNFTList(convertedNfts);
@@ -225,6 +226,7 @@ function NftList() {
             <div
                 style={{
                     ...style,
+                    margin: "0.1rem",
                 }}
             >
                 <NftItem
@@ -246,7 +248,7 @@ function NftList() {
                 <div className="virtual-container">
                     <AutoSizer>
                         {({ height, width }) => {
-                            const columns = Math.round(width / 230);
+                            const columns = Math.round(width / 180);
                             return (
                                 <Grid
                                     className="nft-list"
@@ -254,7 +256,7 @@ function NftList() {
                                     columnWidth={width / columns} // Width of each item
                                     height={height} // Height of the grid
                                     rowCount={Math.ceil(NFTList.length / columns)} // Number of rows
-                                    rowHeight={230} // Height of each item
+                                    rowHeight={170} // Height of each item
                                     width={width} // Width of the grid
                                 >
                                     {Cell}

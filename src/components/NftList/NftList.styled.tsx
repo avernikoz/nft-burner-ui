@@ -4,12 +4,12 @@ export const List = styled.div`
     width: 100%;
     height: 78%;
     // border-bottom: 1px solid #4d4c4c;
-    @media (max-width: 800px) {
-        height: 66%;
-    }
 
     h3 {
         color: white;
+        @media (max-width: 1000px) {
+            display: none;
+        }
     }
     .virtual-container {
         width: 100%;

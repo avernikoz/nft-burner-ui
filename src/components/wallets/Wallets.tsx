@@ -247,12 +247,13 @@ function Wallets(props: { hideUI: () => void }) {
         wagmiAccount.isConnected,
     ]);
 
+    const panelMenuClass = `w-full md:w-25rem ${account ? "phoneAdapt" : ""}`;
     return (
         <div className="wallet">
             <ButtonContainer>
                 <PanelMenu
                     model={menuItems}
-                    className="w-full md:w-25rem"
+                    className={panelMenuClass}
                     color={"primary"}
                     style={{ minWidth: "200px" }}
                 />
