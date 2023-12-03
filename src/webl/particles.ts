@@ -329,7 +329,7 @@ export class ParticlesEmitter {
         //TODO: Use Static Noise Texture, not a texture per Particle System
         //this.NoiseTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg");
         this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise32");
-        this.NoiseTextureHQ = GTexturePool.CreateTexture(gl, false, "perlinNoise512");
+        this.NoiseTextureHQ = GTexturePool.CreateTexture(gl, false, "perlinNoise512", true);
 
         this.UniformParametersLocationList = this.GetUniformParametersList(gl, this.ParticleUpdateShaderProgram);
 
