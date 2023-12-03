@@ -9,7 +9,7 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
             /* glsl */ `
 		vec2 uv = vec2(CurTime * 0.17f + 0.12f * float(gl_VertexID), CurTime * 0.09 + 0.07 * float(gl_VertexID));
 		//uv *= 0.1f;
-		vec2 noise = textureLod(NoiseTextureHQ, uv.xy, 2.0).rg;
+		vec2 noise = textureLod(NoiseTextureHQ, uv.xy, 0.0).rg;
 		noise = noise * 2.f - 1.f;
 	#if 1 //MIN LENGTH
 		float curLength = length(noise);
@@ -148,7 +148,8 @@ function scParticleSampleFlipbook(condition: boolean) {
 		uv.x += (frameSize.x * float(FlipBookIndex2D.x));
 		uv.y += (frameSize.y * float(FlipBookIndex2D.y));
 		
-		colorFinal = texture(ColorTexture, uv).rgba;
+		//colorFinal = texture(ColorTexture, uv).rgba;
+		colorFinal = textureLod(ColorTexture, uv, 0.0).rgba;
 
 		#if 1//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
 		float numFrames = float(FlipbookSizeRC.x * FlipbookSizeRC.y);
