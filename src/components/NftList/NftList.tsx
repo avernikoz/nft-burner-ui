@@ -84,7 +84,7 @@ function NftList() {
                             network: chainName,
                             owner: signer,
                             options: {
-                                // excludeFilters: [NftFilters.SPAM, NftFilters.AIRDROPS],
+                                excludeFilters: [NftFilters.SPAM, NftFilters.AIRDROPS],
                             },
                         }).then((data) => {
                             const convertedNfts = data.ownedNfts.map((nft, index) => {
