@@ -157,8 +157,8 @@ export class GTexturePool {
                             gl.compressedTexImage2D(
                                 gl.TEXTURE_2D,
                                 i,
-                                //ext.COMPRESSED_RGBA_ASTC_6x6_KHR,
-                                ktxMeta.glInternalFormat,
+                                ext.COMPRESSED_RGBA_ASTC_6x6_KHR,
+                                //ktxMeta.glInternalFormat,
                                 curMIP.width!,
                                 curMIP.height!,
                                 0,
