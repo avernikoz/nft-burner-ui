@@ -304,11 +304,11 @@ export class RCombinerPass {
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
 
-        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "assets/perlinNoise1024.png");
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
 
-        this.SmokeNoiseTexture = GTexturePool.CreateTexture(gl, false, "assets/smokeNoiseColor.jpg");
-        this.LogoImageTexture = GTexturePool.CreateTexture(gl, false, "assets/background/logoNewY.png");
-        this.LensTexture = GTexturePool.CreateTexture(gl, false, "assets/lensDirt6Edit.jpg");
+        this.SmokeNoiseTexture = GTexturePool.CreateTexture(gl, false, "smokeNoiseColor");
+        this.LogoImageTexture = GTexturePool.CreateTexture(gl, false, "logoNewY");
+        this.LensTexture = GTexturePool.CreateTexture(gl, false, "lensDirt6Edit");
     }
 
     Execute(
@@ -428,9 +428,9 @@ export class RFlamePostProcessPass {
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
 
-        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "assets/perlinNoise1024.png");
-        this.FlameNoiseTexture = GTexturePool.CreateTexture(gl, false, "assets/flameNoise1.png");
-        this.FlameNoiseTexture2 = GTexturePool.CreateTexture(gl, false, "assets/flameNoise2.png");
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
+        this.FlameNoiseTexture = GTexturePool.CreateTexture(gl, false, "flameNoise1_R8");
+        this.FlameNoiseTexture2 = GTexturePool.CreateTexture(gl, false, "flameNoise2_R8");
     }
 
     Execute(

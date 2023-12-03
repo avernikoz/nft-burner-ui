@@ -328,8 +328,8 @@ export class ParticlesEmitter {
         //Noise Texture
         //TODO: Use Static Noise Texture, not a texture per Particle System
         //this.NoiseTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg");
-        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "assets/perlinNoise32.png");
-        this.NoiseTextureHQ = GTexturePool.CreateTexture(gl, false, "assets/perlinNoise512.png");
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise32");
+        this.NoiseTextureHQ = GTexturePool.CreateTexture(gl, false, "perlinNoise512");
 
         this.UniformParametersLocationList = this.GetUniformParametersList(gl, this.ParticleUpdateShaderProgram);
 
@@ -342,7 +342,7 @@ export class ParticlesEmitter {
         }
 
         if (inESpecificShadingMode === EParticleShadingMode.Flame) {
-            this.FlameColorLUTTexture = GTexturePool.CreateTexture(gl, false, "assets/flameColorLUT5.png", true);
+            this.FlameColorLUTTexture = GTexturePool.CreateTexture(gl, false, "flameColorLUT5", true);
         } else {
             this.FlameColorLUTTexture = null;
         }

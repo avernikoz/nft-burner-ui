@@ -64,7 +64,7 @@ import {
 import { ApplyCameraControl, SetupCameraControlThroughInput } from "./controller";
 import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./spatialController";
 import { ERenderingState, GRenderingStateMachine } from "./states";
-import { IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
+import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController } from "./animationController";
 import { AudioEngine } from "./audioEngine";
 import { LighterTool } from "./tools";
@@ -336,6 +336,19 @@ export function RenderMain() {
         }
     }
 
+    ext = gl.getExtension("WEBGL_compressed_texture_astc");
+    if (ext) {
+        GTexturePool.bSupportsASTCCompression = true;
+    } else {
+        ext = gl.getExtension("WEBGL_compressed_texture_s3tc");
+        if (ext) {
+            GTexturePool.bSupportsDXTCompression = true;
+            GTexturePool.CompressedTextureExtension = gl.getExtension("WEBGL_compressed_texture_s3tc")!;
+        } else {
+            showError("Texture Compression Not Supported");
+        }
+    }
+
     //================================
     // 	INIT DEBUG STATE CONTROLLERS
     //================================
@@ -353,8 +366,8 @@ export function RenderMain() {
         { x: curStateControllerPos, y: -0.75 },
         stateControllerSize,
         false,
-        `assets/background/stateIcon0.png`,
-        `assets/background/stateIcon01.png`,
+        `stateIcon0`,
+        `stateIcon01`,
     );
     curStateControllerPos += distBBetwenControllers;
     StateControllers[1] = new SpatialControlPoint(
@@ -362,8 +375,8 @@ export function RenderMain() {
         { x: curStateControllerPos, y: -0.75 },
         stateControllerSize,
         false,
-        `assets/background/stateIcon1.png`,
-        `assets/background/stateIcon11.png`,
+        `stateIcon1`,
+        `stateIcon11`,
     );
     curStateControllerPos += distBBetwenControllers;
     StateControllers[2] = new SpatialControlPoint(
@@ -371,8 +384,8 @@ export function RenderMain() {
         { x: curStateControllerPos, y: -0.75 },
         stateControllerSize,
         false,
-        `assets/background/stateIcon2.png`,
-        `assets/background/stateIcon21.png`,
+        `stateIcon2`,
+        `stateIcon21`,
     );
     curStateControllerPos += distBBetwenControllers;
     StateControllers[3] = new SpatialControlPoint(
@@ -380,8 +393,8 @@ export function RenderMain() {
         { x: curStateControllerPos, y: -0.75 },
         stateControllerSize,
         false,
-        `assets/background/stateIcon3.png`,
-        `assets/background/stateIcon31.png`,
+        `stateIcon3`,
+        `stateIcon31`,
     );
     curStateControllerPos += distBBetwenControllers;
     StateControllers[4] = new SpatialControlPoint(
@@ -389,8 +402,8 @@ export function RenderMain() {
         { x: curStateControllerPos, y: -0.75 },
         stateControllerSize,
         false,
-        `assets/background/stateIcon3.png`,
-        `assets/background/stateIcon31.png`,
+        `stateIcon3`,
+        `stateIcon31`,
     );
     curStateControllerPos += distBBetwenControllers;
     StateControllers[5] = new SpatialControlPoint(
@@ -398,8 +411,8 @@ export function RenderMain() {
         { x: curStateControllerPos, y: -0.75 },
         stateControllerSize,
         false,
-        `assets/background/stateIcon3.png`,
-        `assets/background/stateIcon31.png`,
+        `stateIcon3`,
+        `stateIcon31`,
     );
 
     //==============================
@@ -466,7 +479,7 @@ export function RenderMain() {
         SmokeParticlesDesc.inDownwardForceScale = 2.5; */
     }
     const bPaperMaterial = false;
-    const bAshesInEmbersPass = 0 && bPaperMaterial;
+    const bAshesInEmbersPass = 0;
     if (bPaperMaterial) {
         //FlameParticlesDesc.inDefaultSize.y *= 0.9;
         FlameParticlesDesc.inRandomSpawnThres = 0.5;
@@ -496,8 +509,8 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
     //
-    SmokeParticlesDesc.inAlphaScale = 0.25 + Math.random() * 0.7;
-    SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(5.0, 20.0, Math.random());
+    SmokeParticlesDesc.inAlphaScale = 0.05 + Math.random() * 0.9;
+    SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
     AfterBurnSmokeParticlesDesc.inAlphaScale = 0.25 + Math.random() * 0.5;
@@ -516,8 +529,8 @@ export function RenderMain() {
         { x: 0.0, y: 0.9 },
         0.075,
         true,
-        `assets/background/spotLightIcon2.png`,
-        `assets/background/spotLightIcon2Inv.png`,
+        `spotLightIcon2_R8`,
+        `spotLightIcon2Inv`,
     );
     function ApplySpotlightControlFromGUI() {
         if (SpotlightPositionController.bIntersectionThisFrame) {
@@ -560,8 +573,8 @@ export function RenderMain() {
         { x: -0.75, y: 0.0 },
         0.35,
         false,
-        `assets/background/connectButton.png`,
-        `assets/background/connectButton1.png`,
+        `connectButton`,
+        `connectButton1`,
     );
 
     //==============================
@@ -577,11 +590,11 @@ export function RenderMain() {
     if (GDatGUI) {
         //For global vars
         {
-            GDatGUI.close();
+            //GDatGUI.close();
+
+            GDatGUI.add(GSettings, "bRunSimulation").name("Run Simulation");
 
             const folder = GDatGUI.addFolder("Main");
-
-            folder.add(GSettings, "bRunSimulation").name("Run Simulation"); // 'Enable Feature' is the label for the checkbox
 
             folder.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
             folder.add(GTime, "Cur").name("CurTime").listen().step(0.0001);
@@ -599,6 +612,7 @@ export function RenderMain() {
         BurningSurface.SubmitDebugUI(GDatGUI);
         BackGroundRenderPass.SubmitDebugUI(GDatGUI);
         CurTool.SubmitDebugUI(GDatGUI);
+        GTexturePool.SubmitDebugUI(GDatGUI);
     }
 
     //=============================================================================================================================
@@ -611,6 +625,11 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
         if (gl !== null && GRenderTargets.FirePlaneTexture !== null && GPostProcessPasses.CopyPresemt !== null) {
+            //Debug UI
+            if (APP_ENVIRONMENT === "development") {
+                GTexturePool.LogTexturesInPool();
+            }
+
             const RenderStateMachine = GRenderingStateMachine.GetInstance();
             const bNewRenderStateThisFrame = RenderStateMachine.bWasNewStateProcessed();
 

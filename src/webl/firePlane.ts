@@ -271,8 +271,8 @@ export class RFirePlanePass {
         //Shader Parameters
         this.UniformParametersLocationListFireUpdate = GetUniformParametersList(gl, this.shaderProgramFireUpdate);
 
-        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "assets/perlinNoise1024.png");
-        this.NoiseTextureLQ = GTexturePool.CreateTexture(gl, false, "assets/perlinNoise32.png");
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
+        this.NoiseTextureLQ = GTexturePool.CreateTexture(gl, false, "perlinNoise32");
 
         this.NoiseTextureInterpolator = 0;
 
@@ -288,21 +288,20 @@ export class RFirePlanePass {
         //Shader Parameters
         this.VisualizerUniformParametersLocationList = GetUniformParametersList(gl, this.VisualizerShaderProgram);
 
-        this.VisualizerFlameColorLUT = GTexturePool.CreateTexture(gl, false, "assets/flameColorLUT5.png");
+        this.VisualizerFlameColorLUT = GTexturePool.CreateTexture(gl, false, "flameColorLUT5");
         //this.CurrentImageTextureSrc = "assets/example.jpg";
-        this.CurrentImageTextureSrc = "assets/apeBlue.png";
+        this.CurrentImageTextureSrc = "apeBlue";
         //this.CurrentImageTextureSrc = "assets/example2.png";
         this.VisualizerImageTexture = GTexturePool.CreateTexture(gl, false, this.CurrentImageTextureSrc, true, true);
-        this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "assets/ashTexture.jpg", true);
+        this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "ashTexture_R8", true);
 
-        this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(gl, false, "assets/afterBurnNoise2.png");
+        this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(gl, false, "afterBurnNoise2_R8");
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise128.png");
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/cracksNoise.png");
 
-        this.VisualizerFirePlaneNoiseTexture = GTexturePool.CreateTexture(gl, false, "assets/fireNoise.png");
+        this.VisualizerFirePlaneNoiseTexture = GTexturePool.CreateTexture(gl, false, "fireNoise_R8");
 
         const matName = `copper`;
-        const fileFormat = `.png`;
 
         /* this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/marbleYellow.png");
         this.NormalsTexture = CreateTexture(gl, 7, "assets/grainNoise3.png");
@@ -320,19 +319,13 @@ export class RFirePlanePass {
         this.NormalsTexture = CreateTexture(gl, 7, "assets/background/blueWoodNRM2.jpg");
         this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/blueWoodRGH2.jpg"); */
 
-        this.SurfaceMaterialColorTexture = GTexturePool.CreateTexture(
+        /* this.SurfaceMaterialColorTexture = GTexturePool.CreateTexture(
             gl,
             false,
             `assets/background/` + matName + `DFS` + fileFormat,
             true,
-        );
-        this.NormalsTexture = GTexturePool.CreateTexture(
-            gl,
-            false,
-            `assets/background/` + matName + `NRM` + fileFormat,
-            true,
-            true,
-        );
+        ); */
+        this.NormalsTexture = GTexturePool.CreateTexture(gl, false, matName + `NRM`, true, true);
         //this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/` + matName + `RGH` + fileFormat, true);
 
         //this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/oxidCopperRGH.png");
@@ -345,18 +338,13 @@ export class RFirePlanePass {
         this.RoughnessTexture = GTexturePool.CreateTexture(
             gl,
             false,
-            `assets/background/cdCoverRGH` + roughnessTextureId + `.png`,
+            `cdCoverRGH` + roughnessTextureId + `_R8`,
             true,
             true,
         );
         this.RoughnessParams.Contrast = 1.0 + Math.random();
 
-        this.SurfaceMaterialColorTexture = GTexturePool.CreateTexture(
-            gl,
-            false,
-            "assets/background/oxidCopperRGH.png",
-            true,
-        );
+        this.SurfaceMaterialColorTexture = GTexturePool.CreateTexture(gl, false, "oxidCopperRGH", true);
         //this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/paperRGH.png");
 
         const matOffsetSign = { x: 1, y: 1 };
