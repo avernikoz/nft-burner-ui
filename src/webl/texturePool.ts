@@ -12,6 +12,10 @@ class KTXMetaData {
 
     MIPs;
 
+    glType;
+
+    glInternalFormat;
+
     constructor(arrayBuffer: ArrayBuffer, bMIPs: boolean) {
         // Test that it is a ktx formatted file, based on the first 12 bytes, character representation is:
         // '´', 'K', 'T', 'X', ' ', '1', '1', 'ª', '\r', '\n', '\x1A', '\n'
@@ -41,18 +45,28 @@ class KTXMetaData {
         const endianness = headerDataView.getUint32(0, true);
         const littleEndian = endianness === 0x04030201;
 
+        this.glType = headerDataView.getUint32(1 * dataSize, littleEndian); // must be 0 for compressed textures
+        this.glInternalFormat = headerDataView.getUint32(4 * dataSize, littleEndian); // the value of arg passed to gl.compressedTexImage2D(,,x,,,,)
         this.Width = headerDataView.getUint32(6 * dataSize, littleEndian); // level 0 value of arg passed to gl.compressedTexImage2D(,,,x,,,)
         this.Height = headerDataView.getUint32(7 * dataSize, littleEndian); // level 0 value of arg passed to gl.compressedTexImage2D(,,,,x,,)
         this.NumMIPs = headerDataView.getUint32(11 * dataSize, littleEndian); // number of levels; disregard possibility of 0 for compressed textures
         this.HeaderOffset = headerDataView.getUint32(12 * dataSize, littleEndian); // the amount of space after the header for meta-data
+
+        // Make sure we have a compressed type.  Not only reduces work, but probably better to let dev know they are not compressing.
+        if (this.glType !== 0) {
+            this.bValid = false;
+        } else {
+            // value of zero is an indication to generate mipmaps @ runtime.  Not usually allowed for compressed, so disregard.
+            this.NumMIPs = Math.max(1, this.NumMIPs);
+        }
 
         if (this.bValid) {
             this.MIPs = [];
 
             // initialize width & height for level 1
             let dataOffset = KTX_HEADER_LEN + this.HeaderOffset;
-            let width = this.Width;
-            let height = this.Height;
+            let curWidth = this.Width;
+            let curHeight = this.Height;
             const mipmapCount = bMIPs ? this.NumMIPs : 1;
 
             for (let level = 0; level < mipmapCount; level++) {
@@ -61,13 +75,13 @@ class KTXMetaData {
 
                 const byteArray = new Uint8Array(arrayBuffer, dataOffset, imageSize);
 
-                this.MIPs.push({ data: byteArray, width: width, height: height });
+                this.MIPs.push({ data: byteArray, width: curWidth, height: curHeight });
 
                 dataOffset += imageSize;
                 dataOffset += 3 - ((imageSize + 3) % 4); // add padding for odd sized image
 
-                width = Math.max(1.0, width * 0.5);
-                height = Math.max(1.0, height * 0.5);
+                curWidth = Math.max(1.0, curWidth * 0.5);
+                curHeight = Math.max(1.0, curHeight * 0.5);
             }
         }
     }
@@ -137,12 +151,14 @@ export class GTexturePool {
                     const ktxMeta = new KTXMetaData(arrayBuffer, true);
 
                     if (ktxMeta.bValid) {
+                        gl.bindTexture(gl.TEXTURE_2D, texture);
                         for (let i = 0, il = ktxMeta.MIPs!.length; i < il; i++) {
                             const curMIP = ktxMeta.MIPs![i];
                             gl.compressedTexImage2D(
                                 gl.TEXTURE_2D,
                                 i,
-                                ext.COMPRESSED_RGBA_ASTC_6x6_KHR,
+                                //ext.COMPRESSED_RGBA_ASTC_6x6_KHR,
+                                ktxMeta.glInternalFormat,
                                 curMIP.width!,
                                 curMIP.height!,
                                 0,
