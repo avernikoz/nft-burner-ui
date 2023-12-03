@@ -148,7 +148,7 @@ export class GTexturePool {
                 try {
                     const arrayBuffer = await fetchRes.arrayBuffer();
 
-                    const ktxMeta = new KTXMetaData(arrayBuffer, true);
+                    const ktxMeta = new KTXMetaData(arrayBuffer, false);
 
                     if (ktxMeta.bValid) {
                         gl.bindTexture(gl.TEXTURE_2D, texture);
