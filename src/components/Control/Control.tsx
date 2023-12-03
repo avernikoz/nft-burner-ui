@@ -23,7 +23,6 @@ function Control() {
                     <Button
                         label="Burn NFT"
                         severity="danger"
-                        rounded
                         size="large"
                         onClick={() => setVisible(true)}
                         disabled={!nft}
@@ -40,7 +39,7 @@ function Control() {
                     ></NftDialog>
                 </div>
                 <div className="control__social">
-                    <Button label="Chedule Burn" severity="warning" rounded />
+                    <Button label="Chedule Burn" severity="warning" />
                     <div className="control__social--media">
                         <Button icon="pi pi-twitter " rounded text severity="info" aria-label="Notification" />
                         <Button rounded text severity="help" aria-label="Favorite">

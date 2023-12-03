@@ -12,6 +12,21 @@ export const ControlContainer = styled.div`
             display: flex;
             flex-direction: column;
         }
+        @media (max-width: 1000px) {
+            &__burn {
+                width: 45%;
+                .p-button {
+                    padding: 0.5rem 0.5rem;
+                }
+            }
+
+            &__social {
+                width: 45%;
+                .p-button {
+                    padding: 0.5rem 0.5rem;
+                }
+            }
+        }
 
         &__social {
             width: 40%;

@@ -1,7 +1,7 @@
 import { styled } from "styled-components";
 
 export const Footer = styled.div`
-    @media screen and (aspect-ratio: 1/1) {
+    @media (max-width: 1000px) {
         display: none;
     }
 
@@ -25,7 +25,7 @@ export const BodyContainer = styled.div`
     height: 85vh;
 
     @media (max-width: 1000px) {
-        height: 50%;
+        height: 55%;
         width: 100%;
         position: absolute;
         bottom: 0;
