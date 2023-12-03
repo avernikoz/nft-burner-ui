@@ -148,8 +148,7 @@ function scParticleSampleFlipbook(condition: boolean) {
 		uv.x += (frameSize.x * float(FlipBookIndex2D.x));
 		uv.y += (frameSize.y * float(FlipBookIndex2D.y));
 		
-		//colorFinal = texture(ColorTexture, uv).rgba;
-		colorFinal = textureLod(ColorTexture, uv, 0.0).rgba;
+		colorFinal = texture(ColorTexture, uv).rgba;
 
 		#if 1//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
 		float numFrames = float(FlipbookSizeRC.x * FlipbookSizeRC.y);
