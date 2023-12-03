@@ -58,23 +58,23 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
     const handleHold = async () => {
         setSubmit(true);
         try {
-            if (
+            const evmCondition =
+                nft &&
                 nft?.contractAddress &&
                 nft?.contractType &&
                 nft?.nftTokenId &&
                 nft?.owner &&
                 nft?.evm &&
-                (nft.contractType == NFTContractStandard.ERC1155 || nft.contractType == NFTContractStandard.ERC721)
-            ) {
+                (nft.contractType == NFTContractStandard.ERC1155 || nft.contractType == NFTContractStandard.ERC721);
+            const suiCondition = nft?.nftId && nft?.kioskId && nft?.nftType;
+            const solanaCondition = nft?.solanaAccount && solanaWallet.publicKey;
+            if (evmCondition) {
                 setLoading(true);
                 const payTransaction = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.pay({
-                    network: nft.evm,
+                    network: nft?.evm,
                     amount: 0.000001,
                 });
-
-                console.log(payTransaction);
-                const payResp = await nft.owner.sendTransaction(payTransaction);
-                console.log(payResp);
+                await nft.owner.sendTransaction(payTransaction);
                 const res = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.burnNFT({
                     collection: {
                         contractAddress: nft?.contractAddress,
@@ -89,7 +89,7 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 setLoading(false);
                 setNft();
             }
-            if (nft?.nftId && nft?.kioskId && nft?.nftType) {
+            if (suiCondition) {
                 setLoading(true);
                 const payRes = await SUI_NFT_CLIENT_INSTANCE.pay({ amount: 0.01 });
                 const burnRes = await SUI_NFT_CLIENT_INSTANCE.burnNFT({
@@ -107,7 +107,7 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 setLoading(false);
                 setNft();
             }
-            if (nft?.solanaAccount && solanaWallet.publicKey) {
+            if (solanaCondition) {
                 setLoading(true);
                 const payRes = await SOLANA_NFT_CLIENT_INSTANCE.pay({
                     amount: 0.01,
@@ -127,9 +127,9 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
             }
         } catch (error) {
             if (error instanceof Error) {
-                toastController?.showError("Failed to connect: " + error.message);
+                toastController?.showError("Failed to process transactions: " + error.message);
             } else {
-                toastController?.showError("Failed to connect: " + error);
+                toastController?.showError("Failed to process transactions: " + error);
             }
         }
     };

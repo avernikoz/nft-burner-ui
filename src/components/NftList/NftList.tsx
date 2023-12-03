@@ -20,9 +20,9 @@ import { NftContext } from "../NftProvider/NftProvider";
 import NftItem from "../NftItem/NftItem";
 import { INft, ALLOWED_EVM_CHAINS, ENftBurnStatus } from "../../utils/types";
 import { List } from "./NftList.styled";
-import { NFT_IMAGES_CORS_PROXY_URL } from "../../config/proxy.config";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { NftFilters } from "alchemy-sdk";
+import { evmMapper, solanaMapper, suiMapper } from "./mappers";
 
 function NftList() {
     const suietWallet = suietUseWallet();
@@ -42,16 +42,6 @@ function NftList() {
         NftController?.setNftStatus(ENftBurnStatus.SELECTED);
     };
 
-    // const checkImageExists = (imageUrl: string) => {
-    //     return new Promise((resolve, reject) => {
-    //         const img = new Image();
-    //         img.onerror = function () {
-    //             reject(false);
-    //         };
-    //         img.src = imageUrl;
-    //     });
-    // };
-
     // function imageExists(imageUrl: string) {
     //     return fetch(imageUrl, { method: "HEAD" });
     // }
@@ -62,8 +52,10 @@ function NftList() {
                 NftController?.nftStatus === ENftBurnStatus.BURNED ||
                 NftController?.nftStatus === ENftBurnStatus.EPMTY
             ) {
-                const proxy = NFT_IMAGES_CORS_PROXY_URL;
-                if (wagmiAccount.isConnected && wagmiAccount.address && signer) {
+                const wagmiChangeOrConnected = wagmiAccount.isConnected && wagmiAccount.address && signer;
+                const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
+                const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
+                if (wagmiChangeOrConnected) {
                     setUserConnected(true);
                     setShowSpinner(true);
                     wagmiAccount.connector?.getChainId().then((id) => {
@@ -87,39 +79,14 @@ function NftList() {
                                 excludeFilters: [NftFilters.SPAM, NftFilters.AIRDROPS],
                             },
                         }).then((data) => {
-                            const convertedNfts = data.ownedNfts.map((nft, index) => {
-                                let ipfsHash = nft.rawMetadata?.image;
-                                if (!ipfsHash) {
-                                    ipfsHash = "../../assets/svg/empty.jpg";
-                                }
-                                if (ipfsHash.includes("https://")) {
-                                    ipfsHash = proxy + ipfsHash;
-                                }
-                                if (ipfsHash.includes("ipfs://")) {
-                                    ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
-                                }
-                                return {
-                                    name: nft.title,
-                                    logoURI: ipfsHash,
-                                    id: index,
-                                    contractAddress: nft.contract.address,
-                                    contractType: nft.contract.tokenType,
-                                    nftTokenId: nft.tokenId,
-                                    owner: signer,
-                                    evm: ALLOWED_EVM_CHAINS.Polygon,
-                                };
-                            });
-                            console.log(convertedNfts);
-
+                            const convertedNfts = evmMapper(data.ownedNfts, signer);
                             setNFTList(convertedNfts.filter((a) => !a.name.includes("Airdrop")));
                             setShowSpinner(false);
-
                             // const promises = convertedNfts.map((nft) => {
                             //     return imageExists(nft.logoURI)
                             //         .then(() => true)
                             //         .catch(() => false);
                             // });
-
                             // Promise.all(promises).catch((results) => {
                             //     convertedNfts = convertedNfts.filter((nft, index) => results[index]);
                             //     setNFTList(convertedNfts);
@@ -128,43 +95,21 @@ function NftList() {
                         });
                     });
                     return;
-                } else if (solanaWallet.connected && solanaWallet.publicKey) {
+                } else if (solanaChangeOrConnected) {
                     setUserConnected(true);
                     setShowSpinner(true);
                     SOLANA_NFT_CLIENT_INSTANCE.getNFTs(solanaWallet.publicKey).then((nfts) => {
                         setShowSpinner(false);
-                        const mappedNFts: INft[] = nfts.map((item, i) => ({
-                            logoURI: item.logoURI,
-                            name: item.name,
-                            id: i,
-                            solanaAccount: item.accounts,
-                        }));
+                        const mappedNFts: INft[] = solanaMapper(nfts);
                         setNFTList(mappedNFts);
                     });
                     return;
-                } else if (suietWallet.connected && suietWallet.address) {
+                } else if (suiChangeOrConnected) {
                     setUserConnected(true);
                     setShowSpinner(true);
                     SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address }).then((nfts) => {
                         setShowSpinner(false);
-                        console.log(nfts);
-                        const convertedNfts = nfts.map((nft, index) => {
-                            let ipfsHash = nft.url;
-                            if (ipfsHash.includes("https://")) {
-                                ipfsHash = proxy + ipfsHash;
-                            }
-                            if (ipfsHash.includes("ipfs://")) {
-                                ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
-                            }
-                            return {
-                                name: nft.name,
-                                logoURI: ipfsHash,
-                                id: index,
-                                nftId: nft.nftId,
-                                kioskId: nft.kioskId,
-                                nftType: nft.nftType,
-                            };
-                        });
+                        const convertedNfts = suiMapper(nfts);
                         setNFTList(convertedNfts);
                     });
                     return;
@@ -176,9 +121,9 @@ function NftList() {
             }
         } catch (error) {
             if (error instanceof Error) {
-                toastController?.showError("Failed to connect: " + error.message);
+                toastController?.showError("Error when receiving nft: " + error.message);
             } else {
-                toastController?.showError("Failed to connect: " + error);
+                toastController?.showError("Error when receiving nft: " + error);
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -193,19 +138,6 @@ function NftList() {
         wagmiAccount.connector,
         wagmiAccount.isConnected,
     ]);
-
-    // const itemTemplate = (item: INft) => {
-    //     const index = item.id ?? Math.random();
-    //     return (
-    //         <NftItem
-    //             item={item}
-    //             key={index}
-    //             id={index}
-    //             isActive={index == activeNft}
-    //             onClick={() => handleItemClick(index)}
-    //         />
-    //     );
-    // };
 
     const Cell = ({
         columnIndex,
@@ -243,7 +175,6 @@ function NftList() {
     return (
         <List>
             {!userConnected ? <h3>Connect your wallet</h3> : <h3>Choose NFT to burn</h3>}
-            {/* {userConnected && NftList.length == 0 ? <h3>Buy NFT and BURN them!</h3> : null} */}
             {!showSpinner ? (
                 <div className="virtual-container">
                     <AutoSizer>
