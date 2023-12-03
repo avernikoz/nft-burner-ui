@@ -152,6 +152,7 @@ export class GTexturePool {
 
                     if (ktxMeta.bValid) {
                         gl.bindTexture(gl.TEXTURE_2D, texture);
+                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
                         for (let i = 0, il = ktxMeta.MIPs!.length; i < il; i++) {
                             const curMIP = ktxMeta.MIPs![i];
                             gl.compressedTexImage2D(
