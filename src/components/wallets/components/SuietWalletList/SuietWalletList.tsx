@@ -11,19 +11,16 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
     const [selectedOption, setSelectedOption] = useState<IWallet | null>(null);
     const wallet = useWallet();
     const { error, loading, balance } = useAccountBalance();
-    const [retry, setRetry] = useState(0);
     const toastController = useContext(ToastContext);
 
     useEffect(() => {
         if (balance === undefined) {
             return;
         }
-        if (wallet.connected && !loading && error == null && balance.toString() == "0" && retry < 5) {
-            setRetry(retry + 1);
-            return;
-        }
         if (wallet.connected && !loading && error == null) {
             const balanceInSUI = ethers.formatUnits(balance, 9).substring(0, 5);
+            console.log(balanceInSUI);
+            console.log(balance);
             props.connect({
                 id: wallet.account?.address,
                 balance: balanceInSUI + " SUI",
@@ -33,17 +30,8 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
         if (error) {
             toastController?.showError("Failed to fetch balances: " + error);
         }
-    }, [
-        wallet.connected,
-        balance,
-        retry,
-        wallet.account?.address,
-        wallet.adapter?.icon,
-        loading,
-        error,
-        props,
-        toastController,
-    ]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [wallet.connected, balance, wallet.account?.address, wallet.adapter?.icon, loading, error]);
 
     async function connect(chosenWallet: IWallet) {
         try {
