@@ -19,8 +19,6 @@ export class GTexturePool {
 
     static bSupportsDXTCompression = false;
 
-    static CompressedTextureExtension: WEBGL_compressed_texture_s3tc;
-
     static LogTexturesInPool() {
         if (GTexturePool.bLogTexturesInPool) {
             const urlsArray = Array.from(GTexturePool.TextureMap.keys());
@@ -43,13 +41,79 @@ export class GTexturePool {
 
     private static TextureLocationFolder = `assets/textures/`;
 
+    static ParseKTXHeader(arrayBuffer: ArrayBuffer) {
+        // Test that it is a ktx formatted file, based on the first 12 bytes, character representation is:
+        // '´', 'K', 'T', 'X', ' ', '1', '1', 'ª', '\r', '\n', '\x1A', '\n'
+        // 0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A
+        const identifier = new Uint8Array(arrayBuffer, 0, 12);
+        if (
+            identifier[0] !== 0xab ||
+            identifier[1] !== 0x4b ||
+            identifier[2] !== 0x54 ||
+            identifier[3] !== 0x58 ||
+            identifier[4] !== 0x20 ||
+            identifier[5] !== 0x31 ||
+            identifier[6] !== 0x31 ||
+            identifier[7] !== 0xbb ||
+            identifier[8] !== 0x0d ||
+            identifier[9] !== 0x0a ||
+            identifier[10] !== 0x1a ||
+            identifier[11] !== 0x0a
+        ) {
+            console.error("texture missing KTX identifier");
+            return { result: false, x: 0, y: 0 };
+        }
+
+        const dataSize = Uint32Array.BYTES_PER_ELEMENT;
+        const headerDataView = new DataView(arrayBuffer, 12, 13 * dataSize);
+        const endianness = headerDataView.getUint32(0, true);
+        const littleEndian = endianness === 0x04030201;
+
+        const pixelWidth = headerDataView.getUint32(6 * dataSize, littleEndian); // level 0 value of arg passed to gl.compressedTexImage2D(,,,x,,,)
+        const pixelHeight = headerDataView.getUint32(7 * dataSize, littleEndian); // level 0 value of arg passed to gl.compressedTexImage2D(,,,,x,,)
+        //const numberOfMipmapLevels = headerDataView.getUint32(11 * dataSize, littleEndian); // number of levels; disregard possibility of 0 for compressed textures
+        //const bytesOfKeyValueData = headerDataView.getUint32(12 * dataSize, littleEndian); // the amount of space after the header for meta-data
+
+        return { result: true, x: pixelWidth, y: pixelHeight };
+    }
+
     static async LoadTextureImageAsync(
         gl: WebGL2RenderingContext,
         texture: WebGLTexture,
         textureBaseName: string,
         bGenerateMips = false,
     ) {
+        let bImageLoaded = false;
         const bSingleChannelTexture = textureBaseName.endsWith("_R8");
+
+        const ext = gl.getExtension("WEBGL_compressed_texture_astc");
+        if (!bSingleChannelTexture && ext) {
+            //try load compressed image
+            const imageUrl = GTexturePool.TextureLocationFolder + `${textureBaseName}.ktx`;
+            const fetchRes = await fetch(imageUrl);
+            if (fetchRes.ok) {
+                try {
+                    const arrayBuffer = await fetchRes.arrayBuffer();
+
+                    const ktxMetaData = GTexturePool.ParseKTXHeader(arrayBuffer);
+
+                    if (ktxMetaData.result) {
+                        gl.compressedTexImage2D(
+                            gl.TEXTURE_2D,
+                            0,
+                            ext.COMPRESSED_RGBA_ASTC_6x6_KHR,
+                            ktxMetaData.x,
+                            ktxMetaData.y,
+                            0,
+                            new Uint8Array(arrayBuffer),
+                        );
+
+                        GTexturePool.NumPendingTextures -= 1;
+                        return;
+                    }
+                } catch {}
+            }
+        }
 
         const uploadImage = (image: HTMLImageElement) => {
             gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -78,7 +142,6 @@ export class GTexturePool {
             });
         };
 
-        let bImageLoaded = false;
         for (let i = 0; i < GTexturePool.DefaultFormatsArr.length; i++) {
             const currentFormat = GTexturePool.DefaultFormatsArr[i];
             const imageUrl = GTexturePool.TextureLocationFolder + `${textureBaseName}.${currentFormat}`;

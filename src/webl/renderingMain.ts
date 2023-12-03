@@ -336,19 +336,6 @@ export function RenderMain() {
         }
     }
 
-    ext = gl.getExtension("WEBGL_compressed_texture_astc");
-    if (ext) {
-        GTexturePool.bSupportsASTCCompression = true;
-    } else {
-        ext = gl.getExtension("WEBGL_compressed_texture_s3tc");
-        if (ext) {
-            GTexturePool.bSupportsDXTCompression = true;
-            GTexturePool.CompressedTextureExtension = gl.getExtension("WEBGL_compressed_texture_s3tc")!;
-        } else {
-            showError("Texture Compression Not Supported");
-        }
-    }
-
     //================================
     // 	INIT DEBUG STATE CONTROLLERS
     //================================
