@@ -53,10 +53,11 @@ function RainbowWalletList(props: {
             if (activeChain !== props.chain && wallet.wallet.switchChain) {
                 await wallet.wallet.switchChain(props.chain);
             }
+
             const address = await wallet.wallet.getAccount();
             const balance = await fetchBalance({
                 address,
-                chainId: activeChain,
+                chainId: props.chain,
             });
             props.connect({
                 id: address,
