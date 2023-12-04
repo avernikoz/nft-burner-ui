@@ -25,12 +25,6 @@ const { chains, publicClient } = configureChains(
     [alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_ID }), publicProvider()],
 );
 
-// const { connectors } = getDefaultWallets({
-//     appName: "Burner",
-//     projectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID,
-//     chains,
-// });
-
 const connectors = connectorsForWallets([
     {
         groupName: "My Wallets",

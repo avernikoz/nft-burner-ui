@@ -174,19 +174,6 @@ function NftList() {
         toastController,
     ]);
 
-    // const itemTemplate = (item: INft) => {
-    //     const index = item.id ?? Math.random();
-    //     return (
-    //         <NftItem
-    //             item={item}
-    //             key={index}
-    //             id={index}
-    //             isActive={index == activeNft}
-    //             onClick={() => handleItemClick(index)}
-    //         />
-    //     );
-    // };
-
     const Cell = ({
         columnIndex,
         rowIndex,

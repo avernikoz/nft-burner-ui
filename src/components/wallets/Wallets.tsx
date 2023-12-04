@@ -162,6 +162,7 @@ function Wallets() {
         },
     ];
 
+    // some walletsContext can save session in cache, it's just garantyee that all network will be disconnected when app is running
     useEffect(() => {
         disconnect();
         // eslint-disable-next-line react-hooks/exhaustive-deps
