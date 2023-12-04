@@ -506,6 +506,8 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const AshesParticles = new ParticlesEmitter(gl, AfterBurnAshesParticlesDesc);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    /* DustParticlesDesc.inBuoyancyForceScale = 5.0 * Math.random();
+    DustParticlesDesc.inDownwardForceScale = DustParticlesDesc.inBuoyancyForceScale * 2.0; */
     const DustParticles = new ParticlesEmitter(gl, DustParticlesDesc);
 
     //==============================
@@ -602,6 +604,9 @@ export function RenderMain() {
         GTexturePool.SubmitDebugUI(GDatGUI);
     }
 
+    //let fpsElem: Element | null;
+    const fpsElem = document.querySelector("#fps");
+
     //=============================================================================================================================
     //
     // 														RENDER LOOP
@@ -636,6 +641,11 @@ export function RenderMain() {
             }
 
             UpdateTime();
+            if (fpsElem) {
+                fpsElem.textContent = GTime.FPSAvrg.toFixed(1);
+            } else {
+                //console.error("WTFFFFF");
+            }
 
             UserInputUpdatePerFrame();
 

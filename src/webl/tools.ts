@@ -246,7 +246,7 @@ export class LighterTool {
 
         if (this.bActiveThisFrame) {
             //Animation
-            this.AnimationComponent.Speed = MathLerp(1.0, 1.5, (Math.sin(GTime.Cur) + 1.0) * 0.5);
+            this.AnimationComponent.Speed = MathLerp(1.0, 1.5, (Math.sin(GTime.CurClamped) + 1.0) * 0.5);
             const velocityMagnitude = MathGetVectorLength(GUserInputDesc.InputVelocityCurViewSpace);
             this.AnimationComponent.Speed += velocityMagnitude * 50;
             this.AnimationComponent.Update();
@@ -329,7 +329,7 @@ export class LighterTool {
             GSceneDesc.Camera.ZoomScale,
         );
         gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
-        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.Cur);
+        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.CurClamped);
 
         const TotalFlipFrames = this.AnimationComponent.FlipbookSize.x * this.AnimationComponent.FlipbookSize.y;
         gl.uniform1f(

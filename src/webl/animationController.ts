@@ -31,16 +31,16 @@ export class AnimationController {
     UpdateSelf() {
         //update lerp param
         this.PosInterpolationParameter =
-            (Math.sin(GTime.Cur * Math.PI * 2 * this.PosAnimationNumCyclesPerSec) + 1.0) * 0.5;
+            (Math.sin(GTime.CurClamped * Math.PI * 2 * this.PosAnimationNumCyclesPerSec) + 1.0) * 0.5;
 
         //update controller position
         //const tSmooth = MathSmoothstep(0.0, 1.0, this.InterpolationParameter);
         this.Position = MathLerpVec3(this.MinPosition, this.MaxPosition, this.PosInterpolationParameter);
 
         this.YawInterpolationParameter =
-            (Math.sin(GTime.Cur * Math.PI * 2 * this.YawAnimationNumCyclesPerSec) + 1.0) * 0.5;
+            (Math.sin(GTime.CurClamped * Math.PI * 2 * this.YawAnimationNumCyclesPerSec) + 1.0) * 0.5;
         this.PitchInterpolationParameter =
-            (Math.sin(GTime.Cur * Math.PI * 2 * this.PitchAnimationNumCyclesPerSec) + 1.0) * 0.5;
+            (Math.sin(GTime.CurClamped * Math.PI * 2 * this.PitchAnimationNumCyclesPerSec) + 1.0) * 0.5;
     }
 
     UpdateObjectPosition(objectPos: Vector3, accelerationScale: number) {

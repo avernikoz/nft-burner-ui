@@ -430,7 +430,7 @@ export class RFirePlanePass {
 
         //Constants
         gl.uniform1f(this.UniformParametersLocationListFireUpdate.DeltaTime, GTime.Delta);
-        gl.uniform1f(this.UniformParametersLocationListFireUpdate.Time, GTime.Cur);
+        gl.uniform1f(this.UniformParametersLocationListFireUpdate.Time, GTime.CurClamped);
 
         const NoiseTextureInterpolatorSpeed = 0.25;
         const NoiseTextureInterpolatorMax = 3;
@@ -523,7 +523,7 @@ export class RFirePlanePass {
             this.NoiseTextureInterpolator,
         );
 
-        gl.uniform1f(this.VisualizerUniformParametersLocationList.Time, GTime.Cur);
+        gl.uniform1f(this.VisualizerUniformParametersLocationList.Time, GTime.CurClamped);
 
         gl.uniform3f(
             this.VisualizerUniformParametersLocationList.SpotlightPos,

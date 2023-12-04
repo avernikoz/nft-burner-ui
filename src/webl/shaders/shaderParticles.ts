@@ -118,7 +118,7 @@ function scGetVectorFieldForce(scale: number) {
 			randVelLQ.x = randVelNoise.r;
 			randVelLQ.y = randVelNoise.g;
 			randVelLQ = randVelLQ * 2.f - 1.f;
-			//randVel += (randVelLQ) * RandVelocityScale;
+			randVel += (randVelLQ) * RandVelocityScale;
 
 			//const float clampValue = 10.f;
 			const float clampValue = 50.f;
@@ -879,27 +879,30 @@ function scAshesSpecificShading() {
 }
 
 function scDustSpecificShading() {
-    return /* glsl */ `
+    return (
+        /* glsl */ `
 
 		//vec2 uv = interpolatorTexCoords * 0.005f;
 		vec2 uv = interpolatorTexCoords * 0.01f;
 		float instanceId = float(interpolatorInstanceId);
 		uv.x += instanceId * 0.073f;
 		uv.y += instanceId * 0.177f;
-		//uv.y += interpolatorFrameIndex * 0.0037f;
 		uv.x += interpolatorFrameIndex * 0.0053f;
 		float noise = texture(ColorTexture, uv).r;
 		noise = clamp(MapToRange(noise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
 
+		uv = interpolatorTexCoords * 0.005f;
+		uv.x += instanceId * 0.093f;
+		uv.y += instanceId * 0.277f;
+		uv.y += interpolatorFrameIndex * 0.0017f;
+		float alphaNoise = texture(ColorTexture, uv).r;
+		alphaNoise = clamp(MapToRange(alphaNoise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
 
-		/* float t = noise;
-		t = CircularFadeOut(clamp(t, 0.f, 1.f));
-		float curFire = (1.f - t) * 0.25f; */
-
-		float curFire = 0.1f;
-
-		colorFinal.rgb = vec3(curFire);
-		colorFinal.a = 0.35 * (1.f - noise);
+		colorFinal.rgb = vec3(` +
+        Math.random() * 0.35 +
+        /* glsl */ ` * alphaNoise);
+		//colorFinal.a = 0.35 * (1.f - noise);
+		colorFinal.a = alphaNoise * (1.f - noise);
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		float c = noise * 0.5;
@@ -919,7 +922,9 @@ function scDustSpecificShading() {
 		s = (1.f - clamp(s, 0.f, 1.f));
 		colorFinal.rgb *= s;
 		colorFinal.a *= s * s;
-		`;
+		colorFinal.rgb *= 1.0 + c * 0.5;
+		`
+    );
 }
 
 function scGetBasedOnShadingMode(

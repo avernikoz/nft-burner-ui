@@ -37,3 +37,13 @@ textarea {
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+
+#fpsContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: white; /* Adjust the text color as needed */
+    font-size: 16px; /* Adjust the font size as needed */
+    padding: 8px; /* Adjust padding as needed */
+    background-color: rgba(0, 0, 0, 0.5); /* Adjust the background color and transparency as needed */
+}

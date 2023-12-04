@@ -358,7 +358,7 @@ export class RCombinerPass {
             GSceneDesc.Spotlight.Position.z,
         );
 
-        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.Cur);
+        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.CurClamped);
 
         //Textures
         gl.activeTexture(gl.TEXTURE0 + 1);
@@ -447,7 +447,7 @@ export class RFlamePostProcessPass {
         gl.useProgram(this.shaderProgram);
 
         //Constants
-        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.Cur);
+        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.CurClamped);
 
         gl.uniform4f(
             this.UniformParametersLocationList.CameraDesc,
