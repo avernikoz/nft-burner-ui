@@ -8,9 +8,18 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
         return (
             /* glsl */ `
 		vec2 uv = vec2(CurTime * 0.17f + 0.12f * float(gl_VertexID), CurTime * 0.09 + 0.07 * float(gl_VertexID));
-		uv *= 0.1f;
-		vec2 noise = texture(NoiseTextureHQ, uv.xy).rg;
+		//uv *= 0.1f;
+		vec2 noise = textureLod(NoiseTextureHQ, uv.xy, 0.0).rg;
 		noise = noise * 2.f - 1.f;
+	#if 1 //MIN LENGTH
+		float curLength = length(noise);
+		const float minLength = 0.3;
+		if(curLength < minLength)
+		{
+			noise /= curLength;
+			noise *= minLength;
+		}
+	#endif
 		//noise = normalize(noise);
 		const float InitialVelocityScale = float(` +
             randomVelocityScale +
@@ -96,7 +105,7 @@ function scGetVectorFieldForce(scale: number) {
             scale +
             /* glsl */ `);
 			//randVel = normalize(randVel);
-			randVel = (randVel) * RandVelocityScale * 0.5;
+			randVel = (randVel) * RandVelocityScale /* * 0.5 */;
 
 
 			//LQ Noise
@@ -109,9 +118,10 @@ function scGetVectorFieldForce(scale: number) {
 			randVelLQ.x = randVelNoise.r;
 			randVelLQ.y = randVelNoise.g;
 			randVelLQ = randVelLQ * 2.f - 1.f;
-			randVel += (randVelLQ) * RandVelocityScale;
+			//randVel += (randVelLQ) * RandVelocityScale;
 
-			const float clampValue = 10.f;
+			//const float clampValue = 10.f;
+			const float clampValue = 50.f;
 			randVel = clamp(randVel, vec2(-clampValue), vec2(clampValue));
 
 
@@ -367,7 +377,7 @@ export const ParticleUpdatePS = /* glsl */ `#version 300 es
 function scTransformBasedOnMotion(condition: boolean) {
     if (condition) {
         return /* glsl */ `vec2 curVelocity = inVelocity;
-			float velLength = length(curVelocity) * 0.1;
+			float velLength = length(curVelocity) * 0.10;
 			if(velLength > 0.f)
 			{
 				pos.y *= clamp(1.f - velLength, 0.15f, 0.35f);
@@ -785,7 +795,7 @@ function scEmbersSpecificShading() {
 		//s += 0.15f;
 		s = (1.f - clamp(s, 0.f, 1.f));
 		colorFinal.rgb *= s;
-		//colorFinal.rgb *= 50.f;
+		colorFinal.rgb *= 1.5f;
 		//colorFinal.r *= s;
 		`;
 }
@@ -849,9 +859,8 @@ function scAshesSpecificShading() {
 
 		color *= noise;
 
-		float dx = abs(dFdx(noise));
-		float dy = abs(dFdy(noise));
-
+		/* float dx = abs(dFdx(noise));
+		float dy = abs(dFdy(noise)); */
 		//color += colorEmber * (dx + dy) * 0.5f;
 
 		

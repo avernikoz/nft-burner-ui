@@ -38,10 +38,10 @@ export function GetShaderSourceUISpriteRenderPS() {
 	void main()
 	{
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
-		vec3 color = texture(ColorTexture, flippedUVs.xy).rgb;
+		float color = texture(ColorTexture, flippedUVs.xy).r;
 
 
-		outSpriteColor = vec4(color * 1.0f, 1.0);
+		outSpriteColor = vec4(vec3(color * 1.0f), 1.0);
 
 	}`;
 }

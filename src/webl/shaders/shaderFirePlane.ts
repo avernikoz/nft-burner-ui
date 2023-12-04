@@ -124,7 +124,7 @@ export const ShaderSourceFireUpdatePS =
 		const float kMutualScale = 2.0;
 		const float GFireSpreadSpeed = 3. * kMutualScale;
 		const float NoiseAdvectedSpreadStrength = 0.45f;
-		const float GFuelConsumeSpeed = 0.5f * kMutualScale;
+		const float GFuelConsumeSpeed = 0.4f * kMutualScale;
 		const float GFireDissipationSpeed = 0.5f * kMutualScale; //How fast fire fades when no more fuel is left. Try 0.05
 		const float kIgnitionThreshold = 0.75; //When pixel becomes a source of fire
 		const float kHeatRaiseSpeedDuringCombustion = 1.0;
@@ -761,10 +761,10 @@ export function GetShaderSourceFireVisualizerPS() {
 		vec3 ashesColor = vec3(0.1);
 		float afterBurnEmbers = 0.0;
 	#elif WOOD
-		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * 0.5;
+		vec3 ashesColor = vec3(texture(AshTexture, vsOutTexCoords.xy).r) * 0.5;
 		float afterBurnEmbers = 0.0;
 	#else
-		vec3 ashesColor = texture(AshTexture, vsOutTexCoords.xy).rgb * 1.5;
+		vec3 ashesColor = vec3(texture(AshTexture, vsOutTexCoords.xy).r) * 1.5;
 		const float kRandomOffset = float(` +
         MathLerp(0.01, 0.5, Math.random()) +
         /* glsl */ `);
