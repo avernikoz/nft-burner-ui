@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { ReactComponent as Metamask } from "../../assets/metamask.svg";
 import { ReactComponent as CoinBase } from "../../assets/coinbase.svg";
 import { ReactComponent as Phantom } from "../../assets/phantom.svg";
@@ -65,6 +66,11 @@ function RainbowWalletList(props: {
             props.setActiveConnector(wallet.wallet);
             setSelectedOption(wallet);
         } catch (error) {
+            Sentry.captureException(error, {
+                tags: { scenario: "connect_wallet" },
+                extra: { chain: { id: props.chain } },
+            });
+
             if (error instanceof Error) {
                 toastController?.showError("Failed to connect: " + error.message);
             } else {
