@@ -58,16 +58,16 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
             toastController?.showInfo("Connecting", "Please accept connection in wallet");
             await wallet.select(chosenWallet.name);
             setSelectedOption(chosenWallet);
-        } catch (err) {
-            Sentry.captureException(error, {
+        } catch (e) {
+            Sentry.captureException(e, {
                 tags: { scenario: "connect_wallet" },
                 extra: { chain: { id: "sui" } },
             });
 
-            if (err instanceof Error) {
-                toastController?.showError("Failed to connect: " + err.message);
+            if (e instanceof Error) {
+                toastController?.showError("Failed to connect: " + e.message);
             } else {
-                toastController?.showError("Failed to connect: " + err);
+                toastController?.showError("Failed to connect: " + e);
             }
         }
     }
