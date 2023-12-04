@@ -288,7 +288,8 @@ export function RenderMain() {
     // 	  WINDOW RESIZE INIT
     //=========================
     function GetWindowSizeCurrent(): Vector2 {
-        const dpr = MathClamp(window.devicePixelRatio, 1, 3);
+        const maxDPR = 3;
+        const dpr = MathClamp(window.devicePixelRatio, 1, maxDPR);
         return { x: Math.round(window.innerWidth * dpr), y: Math.round(window.innerHeight * dpr) };
     }
 
@@ -643,8 +644,6 @@ export function RenderMain() {
             UpdateTime();
             if (fpsElem) {
                 fpsElem.textContent = GTime.FPSAvrg.toFixed(1);
-            } else {
-                //console.error("WTFFFFF");
             }
 
             UserInputUpdatePerFrame();

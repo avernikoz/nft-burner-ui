@@ -296,7 +296,7 @@ export class RFirePlanePass {
         this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "ashTexture_R8", true);
 
         this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(gl, false, "afterBurnNoise2_R8");
-        //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise128.png");
+        //this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise128");
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/cracksNoise.png");
 
         this.VisualizerFirePlaneNoiseTexture = GTexturePool.CreateTexture(gl, false, "fireNoise_R8");
@@ -430,7 +430,7 @@ export class RFirePlanePass {
 
         //Constants
         gl.uniform1f(this.UniformParametersLocationListFireUpdate.DeltaTime, GTime.Delta);
-        gl.uniform1f(this.UniformParametersLocationListFireUpdate.Time, GTime.CurClamped);
+        gl.uniform1f(this.UniformParametersLocationListFireUpdate.Time, GTime.Cur);
 
         const NoiseTextureInterpolatorSpeed = 0.25;
         const NoiseTextureInterpolatorMax = 3;
@@ -523,7 +523,7 @@ export class RFirePlanePass {
             this.NoiseTextureInterpolator,
         );
 
-        gl.uniform1f(this.VisualizerUniformParametersLocationList.Time, GTime.CurClamped);
+        gl.uniform1f(this.VisualizerUniformParametersLocationList.Time, GTime.Cur);
 
         gl.uniform3f(
             this.VisualizerUniformParametersLocationList.SpotlightPos,

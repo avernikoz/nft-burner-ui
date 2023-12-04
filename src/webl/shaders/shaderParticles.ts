@@ -118,7 +118,7 @@ function scGetVectorFieldForce(scale: number) {
 			randVelLQ.x = randVelNoise.r;
 			randVelLQ.y = randVelNoise.g;
 			randVelLQ = randVelLQ * 2.f - 1.f;
-			randVel += (randVelLQ) * RandVelocityScale;
+			randVel += (randVelLQ) * RandVelocityScale * 0.5;
 
 			//const float clampValue = 10.f;
 			const float clampValue = 50.f;

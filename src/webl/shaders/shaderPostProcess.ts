@@ -307,6 +307,39 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 
 		flame.rgb *= flameNoise * 1.f;
 
+		#if 0 //MOVE IT TO EACH FLAME PARTICLE SEPARATE SHADER
+		flameSamplingUV = vsOutTexCoords;
+		//flameSamplingUV.y *= (0.75 + sin(Time) * 0.25);
+		flameSamplingUV.y *= 0.5;
+		flameSamplingUV.x *= 2.0;
+		flameSamplingUV *= 0.75;
+		vec3 fadeNoise = textureLod(NoiseTexture, flameSamplingUV.xy, 0.f).rgb;
+		vec3 fadeOptions;
+		fadeOptions.r = fadeNoise.r * fadeNoise.g;
+		fadeOptions.g = fadeNoise.g * fadeNoise.b;
+		fadeOptions.b = fadeNoise.b * fadeNoise.r;
+		float olp = mod(Time, 3.0);
+		if(olp > 2.0)
+		{
+			fadeNoise.r = mix(fadeOptions.b, fadeOptions.r, olp - 2.0);
+		}
+		else if(olp > 1.0)
+		{
+			fadeNoise.r = mix(fadeOptions.g, fadeOptions.b, olp - 1.0);
+		}	
+		else
+		{
+			fadeNoise.r = mix(fadeOptions.r, fadeOptions.g, olp);
+		}
+		fadeNoise.r = 1.0 - fadeNoise.r * 1.5;
+		if(fadeNoise.r < 0.5) 
+		{
+			fadeNoise.r = 0.0;
+		}
+		fadeNoise.r = clamp(MapToRange(fadeNoise.r, 0.4, 0.6, 0.0, 1.0), 0.0, 1.0);
+		flame.rgb *= fadeNoise.r;
+		#endif
+
 		OutColor = flame;
 	}`
     );

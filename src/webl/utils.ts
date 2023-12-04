@@ -148,9 +148,11 @@ export function UpdateTime() {
         GTime.CurFrameCursor %= GTime.MaxFrames;
         GTime.FPSAvrg = GTime.FPSTotal / GTime.NumFrames;
     }
+    if (GTime.Delta > 0.0) {
+        GTime.Delta = MathClamp(GTime.Delta, 1.0 / 300.0, 1.0 / 30.0);
+    }
 
-    GTime.Delta = MathClamp(GTime.Delta, 1.0 / 300.0, 1.0 / 30.0);
     GTime.CurClamped += GTime.Delta;
     GTime.DeltaMs = GTime.Delta * 1000.0;
-    GTime.Last = GTime.CurClamped;
+    GTime.Last = GTime.Cur;
 }

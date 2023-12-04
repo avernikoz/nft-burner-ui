@@ -602,6 +602,7 @@ export function GetShaderSourceFireVisualizerPS() {
 		float curFire = texture(FireTexture, vsOutTexCoords.xy).r;
 		//OutFirePlane = vec4(vec3(1.f - clamp(curFire, 0.0, 1.0), 0.0, curFire), 1); return;
 		float curFuel = texture(FuelTexture, vsOutTexCoords.xy).r;
+		//curFuel = 0.0;
 		//OutFirePlane = vec4(vec3(curFuel), 1); return;
 
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
@@ -776,11 +777,14 @@ export function GetShaderSourceFireVisualizerPS() {
 		vec3 embersColor = vec3(afterBurnEmbers, afterBurnEmbers * 0.2, afterBurnEmbers * 0.1);
 		float emberScale = 1.f;
 	#if 1 //NOISE EMBERS SCALE
-	#if (1 && (PAPER || WOOD))
 		//float noiseConst = textureLod(NoiseTextureLQ, 0.5 * (vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0043)), 0.f).r;
-		float noiseConst = textureLod(NoiseTextureLQ, 50.f + vec2(Time * 0.0013, Time * 0.0093), 0.f).r;
+		//float noiseConst = textureLod(NoiseTextureLQ, 50.f + vec2(Time * 0.0013, Time * 0.0093), 0.f).r;
+		float noiseConst = textureLod(NoiseTextureLQ, 50.f + vec2(Time * 0.013, Time * 0.0093), 0.f).r;
 		noiseConst = clamp(MapToRange(noiseConst, 0.4, 0.6, 0.25, 1.0), 0.1f, 1.f);
+	#if (1 && (PAPER || WOOD))
+		
 		vec3 noiseVec = textureLod(AfterBurnTexture, (vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0043)), 0.f).rgb;
+		//vec3 noiseVec = textureLod(AfterBurnTexture, (vsOutTexCoords.xy - vec2(Time * 0.00013, Time * 0.00043)), 0.f).rgb;
 		emberScale = noiseVec.x * noiseVec.y * noiseVec.z; 
 		emberScale = Contrast(emberScale, 1.5f) * (10.f * noiseConst);
 		emberScale *= 1.f + emberScale;
@@ -807,6 +811,9 @@ export function GetShaderSourceFireVisualizerPS() {
 			emberScale = mix(noiseVec.z, noiseVec.x, t - 2.f);
 		}
 		emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.25f, 2.f);
+		emberScale *= 1.5;
+		//emberScale *= clamp(noiseConst + 0.5, 0.5, 1.5);
+		emberScale *= clamp(noiseConst, 0.75, 1.0);
 		#endif
 		
 		
@@ -851,7 +858,10 @@ export function GetShaderSourceFireVisualizerPS() {
 		ashesColor += burnedImageTexture * emberScale * 4.f;
 		ashesColor += burnedImageTexture * noiseConst * noiseConst;
 	#else
-		ashesColor.rgb = max(ashesColor.rgb, burnedImageTexture * 1.75f * emberScale);
+		//ashesColor.rgb += min(1.0, luminance * 5.0) * 0.25;
+		//ashesColor += burnedImageTexture;
+		float curFireLOD = texture(FireTexture, vsOutTexCoords.xy).r;
+		ashesColor.rgb = max(ashesColor.rgb, burnedImageTexture * 2.0f * emberScale);
 	#endif
 	#endif////BURNED IMAGE
 

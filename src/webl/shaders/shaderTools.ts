@@ -46,6 +46,7 @@ export function GetShaderSourceSingleFlameRenderVS() {
 		pos.y += 0.525;
 		pos.xy *= vec2(0.2, 1.0);
 		pos.xy *= 0.4;
+		//pos.xy *= 1.25;
 		pos.y *= 1.4;
 		pos.x -= Velocity.x * TexCoordsBuffer.y * TexCoordsBuffer.y * 30.f;
 		if(Velocity.y > 0.0)
