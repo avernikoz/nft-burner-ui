@@ -7,7 +7,7 @@ body {
         "Droid Sans", "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-image: linear-gradient(to right, #111010 100%, black 100%);
+    background-image: linear-gradient(to right, #000000 100%, black 100%);
 }
 
 html,
@@ -21,6 +21,102 @@ body,
 
 #root {
     justify-content: center;
+}
+
+.startButton {
+    padding: 2.5% 5%; /* Adjust padding as needed */
+    font-size: 32px; /* Adjust font size as needed */
+    background-color: rgba(0, 0, 0, 0);
+    color: #fff; /* Set your desired button text color */
+    border: 0px solid white; /* White border with 2px width (adjust as needed) */
+    cursor: pointer;
+    font-family: serif; /* Use a sans-serif font */
+    font-weight: thin; /* Make the font bold */
+    letter-spacing: 0px; /* Adjust letter-spacing as needed */
+    position: absolute;
+    top: 80%; /* Adjust as needed */
+    left: 65%; /* Adjust as needed */
+    transform: translate(-50%, -50%); /* Center the button */
+}
+/* Hover styles */
+.startButton:hover {
+    background-color: #ffffff; /* Change to your desired color on hover */
+    color: #000000; /* Change text color on hover if needed */
+    border-color: #ffffff; /* Change border color on hover if needed */
+}
+.startButton:disabled {
+    display: none;
+}
+.aboutButton {
+    padding: 2.5% 5%; /* Adjust padding as needed */
+    font-size: 32px; /* Adjust font size as needed */
+    background-color: rgba(0, 0, 0, 0);
+    color: #fff; /* Set your desired button text color */
+    border: 0px solid white; /* White border with 2px width (adjust as needed) */
+    cursor: pointer;
+    font-family: serif; /* Use a sans-serif font */
+    font-weight: thin; /* Make the font bold */
+    letter-spacing: 0px; /* Adjust letter-spacing as needed */
+    position: absolute;
+    top: 80%; /* Adjust as needed */
+    left: 35vw; /* Adjust as needed */
+    transform: translate(-50%, -50%); /* Center the button */
+}
+/* Hover styles */
+.aboutButton:hover {
+    background-color: #ffffff; /* Change to your desired color on hover */
+    color: #000000; /* Change text color on hover if needed */
+    border-color: #ffffff; /* Change border color on hover if needed */
+}
+.aboutButton:disabled {
+    display: none;
+}
+
+.progress-bar {
+    height: 10px;
+    width: 0%;
+    background: linear-gradient(to right, purple, brown); /* Use a linear gradient */
+    position: absolute;
+    left: 25%;
+    top: 82.5%;
+    border-radius: 16px; /* Set the border radius to control corner softness */
+    transition: width 1.5s ease; /* Add a transition for a smooth effect */
+    transition: opacity 1s ease; /* Add a transition for a smooth effect */
+}
+
+.intro_quote {
+    width: 75%;
+    font-size: 4vw; /* Adjust font size as needed */
+    background-color: rgba(0, 0, 0, 0);
+    color: #fff; /* Set your desired button text color */
+    border: none;
+    cursor: none;
+    font-family: sans-serif; /* Use a sans-serif font */
+    font-weight: bold; /* Make the font bold */
+    letter-spacing: 0px; /* Adjust letter-spacing as needed */
+    position: absolute;
+    top: 45%; /* Adjust as needed */
+    left: 50%; /* Adjust as needed */
+    transform: translate(-50%, -50%); /* Center the button */
+    text-align: center; /* Center the text horizontally */
+
+    transition: opacity 0.5s ease; /* Add a transition for a smooth effect */
+}
+/* Set the minimum font size */
+@media (max-width: 600px) {
+    .intro_quote {
+        font-size: 24px;
+    }
+}
+
+/* Set the maximum font size */
+@media (min-width: 1200px) {
+    .intro_quote {
+        font-size: 40px;
+    }
+}
+.intro_quote:disabled {
+    display: none;
 }
 
 input,

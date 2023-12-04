@@ -65,6 +65,7 @@ export class GRenderingStateMachine {
 
     public get bCurStateHasSceneDesc(): boolean {
         return (
+            this.currentState === ERenderingState.Preloading ||
             this.currentState === ERenderingState.Intro ||
             this.currentState === ERenderingState.Inventory ||
             this.currentState === ERenderingState.BurningReady

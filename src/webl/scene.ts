@@ -76,11 +76,21 @@ export const GSceneStateDescsArray: SceneStateDescription[] = new Array(ERenderi
 });
 
 export function InitializeSceneStateDescsArr() {
+    //Preloader
+    GSceneStateDescsArray[ERenderingState.Preloading] = {
+        CameraPosition: { x: -2.6, y: 0.0, z: -3.61 },
+        SpotlightPosition: { x: -4.63, y: 0.94, z: -2.5 },
+        SpotlightFocusPosition: { x: 0, y: 0.3, z: 1.5 },
+        FloorHeight: -5,
+        CameraZoom: 2,
+    };
+
     //Intro
     GSceneStateDescsArray[ERenderingState.Intro] = {
         CameraPosition: { x: -1.6, y: 0.0, z: -3.61 },
-        SpotlightPosition: { x: -2.88, y: 1.57, z: -1.71 },
-        SpotlightFocusPosition: { x: 0, y: 1.03, z: 1.5 },
+        //SpotlightPosition: { x: -2.88, y: 1.57, z: -1.71 },
+        SpotlightPosition: { x: 1.68, y: 2.4, z: -1.3 },
+        SpotlightFocusPosition: { x: 0, y: 0.5, z: 1.5 },
         FloorHeight: -1,
         CameraZoom: 2,
     };
@@ -198,8 +208,8 @@ export function GSceneDescSubmitDebugUI(datGui: dat.GUI) {
         //spotlightFolder.open();
         spotlightFolder.add(GSceneDesc.Spotlight.SizeScale, "x", -2, 5).name("LightSizeX").step(0.01);
         spotlightFolder.add(GSceneDesc.Spotlight.SizeScale, "y", -2, 5).name("LightSizeY").step(0.01).listen();
-        spotlightFolder.add(GSceneDesc.Spotlight.Position, "x", -3, 10).name("LightPosX").step(0.01).listen();
-        spotlightFolder.add(GSceneDesc.Spotlight.Position, "y", -3, 10).name("LightPosY").step(0.01).listen();
+        spotlightFolder.add(GSceneDesc.Spotlight.Position, "x", -10, 10).name("LightPosX").step(0.01).listen();
+        spotlightFolder.add(GSceneDesc.Spotlight.Position, "y", -10, 10).name("LightPosY").step(0.01).listen();
         spotlightFolder.add(GSceneDesc.Spotlight.Position, "z", -10, 10).name("LightPosZ").step(0.01).listen();
         spotlightFolder.add(GSceneDesc.Spotlight.FocusPosition, "x", -3, 10).name("FocusPosX").step(0.01).listen();
         spotlightFolder.add(GSceneDesc.Spotlight.FocusPosition, "y", -3, 10).name("FocusPosY").step(0.01).listen();
