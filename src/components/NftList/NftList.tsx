@@ -23,6 +23,7 @@ import { List } from "./NftList.styled";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { NftFilters } from "alchemy-sdk";
 import { evmMapper, solanaMapper, suiMapper } from "./mappers";
+import { PublicKey } from "@solana/web3.js";
 
 function NftList() {
     const suietWallet = suietUseWallet();
@@ -98,7 +99,7 @@ function NftList() {
                 } else if (solanaChangeOrConnected) {
                     setUserConnected(true);
                     setShowSpinner(true);
-                    SOLANA_NFT_CLIENT_INSTANCE.getNFTs(solanaWallet.publicKey).then((nfts) => {
+                    SOLANA_NFT_CLIENT_INSTANCE.getNFTs(solanaWallet.publicKey as PublicKey).then((nfts) => {
                         setShowSpinner(false);
                         const mappedNFts: INft[] = solanaMapper(nfts);
                         setNFTList(mappedNFts);
@@ -107,7 +108,7 @@ function NftList() {
                 } else if (suiChangeOrConnected) {
                     setUserConnected(true);
                     setShowSpinner(true);
-                    SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address }).then((nfts) => {
+                    SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address as string }).then((nfts) => {
                         setShowSpinner(false);
                         const convertedNfts = suiMapper(nfts);
                         setNFTList(convertedNfts);
