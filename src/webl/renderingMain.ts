@@ -70,7 +70,6 @@ import { AnimationController } from "./animationController";
 import { AudioEngine } from "./audioEngine";
 import { LighterTool } from "./tools";
 import { GTexturePool } from "./texturePool";
-import { RHTMLClickButton, RHTMLProgressElement } from "./htmlElements";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -567,16 +566,6 @@ export function RenderMain() {
         `connectButton`,
         `connectButton1`,
     );
-
-    const StartButton = new RHTMLClickButton(".startButton");
-    const AboutButton = new RHTMLClickButton(".aboutButton");
-    const LoadingProgressBar = new RHTMLProgressElement(".progress-bar");
-    document.addEventListener("DOMContentLoaded", function () {
-        const quoteElement: HTMLDivElement | null = document.querySelector(".intro_quote");
-        if (quoteElement) {
-            quoteElement.style.opacity = `0.5`;
-        }
-    });
     //==============================
     // 	 INIT SCENE STATES DESCS
     //==============================
@@ -621,7 +610,7 @@ export function RenderMain() {
     //
     //=============================================================================================================================
 
-    let GFirstRenderingFrame = true;
+    const GFirstRenderingFrame = true;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
         if (gl !== null && GRenderTargets.FirePlaneTexture !== null && GPostProcessPasses.CopyPresemt !== null) {
@@ -652,36 +641,6 @@ export function RenderMain() {
             UpdateTime();
 
             UserInputUpdatePerFrame();
-
-            //============================
-            // 		HTML ELEMENTS
-            //============================
-            StartButton.Update(document);
-            if (StartButton.bOnClickSwitch && StartButton.ElementInner) {
-                StartButton.ElementInner.disabled = true;
-            }
-            AboutButton.Update(document);
-            if (StartButton.bOnClickSwitch && AboutButton.ElementInner) {
-                AboutButton.ElementInner.disabled = true;
-
-                const quoteElement: HTMLDivElement | null = document.querySelector(".intro_quote");
-                if (quoteElement) {
-                    quoteElement.style.opacity = `0.0`;
-                }
-            }
-
-            LoadingProgressBar.ElementInner = document.querySelector(LoadingProgressBar.Name);
-            if (LoadingProgressBar.ElementInner) {
-                if (GTexturePool.NumPendingTextures > 0) {
-                    const textureLoadProgressNorm =
-                        1 - GTexturePool.NumPendingTextures / GTexturePool.NumTexturesInPool;
-                    LoadingProgressBar.ElementInner.style.width = textureLoadProgressNorm * 50 + `%`;
-                } else {
-                    LoadingProgressBar.ElementInner.style.width = 50 + `%`;
-                    LoadingProgressBar.ElementInner.style.opacity = `0.0`;
-                    LoadingProgressBar.ElementInner.style.background = "#ffffff";
-                }
-            }
 
             //============================
             // 		SCENE STATE UPDATE
@@ -768,12 +727,6 @@ export function RenderMain() {
                 GFirstRenderingFrame ||
                 RenderStateMachine.currentState !== ERenderingState.Preloading
             ) {
-                if (StartButton.bOnClickSwitch && GFirstRenderingFrame) {
-                    GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, false);
-                    GFirstRenderingFrame = false;
-                    BurningSurface.SetToBurned(gl);
-                }
-
                 ApplyCameraControl();
 
                 SpotlightPositionController.OnUpdate();
