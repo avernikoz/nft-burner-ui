@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import React, { useContext, useEffect, useState } from "react";
 import { ListBox } from "primereact/listbox";
 import { useAccountBalance, useWallet } from "@suiet/wallet-kit";
@@ -57,11 +58,16 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
             toastController?.showInfo("Connecting", "Please accept connection in wallet");
             await wallet.select(chosenWallet.name);
             setSelectedOption(chosenWallet);
-        } catch (err) {
-            if (err instanceof Error) {
-                toastController?.showError("Failed to connect: " + err.message);
+        } catch (e) {
+            Sentry.captureException(e, {
+                tags: { scenario: "connect_wallet" },
+                extra: { chain: { id: "sui" } },
+            });
+
+            if (e instanceof Error) {
+                toastController?.showError("Failed to connect: " + e.message);
             } else {
-                toastController?.showError("Failed to connect: " + err);
+                toastController?.showError("Failed to connect: " + e);
             }
         }
     }

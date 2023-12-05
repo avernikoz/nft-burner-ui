@@ -6,6 +6,10 @@ import reportWebVitals from "./utils/reportWebVitals";
 import { PrimeReactProvider } from "primereact/api";
 import "primeicons/primeicons.css";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
+import { configureSentry } from "./utils/configureSentry";
+
+// Sentry init
+configureSentry();
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
