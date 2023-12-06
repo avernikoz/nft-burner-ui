@@ -9,7 +9,7 @@ export class GReactGLBridgeFunctions {
     static OnAboutButtonPressed() {}
 
     static GetLoadingProgressParameterNormalised() {
-        if (GTexturePool.NumPendingTextures > 0) {
+        if (GTexturePool.NumPendingTextures > 0 && GTexturePool.NumTexturesInPool > 0) {
             return 1.0 - GTexturePool.NumPendingTextures / GTexturePool.NumTexturesInPool;
         } else {
             return null;

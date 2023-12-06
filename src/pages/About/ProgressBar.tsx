@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GTexturePool } from "../../webl/texturePool";
+import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
 
 export const ProgressBar = () => {
     const [loadingPercentage, setLoadingPercentage] = useState(0);
@@ -10,15 +10,15 @@ export const ProgressBar = () => {
         let intervalId: string | number | NodeJS.Timeout | undefined;
 
         const updateProgressBar = () => {
-            // Check if loading is finished
-            if (GTexturePool.NumPendingTextures === 0) {
+            // Calculate the loading percentage based on your requirements
+            const loadProgressRes = GReactGLBridgeFunctions.GetLoadingProgressParameterNormalised();
+            if (loadProgressRes !== null) {
+                const percentage = loadProgressRes * 50;
+                setLoadingPercentage(percentage);
+            } else {
                 setLoadingFinished(true);
                 clearInterval(intervalId);
             }
-
-            // Calculate the loading percentage based on your requirements
-            const percentage = (1 - GTexturePool.NumPendingTextures / GTexturePool.NumTexturesInPool) * 50;
-            setLoadingPercentage(percentage);
         };
 
         intervalId = setInterval(updateProgressBar, 250);
