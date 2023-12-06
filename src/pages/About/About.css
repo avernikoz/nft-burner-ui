@@ -77,10 +77,35 @@
 
     transition: opacity 0.5s ease; /* Add a transition for a smooth effect */
 }
+
+.section_text {
+    font-size: 24px;
+    text-align: justify;
+    width: 20%;
+    font-family: serif;
+    font-weight: normal;
+    left: 70%;
+}
+
+.section_title {
+    left: 30%;
+    top: 35%;
+    font-family: serif;
+    text-transform: uppercase;
+    font-weight: 100;
+    text-align: center;
+    width: 25%;
+    font-style: italic;
+    line-height: 1.5;
+}
+
 /* Set the minimum font size */
 @media (max-width: 600px) {
     .intro_quote {
         font-size: 24px;
+    }
+    .section_text {
+        font-size: 26px;
     }
 }
 
@@ -88,6 +113,9 @@
 @media (min-width: 1200px) {
     .intro_quote {
         font-size: 40px;
+    }
+    .section_text {
+        font-size: 26px;
     }
 }
 .intro_quote:disabled {
@@ -105,4 +133,8 @@
     width: 100vw;
     height: 100vh;
     position: relative;
+}
+
+.small_height_section {
+    height: 50vh;
 }
