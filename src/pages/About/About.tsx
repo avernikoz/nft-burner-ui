@@ -1,7 +1,7 @@
 import React from "react";
 import "./About.css";
-import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import { ProgressBar } from "./ProgressBar";
+import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
 
 export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: boolean) => void }) => {
     return (
@@ -17,14 +17,19 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
                 className="startButton"
                 onClick={() => {
                     setAboutPageActive(false);
-                    GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, false);
-                    //GFirstRenderingFrame = false;
-                    //BurningSurface.SetToBurned(gl);
+                    GReactGLBridgeFunctions.OnStartButtonPressed();
                 }}
             >
                 START
             </button>
-            <button className="aboutButton">ABOUT</button>
+            <button
+                className="aboutButton"
+                onClick={() => {
+                    GReactGLBridgeFunctions.OnAboutButtonPressed();
+                }}
+            >
+                ABOUT
+            </button>
         </>
     );
 };
