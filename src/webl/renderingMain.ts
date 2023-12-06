@@ -5,7 +5,6 @@ import { DrawUISingleton } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
 import {
     AfterBurnAshesParticlesDesc,
-    AfterBurnAshesPreloaderParticlesDesc,
     AfterBurnSmokeParticlesDesc,
     DustParticlesDesc,
     EmberParticlesDesc,
@@ -509,8 +508,6 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const DustParticles = new ParticlesEmitter(gl, DustParticlesDesc);
 
-    const LoaderAshParticles = new ParticlesEmitter(gl, AfterBurnAshesPreloaderParticlesDesc);
-
     //==============================
     // 		INIT GUI ELEMENTS
     //==============================
@@ -837,7 +834,6 @@ export function RenderMain() {
                     SmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                     AfterBurnSmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                     DustParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
-                    LoaderAshParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                 }
 
                 //===================================
@@ -859,13 +855,11 @@ export function RenderMain() {
                 if (!bPreloaderState) {
                     BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
                     //Render Background floor
-                    if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
-                        BackGroundRenderPass.RenderFloor(
-                            gl,
-                            GPostProcessPasses.Bloom!.BloomTexture,
-                            GPostProcessPasses.Combiner!.SmokeNoiseTexture,
-                        );
-                    }
+                    BackGroundRenderPass.RenderFloor(
+                        gl,
+                        GPostProcessPasses.Bloom!.BloomTexture!,
+                        GPostProcessPasses.Combiner!.SmokeNoiseTexture,
+                    );
                 }
 
                 //=================================
@@ -981,7 +975,6 @@ export function RenderMain() {
                 //======================
                 BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, GScreenDesc.RenderTargetSize, true);
                 DustParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
-                LoaderAshParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 if (!bAshesInEmbersPass) {

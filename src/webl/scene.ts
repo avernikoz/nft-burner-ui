@@ -88,8 +88,7 @@ export function InitializeSceneStateDescsArr() {
     //Intro
     GSceneStateDescsArray[ERenderingState.Intro] = {
         CameraPosition: { x: -1.6, y: 0.0, z: -3.61 },
-        //SpotlightPosition: { x: -2.88, y: 1.57, z: -1.71 },
-        SpotlightPosition: { x: 1.68, y: 2.4, z: -1.3 },
+        SpotlightPosition: { x: -2.88, y: 1.57, z: -1.71 },
         SpotlightFocusPosition: { x: 0, y: 0.5, z: 1.5 },
         FloorHeight: -1,
         CameraZoom: 2,
