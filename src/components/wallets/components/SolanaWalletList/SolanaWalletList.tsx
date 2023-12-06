@@ -14,14 +14,6 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
     const { connection } = useConnection();
     const toastController = useContext(ToastContext);
 
-    // useEffect(() => {
-    //     console.log(connected, publicKey);
-    //     console.log(selectedOption);
-    //     console.log(wallet);
-    //     console.log(wallet);
-    //     console.log(connection);
-    // }, []);
-
     useEffect(() => {
         console.log(connected, publicKey);
 
