@@ -76,7 +76,7 @@ function App() {
                                             aria-label="Notification"
                                         />
                                         <Button rounded text severity="help" aria-label="Favorite">
-                                            <TwitchLogo></TwitchLogo>
+                                            <TwitchLogo />
                                         </Button>
                                         <Button
                                             icon="pi pi-youtube"
