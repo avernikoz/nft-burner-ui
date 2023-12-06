@@ -1,7 +1,7 @@
 import React, { RefObject, useRef } from "react";
 import "./About.css";
-import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import { ProgressBar } from "./ProgressBar";
+import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
 
 const sectionTextList = [
     "The NFT ecosystem is currently saturated with an overwhelming number of low-value tokens, diluting the essence of true artistic and collectible value. Burning NFTs serves as a means to clear the clutter, allowing more visibility and recognition for high-quality, meaningful digital creations.",
@@ -30,14 +30,18 @@ export const AboutFirstSection = ({
                 className="startButton"
                 onClick={() => {
                     setAboutPageActive(false);
-                    GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, false);
-                    //GFirstRenderingFrame = false;
-                    //BurningSurface.SetToBurned(gl);
+                    GReactGLBridgeFunctions.OnStartButtonPressed();
                 }}
             >
                 START
             </button>
-            <button className="aboutButton" onClick={() => setShowMore()}>
+            <button
+                className="aboutButton"
+                onClick={() => {
+                    GReactGLBridgeFunctions.OnAboutButtonPressed();
+                    setShowMore();
+                }}
+            >
                 ABOUT
             </button>
         </div>
