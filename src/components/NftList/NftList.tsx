@@ -11,9 +11,7 @@ import {
 import { useEthersSigner } from "./variables";
 import { arbitrum, optimism, polygon } from "viem/chains";
 import { ProgressSpinner } from "primereact/progressspinner";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { FixedSizeGrid as Grid } from "react-window";
-// eslint-disable-next-line import/no-unresolved
 import { AutoSizer } from "react-virtualized";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { NftContext } from "../NftProvider/NftProvider";
