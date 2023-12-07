@@ -263,49 +263,56 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 		//float4 flame = FlameTextureSRV[SampleCoord];
 		vec4 flame = textureLod(FlameTexture, flameSamplingUV.xy, 0.f);
 
-		//Pre-Translate Scale
-		flameNoiseUV *= 0.9f;
-		float flameNoiseXScale = ` +
+		if(any(greaterThan(flame.rgb, vec3(0.0))))
+		{
+			//Pre-Translate Scale
+			flameNoiseUV *= 0.9f;
+			float flameNoiseXScale = ` +
         MathLerp(2.0, 5.0, Math.random()) +
         /* glsl */ `;
-		flameNoiseUV.x *= flameNoiseXScale;
-
-		flameNoiseUV = MapToRange(flameNoiseUV, 0.0, 1.0, -1.0, 1.0);
-		flameNoiseUV.x *= ScreenRatio;
-		/* flameNoiseUV /= (1.f + CameraDesc.z);
-		flameNoiseUV *= (CameraDesc.w); */
-		flameNoiseUV = MapToRange(flameNoiseUV, -1.0, 1.0, 0.0, 1.0);
-
-		//Translate
-		const float flameSpeed = 0.25f + (kRandomValues.y * 0.5); 
-		flameNoiseUV.y -= Time * flameSpeed;
-		flameNoiseUV.x += Time * 0.05f;
-
-		//Post-Translate Scale
-		flameNoiseUV *= (0.2f + kRandomValues.z * 0.5);
-
-		flameNoiseUV.x += distortionNoise.r * 0.0095f;
-		flameNoiseUV.y -= distortionNoise.g * 0.0055f;
-
-		vec2 flameNoise2;
-		flameNoise2.r = textureLod(FlameNoiseTexture, flameNoiseUV.xy, 0.f).r;
-		flameNoise2.g = textureLod(FlameNoiseTexture2, flameNoiseUV.xy, 0.f).r;
-
-		float flameNoise;
-		if(t < 1.f)
-		{
-			flameNoise = mix(flameNoise2.r, flameNoise2.g, t);
+			flameNoiseUV.x *= flameNoiseXScale;
+			
+			flameNoiseUV = MapToRange(flameNoiseUV, 0.0, 1.0, -1.0, 1.0);
+			flameNoiseUV.x *= ScreenRatio;
+			/* flameNoiseUV /= (1.f + CameraDesc.z);
+			flameNoiseUV *= (CameraDesc.w); */
+			flameNoiseUV = MapToRange(flameNoiseUV, -1.0, 1.0, 0.0, 1.0);
+			
+			//Translate
+			const float flameSpeed = 0.25f + (kRandomValues.y * 0.5); 
+			flameNoiseUV.y -= Time * flameSpeed;
+			flameNoiseUV.x += Time * 0.05f;
+			
+			//Post-Translate Scale
+			flameNoiseUV *= (0.2f + kRandomValues.z * 0.5);
+			
+			flameNoiseUV.x += distortionNoise.r * 0.0095f;
+			flameNoiseUV.y -= distortionNoise.g * 0.0055f;
+			
+			vec2 flameNoise2;
+			flameNoise2.r = textureLod(FlameNoiseTexture, flameNoiseUV.xy, 0.f).r;
+			flameNoise2.g = textureLod(FlameNoiseTexture2, flameNoiseUV.xy, 0.f).r;
+			
+			float flameNoise;
+			if(t < 1.f)
+			{
+				flameNoise = mix(flameNoise2.r, flameNoise2.g, t);
+			}
+			else
+			{
+				flameNoise = mix(flameNoise2.g, flameNoise2.r, t - 1.f);
+			}
+		
+			//OutColor = vec4(flameNoise, flameNoise,flameNoise, 1.0);return;
+		
+			flameNoise = 1.f - flameNoise;
+		
+			flame.rgb *= flameNoise * 1.f;
 		}
-		else
-		{
-			flameNoise = mix(flameNoise2.g, flameNoise2.r, t - 1.f);
-		}
 
-		//OutColor = vec4(flameNoise, flameNoise,flameNoise, 1.0);return;
+		
 
-		flameNoise = 1.f - flameNoise;
 
-		flame.rgb *= flameNoise * 1.f;
 
 		#if 0 //MOVE IT TO EACH FLAME PARTICLE SEPARATE SHADER
 		flameSamplingUV = vsOutTexCoords;
@@ -339,6 +346,9 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 		fadeNoise.r = clamp(MapToRange(fadeNoise.r, 0.4, 0.6, 0.0, 1.0), 0.0, 1.0);
 		flame.rgb *= fadeNoise.r;
 		#endif
+
+
+
 
 		OutColor = flame;
 	}`
