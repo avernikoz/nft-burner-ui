@@ -57,7 +57,7 @@ export const AboutFirstSection = ({
 
 export const AboutSecondSection = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => {
     return (
-        <div className="section small_height_section" ref={refProp}>
+        <div className="section" ref={refProp}>
             <div>
                 <p className="intro_quote section_title">A Call for Renewal: The Case for Burning NFTs</p>
             </div>
