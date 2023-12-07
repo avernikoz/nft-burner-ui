@@ -662,8 +662,8 @@ export function GetShaderSourceCombinerPassPS() {
 				lensUV = vec2(-texCoords.y, texCoords.x) * vec2(1.0, xScale);
 			}
 			vec4 lensDirt = textureLod(LensTexture, lensUV, 0.f);
-			final.rgb += (bloom.rgb + pointLights * 0.5) * lensDirt.rgb * (1.0f + ` +
-        Math.random() * 4.0 +
+			final.rgb += (bloom.rgb + pointLights * 0.5) * lensDirt.rgb * (0.5f + ` +
+        Math.random() * 2.0 +
         /* glsl */ `);
 			//final.rgb = lensDirt.rgb;
 			//final = bloom.rgb;

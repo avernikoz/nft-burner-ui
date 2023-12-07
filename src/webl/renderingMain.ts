@@ -220,6 +220,7 @@ const GRenderTargets: {
     SmokeFramebuffer: WebGLFramebuffer | null;
     SpotlightTexture: WebGLTexture | null;
     SpotlightFramebuffer: WebGLFramebuffer | null;
+    bUseHalfResRT: boolean;
 } = {
     FirePlaneTexture: null,
     FirePlaneFramebuffer: null,
@@ -231,18 +232,18 @@ const GRenderTargets: {
     SmokeFramebuffer: null,
     SpotlightTexture: null,
     SpotlightFramebuffer: null,
+    bUseHalfResRT: false,
 };
 
 function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
     const size = GScreenDesc.RenderTargetSize;
+    GScreenDesc.HalfResRenderTargetSize = GRenderTargets.bUseHalfResRT
+        ? { x: GScreenDesc.RenderTargetSize.x * 0.5, y: GScreenDesc.RenderTargetSize.y * 0.5 }
+        : GScreenDesc.RenderTargetSize;
     const textureInternalFormat = gl.R11F_G11F_B10F;
     const textureFormat = gl.RGB;
     const textureType = gl.HALF_FLOAT;
-    /* const textureInternalFormat = gl.RGBA8;
-    const textureFormat = gl.RGBA;
-    const textureType = gl.UNSIGNED_BYTE; */
 
-    //const RenderTargetMainFloat = CreateTextureRT(gl, RenderTargetSize, gl.RGBA16F, gl.RGBA, gl.HALF_FLOAT);
     //Fire Plane
     GRenderTargets.FirePlaneTexture = CreateTextureRT(
         gl,
@@ -261,11 +262,17 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
     GRenderTargets.FlameFramebuffer2 = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture2!);
 
     //Smoke
-    GRenderTargets.SmokeTexture = CreateTextureRT(gl, size, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
+    GRenderTargets.SmokeTexture = CreateTextureRT(
+        gl,
+        GScreenDesc.HalfResRenderTargetSize,
+        gl.RGBA8,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+    );
     GRenderTargets.SmokeFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.SmokeTexture!);
 
     //Spotlight
-    GRenderTargets.SpotlightTexture = CreateTextureRT(gl, size, gl.R16F, gl.RED, gl.HALF_FLOAT);
+    GRenderTargets.SpotlightTexture = CreateTextureRT(gl, GScreenDesc.RenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT);
     GRenderTargets.SpotlightFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.SpotlightTexture!);
 }
 
@@ -290,6 +297,11 @@ export function RenderMain() {
     function GetWindowSizeCurrent(): Vector2 {
         const maxDPR = 3;
         const dpr = MathClamp(window.devicePixelRatio, 1, maxDPR);
+        if (dpr > 1) {
+            GRenderTargets.bUseHalfResRT = true;
+        } else {
+            GRenderTargets.bUseHalfResRT = false;
+        }
         return { x: Math.round(window.innerWidth * dpr), y: Math.round(window.innerHeight * dpr) };
     }
 
@@ -982,7 +994,7 @@ export function RenderMain() {
                 //======================
                 // 		SMOKE RENDER
                 //======================
-                BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, GScreenDesc.RenderTargetSize, true);
+                BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, GScreenDesc.HalfResRenderTargetSize, true);
                 DustParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);

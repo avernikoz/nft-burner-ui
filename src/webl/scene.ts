@@ -6,6 +6,7 @@ import { MathLerp, MathLerpVec3, MathSmoothstep, MathVector3Negate, MathVector3N
 export const GScreenDesc = {
     WindowSize: { x: 512, y: 512 }, //size displayed on the page
     RenderTargetSize: { x: 512, y: 512 }, //drawingBuffer size //TODO: Set min max allowed resolution, add half size support, dynamic RT size support
+    HalfResRenderTargetSize: { x: 512, y: 512 },
     ScreenRatio: 16.0 / 9.0,
     bWideScreen: true,
     ViewRatioXY: { x: 16.0 / 9.0, y: 1.0 }, //Used for pre-ViewportTransform, For WideScreen: y = 1, for Narrow Screen: x = 1
