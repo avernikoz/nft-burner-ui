@@ -500,7 +500,8 @@ export function GetShaderSourceCombinerPassPS() {
         /* glsl */ `));
 
 			vec2 texCoords = vsOutTexCoords;
-			vec3 flame = textureLod(FlameTexture, texCoords.xy, 0.f).rgb;
+			ivec2 itexCoords = ivec2(gl_FragCoord.xy);
+			vec3 flame = texelFetch(FlameTexture, itexCoords, 0).rgb;
 			flame.rgb *= 1.1f;
 	
 		#if 1//heat distortion
@@ -542,13 +543,9 @@ export function GetShaderSourceCombinerPassPS() {
 			vec4 firePlane = textureLod(FirePlaneTexture, texCoords.xy, 0.f);
 			#endif
 			
-			vec3 bloom = textureLod(BloomTexture, texCoords.xy, 0.f).rgb;
-
 			float pointLights = textureLod(PointLightsTexture, texCoords.xy, 0.f).r; 
 
-			vec2 spotlightSamplingUV = vec2(texCoords.x, texCoords.y);
-
-			float light = textureLod(SpotlightTexture, spotlightSamplingUV, 0.f).r;
+			float light = textureLod(SpotlightTexture, texCoords, 0.f).r;
 			//float light = 1.f;
 			float lightInitial = light;
 			//light *= light;
@@ -601,6 +598,9 @@ export function GetShaderSourceCombinerPassPS() {
 			}
 			smoke.rgb *= 0.75f;
 			smoke.rgb *= 0.25f;
+
+
+			vec3 bloom = textureLod(BloomTexture, texCoords.xy, 0.f).rgb;
 
 			const float BloomStrength = 5.0f;
 			const vec2 SmokeBloomColorClampMinMax = vec2(0.15, 1.f);
@@ -658,11 +658,13 @@ export function GetShaderSourceCombinerPassPS() {
 			vec2 lensUV = texCoords.xy;
 			if(kViewSize.y > 1.f)
 			{
-				const float xScale = 0.95f; //TODO: Startup random
+				const float xScale = 0.99f; //TODO: Startup random
 				lensUV = vec2(-texCoords.y, texCoords.x) * vec2(1.0, xScale);
 			}
 			vec4 lensDirt = textureLod(LensTexture, lensUV, 0.f);
-			final.rgb += (bloom.rgb + pointLights) * lensDirt.rgb * 1.0f;
+			final.rgb += (bloom.rgb + pointLights * 0.5) * lensDirt.rgb * (1.0f + ` +
+        Math.random() * 4.0 +
+        /* glsl */ `);
 			//final.rgb = lensDirt.rgb;
 			//final = bloom.rgb;
 

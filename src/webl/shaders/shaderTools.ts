@@ -48,7 +48,7 @@ export function GetShaderSourceSingleFlameRenderVS() {
 		pos.xy *= 0.4;
 		//pos.xy *= 1.25;
 		pos.y *= 1.4;
-		pos.x -= Velocity.x * TexCoordsBuffer.y * TexCoordsBuffer.y * 30.f;
+		pos.x -= Velocity.x * TexCoordsBuffer.y * TexCoordsBuffer.y * 20.f;
 		if(Velocity.y > 0.0)
 		{
 			//shrink
@@ -62,7 +62,7 @@ export function GetShaderSourceSingleFlameRenderVS() {
 		if(abs(Velocity.x) > 0.0)
 		{
 			//shrink
-			pos.y *= 1.f - clamp(abs(Velocity.x) * 35.0, 0.0, 1.0);
+			pos.y *= 1.f - clamp(abs(Velocity.x) * 15.0, 0.0, 1.0);
 		}
 
 		if(FadeInOutParameters.x < 1.0)
