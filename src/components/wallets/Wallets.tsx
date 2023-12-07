@@ -36,6 +36,7 @@ function Wallets(props: { hideUI: () => void }) {
     const connect = useCallback(
         (acc: IAccount) => {
             localStorage.setItem("activeIndex", JSON.stringify(activeIndex));
+            // TODO: On wallet connect method from react bridge
             GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory);
             setVisible(false);
             setAccount(acc);
