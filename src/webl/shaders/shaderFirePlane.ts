@@ -739,7 +739,7 @@ export function GetShaderSourceFireVisualizerPS() {
 					//Specular
 					float specular = pow(max(0.f, dot(halfVec, normal)), specularPowerScaledCur);
 					//float specular = pow(max(0.f, dot(halfVec, normal)), SpecularIntensityAndPower.y * 8.f);
-					lightingSpecFinal += min(5.f, specular * SpecularIntensityAndPower.x * max(0.75,(1.f - roughness)) * nDotL * spotlightMask);
+					lightingSpecFinal += min(5.f, specular * max(0.25, curFuel) * SpecularIntensityAndPower.x * max(0.75,(1.f - roughness)) * nDotL * spotlightMask);
 				}
 
 				//Tool Light

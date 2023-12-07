@@ -167,7 +167,7 @@ export class RSpotlightRenderPass {
         this.SpotlightTexture = GTexturePool.CreateTexture(gl, false, `spotlightCut` + spotlightTextureId + `_R8`);
         //this.SpotlightTexture = CreateTexture(gl, 5, "assets/example.jpg");
 
-        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `lightGlare0`);
+        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `lightGlare2`);
         this.LightSourceTexture = GTexturePool.CreateTexture(gl, false, `spotlightMask0`);
     }
 

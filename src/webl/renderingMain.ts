@@ -295,7 +295,7 @@ export function RenderMain() {
     // 	  WINDOW RESIZE INIT
     //=========================
     function GetWindowSizeCurrent(): Vector2 {
-        const maxDPR = 3;
+        const maxDPR = 2;
         const dpr = MathClamp(window.devicePixelRatio, 1, maxDPR);
         if (dpr > 1) {
             GRenderTargets.bUseHalfResRT = true;
