@@ -11,11 +11,13 @@ import { ToastContext } from "../../../ToastProvider/ToastProvider";
 
 function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<Wallet | null>(null);
-    const { wallets, connected, select, publicKey, wallet, disconnect } = useWallet();
+    const { wallets, connected, select, publicKey, wallet, disconnect, connect } = useWallet();
     const { connection } = useConnection();
     const toastController = useContext(ToastContext);
 
     useEffect(() => {
+        console.log(connected, publicKey);
+
         if (connected && publicKey) {
             connection.getBalance(new PublicKey(publicKey)).then(
                 (balance) => {
@@ -52,6 +54,7 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                         }
                         toastController?.showInfo("Connecting", "Please accept connection in wallet");
                         await select(e.value.adapter.name);
+                        await connect();
                         setSelectedOption(e.value);
                     } catch (error) {
                         Sentry.captureException(error, {

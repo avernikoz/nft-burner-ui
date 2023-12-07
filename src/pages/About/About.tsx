@@ -103,7 +103,7 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
             <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
             <AboutSecondSection refProp={myRef} />
             {sectionTextList.map((text, i) => (
-                <AboutGenericSection sectionText={text} sectionTitle={sectionTitleList[i]} />
+                <AboutGenericSection key={i} sectionText={text} sectionTitle={sectionTitleList[i]} />
             ))}
         </div>
     );

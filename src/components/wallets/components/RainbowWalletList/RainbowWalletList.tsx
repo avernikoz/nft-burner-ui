@@ -5,11 +5,10 @@ import { ReactComponent as Phantom } from "../../assets/phantom.svg";
 import { ReactComponent as WalletConnect } from "../../assets/walletconnect.svg";
 import React, { JSX, useContext, useState } from "react";
 import { StyledListBox } from "./RainbowWalletList.styled";
-import { Connector } from "wagmi";
+import { Connector, useConnect } from "wagmi";
 import { IAccount, IWallet } from "../../types";
 import { fetchBalance } from "@wagmi/core";
 import RainbowItemTemplate from "./RainbowItemTemplate";
-import connectors from "../../../../utils/connectors";
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
 
 function RainbowWalletList(props: {
@@ -19,8 +18,9 @@ function RainbowWalletList(props: {
 }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<IWallet>();
     const toastController = useContext(ToastContext);
+    const wagmiConnect = useConnect();
 
-    const connectorsList = connectors;
+    const connectorsList = wagmiConnect.connectors;
 
     const wallets: IWallet[] = [
         {
@@ -48,7 +48,8 @@ function RainbowWalletList(props: {
     async function connect(wallet: IWallet) {
         try {
             toastController?.showInfo("Connecting", "Please accept connection in wallet");
-            await wallet.wallet.connect();
+            wagmiConnect.connect({ connector: wallet.wallet });
+            // await wallet.wallet.connect();
             const activeChain = await wallet.wallet.getChainId();
             if (activeChain !== props.chain && wallet.wallet.switchChain) {
                 await wallet.wallet.switchChain(props.chain);
@@ -56,7 +57,7 @@ function RainbowWalletList(props: {
             const address = await wallet.wallet.getAccount();
             const balance = await fetchBalance({
                 address,
-                chainId: props.chain,
+                chainId: activeChain,
             });
             props.connect({
                 id: address,

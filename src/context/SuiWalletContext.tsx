@@ -8,7 +8,7 @@ export const SuiWalletContext: FC<PropsWithChildren> = (props) => {
     const { children } = props;
 
     return (
-        <WalletProvider autoConnect chains={[SuiMainnetChain]}>
+        <WalletProvider chains={[SuiMainnetChain]} autoConnect={false}>
             {children}
         </WalletProvider>
     );

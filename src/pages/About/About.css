@@ -108,6 +108,7 @@
     height: 100vh;
     position: absolute;
     overflow: scroll;
+    z-index: 2;
 }
 
 .section {
