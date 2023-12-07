@@ -84,10 +84,8 @@ export const AboutSecondSection = ({ refProp }: { refProp: RefObject<HTMLDivElem
 export const AboutGenericSection = ({ sectionText, sectionTitle }: { sectionText: string; sectionTitle: string }) => {
     return (
         <div className="section small_height_section">
-
             <div className="intro_quote section_title">
                 <p>{sectionTitle}</p>
-
             </div>
             <div className="intro_quote section_text">
                 <p>{sectionText}</p>
