@@ -54,7 +54,9 @@ export const EVMWalletContext: FC<PropsWithChildren> = (props) => {
 
     return (
         <WagmiConfig config={wagmiConfig}>
-            <RainbowKitProvider chains={chains}>{children}</RainbowKitProvider>
+            <RainbowKitProvider chains={chains} theme={null}>
+                {children}
+            </RainbowKitProvider>
         </WagmiConfig>
     );
 };

@@ -7,7 +7,7 @@ body {
         "Droid Sans", "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-image: linear-gradient(to right, #111010 100%, black 100%);
+    background-image: linear-gradient(to right, #000000 100%, black 100%);
 }
 
 html,
@@ -38,9 +38,7 @@ code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
-#demo-canvas {
-    /* aspect-ratio: 1 / 1; */
-    /* width: min(100%, 100vh * 1 / 1); */
+#burning-canvas {
     position: fixed;
     top: 0;
     left: 0;
@@ -49,4 +47,8 @@ code {
     width: 100%;
     height: 100%;
     background-color: rgb(61, 61, 61);
+}
+
+html {
+    scroll-behavior: smooth;
 }

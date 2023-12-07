@@ -10,6 +10,8 @@ import { SolanaWalletContext } from "./context/SolanaWalletContext";
 import { EVMWalletContext } from "./context/EVMWalletContext";
 import { SuiWalletContext } from "./context/SuiWalletContext";
 import { NftProvider } from "./components/NftProvider/NftProvider";
+import { ToastProvider } from "./components/ToastProvider/ToastProvider";
+
 import { configureSentry } from "./utils/configureSentry";
 
 // Sentry init
@@ -20,17 +22,19 @@ root.render(
     // TODO: Return it back, but only in dev mode
     // <React.StrictMode>
 
-    <PrimeReactProvider>
-        <SolanaWalletContext>
-            <EVMWalletContext>
-                <SuiWalletContext>
-                    <NftProvider>
-                        <App />
-                    </NftProvider>
-                </SuiWalletContext>
-            </EVMWalletContext>
-        </SolanaWalletContext>
-    </PrimeReactProvider>,
+    <ToastProvider>
+        <PrimeReactProvider>
+            <SolanaWalletContext>
+                <EVMWalletContext>
+                    <SuiWalletContext>
+                        <NftProvider>
+                            <App />
+                        </NftProvider>
+                    </SuiWalletContext>
+                </EVMWalletContext>
+            </SolanaWalletContext>
+        </PrimeReactProvider>
+    </ToastProvider>,
     // </React.StrictMode>,
 );
 
