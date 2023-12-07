@@ -1,6 +1,6 @@
 //Bloom
 
-import { CreateTexture, CreateTextureRT } from "./resourcesUtils";
+import { CreateTextureRT } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
@@ -13,6 +13,7 @@ import {
     ShaderSourceFullscreenPassVS,
     ShaderSourcePresentPassPS,
 } from "./shaders/shaderPostProcess";
+import { GTexturePool } from "./texturePool";
 import { Vector2 } from "./types";
 import { GTime } from "./utils";
 
@@ -303,11 +304,11 @@ export class RCombinerPass {
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
 
-        this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
 
-        this.SmokeNoiseTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg");
-        this.LogoImageTexture = CreateTexture(gl, 4, "assets/background/logoNewY.png");
-        this.LensTexture = CreateTexture(gl, 4, "assets/lensDirt6Edit.jpg");
+        this.SmokeNoiseTexture = GTexturePool.CreateTexture(gl, false, "smokeNoiseColor");
+        this.LogoImageTexture = GTexturePool.CreateTexture(gl, false, "logoNewY");
+        this.LensTexture = GTexturePool.CreateTexture(gl, false, "lensDirt6Edit");
     }
 
     Execute(
@@ -427,9 +428,9 @@ export class RFlamePostProcessPass {
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
 
-        this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
-        this.FlameNoiseTexture = CreateTexture(gl, 5, "assets/flameNoise1.png");
-        this.FlameNoiseTexture2 = CreateTexture(gl, 6, "assets/flameNoise2.png");
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
+        this.FlameNoiseTexture = GTexturePool.CreateTexture(gl, false, "flameNoise1_R8");
+        this.FlameNoiseTexture2 = GTexturePool.CreateTexture(gl, false, "flameNoise2_R8");
     }
 
     Execute(

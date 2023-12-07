@@ -49,14 +49,14 @@ export class AudioEngine {
     }
 
     async loadSounds() {
-        this.clickAudioBuffer = await this.loadAudioBuffer("assets/background/audio/bassShot.mp3");
-        this.introAudioBuffer = await this.loadAudioBuffer("assets/background/audio/intro.mp3");
-        this.stampAudioBuffer = await this.loadAudioBuffer("assets/background/audio/stamp.mp3");
-        this.lighterStartAudioBuffer = await this.loadAudioBuffer("assets/background/audio/lighterStart.mp3");
-        this.lighterGasAudioBuffer = await this.loadAudioBuffer("assets/background/audio/lighterGasLoop.mp3");
-        this.burstAudioBuffer = await this.loadAudioBuffer("assets/background/audio/fireBurst2.mp3");
-        this.flameLoopAudioBuffer = await this.loadAudioBuffer("assets/background/audio/flameLoop2.mp3");
-        this.burningLoopAudioBuffer = await this.loadAudioBuffer("assets/background/audio/burningLoop2.mp3");
+        this.clickAudioBuffer = await this.loadAudioBuffer("assets/audio/bassShot.mp3");
+        this.introAudioBuffer = await this.loadAudioBuffer("assets/audio/intro.mp3");
+        this.stampAudioBuffer = await this.loadAudioBuffer("assets/audio/stamp.mp3");
+        this.lighterStartAudioBuffer = await this.loadAudioBuffer("assets/audio/lighterStart.mp3");
+        this.lighterGasAudioBuffer = await this.loadAudioBuffer("assets/audio/lighterGasLoop.mp3");
+        this.burstAudioBuffer = await this.loadAudioBuffer("assets/audio/fireBurst2.mp3");
+        this.flameLoopAudioBuffer = await this.loadAudioBuffer("assets/audio/flameLoop2.mp3");
+        this.burningLoopAudioBuffer = await this.loadAudioBuffer("assets/audio/burningLoop2.mp3");
     }
 
     async loadAudioBuffer(url: string): Promise<AudioBuffer> {

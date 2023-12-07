@@ -9,6 +9,10 @@ import "primereact/resources/themes/lara-light-indigo/theme.css";
 import { SolanaWalletContext } from "./context/SolanaWalletContext";
 import { EVMWalletContext } from "./context/EVMWalletContext";
 import { SuiWalletContext } from "./context/SuiWalletContext";
+import { configureSentry } from "./utils/configureSentry";
+
+// Sentry init
+configureSentry();
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(

@@ -1,5 +1,6 @@
 import { GScreenDesc } from "../scene";
 import { Vector3 } from "../types";
+import { MathLerp } from "../utils";
 
 export function scSpotlightFlicker() {
     return /* glsl */ `
@@ -264,7 +265,10 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 
 		//Pre-Translate Scale
 		flameNoiseUV *= 0.9f;
-		flameNoiseUV.x *= 4.f;
+		float flameNoiseXScale = ` +
+        MathLerp(2.0, 5.0, Math.random()) +
+        /* glsl */ `;
+		flameNoiseUV.x *= flameNoiseXScale;
 
 		flameNoiseUV = MapToRange(flameNoiseUV, 0.0, 1.0, -1.0, 1.0);
 		flameNoiseUV.x *= ScreenRatio;
@@ -586,10 +590,14 @@ export function GetShaderSourceCombinerPassPS() {
 				vec2 texCoordsScaled = texCoords.xy;
 				texCoordsScaled = MapToRange(texCoordsScaled, 0.0, 1.0, -1.0, 1.0);
 				texCoordsScaled /= (1.f - CameraDesc.z);
-				texCoordsScaled *= 4.0f;
+				texCoordsScaled *= 2.0f + ` +
+        Math.random() * 2.0 +
+        /* glsl */ `;
 				texCoordsScaled *= CameraDesc.w;
 				texCoordsScaled.x *= ScreenRatio;
-				smokeScale *= clamp(length(texCoordsScaled), 0.25, 1.f);
+				smokeScale *= clamp(length(texCoordsScaled), ` +
+        Math.random() +
+        /* glsl */ `, 1.f);
 			}
 			smokeScale *= 2.0f;
 			//smokeScale = min(1.5f, smokeScale);

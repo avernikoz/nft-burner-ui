@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { Button } from "primereact/button";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line import/no-unresolved
@@ -52,6 +53,11 @@ function Wallets() {
             solanaWallet.publicKey = null;
             solanaWallet.connected = false;
             solanaWallet.disconnect().catch((error) => {
+                Sentry.captureException(error, {
+                    tags: { scenario: "disconnect_wallet" },
+                    extra: { chain: { id: "solana" } },
+                });
+
                 console.error("Failed to disconnect from Solana Wallet:", error);
             });
         }
@@ -112,10 +118,15 @@ function Wallets() {
                     setActiveIndex(index);
                 }
             } catch (error) {
+                Sentry.captureException(error, {
+                    tags: { scenario: "switch_chain" },
+                    extra: { chain: { id: chainId } },
+                });
+
                 if (error instanceof Error) {
-                    toastController?.showError("Failed to connect: " + error.message);
+                    toastController?.showError("Failed to switch chain: " + error.message);
                 } else {
-                    toastController?.showError("Failed to connect: " + error);
+                    toastController?.showError("Failed to switch chain: " + error);
                 }
             }
         },

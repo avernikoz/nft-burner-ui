@@ -29,6 +29,8 @@
         "@avernikoz/nft-sdk": "2.0.3",
         "@mysten/sui.js": "0.42.0",
         "@rainbow-me/rainbowkit": "^1.1.1",
+        "@sentry/browser": "^7.84.0",
+        "@sentry/react": "^7.84.0",
         "@solana/wallet-adapter-base": "^0.9.23",
         "@solana/wallet-adapter-react": "^0.15.35",
         "@solana/wallet-adapter-react-ui": "^0.9.34",
