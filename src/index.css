@@ -7,7 +7,7 @@ body {
         "Droid Sans", "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-image: linear-gradient(to right, #111010 100%, black 100%);
+    background-image: linear-gradient(to right, #000000 100%, black 100%);
 }
 
 html,
@@ -36,4 +36,8 @@ textarea {
 
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+html {
+    scroll-behavior: smooth;
 }
