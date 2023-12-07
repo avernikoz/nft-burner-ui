@@ -1,15 +1,15 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 import "./App.css";
 import { RenderMain } from "../../webl/renderingMain";
 import { SolanaWalletContext } from "../../context/SolanaWalletContext";
 import { EVMWalletContext } from "../../context/EVMWalletContext";
-import { Footer } from "./app.styled";
-import FullScreenButton from "../../components/FullscreenButton/FullscreenButton";
-import Wallets from "../../components/wallets/Wallets";
+
 import { SuiWalletContext } from "../../context/SuiWalletContext";
 import { ToastProvider } from "../../components/ToastProvider/ToastProvider";
 import { GlobalStyles } from "../../config/globalStyles";
+import { About } from "../About/About";
+import { InternalApp } from "./InternalApp";
 
 function App() {
     useEffect(() => {
@@ -20,28 +20,21 @@ function App() {
         }
     }, []);
 
+    const [isAboutPageActive, setAboutPageActive] = useState(true);
+    const AppComponent = isAboutPageActive ? About : InternalApp;
+
     return (
         <>
             <GlobalStyles />
             <SolanaWalletContext>
                 <EVMWalletContext>
                     <SuiWalletContext>
-                        <div className="App">
-                            <div className="WalletConnectionHeader">
-                                <ToastProvider>
-                                    <Wallets />
-                                </ToastProvider>
-                            </div>
-                            <div>
-                                <canvas id="demo-canvas">
-                                    Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code>{" "}
-                                    element.
-                                </canvas>
-                            </div>
-                            <Footer>
-                                <FullScreenButton />
-                            </Footer>
-                        </div>
+                        <ToastProvider>
+                            <AppComponent setAboutPageActive={setAboutPageActive} />
+                            <canvas id="demo-canvas">
+                                Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
+                            </canvas>
+                        </ToastProvider>
                     </SuiWalletContext>
                 </EVMWalletContext>
             </SolanaWalletContext>

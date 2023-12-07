@@ -186,6 +186,17 @@ export class RFirePlanePass {
         gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
     }
 
+    SetToBurned(gl: WebGL2RenderingContext) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[0]);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+        //Fill Fuel texture with 1.f
+        const clearColor0 = new Float32Array([0.01, 0.01, 0.01, 0.01]);
+        const clearColor1 = new Float32Array([0.01, 0.01, 0.01, 0.01]);
+        gl.clearBufferfv(gl.COLOR, 0, clearColor0);
+        gl.clearBufferfv(gl.COLOR, 1, clearColor1);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+    }
+
     constructor(gl: WebGL2RenderingContext, inRenderTargetSize = { x: 512, y: 512 }) {
         this.RenderTargetSize = inRenderTargetSize;
 

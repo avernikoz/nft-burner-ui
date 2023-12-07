@@ -566,7 +566,6 @@ export function RenderMain() {
         `connectButton`,
         `connectButton1`,
     );
-
     //==============================
     // 	 INIT SCENE STATES DESCS
     //==============================
@@ -614,7 +613,7 @@ export function RenderMain() {
     //
     //=============================================================================================================================
 
-    let GFirstRenderingFrame = true;
+    const GFirstRenderingFrame = true;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
         if (gl !== null && GRenderTargets.FirePlaneTexture !== null && GPostProcessPasses.CopyPresemt !== null) {
@@ -625,6 +624,7 @@ export function RenderMain() {
 
             const RenderStateMachine = GRenderingStateMachine.GetInstance();
             const bNewRenderStateThisFrame = RenderStateMachine.bWasNewStateProcessed();
+            const bPreloaderState = RenderStateMachine.currentState == ERenderingState.Preloading;
 
             //=========================
             // 		WINDOW RESIZE
@@ -695,7 +695,7 @@ export function RenderMain() {
             //=========================
             // 	STATE DEBUG GUI UPDATE
             //=========================
-            {
+            if (0) {
                 StateControllers.forEach((controller) => {
                     controller.OnUpdate();
                 });
@@ -720,20 +720,19 @@ export function RenderMain() {
 
                 /* StateControllers.forEach((controller) => {
                 controller.ClearState();
-            }); */
+            	}); */
                 StateControllers[RenderStateMachine.currentState].bSelectedThisFrame = true;
                 StateControllers[RenderStateMachine.currentState].bIntersectionThisFrame = true;
             }
 
+            //============================
+            // 		AFTER PRELOADER
+            //============================
             if (
-                GTexturePool.AreAllTexturesLoaded() &&
-                (GFirstRenderingFrame || RenderStateMachine.currentState !== ERenderingState.Preloading)
+                /* GTexturePool.AreAllTexturesLoaded() && */
+                GFirstRenderingFrame ||
+                RenderStateMachine.currentState !== ERenderingState.Preloading
             ) {
-                if (GFirstRenderingFrame) {
-                    GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady, true);
-                    GFirstRenderingFrame = false;
-                }
-
                 ApplyCameraControl();
 
                 SpotlightPositionController.OnUpdate();
@@ -751,12 +750,6 @@ export function RenderMain() {
                         }
                     } else {
                         if (RenderStateMachine.currentState !== ERenderingState.BurningFinished) {
-                            if (
-                                GUserInputDesc.bPointerInputPressedCurFrame &&
-                                !SpotlightPositionController.bIntersectionThisFrame
-                            ) {
-                            }
-
                             if (GUserInputDesc.bPointerInputPressedCurFrame) {
                                 if (!GUserInputDesc.bPointerInputPressedPrevFrame) {
                                     GAudioEngine.PlayLighterStartSound();
@@ -770,7 +763,7 @@ export function RenderMain() {
                     }
                 } else {
                     if (bNewRenderStateThisFrame) {
-                        BurningSurface.Reset(gl);
+                        //BurningSurface.Reset(gl);
                     }
                 }
 
@@ -868,12 +861,12 @@ export function RenderMain() {
                 //=============================
                 // 		BACKGROUND RENDER
                 //=============================
-                BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
-                //Render Background floor
-                if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
+                if (!bPreloaderState) {
+                    BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
+                    //Render Background floor
                     BackGroundRenderPass.RenderFloor(
                         gl,
-                        GPostProcessPasses.Bloom!.BloomTexture,
+                        GPostProcessPasses.Bloom!.BloomTexture!,
                         GPostProcessPasses.Combiner!.SmokeNoiseTexture,
                     );
                 }
@@ -881,7 +874,7 @@ export function RenderMain() {
                 //=================================
                 // 		BURNING SURFACE RENDER
                 //=================================
-                {
+                if (!bPreloaderState) {
                     //Update Iamge Surface with one selected from Inventory
                     if (RenderStateMachine.currentState === ERenderingState.Inventory) {
                         const srcImage = IMAGE_STORE_SINGLETON_INSTANCE.getImage();
@@ -923,15 +916,15 @@ export function RenderMain() {
                     gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ONE, gl.ONE);
                     gl.blendEquation(gl.MAX);
-                    SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
+                    //SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
 
                     if (RenderStateMachine.currentState == ERenderingState.Intro) {
                         SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
                     }
 
-                    StateControllers.forEach((controller) => {
+                    /* StateControllers.forEach((controller) => {
                         SpatialControlUIVisualizer.Render(gl, controller);
-                    });
+                    }); */
                     gl.disable(gl.BLEND);
                 }
 
@@ -1053,9 +1046,9 @@ export function RenderMain() {
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 gl.clear(gl.COLOR_BUFFER_BIT);
 
-                StateControllers.forEach((controller) => {
+                /* StateControllers.forEach((controller) => {
                     SpatialControlUIVisualizer.Render(gl, controller);
-                });
+                }); */
             }
 
             RenderStateMachine.MarkNewStateProcessed();

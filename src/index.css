@@ -7,7 +7,7 @@ body {
         "Droid Sans", "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-image: linear-gradient(to right, #111010 100%, black 100%);
+    background-image: linear-gradient(to right, #000000 100%, black 100%);
 }
 
 html,
@@ -46,4 +46,8 @@ code {
     font-size: 16px; /* Adjust the font size as needed */
     padding: 8px; /* Adjust padding as needed */
     background-color: rgba(0, 0, 0, 0.5); /* Adjust the background color and transparency as needed */
+}
+
+html {
+    scroll-behavior: smooth;
 }
