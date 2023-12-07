@@ -17,7 +17,7 @@ export default {
                     http: false,
                     stream: false,
                     crypto: false,
-                    path: require.resolve("path-browserify"),
+                    path: false,
                 },
             },
             ignoreWarnings: [

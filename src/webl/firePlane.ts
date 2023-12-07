@@ -1,4 +1,4 @@
-import { CreateTexture, CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
+import { CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
@@ -13,6 +13,7 @@ import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
 import { GUserInputDesc } from "./input";
 import { Vector2 } from "./types";
 import { GTime, MathClamp, MathGetVectorLength, MathVector2Normalize } from "./utils";
+import { GTexturePool } from "./texturePool";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -67,7 +68,7 @@ export class RApplyFireRenderPass {
 
         //Create Shader Program
         if (imageSrc != null) {
-            this.colorTexture = CreateTexture(gl, 0, imageSrc);
+            this.colorTexture = GTexturePool.CreateTexture(gl, false, imageSrc);
         }
 
         this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceApplyFireVS, ShaderSourceApplyFirePS);
@@ -270,8 +271,8 @@ export class RFirePlanePass {
         //Shader Parameters
         this.UniformParametersLocationListFireUpdate = GetUniformParametersList(gl, this.shaderProgramFireUpdate);
 
-        this.NoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise1024.png");
-        this.NoiseTextureLQ = CreateTexture(gl, 4, "assets/perlinNoise32.png");
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
+        this.NoiseTextureLQ = GTexturePool.CreateTexture(gl, false, "perlinNoise32");
 
         this.NoiseTextureInterpolator = 0;
 
@@ -287,21 +288,20 @@ export class RFirePlanePass {
         //Shader Parameters
         this.VisualizerUniformParametersLocationList = GetUniformParametersList(gl, this.VisualizerShaderProgram);
 
-        this.VisualizerFlameColorLUT = CreateTexture(gl, 4, "assets/flameColorLUT5.png");
+        this.VisualizerFlameColorLUT = GTexturePool.CreateTexture(gl, false, "flameColorLUT5");
         //this.CurrentImageTextureSrc = "assets/example.jpg";
-        this.CurrentImageTextureSrc = "assets/apeBlue.png";
+        this.CurrentImageTextureSrc = "apeBlue";
         //this.CurrentImageTextureSrc = "assets/example2.png";
-        this.VisualizerImageTexture = CreateTexture(gl, 5, this.CurrentImageTextureSrc, true, true);
-        this.VisualizerAshTexture = CreateTexture(gl, 6, "assets/ashTexture.jpg", true);
+        this.VisualizerImageTexture = GTexturePool.CreateTexture(gl, false, this.CurrentImageTextureSrc, true, true);
+        this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "ashTexture_R8", true);
 
-        this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/afterBurnNoise2.png");
+        this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(gl, false, "afterBurnNoise2_R8");
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 4, "assets/perlinNoise128.png");
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/cracksNoise.png");
 
-        this.VisualizerFirePlaneNoiseTexture = CreateTexture(gl, 7, "assets/fireNoise.png");
+        this.VisualizerFirePlaneNoiseTexture = GTexturePool.CreateTexture(gl, false, "fireNoise_R8");
 
         const matName = `copper`;
-        const fileFormat = `.png`;
 
         /* this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/marbleYellow.png");
         this.NormalsTexture = CreateTexture(gl, 7, "assets/grainNoise3.png");
@@ -319,13 +319,13 @@ export class RFirePlanePass {
         this.NormalsTexture = CreateTexture(gl, 7, "assets/background/blueWoodNRM2.jpg");
         this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/blueWoodRGH2.jpg"); */
 
-        this.SurfaceMaterialColorTexture = CreateTexture(
+        /* this.SurfaceMaterialColorTexture = GTexturePool.CreateTexture(
             gl,
-            7,
+            false,
             `assets/background/` + matName + `DFS` + fileFormat,
             true,
-        );
-        this.NormalsTexture = CreateTexture(gl, 7, `assets/background/` + matName + `NRM` + fileFormat, true, true);
+        ); */
+        this.NormalsTexture = GTexturePool.CreateTexture(gl, false, matName + `NRM`, true, true);
         //this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/` + matName + `RGH` + fileFormat, true);
 
         //this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/oxidCopperRGH.png");
@@ -335,16 +335,16 @@ export class RFirePlanePass {
         //this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/foil2RGH.png");
 
         const roughnessTextureId = Math.floor(Math.random() * 4);
-        this.RoughnessTexture = CreateTexture(
+        this.RoughnessTexture = GTexturePool.CreateTexture(
             gl,
-            7,
-            `assets/background/cdCoverRGH` + roughnessTextureId + `.png`,
+            false,
+            `cdCoverRGH` + roughnessTextureId + `_R8`,
             true,
             true,
         );
         this.RoughnessParams.Contrast = 1.0 + Math.random();
 
-        this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/oxidCopperRGH.png", true);
+        this.SurfaceMaterialColorTexture = GTexturePool.CreateTexture(gl, false, "oxidCopperRGH", true);
         //this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/paperRGH.png");
 
         const matOffsetSign = { x: 1, y: 1 };

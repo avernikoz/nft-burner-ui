@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { Button } from "primereact/button";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line import/no-unresolved
@@ -75,6 +76,11 @@ function Wallets(props: { hideUI: () => void }) {
                     props.hideUI();
                 })
                 .catch((error) => {
+                    Sentry.captureException(error, {
+                        tags: { scenario: "disconnect_wallet" },
+                        extra: { chain: { id: "solana" } },
+                    });
+
                     console.error("Failed to disconnect from Solana Wallet:", error);
                 });
         }
@@ -135,10 +141,15 @@ function Wallets(props: { hideUI: () => void }) {
                     setActiveIndex(index);
                 }
             } catch (error) {
+                Sentry.captureException(error, {
+                    tags: { scenario: "switch_chain" },
+                    extra: { chain: { id: chainId } },
+                });
+
                 if (error instanceof Error) {
-                    toastController?.showError("Failed to connect: " + error.message);
+                    toastController?.showError("Failed to switch chain: " + error.message);
                 } else {
-                    toastController?.showError("Failed to connect: " + error);
+                    toastController?.showError("Failed to switch chain: " + error);
                 }
             }
         },
@@ -185,6 +196,7 @@ function Wallets(props: { hideUI: () => void }) {
         },
     ];
 
+    // some walletsContext can save session in cache, it's just garantyee that all network will be disconnected when app is running
     useEffect(() => {
         disconnect();
         // eslint-disable-next-line react-hooks/exhaustive-deps

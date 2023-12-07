@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import React, { useContext, useEffect, useState } from "react";
 import { ListBox } from "primereact/listbox";
 import { useConnection, useWallet, Wallet } from "@solana/wallet-adapter-react";
@@ -56,6 +57,11 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                         await connect();
                         setSelectedOption(e.value);
                     } catch (error) {
+                        Sentry.captureException(error, {
+                            tags: { scenario: "connect_wallet" },
+                            extra: { chain: { id: "solana" } },
+                        });
+
                         if (error instanceof Error) {
                             toastController?.showError("Failed to connect: " + error.message);
                         } else {

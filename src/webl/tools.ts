@@ -2,12 +2,12 @@ import { RFirePlanePass } from "./firePlane";
 import { GMeshGenerator } from "./helpers/meshGenerator";
 import { GUserInputDesc } from "./input";
 import { EParticleShadingMode, ParticlesEmitter } from "./particles";
-import { CreateTexture } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
 import { GetShaderSourceAnimatedSpriteRenderPS, GetShaderSourceSingleFlameRenderVS } from "./shaders/shaderTools";
 import { ERenderingState, GRenderingStateMachine } from "./states";
+import { GTexturePool } from "./texturePool";
 import { GTime, MathClamp, MathGetVectorLength, MathLerp, MathLerpColor } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
@@ -118,8 +118,8 @@ export class LighterTool {
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
 
-        this.ColorTexture = CreateTexture(gl, 7, "assets/sprites/Flame02_16x4.png", true);
-        this.LUTTexture = CreateTexture(gl, 5, "assets/flameColorLUT5.png", true);
+        this.ColorTexture = GTexturePool.CreateTexture(gl, false, "Flame02_16x4", true);
+        this.LUTTexture = GTexturePool.CreateTexture(gl, false, "flameColorLUT5", true);
 
         this.InitRenderingResources(gl);
 
@@ -165,7 +165,7 @@ export class LighterTool {
             inSpawnRange: { x: 0.0, y: 0.1 },
             inParticleLife: 2.0,
             inNumLoops: 1.0,
-            inTextureFileName: "assets/sprites/CandleSmoke01_20x4.png",
+            inTextureFileName: "CandleSmoke01_20x4",
             inFlipbookSizeRC: { x: 20.0, y: 4.0 },
             inDefaultSize: { x: 2.0 * 0.1, y: 3.525 * 0.15 },
             inSizeRangeMinMax: { x: 0.99, y: 1.01 },
