@@ -177,7 +177,7 @@ const GPostProcessPasses: {
     Bloom: null,
     FlamePostProcess: null,
     Combiner: null,
-    BloomNumBlurPasses: 3,
+    BloomNumBlurPasses: 4,
     RenderTargetMIPForBloom: 4,
 };
 

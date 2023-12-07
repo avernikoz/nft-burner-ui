@@ -126,7 +126,7 @@ export class GTexturePool {
         }
     }
 
-    private static DefaultFormatsArr = ["png", "jpg"];
+    private static DefaultFormatsArr = ["webp", "png", "jpg"];
 
     private static TextureLocationFolder = `assets/textures/`;
 
