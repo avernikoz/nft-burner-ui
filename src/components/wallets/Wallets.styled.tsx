@@ -18,6 +18,12 @@ export const ButtonContainer = styled.div`
         margin-bottom: 0;
     }
 
+    .phoneAdapt {
+        @media (max-width: 1000px) {
+            display: none;
+        }
+    }
+
     button {
         margin: 0.8rem 0.5rem;
         border: ${STYLES_CONFIG.button.border};

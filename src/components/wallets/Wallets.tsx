@@ -6,7 +6,7 @@ import { MenuItem } from "primereact/menuitem";
 import { PanelMenu } from "primereact/panelmenu";
 import { Menu } from "primereact/menu";
 import { ButtonContainer, ProfileLabel, StyledDialog } from "./Wallets.styled";
-import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import { useWallet as suietUseWallet, useAccountBalance } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
 import { ConnectorData, disconnect as wagmiDisconnect, fetchBalance } from "@wagmi/core";
@@ -19,7 +19,7 @@ import { createMenuItems } from "./variables";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 
-function Wallets() {
+function Wallets(props: { hideUI: () => void }) {
     const [visible, setVisible] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
     const [activeRainbowConnector, setActiveRainbowConnector] = useState<Connector | null>(null);
@@ -31,6 +31,7 @@ function Wallets() {
     const wagmiAccount = useWagmiAccount();
     const toastController = useContext(ToastContext);
     const lastEvmIndex = 3;
+    const suiAccount = useAccountBalance();
 
     const connect = useCallback(
         (acc: IAccount) => {
@@ -42,6 +43,23 @@ function Wallets() {
         [activeIndex],
     );
 
+    useEffect(() => {
+        if (suiAccount.balance === undefined) {
+            return;
+        }
+        if (suietWallet.connected && !suiAccount.loading && suiAccount.error == null) {
+            const balanceInSUI = ethers.formatUnits(suiAccount.balance, 9).substring(0, 5);
+            connect({
+                id: suietWallet.account?.address,
+                balance: balanceInSUI + " SUI",
+            });
+        }
+        if (suiAccount.error) {
+            toastController?.showError("Failed to fetch balances: " + suiAccount.error);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [suietWallet.connected, suiAccount.balance, suietWallet.account?.address, suiAccount.loading, suiAccount.error]);
+
     const disconnect = useCallback(async () => {
         if (wagmiAccount.isConnected) {
             await wagmiDisconnect();
@@ -50,21 +68,26 @@ function Wallets() {
             await suietWallet.disconnect();
         }
         if (solanaWallet.connected) {
-            solanaWallet.publicKey = null;
-            solanaWallet.connected = false;
-            solanaWallet.disconnect().catch((error) => {
-                Sentry.captureException(error, {
-                    tags: { scenario: "disconnect_wallet" },
-                    extra: { chain: { id: "solana" } },
-                });
+            solanaWallet.wallet?.adapter
+                .disconnect()
+                .then(() => {
+                    solanaWallet.connected = false;
+                    solanaWallet.publicKey = null;
+                    props.hideUI();
+                })
+                .catch((error) => {
+                    Sentry.captureException(error, {
+                        tags: { scenario: "disconnect_wallet" },
+                        extra: { chain: { id: "solana" } },
+                    });
 
-                console.error("Failed to disconnect from Solana Wallet:", error);
-            });
+                    console.error("Failed to disconnect from Solana Wallet:", error);
+                });
         }
 
         setActiveRainbowConnector(null);
         setAccount(null);
-    }, [wagmiAccount.isConnected, suietWallet, solanaWallet]);
+    }, [wagmiAccount.isConnected, suietWallet, solanaWallet, props]);
 
     useEffect(() => {
         // Handle disconnect wallet in case wallet `A` was connected and then user
@@ -214,6 +237,7 @@ function Wallets() {
             if (data.account) {
                 fetchBalance({
                     address: data.account,
+                    formatUnits: "ether",
                 }).then((balance) => {
                     connect({
                         id: data.account,
@@ -253,12 +277,13 @@ function Wallets() {
         wagmiAccount.isConnected,
     ]);
 
+    const panelMenuClass = `w-full md:w-25rem ${account ? "phoneAdapt" : ""}`;
     return (
         <div className="wallet">
             <ButtonContainer>
                 <PanelMenu
                     model={menuItems}
-                    className="w-full md:w-25rem"
+                    className={panelMenuClass}
                     color={"primary"}
                     style={{ minWidth: "200px" }}
                 />

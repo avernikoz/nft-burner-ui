@@ -1,7 +1,7 @@
 import { styled } from "styled-components";
 
 export const Footer = styled.div`
-    @media (max-width: 800px) {
+    @media (max-width: 1000px) {
         display: none;
     }
 
@@ -19,28 +19,33 @@ export const BodyContainer = styled.div`
     grid-template-columns: 1fr 1fr; */
     width: 50vw;
     padding: 0 1rem;
-    z-index: 10;
     position: absolute;
     top: 100px;
     left: 0;
-    height: 80vh;
+    height: 85vh;
 
-    @media (max-width: 400px) {
-        height: 50%;
+    @media (max-width: 1000px) {
+        height: 55%;
         width: 100%;
         position: absolute;
         bottom: 0;
         top: auto;
+        padding: 0 0.5rem;
     }
 
     .half {
         /* grid-column: span 1; */
-        background-color: rgba(0, 0, 0, 0.3);
+        background-color: rgba(0, 0, 0, 0.1);
         padding: 0.5rem;
-        border: 1px solid #acacac;
         border-radius: 15px;
         height: 100%;
-        max-width: 650px;
+        width: 90%;
+        z-index: 10;
+        position: relative;
+
+        @media (max-width: 1000px) {
+            width: 100%;
+        }
 
         .control {
             display: flex;

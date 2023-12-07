@@ -22,10 +22,10 @@ const burnAnimation = keyframes`
 `;
 
 export const Card = styled.div`
-    width: 200px;
-    height: 220px;
+    width: 150px;
+    height: 160px;
     position: relative;
-    border-radius: 10px;
+    border-radius: 5px;
     overflow: hidden;
     margin: auto;
     transition: box-shadow 0.3s ease-in-out;

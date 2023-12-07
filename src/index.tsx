@@ -9,6 +9,7 @@ import "primereact/resources/themes/lara-light-indigo/theme.css";
 import { SolanaWalletContext } from "./context/SolanaWalletContext";
 import { EVMWalletContext } from "./context/EVMWalletContext";
 import { SuiWalletContext } from "./context/SuiWalletContext";
+import { NftProvider } from "./components/NftProvider/NftProvider";
 import { configureSentry } from "./utils/configureSentry";
 
 // Sentry init
@@ -23,7 +24,9 @@ root.render(
         <SolanaWalletContext>
             <EVMWalletContext>
                 <SuiWalletContext>
-                    <App />
+                    <NftProvider>
+                        <App />
+                    </NftProvider>
                 </SuiWalletContext>
             </EVMWalletContext>
         </SolanaWalletContext>
