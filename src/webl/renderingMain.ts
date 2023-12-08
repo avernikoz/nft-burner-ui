@@ -878,11 +878,11 @@ export function RenderMain() {
                 if (!bPreloaderState) {
                     BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
                     //Render Background floor
-                    BackGroundRenderPass.RenderFloor(
+                    /* BackGroundRenderPass.RenderFloor(
                         gl,
                         GPostProcessPasses.Bloom!.BloomTexture!,
                         GPostProcessPasses.Combiner!.SmokeNoiseTexture,
-                    );
+                    ); */
                 }
 
                 //=================================
