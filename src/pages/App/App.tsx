@@ -1,15 +1,13 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import "./App.css";
-import { RenderMain } from "../../webl/renderingMain";
-import { SolanaWalletContext } from "../../context/SolanaWalletContext";
-import { EVMWalletContext } from "../../context/EVMWalletContext";
-
-import { SuiWalletContext } from "../../context/SuiWalletContext";
-import { ToastProvider } from "../../components/ToastProvider/ToastProvider";
 import { GlobalStyles } from "../../config/globalStyles";
+import "./App.css";
+
 import { About } from "../About/About";
 import { InternalApp } from "./InternalApp";
+import { Canvas } from "../../components/Canvas/Canvas";
+import { RenderMain } from "../../webl/renderingMain";
+import { FPSMeter } from "../../components/FPSMeter/FPSMeter";
 
 function App() {
     useEffect(() => {
@@ -26,18 +24,9 @@ function App() {
     return (
         <>
             <GlobalStyles />
-            <SolanaWalletContext>
-                <EVMWalletContext>
-                    <SuiWalletContext>
-                        <ToastProvider>
-                            <AppComponent setAboutPageActive={setAboutPageActive} />
-                            <canvas id="demo-canvas">
-                                Your browser does <strong>not support</strong> the <code>&lt;canvas&gt;</code> element.
-                            </canvas>
-                        </ToastProvider>
-                    </SuiWalletContext>
-                </EVMWalletContext>
-            </SolanaWalletContext>
+            <FPSMeter />
+            <Canvas />
+            <AppComponent setAboutPageActive={setAboutPageActive} />
         </>
     );
 }

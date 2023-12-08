@@ -1,5 +1,5 @@
 export const getCanvas = (): HTMLCanvasElement => {
-    const canvas = document.getElementById("demo-canvas");
+    const canvas = document.getElementById("burning-canvas");
 
     if (canvas === null) {
         throw new Error("Canvas is not found in html layout");

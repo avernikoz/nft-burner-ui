@@ -1,2 +1,8 @@
+// eslint-disable-next-line import/no-unresolved
 import { SuiClient } from "@mysten/sui.js/client";
-export const provider = new SuiClient({ url: "https://sui-rpc.publicnode.com" });
+import { Connection } from "@solana/web3.js";
+
+export const suiProvider = new SuiClient({ url: "https://sui-mainnet-rpc.allthatnode.com" });
+export const solanaProvider = new Connection(
+    "https://mainnet.helius-rpc.com/?api-key=4446ea08-ee75-433b-b078-9919068079ef",
+);

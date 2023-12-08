@@ -19,7 +19,7 @@ export const SolanaWalletContext: FC<PropsWithChildren> = (props) => {
     const { children } = props;
     const network = WalletAdapterNetwork.Mainnet;
     // TODO ASAP IMPORTANT: Add custom RPC
-    const endpoint = "https://solana-mainnet.rpc.extrnode.com";
+    const endpoint = "https://mainnet.helius-rpc.com/?api-key=4446ea08-ee75-433b-b078-9919068079ef";
 
     const wallets = useMemo(
         () => [
@@ -48,7 +48,7 @@ export const SolanaWalletContext: FC<PropsWithChildren> = (props) => {
 
     return (
         <ConnectionProvider endpoint={endpoint}>
-            <WalletProvider wallets={wallets} autoConnect>
+            <WalletProvider wallets={wallets} autoConnect={false}>
                 <WalletModalProvider>{children}</WalletModalProvider>
             </WalletProvider>
         </ConnectionProvider>

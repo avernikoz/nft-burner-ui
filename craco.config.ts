@@ -17,6 +17,7 @@ export default {
                     http: false,
                     stream: false,
                     crypto: false,
+                    path: false,
                 },
             },
             ignoreWarnings: [
