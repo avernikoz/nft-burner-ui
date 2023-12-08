@@ -38,11 +38,11 @@ export const ShaderSourceFullscreenPassVS = /* glsl */ `#version 300 es
 export const ShaderSourcePresentPassPS = /* glsl */ `#version 300 es
 	
 	precision highp float;
-	precision highp sampler2D;
+	precision mediump sampler2D;
 
 	out vec4 OutColor;
 
-	uniform highp sampler2D SourceTexture;
+	uniform sampler2D SourceTexture;
 	uniform float MipLevel;
 
 	in vec2 vsOutTexCoords;
@@ -56,11 +56,11 @@ export const ShaderSourcePresentPassPS = /* glsl */ `#version 300 es
 export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 	
 	precision highp float;
-	precision highp sampler2D;
+	precision mediump sampler2D;
 
 	out vec4 OutColor;
 
-	uniform highp sampler2D SourceTexture;
+	uniform sampler2D SourceTexture;
 
 	uniform float MipLevel;
 	uniform vec2 TextureSize;
@@ -75,7 +75,7 @@ export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 	{
 		vec2 texCoords = vsOutTexCoords;
 		vec2 texelSize = 1.f / (TextureSize);
-		vec4 result = textureLod(SourceTexture, texCoords, MipLevel) * Weights[0];
+		vec4 result = textureLod(SourceTexture, texCoords, 0.0) * Weights[0];
 		for(int i = 1; i < 5; ++i)
         {
             result += textureLod(SourceTexture, texCoords + vec2(texelSize.x * float(i), 0.0), MipLevel).rgba * Weights[i];
@@ -87,7 +87,7 @@ export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 	
 	precision highp float;
-	precision highp sampler2D;
+	precision mediump sampler2D;
 
 	out vec4 OutColor;
 
@@ -106,7 +106,7 @@ export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 	{
 		vec2 texCoords = vsOutTexCoords;
 		vec2 texelSize = 1.f / (TextureSize);
-		vec4 result = textureLod(SourceTexture, texCoords, MipLevel) * Weights[0];
+		vec4 result = textureLod(SourceTexture, texCoords, 0.0) * Weights[0];
 		for(int i = 1; i < 5; ++i)
         {
             result += textureLod(SourceTexture, texCoords + vec2(0.f, texelSize.y * float(i)), MipLevel).rgba * Weights[i];
@@ -118,13 +118,13 @@ export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 	
 	precision highp float;
-	precision highp sampler2D;
+	precision mediump sampler2D;
 
 	out vec4 OutColor;
 
-	uniform highp sampler2D FlameTexture;
-	uniform highp sampler2D FirePlaneTexture;
-	uniform highp sampler2D SpotlightTexture;
+	uniform sampler2D FlameTexture;
+	uniform sampler2D FirePlaneTexture;
+	uniform sampler2D SpotlightTexture;
 	uniform float MipLevel;
 
 	in vec2 vsOutTexCoords;
@@ -165,7 +165,7 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
         /* glsl */ `#version 300 es
 	
 	precision highp float;
-	precision highp sampler2D;
+	precision mediump sampler2D;
 
 	out vec4 OutColor;
 
@@ -174,10 +174,10 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 	uniform float ScreenRatio;
 	
 
-	uniform highp sampler2D FlameTexture;
-	uniform highp sampler2D NoiseTexture;
-	uniform highp sampler2D FlameNoiseTexture;
-	uniform highp sampler2D FlameNoiseTexture2;
+	uniform mediump sampler2D FlameTexture;
+	uniform mediump sampler2D NoiseTexture;
+	uniform mediump sampler2D FlameNoiseTexture;
+	uniform mediump sampler2D FlameNoiseTexture2;
 
 	in vec2 vsOutTexCoords;
 
@@ -360,8 +360,8 @@ export function GetShaderSourceCombinerPassPS() {
     return (
         /* glsl */ `#version 300 es
 	
-		precision highp float;
-		precision highp sampler2D;
+		precision mediump float;
+		precision mediump sampler2D;
 	
 		out vec4 OutColor;
 
@@ -373,16 +373,16 @@ export function GetShaderSourceCombinerPassPS() {
 		uniform float Time;
 		
 	
-		uniform highp sampler2D FlameTexture;
-		uniform highp sampler2D FirePlaneTexture;
-		uniform highp sampler2D BloomTexture;
-		uniform highp sampler2D SmokeTexture;
-		uniform highp sampler2D NoiseTexture;
-		uniform highp sampler2D SpotlightTexture;
-		uniform highp sampler2D SmokeNoiseTexture;
-		uniform highp sampler2D PointLightsTexture;
-		uniform highp sampler2D LogoImageTexture;
-		uniform highp sampler2D LensTexture;
+		uniform sampler2D FlameTexture;
+		uniform sampler2D FirePlaneTexture;
+		uniform sampler2D BloomTexture;
+		uniform sampler2D SmokeTexture;
+		uniform sampler2D NoiseTexture;
+		uniform sampler2D SpotlightTexture;
+		uniform sampler2D SmokeNoiseTexture;
+		uniform sampler2D PointLightsTexture;
+		uniform sampler2D LogoImageTexture;
+		uniform sampler2D LensTexture;
 	
 		in vec2 vsOutTexCoords;
 
