@@ -898,11 +898,11 @@ export function RenderMain() {
                         }
                     }
 
-                    BurningSurface.VisualizeFirePlane(
+                    /* BurningSurface.VisualizeFirePlane(
                         gl,
                         BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
                         GRenderTargets.SpotlightTexture!,
-                    );
+                    ); */
 
                     if (RenderStateMachine.currentState === ERenderingState.BurningFinished) {
                         //Render BURNT Stamp
