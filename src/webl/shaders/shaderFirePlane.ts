@@ -595,7 +595,9 @@ export function GetShaderSourceFireVisualizerPS() {
 		const float ImageMixRoughnessScale = 0.75f;
 		const bool bInverseRoughness = false;
 		const float TopSpecFadeScale = 2.0;
-		const float NormalHarshness = 0.5f;
+		const float NormalHarshness = float(` +
+        MathLerp(Math.random(), 0.5, 1.0) +
+        /* glsl */ `);
 
 		
 		ivec2 SampleCoord = ivec2(gl_FragCoord.xy);
