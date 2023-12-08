@@ -277,6 +277,8 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
 }
 
 export function RenderMain() {
+    const DEBUG_ENV = APP_ENVIRONMENT === "development";
+
     const canvas = getCanvas();
 
     const GAudioEngine = new AudioEngine();
@@ -352,68 +354,68 @@ export function RenderMain() {
     //================================
     // 	INIT DEBUG STATE CONTROLLERS
     //================================
+    const StateControllers: SpatialControlPoint[] = [];
     const stateControllerSize = 0.05;
     const numStateControllers = 6;
     const stateControllersViewSpaceStart = -0.25;
     const stateControllersViewSpaceLength = 0.5;
     const distBBetwenControllers = stateControllersViewSpaceLength / (numStateControllers - 1);
     let curStateControllerPos = stateControllersViewSpaceStart;
-
-    const StateControllers: SpatialControlPoint[] = [];
-
-    StateControllers[0] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon0`,
-        `stateIcon01`,
-    );
-    curStateControllerPos += distBBetwenControllers;
-    StateControllers[1] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon1`,
-        `stateIcon11`,
-    );
-    curStateControllerPos += distBBetwenControllers;
-    StateControllers[2] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon2`,
-        `stateIcon21`,
-    );
-    curStateControllerPos += distBBetwenControllers;
-    StateControllers[3] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon3`,
-        `stateIcon31`,
-    );
-    curStateControllerPos += distBBetwenControllers;
-    StateControllers[4] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon3`,
-        `stateIcon31`,
-    );
-    curStateControllerPos += distBBetwenControllers;
-    StateControllers[5] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon3`,
-        `stateIcon31`,
-    );
+    if (DEBUG_ENV) {
+        StateControllers[0] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon0`,
+            `stateIcon01`,
+        );
+        curStateControllerPos += distBBetwenControllers;
+        StateControllers[1] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon1`,
+            `stateIcon11`,
+        );
+        curStateControllerPos += distBBetwenControllers;
+        StateControllers[2] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon2`,
+            `stateIcon21`,
+        );
+        curStateControllerPos += distBBetwenControllers;
+        StateControllers[3] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon3`,
+            `stateIcon31`,
+        );
+        curStateControllerPos += distBBetwenControllers;
+        StateControllers[4] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon3`,
+            `stateIcon31`,
+        );
+        curStateControllerPos += distBBetwenControllers;
+        StateControllers[5] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon3`,
+            `stateIcon31`,
+        );
+    }
 
     //==============================
     // 		ALLOCATE RESOURCES
@@ -707,7 +709,7 @@ export function RenderMain() {
             //=========================
             // 	STATE DEBUG GUI UPDATE
             //=========================
-            if (0) {
+            if (DEBUG_ENV) {
                 StateControllers.forEach((controller) => {
                     controller.OnUpdate();
                 });
@@ -934,9 +936,12 @@ export function RenderMain() {
                         SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
                     }
 
-                    /* StateControllers.forEach((controller) => {
-                        SpatialControlUIVisualizer.Render(gl, controller);
-                    }); */
+                    if (DEBUG_ENV) {
+                        StateControllers.forEach((controller) => {
+                            SpatialControlUIVisualizer.Render(gl, controller);
+                        });
+                    }
+
                     gl.disable(gl.BLEND);
                 }
 
