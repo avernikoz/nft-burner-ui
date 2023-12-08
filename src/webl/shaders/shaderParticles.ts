@@ -197,6 +197,7 @@ export function GetParticleUpdateShaderVS(
         /* glsl */ `#version 300 es
   
 	  precision highp float;
+	  precision mediump sampler2D;
   
 	  layout(location = 0) in vec2 inPosition;
 	  layout(location = 1) in vec2 inVelocity;
@@ -466,7 +467,8 @@ export function GetParticleRenderInstancedVS(
     return (
         /* glsl */ `#version 300 es
   
-		precision highp float;
+		precision mediump float;
+	precision mediump sampler2D;
 	
 		layout(location = 0) in vec2 VertexBuffer;
 		layout(location = 1) in vec2 TexCoordsBuffer;
@@ -977,7 +979,8 @@ export function GetParticleRenderColorPS(
     return (
         /* glsl */ `#version 300 es
 	  
-		precision highp float;
+		precision mediump float;
+		precision mediump sampler2D;
 	
 		out vec4 OutColor;
 	

@@ -164,8 +164,8 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
     return (
         /* glsl */ `#version 300 es
 	
-	precision highp float;
-	precision mediump sampler2D;
+		precision mediump float;
+		precision mediump sampler2D;
 
 	out vec4 OutColor;
 

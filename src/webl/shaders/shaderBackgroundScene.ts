@@ -1,7 +1,8 @@
 export function GetShaderSourceBackgroundFloorRenderPerspectiveVS() {
     return /* glsl */ `#version 300 es
 
-		precision highp float;
+	precision mediump float;
+	precision mediump sampler2D;
 	
 		layout(location = 0) in vec2 VertexBuffer;
 
@@ -106,20 +107,20 @@ export function GetShaderSourceBackgroundFloorRenderPerspectiveVS() {
 export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
     return /* glsl */ `#version 300 es
 		
-		precision highp float;
-		precision highp sampler2D;
+	precision mediump float;
+	precision mediump sampler2D;
 	
 		layout(location = 0) out vec4 OutColor;
 	
-		uniform highp sampler2D ColorTexture;
-		uniform highp sampler2D NormalTexture;
-		uniform highp sampler2D RoughnessTexture;
-		uniform highp sampler2D SpotlightTexture;
-		uniform highp sampler2D PointLightsTexture;
-		uniform highp sampler2D BloomTexture;
-		uniform highp sampler2D SmokeNoiseTexture;
-		uniform highp sampler2D OilTexture;
-		uniform highp sampler2D PuddleTexture;
+		uniform sampler2D ColorTexture;
+		uniform sampler2D NormalTexture;
+		uniform sampler2D RoughnessTexture;
+		uniform sampler2D SpotlightTexture;
+		uniform sampler2D PointLightsTexture;
+		uniform sampler2D BloomTexture;
+		uniform sampler2D SmokeNoiseTexture;
+		uniform sampler2D OilTexture;
+		uniform sampler2D PuddleTexture;
 		
 		uniform vec4 CameraDesc;
 		uniform float ScreenRatio;
