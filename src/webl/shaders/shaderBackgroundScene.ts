@@ -107,8 +107,8 @@ export function GetShaderSourceBackgroundFloorRenderPerspectiveVS() {
 export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
     return /* glsl */ `#version 300 es
 		
-		precision mediump float;
-		precision mediump sampler2D;
+	precision mediump float;
+	precision mediump sampler2D;
 	
 		layout(location = 0) out vec4 OutColor;
 	
@@ -899,8 +899,8 @@ export function GetShaderSourceSpotlightRenderVS() {
 export function GetShaderSourceSpotlightRenderPS() {
     return /* glsl */ `#version 300 es
 	
-	precision mediump float;
-	precision mediump sampler2D;
+	precision highp float;
+	precision highp sampler2D;
 
 	layout(location = 0) out float outSpotlightColor;
 
