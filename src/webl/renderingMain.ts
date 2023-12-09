@@ -1,4 +1,4 @@
-import { RBackgroundRenderPass, RBurntStampVisualizer, RSpotlightRenderPass } from "./backgroundScene";
+import { RBackgroundRenderPass, RBurntStampVisualizer, RRenderGlow, RSpotlightRenderPass } from "./backgroundScene";
 import { RFirePlanePass } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUISingleton } from "./helpers/gui";
@@ -449,6 +449,8 @@ export function RenderMain() {
     const SpotlightRenderPass = new RSpotlightRenderPass(gl);
     const BurntStampSprite = new RBurntStampVisualizer(gl);
 
+    const GlowRender = new RRenderGlow(gl);
+
     SetupPostProcessPasses(gl);
 
     const SpatialControlUIVisualizer = new RSpatialControllerVisualizationRenderer(gl);
@@ -466,6 +468,7 @@ export function RenderMain() {
     const FirePlaneSizePixels = { x: 512, y: 512 };
     //const FirePlaneSizePixels = { x: 1024, y: 1024 };
     const BurningSurface = new RFirePlanePass(gl, FirePlaneSizePixels);
+    BurningSurface.SetToBurned(gl);
 
     const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
     const FirePlaneAnimationController = new AnimationController(
@@ -514,7 +517,7 @@ export function RenderMain() {
     const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
     //
     SmokeParticlesDesc.inAlphaScale = 0.05 + Math.random() * 0.9;
-    SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
+    //SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
     AfterBurnSmokeParticlesDesc.inAlphaScale = 0.25 + Math.random() * 0.5;
@@ -992,6 +995,13 @@ export function RenderMain() {
                         GRenderTargets.SpotlightTexture!,
                         GPostProcessPasses.RenderTargetMIPForBloom,
                     );
+
+                    gl.enable(gl.BLEND);
+                    gl.blendFunc(gl.ONE, gl.ONE);
+                    gl.blendEquation(gl.FUNC_ADD);
+                    GlowRender.Render(gl);
+                    //EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+                    gl.disable(gl.BLEND);
 
                     for (let i = 0; i < GPostProcessPasses.BloomNumBlurPasses; i++) {
                         GPostProcessPasses.Bloom!.Blur(gl, GPostProcessPasses.Blur!);

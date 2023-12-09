@@ -1,3 +1,4 @@
+import { GUserInputDesc } from "./input";
 import { CreateTextureRT } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
@@ -16,8 +17,10 @@ import {
     GetShaderSourceLightSourceSpriteRenderPS,
     GetShaderSourceGenericSpriteRenderVS,
     GetShaderSourceGenericSpriteRenderPS,
+    GetShaderSourceGlowRenderPS,
 } from "./shaders/shaderBackgroundScene";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
+import { GetShaderSourceUISpriteRenderVS } from "./shaders/shaderUI";
 import { GTexturePool } from "./texturePool";
 import { GTime, MathLerp, MathMapToRange } from "./utils";
 
@@ -544,5 +547,52 @@ export class RBackgroundRenderPass {
         gl.uniform1i(this.UniformParametersLocationListFloor.RoughnessTexture, 9);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+}
+
+export class RRenderGlow {
+    public ShaderProgram;
+
+    public UniformParametersLocationList;
+
+    constructor(gl: WebGL2RenderingContext) {
+        //================================================ Floor Render
+
+        //Create Shader Program
+        this.ShaderProgram = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceUISpriteRenderVS(),
+            GetShaderSourceGlowRenderPS(),
+        );
+
+        //Shader Parameters
+        this.UniformParametersLocationList = this.GetUniformParametersList(gl, this.ShaderProgram);
+    }
+
+    Render(gl: WebGL2RenderingContext) {
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.ShaderProgram);
+
+        //Constants
+        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform1f(this.UniformParametersLocationList.Size, 0.1);
+        gl.uniform2f(
+            this.UniformParametersLocationList.Position,
+            GUserInputDesc.InputPosCurViewSpace.x,
+            GUserInputDesc.InputPosCurViewSpace.y,
+        );
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
+        const params = {
+            ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
+            Size: gl.getUniformLocation(shaderProgram, "Size"),
+            Position: gl.getUniformLocation(shaderProgram, "Position"),
+            ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
+        };
+        return params;
     }
 }

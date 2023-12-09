@@ -1223,3 +1223,24 @@ export function GetShaderSourceGenericSpriteRenderPS() {
 		outColor = color;
 	}`;
 }
+
+export function GetShaderSourceGlowRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec4 outColor;
+
+	in vec2 vsOutTexCoords;
+
+	void main()
+	{
+		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+		vec3 color = vec3(1.0, 0.4, 0.1);
+		//color.rgb *= 3.f;
+		float s = 1.0 - min(1.0, length(flippedUVs - vec2(0.5)));
+		color *= s;
+		outColor = vec4(color, 1.0);
+	}`;
+}

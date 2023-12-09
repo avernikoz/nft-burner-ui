@@ -48,8 +48,10 @@ function scGetInitialPosition(EInitialPositionMode: number) {
 				uvPos.y = float(gl_VertexID) * 0.007 + CurTime * 0.01;
 				uvPos.x = float(gl_VertexID) * 0.0013 + CurTime * 0.07;
 				vec3 noisePos = textureLod(NoiseTextureHQ, uvPos, 0.f).rgb;
-				noisePos.x = MapToRange(noisePos.x, 0.4, 0.6, -2.f, 2.f);
-				noisePos.y = MapToRange(noisePos.y, 0.4, 0.6, -1.f, 2.f);
+				const vec2 spawnRangeX = vec2(-3.0, 1.0);
+				const vec2 spawnRangeY = vec2(-1.0, 2.0);
+				noisePos.x = MapToRange(noisePos.x, 0.4, 0.6, spawnRangeX.x, spawnRangeX.y);
+				noisePos.y = MapToRange(noisePos.y, 0.4, 0.6, spawnRangeY.x, spawnRangeY.y);
 				//noisePos = noisePos * 2.f - 1.f;
 				outPosition = noisePos.xy /* + uvPos.xy * 0.01 */;
 			  }
@@ -76,7 +78,8 @@ function scRandomiseParticleSpawn(threshold: number) {
 			if(noiseVal < thres)
 			{
 				outAge = ParticleLife;
-				outPosition = vec2(0.f, 0.f);
+				//outPosition = vec2(0.f, 0.f);
+				outPosition = vec2(10000.f, 10000.f);
 				outVelocity = vec2(0, 0);
 				return;
 			}
@@ -119,11 +122,13 @@ function scGetVectorFieldForce(scale: number) {
 			randVelLQ.x = randVelNoise.r;
 			randVelLQ.y = randVelNoise.g;
 			randVelLQ = randVelLQ * 2.f - 1.f;
-			randVel += (randVelLQ) * RandVelocityScale * 0.5;
+			//randVel += (randVelLQ) * RandVelocityScale * 0.5;
 
 			//const float clampValue = 10.f;
 			const float clampValue = 50.f;
 			randVel = clamp(randVel, vec2(-clampValue), vec2(clampValue));
+
+			randVel += vec2(-1.0, 0.0) * (2.5 + RandVelocityScale * 0.05);
 
 
 			//randVel = normalize(vec2(-1, 0.0)) * 35.f * 0.5;
@@ -392,10 +397,14 @@ function scTransformBasedOnMotion(condition: boolean) {
     if (condition) {
         return /* glsl */ `vec2 curVelocity = inVelocity;
 			float velLength = length(curVelocity) * 0.10;
+			//velLength *= 0.1;
+			//velLength = 0.0;
 			if(velLength > 0.f)
 			{
-				pos.y *= clamp(1.f - velLength, 0.15f, 0.35f);
-				pos.x *= (1.f + velLength);
+				pos.y *= clamp(1.f - velLength, 0.5f, 1.f);
+				//pos.y *= 0.5;
+				pos.x *= (1.f + velLength * 3.0);
+				//pos.x *= 5.0;
 				
 				// Calculate the angle between the initial direction (1, 0) and the desired direction
 				float angle = atan(curVelocity.y, curVelocity.x);
@@ -784,18 +793,24 @@ function scEmbersSpecificShading() {
 		float t = interpolatorAge;
 		t = CircularFadeOut(clamp(t, 0.f, 1.f));
 		float curFire = (1.f - t) * 10.f;
+		
+		curFire = 1.0;
 
-		vec3 colorBright = vec3(curFire * 0.4, curFire * 0.2, curFire * 0.1);
-		vec3 colorLow = vec3(curFire * 0.2f, curFire * 0.2, curFire * 0.2f);
+		vec3 colorBright = vec3(curFire * (1.0 + (4.0 * (1. - t))), curFire * 0.25, curFire * 0.1);
+		vec3 colorLow = vec3(curFire, curFire * 0.75, curFire * 0.5);
 
-		if(t < 0.5f)
+		colorFinal.rgb = mix(colorBright, colorLow , t);
+
+		colorFinal.rgb *= 2.f * (1.0 - t);
+
+		/* if(t < 0.5f)
 		{
 			colorFinal.rgb = colorBright;
 		}
 		else
 		{
 			colorFinal.rgb = mix(colorBright, colorLow, (t - 0.5f) * 2.f);
-		}
+		} */
 		
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		s *= 2.f;
@@ -835,7 +850,7 @@ function scAshesSpecificShading() {
 		const vec3 colorEmber2 = vec3(0.9, 0.4, 0.1f) * 10.f;
 		const vec3 colorAsh  = vec3(0.1, 0.1, 0.1);
 		vec3 colorEmberFinal;
-		if((interpolatorInstanceId % 10) == 0)
+		if((interpolatorInstanceId % 2) == 0)
 		{
 			colorEmberFinal = mix(colorEmber2, colorEmber, noise);
 		}
@@ -847,14 +862,14 @@ function scAshesSpecificShading() {
 
 		vec3 color = mix(colorEmberFinal, colorAsh, min(1.f, 3.5f * interpolatorAge));
 		
-		if(noise <= clamp((interpolatorAge) + 0.25, 0.0, 0.9))
+		/* if(noise <= clamp((interpolatorAge) + 0.25, 0.0, 0.9))
 		{
 			noise = 0.0f;
 		}
 		else
 		{
 			noise = 1.0f;
-		}
+		} */
 
 		noise = clamp(noise, 0.f, 1.f);
 

@@ -602,6 +602,28 @@ export function GetShaderSourceCombinerPassPS() {
 
 			vec3 bloom = textureLod(BloomTexture, texCoords.xy, 0.f).rgb;
 
+			const float glowFade = 0.25;
+			if(texCoords.x > glowFade )
+			{
+				vec2 noiseUV = texCoords;
+				noiseUV = MapToRange(noiseUV, 0.0, 1.0, -1.0, 1.0);
+				noiseUV += CameraDesc.xy * 0.5;
+				noiseUV.x *= ScreenRatio;
+				noiseUV = MapToRange(noiseUV, -1.0, 1.0, 0.0, 1.0);
+				noiseUV.x += Time * 1.93f;
+				noiseUV.y -= Time * 0.83f;
+				noiseUV *= 0.003;
+				float n = textureLod(NoiseTexture, noiseUV, 0.f).r;
+				n = MapToRange(n, 0.4, 0.6, 0.0, 1.0);
+				n = clamp(n, 0.75, 1.0);
+				const vec3 flameGlowColor = vec3(1.0, 0.4, 0.1);
+				float s = MapToRange(texCoords.x, glowFade, 1.0, 0.0, 1.0);
+				s = clamp(s, 0.0, 1.0);
+				s *= s;
+				//s = 1.0;
+				bloom += mix(flameGlowColor, vec3(1.0, 0.6, 0.4), n) * s * n * 0.2;
+			}
+
 			const float BloomStrength = 5.0f;
 			const vec2 SmokeBloomColorClampMinMax = vec2(0.15, 1.f);
 			const vec2 SmokeBloomAlphaClampMinMax = vec2(0.f, 1.f);
@@ -638,8 +660,9 @@ export function GetShaderSourceCombinerPassPS() {
         /* glsl */ `;
 				texCoordsScaled *= CameraDesc.w;
 				texCoordsScaled.x *= ScreenRatio;
-				smokeScale *= clamp(length(texCoordsScaled), ` +
-        Math.random() +
+				texCoordsScaled += CameraDesc.xy;
+				smokeScale *= clamp(length(texCoordsScaled - vec2(0.0, 0.0)), ` +
+        Math.random() * 0.5 +
         /* glsl */ `, 1.f);
 			}
 			smokeScale *= 2.0f;
@@ -672,7 +695,11 @@ export function GetShaderSourceCombinerPassPS() {
 			final.rgb *= exposure;
 
 			//final.rgb = pow(final.rgb, vec3(1.f/2.2f));
-			vec3 colorFilter1 = vec3(0.3, 0.52, 1.0);
+			const float kGreenAmount = float(` +
+        MathLerp(0.25, 0.75, Math.random()) +
+        /* glsl */ `);
+
+			vec3 colorFilter1 = vec3(0.3, kGreenAmount, 1.0);
 			float luma = clamp(dot(final.rgb, vec3(0.33)), 0.0, 1.0);
 			//float luma = dot(final.rgb, vec3(0.2126, 0.7152, 0.0722)); // Using proper luminance values
 			vec3 colorFilter2 = vec3(1.0, 1.0, 0.75);
@@ -694,8 +721,8 @@ export function GetShaderSourceCombinerPassPS() {
 				gradParam = MapToRange(mapped, 0.0, 1.0, gradThres, 1.0);
 			}
 			gradParam = clamp(gradParam, 0.0, 1.0);
-			colorFilter1 = mix(colorFilter1, vec3(1.0), 0.25);
-			final.rgb = mix(colorFilter1 * final.rgb, final.rgb, 1.f - clamp(gradParam, 0.0, 1.0));
+			//colorFilter1 = mix(colorFilter1, vec3(1.0), 0.25);
+			final.rgb = mix(colorFilter1 * final.rgb, final.rgb, 1.f - clamp(gradParam, 0.75, 1.0));
 
 			/* colorFilter1 = mix(colorFilter1 * final.rgb, final.rgb, gradParam);
 			final.rgb = mix(colorFilter1, final.rgb, 1.f - (gradParam * 0.5)); */
@@ -706,7 +733,7 @@ export function GetShaderSourceCombinerPassPS() {
 			/* noiseUV *= 0.001f;
 			noiseUV.y += Time * 0.00003f;
 			noiseUV.x += Time * 0.00000013f; */
-			const float noiseIntensity = 0.01f;
+			const float noiseIntensity = 0.025f;
 			float noise = (rand(noiseUV) * 2.0 - 1.0) * noiseIntensity;
 
 			// Add noise to the color
