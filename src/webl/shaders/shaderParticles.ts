@@ -468,7 +468,7 @@ export function GetParticleRenderInstancedVS(
         /* glsl */ `#version 300 es
   
 		precision mediump float;
-	precision mediump sampler2D;
+		precision mediump sampler2D;
 	
 		layout(location = 0) in vec2 VertexBuffer;
 		layout(location = 1) in vec2 TexCoordsBuffer;

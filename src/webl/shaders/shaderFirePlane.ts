@@ -93,8 +93,8 @@ export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 export const ShaderSourceFireUpdatePS =
     /* glsl */ `#version 300 es
 	
-	precision highp float;
-	precision highp sampler2D;
+	precision mediump float;
+	precision mediump sampler2D;
 
 	layout(location = 0) out float OutFire;
 	layout(location = 1) out float OutFuel;
@@ -103,9 +103,9 @@ export const ShaderSourceFireUpdatePS =
 	uniform float Time;
 	uniform float NoiseTextureInterpolator;
 
-	uniform highp sampler2D FireTexture;
-	uniform highp sampler2D FuelTexture;
-	uniform highp sampler2D NoiseTexture;
+	uniform sampler2D FireTexture;
+	uniform sampler2D FuelTexture;
+	uniform sampler2D NoiseTexture;
 
 	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
 	{

@@ -55,7 +55,7 @@ export const ShaderSourcePresentPassPS = /* glsl */ `#version 300 es
 	}`;
 export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 	
-	precision highp float;
+	precision mediump float;
 	precision mediump sampler2D;
 
 	out vec4 OutColor;
@@ -86,12 +86,12 @@ export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 
 export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 	
-	precision highp float;
+	precision mediump float;
 	precision mediump sampler2D;
 
 	out vec4 OutColor;
 
-	uniform highp sampler2D SourceTexture;
+	uniform sampler2D SourceTexture;
 
 	uniform float MipLevel;
 	uniform vec2 TextureSize;
@@ -164,8 +164,8 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
     return (
         /* glsl */ `#version 300 es
 	
-		precision mediump float;
-		precision mediump sampler2D;
+	precision mediump float;
+	precision mediump sampler2D;
 
 	out vec4 OutColor;
 
@@ -174,10 +174,10 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 	uniform float ScreenRatio;
 	
 
-	uniform mediump sampler2D FlameTexture;
-	uniform mediump sampler2D NoiseTexture;
-	uniform mediump sampler2D FlameNoiseTexture;
-	uniform mediump sampler2D FlameNoiseTexture2;
+	uniform sampler2D FlameTexture;
+	uniform sampler2D NoiseTexture;
+	uniform sampler2D FlameNoiseTexture;
+	uniform sampler2D FlameNoiseTexture2;
 
 	in vec2 vsOutTexCoords;
 
