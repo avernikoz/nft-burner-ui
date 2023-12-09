@@ -276,7 +276,7 @@ export class GTexturePool {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 
         if (bGenerateMips) {
-            //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_LOD, 1.0);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_LOD, 2.0);
         }
 
         // Store the new texture in the map
