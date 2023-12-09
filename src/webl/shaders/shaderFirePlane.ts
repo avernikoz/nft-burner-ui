@@ -597,7 +597,7 @@ export function GetShaderSourceFireVisualizerPS() {
 		const bool bInverseRoughness = false;
 		const float TopSpecFadeScale = 2.0;
 		const float NormalHarshness = float(` +
-        MathLerp(Math.random(), 0.5, 1.0) +
+        MathLerp(0.5, 1.0, Math.random()) +
         /* glsl */ `);
 
 		
