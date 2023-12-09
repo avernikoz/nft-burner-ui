@@ -351,6 +351,8 @@ export function RenderMain() {
         }
     }
 
+    GTexturePool.ExtASTC = gl.getExtension("WEBGL_compressed_texture_astc");
+
     //================================
     // 	INIT DEBUG STATE CONTROLLERS
     //================================
