@@ -1,5 +1,6 @@
 import { EParticleShadingMode } from "../particles";
 import { Vector2 } from "../types";
+import { MathLerp } from "../utils";
 
 //sc_ - ShaderCode
 
@@ -118,7 +119,7 @@ function scGetVectorFieldForce(scale: number) {
 			randVelLQ.x = randVelNoise.r;
 			randVelLQ.y = randVelNoise.g;
 			randVelLQ = randVelLQ * 2.f - 1.f;
-			//randVel += (randVelLQ) * RandVelocityScale;
+			randVel += (randVelLQ) * RandVelocityScale * 0.5;
 
 			//const float clampValue = 10.f;
 			const float clampValue = 50.f;
@@ -134,9 +135,34 @@ function scGetVectorFieldForce(scale: number) {
     }
 }
 
-function scParticleSampleFlipbook(condition: boolean) {
+function scSmoothTransitionFlipbookSample(condition: boolean) {
     if (condition) {
         return /* glsl */ `
+	#if 1//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
+	float numFrames = float(FlipbookSizeRC.x * FlipbookSizeRC.y);
+	//if(ceil(interpolatorFrameIndex) < numFrames)
+	{
+		flipBookIndex1D = uint(ceil(interpolatorFrameIndex));
+		FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
+		FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
+		uv = interpolatorTexCoords * frameSize;
+		uv.x += (frameSize.x * float(FlipBookIndex2D.x));
+		uv.y += (frameSize.y * float(FlipBookIndex2D.y));
+		vec4 color2 = texture(ColorTexture, uv).rgba;
+		colorFinal = mix(colorFinal, color2, fract(interpolatorFrameIndex));
+	}
+	#endif
+	`;
+    } else {
+        return ``;
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function scParticleSampleFlipbook(condition: boolean, bSmoothTransition = true) {
+    if (condition) {
+        return (
+            /* glsl */ `
 		vec2 frameSize = 1.f / (FlipbookSizeRC);
 		vec2 uv = interpolatorTexCoords * frameSize;
 
@@ -150,21 +176,8 @@ function scParticleSampleFlipbook(condition: boolean) {
 		
 		colorFinal = texture(ColorTexture, uv).rgba;
 
-		#if 1//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
-		float numFrames = float(FlipbookSizeRC.x * FlipbookSizeRC.y);
-		//if(ceil(interpolatorFrameIndex) < numFrames)
-		{
-			flipBookIndex1D = uint(ceil(interpolatorFrameIndex));
-			FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
-			FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
-			uv = interpolatorTexCoords * frameSize;
-			uv.x += (frameSize.x * float(FlipBookIndex2D.x));
-			uv.y += (frameSize.y * float(FlipBookIndex2D.y));
-			vec4 color2 = texture(ColorTexture, uv).rgba;
-			colorFinal = mix(colorFinal, color2, fract(interpolatorFrameIndex));
-		}
-		#endif
-		`;
+		` + scSmoothTransitionFlipbookSample(bSmoothTransition)
+        );
     } else {
         return ``;
     }
@@ -184,6 +197,7 @@ export function GetParticleUpdateShaderVS(
         /* glsl */ `#version 300 es
   
 	  precision highp float;
+	  precision mediump sampler2D;
   
 	  layout(location = 0) in vec2 inPosition;
 	  layout(location = 1) in vec2 inVelocity;
@@ -453,7 +467,8 @@ export function GetParticleRenderInstancedVS(
     return (
         /* glsl */ `#version 300 es
   
-		precision highp float;
+		precision mediump float;
+	precision mediump sampler2D;
 	
 		layout(location = 0) in vec2 VertexBuffer;
 		layout(location = 1) in vec2 TexCoordsBuffer;
@@ -503,6 +518,7 @@ export function GetParticleRenderInstancedVS(
 			if(IsParticleDead())
 			{
 				gl_Position = vec4(-1000, -1000, -1000, 1.0);
+				return;
 			}
 			else
 			{	
@@ -677,9 +693,10 @@ function scDefaultShading() {
     return;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function scFlameSpecificShading(bUsesTexture: boolean, artificialFlameAmount: number) {
     return (
-        scParticleSampleFlipbook(bUsesTexture) +
+        scParticleSampleFlipbook(bUsesTexture, false) +
         /* glsl */ `
 
 	  #if 1 //ARTIFICIAL COLOR
@@ -694,7 +711,7 @@ function scFlameSpecificShading(bUsesTexture: boolean, artificialFlameAmount: nu
 
 		//const float ArtFlameAmount = 0.45f;//TODO:Randomise this
 		t *= float(` +
-        artificialFlameAmount +
+        MathLerp(0.25, 0.75, Math.random()) +
         /* glsl */ `);
 
 		colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 5.0f, t);
@@ -879,27 +896,30 @@ function scAshesSpecificShading() {
 }
 
 function scDustSpecificShading() {
-    return /* glsl */ `
+    return (
+        /* glsl */ `
 
 		//vec2 uv = interpolatorTexCoords * 0.005f;
 		vec2 uv = interpolatorTexCoords * 0.01f;
 		float instanceId = float(interpolatorInstanceId);
 		uv.x += instanceId * 0.073f;
 		uv.y += instanceId * 0.177f;
-		//uv.y += interpolatorFrameIndex * 0.0037f;
 		uv.x += interpolatorFrameIndex * 0.0053f;
 		float noise = texture(ColorTexture, uv).r;
 		noise = clamp(MapToRange(noise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
 
+		uv = interpolatorTexCoords * 0.005f;
+		uv.x += instanceId * 0.093f;
+		uv.y += instanceId * 0.277f;
+		uv.y += interpolatorFrameIndex * 0.0017f;
+		float alphaNoise = texture(ColorTexture, uv).r;
+		alphaNoise = clamp(MapToRange(alphaNoise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
 
-		/* float t = noise;
-		t = CircularFadeOut(clamp(t, 0.f, 1.f));
-		float curFire = (1.f - t) * 0.25f; */
-
-		float curFire = 0.1f;
-
-		colorFinal.rgb = vec3(curFire);
-		colorFinal.a = 0.35 * (1.f - noise);
+		colorFinal.rgb = vec3(` +
+        Math.random() * 0.35 +
+        /* glsl */ ` * alphaNoise);
+		//colorFinal.a = 0.35 * (1.f - noise);
+		colorFinal.a = alphaNoise * (1.f - noise);
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		float c = noise * 0.5;
@@ -919,7 +939,9 @@ function scDustSpecificShading() {
 		s = (1.f - clamp(s, 0.f, 1.f));
 		colorFinal.rgb *= s;
 		colorFinal.a *= s * s;
-		`;
+		colorFinal.rgb *= 1.0 + c * 0.5;
+		`
+    );
 }
 
 function scGetBasedOnShadingMode(
@@ -957,7 +979,8 @@ export function GetParticleRenderColorPS(
     return (
         /* glsl */ `#version 300 es
 	  
-		precision highp float;
+		precision mediump float;
+		precision mediump sampler2D;
 	
 		out vec4 OutColor;
 	

@@ -538,7 +538,7 @@ export class ParticlesEmitter {
 
         gl.uniform1f(this.UniformParametersLocationList.DeltaTime, GTime.Delta);
         gl.uniform1f(this.UniformParametersLocationList.ParticleLife, this.ParticleLife);
-        gl.uniform1f(this.UniformParametersLocationList.CurTime, GTime.Cur);
+        gl.uniform1f(this.UniformParametersLocationList.CurTime, GTime.CurClamped);
         gl.uniform2f(
             this.UniformParametersLocationList.EmitterPosition,
             initialEmitterPosition.x,
@@ -619,7 +619,7 @@ export class ParticlesEmitter {
             this.FlipbookSizeRC.x,
             this.FlipbookSizeRC.y,
         );
-        gl.uniform1f(this.ParticleRenderUniformParametersLocationList.CurTime, GTime.Cur);
+        gl.uniform1f(this.ParticleRenderUniformParametersLocationList.CurTime, GTime.CurClamped);
 
         /* Set up blending */
         gl.enable(gl.BLEND);

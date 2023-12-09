@@ -7,6 +7,7 @@ import { About } from "../About/About";
 import { InternalApp } from "./InternalApp";
 import { Canvas } from "../../components/Canvas/Canvas";
 import { RenderMain } from "../../webl/renderingMain";
+import { FPSMeter } from "../../components/FPSMeter/FPSMeter";
 
 function App() {
     useEffect(() => {
@@ -23,6 +24,7 @@ function App() {
     return (
         <>
             <GlobalStyles />
+            <FPSMeter />
             <Canvas />
             <AppComponent setAboutPageActive={setAboutPageActive} />
         </>

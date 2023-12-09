@@ -119,8 +119,16 @@ Time
 export const GTime = {
     Last: 0,
     Cur: 0.01,
+    CurClamped: 0.0,
     Delta: 0.01,
     DeltaMs: 1,
+    //FPS counter:
+    FrameTimesArr: [] as number[],
+    CurFrameCursor: 0,
+    NumFrames: 0,
+    MaxFrames: 60,
+    FPSTotal: 0,
+    FPSAvrg: 0,
 };
 export function GetCurrentTimeSec() {
     return performance.now() / 1000.0;
@@ -128,7 +136,23 @@ export function GetCurrentTimeSec() {
 export function UpdateTime() {
     GTime.Cur = GetCurrentTimeSec();
     GTime.Delta = GTime.Cur - GTime.Last;
-    GTime.Delta = MathClamp(GTime.Delta, 1.0 / 300.0, 1.0 / 30.0);
+    //compute average FPS
+    {
+        const fps = 1 / GTime.Delta;
+        // add the current fps and remove the oldest fps
+        GTime.FPSTotal += fps - (GTime.FrameTimesArr[GTime.CurFrameCursor] || 0);
+        // record the newest fps
+        GTime.FrameTimesArr[GTime.CurFrameCursor++] = fps;
+        // needed so the first N frames, before we have maxFrames, is correct.
+        GTime.NumFrames = Math.max(GTime.NumFrames, GTime.CurFrameCursor);
+        GTime.CurFrameCursor %= GTime.MaxFrames;
+        GTime.FPSAvrg = GTime.FPSTotal / GTime.NumFrames;
+    }
+    if (GTime.Delta > 0.0) {
+        GTime.Delta = MathClamp(GTime.Delta, 1.0 / 300.0, 1.0 / 30.0);
+    }
+
+    GTime.CurClamped += GTime.Delta;
     GTime.DeltaMs = GTime.Delta * 1000.0;
     GTime.Last = GTime.Cur;
 }

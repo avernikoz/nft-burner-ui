@@ -51,3 +51,7 @@ code {
 html {
     scroll-behavior: smooth;
 }
+
+.dg.ac {
+    z-index: 99 !important;
+}

@@ -104,9 +104,7 @@ export class GTexturePool {
 
     static bLogTexturesInPool = false;
 
-    static bSupportsASTCCompression = false;
-
-    static bSupportsDXTCompression = false;
+    static ExtASTC: WEBGL_compressed_texture_astc | null = null;
 
     static LogTexturesInPool() {
         if (GTexturePool.bLogTexturesInPool) {
@@ -126,7 +124,7 @@ export class GTexturePool {
         }
     }
 
-    private static DefaultFormatsArr = ["png", "jpg"];
+    private static DefaultFormatsArr = ["webp", "png", "jpg"];
 
     private static TextureLocationFolder = `assets/textures/`;
 
@@ -139,8 +137,7 @@ export class GTexturePool {
         let bImageLoaded = false;
         const bSingleChannelTexture = textureBaseName.endsWith("_R8");
 
-        const ext = gl.getExtension("WEBGL_compressed_texture_astc");
-        if (!bSingleChannelTexture && ext) {
+        if (!bSingleChannelTexture && GTexturePool.ExtASTC) {
             //try load compressed image
             const imageUrl = GTexturePool.TextureLocationFolder + `${textureBaseName}.ktx`;
             const fetchRes = await fetch(imageUrl);
@@ -158,7 +155,7 @@ export class GTexturePool {
                             gl.compressedTexImage2D(
                                 gl.TEXTURE_2D,
                                 i,
-                                ext.COMPRESSED_RGBA_ASTC_6x6_KHR,
+                                GTexturePool.ExtASTC.COMPRESSED_RGBA_ASTC_6x6_KHR,
                                 //ktxMeta.glInternalFormat,
                                 curMIP.width!,
                                 curMIP.height!,
@@ -275,8 +272,9 @@ export class GTexturePool {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 
-        if (bGenerateMips) {
-            //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_LOD, 1.0);
+        if (bGenerateMips && GTexturePool.ExtASTC) {
+            //Apply const MIP bias for Mobile
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_LOD, 2.0);
         }
 
         // Store the new texture in the map
@@ -437,7 +435,5 @@ export class GTexturePool {
         folder.add(GTexturePool, "SizeMegaBytesGPU").name("SizeMbGPU").step(0.01).listen();
         folder.add(GTexturePool, "NumTexturesInPool").name("NumTextures").step(1).listen();
         folder.add(GTexturePool, "bLogTexturesInPool").name("Log All Textures").listen();
-        folder.add(GTexturePool, "bSupportsASTCCompression").name("ASTC").listen();
-        folder.add(GTexturePool, "bSupportsDXTCompression").name("S3TC").listen();
     }
 }

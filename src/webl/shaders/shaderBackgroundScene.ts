@@ -1,7 +1,8 @@
 export function GetShaderSourceBackgroundFloorRenderPerspectiveVS() {
     return /* glsl */ `#version 300 es
 
-		precision highp float;
+	precision mediump float;
+	precision mediump sampler2D;
 	
 		layout(location = 0) in vec2 VertexBuffer;
 
@@ -106,20 +107,20 @@ export function GetShaderSourceBackgroundFloorRenderPerspectiveVS() {
 export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
     return /* glsl */ `#version 300 es
 		
-		precision highp float;
-		precision highp sampler2D;
+	precision mediump float;
+	precision mediump sampler2D;
 	
 		layout(location = 0) out vec4 OutColor;
 	
-		uniform highp sampler2D ColorTexture;
-		uniform highp sampler2D NormalTexture;
-		uniform highp sampler2D RoughnessTexture;
-		uniform highp sampler2D SpotlightTexture;
-		uniform highp sampler2D PointLightsTexture;
-		uniform highp sampler2D BloomTexture;
-		uniform highp sampler2D SmokeNoiseTexture;
-		uniform highp sampler2D OilTexture;
-		uniform highp sampler2D PuddleTexture;
+		uniform sampler2D ColorTexture;
+		uniform sampler2D NormalTexture;
+		uniform sampler2D RoughnessTexture;
+		uniform sampler2D SpotlightTexture;
+		uniform sampler2D PointLightsTexture;
+		uniform sampler2D BloomTexture;
+		uniform sampler2D SmokeNoiseTexture;
+		uniform sampler2D OilTexture;
+		uniform sampler2D PuddleTexture;
 		
 		uniform vec4 CameraDesc;
 		uniform float ScreenRatio;
@@ -980,9 +981,9 @@ export function GetShaderSourceLightFlareRenderVS() {
 				vec3 pos = vec3(VertexBuffer.xy, 0.0f);
 				//pos.y -= 0.01f;
 				pos.xy *= SpotlightScale * 0.75;
-				pos.x *= 2.f;
+				//pos.x *= 2.f;
 				pos.xy += SpotlightPos.xy;
-				pos.xy -= normalize(SpotlightPos.xy) * 0.05;
+				pos.xy -= normalize(SpotlightPos.xy) * 0.025;
 				pos.z += SpotlightPos.z;
 				pos.xyz -= CameraDesc.xyz;
 	
@@ -1074,7 +1075,7 @@ export function GetShaderSourceLightSourceSpriteRenderVS() {
 				pos.xy *= 0.12;
 				pos = rotatePoint(pos, -SpotlightDirection);
 				pos.xy += (SpotlightPos.xy);
-				pos.xy -= normalize(SpotlightPos.xy) * 0.05;
+				pos.xy -= normalize(SpotlightPos.xy) * 0.025;
 				pos.z += SpotlightPos.z;
 				pos.xyz -= CameraDesc.xyz;
 	

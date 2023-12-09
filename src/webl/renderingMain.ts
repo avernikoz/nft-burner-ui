@@ -177,7 +177,7 @@ const GPostProcessPasses: {
     Bloom: null,
     FlamePostProcess: null,
     Combiner: null,
-    BloomNumBlurPasses: 3,
+    BloomNumBlurPasses: 5,
     RenderTargetMIPForBloom: 4,
 };
 
@@ -220,6 +220,7 @@ const GRenderTargets: {
     SmokeFramebuffer: WebGLFramebuffer | null;
     SpotlightTexture: WebGLTexture | null;
     SpotlightFramebuffer: WebGLFramebuffer | null;
+    bUseHalfResRT: boolean;
 } = {
     FirePlaneTexture: null,
     FirePlaneFramebuffer: null,
@@ -231,18 +232,18 @@ const GRenderTargets: {
     SmokeFramebuffer: null,
     SpotlightTexture: null,
     SpotlightFramebuffer: null,
+    bUseHalfResRT: false,
 };
 
 function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
     const size = GScreenDesc.RenderTargetSize;
+    GScreenDesc.HalfResRenderTargetSize = GRenderTargets.bUseHalfResRT
+        ? { x: GScreenDesc.RenderTargetSize.x * 0.5, y: GScreenDesc.RenderTargetSize.y * 0.5 }
+        : GScreenDesc.RenderTargetSize;
     const textureInternalFormat = gl.R11F_G11F_B10F;
     const textureFormat = gl.RGB;
     const textureType = gl.HALF_FLOAT;
-    /* const textureInternalFormat = gl.RGBA8;
-    const textureFormat = gl.RGBA;
-    const textureType = gl.UNSIGNED_BYTE; */
 
-    //const RenderTargetMainFloat = CreateTextureRT(gl, RenderTargetSize, gl.RGBA16F, gl.RGBA, gl.HALF_FLOAT);
     //Fire Plane
     GRenderTargets.FirePlaneTexture = CreateTextureRT(
         gl,
@@ -261,15 +262,23 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
     GRenderTargets.FlameFramebuffer2 = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture2!);
 
     //Smoke
-    GRenderTargets.SmokeTexture = CreateTextureRT(gl, size, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
+    GRenderTargets.SmokeTexture = CreateTextureRT(
+        gl,
+        GScreenDesc.HalfResRenderTargetSize,
+        gl.RGBA8,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+    );
     GRenderTargets.SmokeFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.SmokeTexture!);
 
     //Spotlight
-    GRenderTargets.SpotlightTexture = CreateTextureRT(gl, size, gl.R16F, gl.RED, gl.HALF_FLOAT);
+    GRenderTargets.SpotlightTexture = CreateTextureRT(gl, GScreenDesc.RenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT);
     GRenderTargets.SpotlightFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.SpotlightTexture!);
 }
 
 export function RenderMain() {
+    const DEBUG_ENV = APP_ENVIRONMENT === "development";
+
     const canvas = getCanvas();
 
     const GAudioEngine = new AudioEngine();
@@ -288,7 +297,13 @@ export function RenderMain() {
     // 	  WINDOW RESIZE INIT
     //=========================
     function GetWindowSizeCurrent(): Vector2 {
-        const dpr = MathClamp(window.devicePixelRatio, 1, 3);
+        const maxDPR = 2;
+        const dpr = MathClamp(window.devicePixelRatio, 1, maxDPR);
+        if (dpr > 1) {
+            GRenderTargets.bUseHalfResRT = true;
+        } else {
+            GRenderTargets.bUseHalfResRT = false;
+        }
         return { x: Math.round(window.innerWidth * dpr), y: Math.round(window.innerHeight * dpr) };
     }
 
@@ -336,71 +351,73 @@ export function RenderMain() {
         }
     }
 
+    GTexturePool.ExtASTC = gl.getExtension("WEBGL_compressed_texture_astc");
+
     //================================
     // 	INIT DEBUG STATE CONTROLLERS
     //================================
+    const StateControllers: SpatialControlPoint[] = [];
     const stateControllerSize = 0.05;
     const numStateControllers = 6;
     const stateControllersViewSpaceStart = -0.25;
     const stateControllersViewSpaceLength = 0.5;
     const distBBetwenControllers = stateControllersViewSpaceLength / (numStateControllers - 1);
     let curStateControllerPos = stateControllersViewSpaceStart;
-
-    const StateControllers: SpatialControlPoint[] = [];
-
-    StateControllers[0] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon0`,
-        `stateIcon01`,
-    );
-    curStateControllerPos += distBBetwenControllers;
-    StateControllers[1] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon1`,
-        `stateIcon11`,
-    );
-    curStateControllerPos += distBBetwenControllers;
-    StateControllers[2] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon2`,
-        `stateIcon21`,
-    );
-    curStateControllerPos += distBBetwenControllers;
-    StateControllers[3] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon3`,
-        `stateIcon31`,
-    );
-    curStateControllerPos += distBBetwenControllers;
-    StateControllers[4] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon3`,
-        `stateIcon31`,
-    );
-    curStateControllerPos += distBBetwenControllers;
-    StateControllers[5] = new SpatialControlPoint(
-        gl,
-        { x: curStateControllerPos, y: -0.75 },
-        stateControllerSize,
-        false,
-        `stateIcon3`,
-        `stateIcon31`,
-    );
+    if (DEBUG_ENV) {
+        StateControllers[0] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon0`,
+            `stateIcon01`,
+        );
+        curStateControllerPos += distBBetwenControllers;
+        StateControllers[1] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon1`,
+            `stateIcon11`,
+        );
+        curStateControllerPos += distBBetwenControllers;
+        StateControllers[2] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon2`,
+            `stateIcon21`,
+        );
+        curStateControllerPos += distBBetwenControllers;
+        StateControllers[3] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon3`,
+            `stateIcon31`,
+        );
+        curStateControllerPos += distBBetwenControllers;
+        StateControllers[4] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon3`,
+            `stateIcon31`,
+        );
+        curStateControllerPos += distBBetwenControllers;
+        StateControllers[5] = new SpatialControlPoint(
+            gl,
+            { x: curStateControllerPos, y: -0.75 },
+            stateControllerSize,
+            false,
+            `stateIcon3`,
+            `stateIcon31`,
+        );
+    }
 
     //==============================
     // 		ALLOCATE RESOURCES
@@ -506,6 +523,8 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const AshesParticles = new ParticlesEmitter(gl, AfterBurnAshesParticlesDesc);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    /* DustParticlesDesc.inBuoyancyForceScale = 5.0 * Math.random();
+    DustParticlesDesc.inDownwardForceScale = DustParticlesDesc.inBuoyancyForceScale * 2.0; */
     const DustParticles = new ParticlesEmitter(gl, DustParticlesDesc);
 
     //==============================
@@ -601,6 +620,9 @@ export function RenderMain() {
         GTexturePool.SubmitDebugUI(GDatGUI);
     }
 
+    //let fpsElem: Element | null;
+    const fpsElem = document.querySelector("#fps");
+
     //=============================================================================================================================
     //
     // 														RENDER LOOP
@@ -636,6 +658,9 @@ export function RenderMain() {
             }
 
             UpdateTime();
+            if (fpsElem) {
+                fpsElem.textContent = GTime.FPSAvrg.toFixed(1);
+            }
 
             UserInputUpdatePerFrame();
 
@@ -686,7 +711,7 @@ export function RenderMain() {
             //=========================
             // 	STATE DEBUG GUI UPDATE
             //=========================
-            if (0) {
+            if (DEBUG_ENV) {
                 StateControllers.forEach((controller) => {
                     controller.OnUpdate();
                 });
@@ -913,9 +938,12 @@ export function RenderMain() {
                         SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
                     }
 
-                    /* StateControllers.forEach((controller) => {
-                        SpatialControlUIVisualizer.Render(gl, controller);
-                    }); */
+                    if (DEBUG_ENV) {
+                        StateControllers.forEach((controller) => {
+                            SpatialControlUIVisualizer.Render(gl, controller);
+                        });
+                    }
+
                     gl.disable(gl.BLEND);
                 }
 
@@ -973,7 +1001,7 @@ export function RenderMain() {
                 //======================
                 // 		SMOKE RENDER
                 //======================
-                BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, GScreenDesc.RenderTargetSize, true);
+                BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, GScreenDesc.HalfResRenderTargetSize, true);
                 DustParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);

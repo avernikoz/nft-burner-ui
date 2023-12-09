@@ -38,11 +38,11 @@ export const ShaderSourceFullscreenPassVS = /* glsl */ `#version 300 es
 export const ShaderSourcePresentPassPS = /* glsl */ `#version 300 es
 	
 	precision highp float;
-	precision highp sampler2D;
+	precision mediump sampler2D;
 
 	out vec4 OutColor;
 
-	uniform highp sampler2D SourceTexture;
+	uniform sampler2D SourceTexture;
 	uniform float MipLevel;
 
 	in vec2 vsOutTexCoords;
@@ -55,12 +55,12 @@ export const ShaderSourcePresentPassPS = /* glsl */ `#version 300 es
 	}`;
 export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 	
-	precision highp float;
-	precision highp sampler2D;
+	precision mediump float;
+	precision mediump sampler2D;
 
 	out vec4 OutColor;
 
-	uniform highp sampler2D SourceTexture;
+	uniform sampler2D SourceTexture;
 
 	uniform float MipLevel;
 	uniform vec2 TextureSize;
@@ -75,7 +75,7 @@ export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 	{
 		vec2 texCoords = vsOutTexCoords;
 		vec2 texelSize = 1.f / (TextureSize);
-		vec4 result = textureLod(SourceTexture, texCoords, MipLevel) * Weights[0];
+		vec4 result = textureLod(SourceTexture, texCoords, 0.0) * Weights[0];
 		for(int i = 1; i < 5; ++i)
         {
             result += textureLod(SourceTexture, texCoords + vec2(texelSize.x * float(i), 0.0), MipLevel).rgba * Weights[i];
@@ -86,8 +86,8 @@ export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 
 export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 	
-	precision highp float;
-	precision highp sampler2D;
+	precision mediump float;
+	precision mediump sampler2D;
 
 	out vec4 OutColor;
 
@@ -106,7 +106,7 @@ export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 	{
 		vec2 texCoords = vsOutTexCoords;
 		vec2 texelSize = 1.f / (TextureSize);
-		vec4 result = textureLod(SourceTexture, texCoords, MipLevel) * Weights[0];
+		vec4 result = textureLod(SourceTexture, texCoords, 0.0) * Weights[0];
 		for(int i = 1; i < 5; ++i)
         {
             result += textureLod(SourceTexture, texCoords + vec2(0.f, texelSize.y * float(i)), MipLevel).rgba * Weights[i];
@@ -117,14 +117,14 @@ export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 
 export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 	
-	precision highp float;
-	precision highp sampler2D;
+	precision mediump float;
+	precision mediump sampler2D;
 
 	out vec4 OutColor;
 
-	uniform highp sampler2D FlameTexture;
-	uniform highp sampler2D FirePlaneTexture;
-	uniform highp sampler2D SpotlightTexture;
+	uniform sampler2D FlameTexture;
+	uniform sampler2D FirePlaneTexture;
+	uniform sampler2D SpotlightTexture;
 	uniform float MipLevel;
 
 	in vec2 vsOutTexCoords;
@@ -164,8 +164,8 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
     return (
         /* glsl */ `#version 300 es
 	
-	precision highp float;
-	precision highp sampler2D;
+		precision mediump float;
+		precision mediump sampler2D;
 
 	out vec4 OutColor;
 
@@ -174,10 +174,10 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 	uniform float ScreenRatio;
 	
 
-	uniform highp sampler2D FlameTexture;
-	uniform highp sampler2D NoiseTexture;
-	uniform highp sampler2D FlameNoiseTexture;
-	uniform highp sampler2D FlameNoiseTexture2;
+	uniform mediump sampler2D FlameTexture;
+	uniform mediump sampler2D NoiseTexture;
+	uniform mediump sampler2D FlameNoiseTexture;
+	uniform mediump sampler2D FlameNoiseTexture2;
 
 	in vec2 vsOutTexCoords;
 
@@ -263,49 +263,92 @@ export function GetShaderSourceFlamePostProcessPS(randomValues: Vector3) {
 		//float4 flame = FlameTextureSRV[SampleCoord];
 		vec4 flame = textureLod(FlameTexture, flameSamplingUV.xy, 0.f);
 
-		//Pre-Translate Scale
-		flameNoiseUV *= 0.9f;
-		float flameNoiseXScale = ` +
+		if(any(greaterThan(flame.rgb, vec3(0.0))))
+		{
+			//Pre-Translate Scale
+			flameNoiseUV *= 0.9f;
+			float flameNoiseXScale = ` +
         MathLerp(2.0, 5.0, Math.random()) +
         /* glsl */ `;
-		flameNoiseUV.x *= flameNoiseXScale;
-
-		flameNoiseUV = MapToRange(flameNoiseUV, 0.0, 1.0, -1.0, 1.0);
-		flameNoiseUV.x *= ScreenRatio;
-		/* flameNoiseUV /= (1.f + CameraDesc.z);
-		flameNoiseUV *= (CameraDesc.w); */
-		flameNoiseUV = MapToRange(flameNoiseUV, -1.0, 1.0, 0.0, 1.0);
-
-		//Translate
-		const float flameSpeed = 0.25f + (kRandomValues.y * 0.5); 
-		flameNoiseUV.y -= Time * flameSpeed;
-		flameNoiseUV.x += Time * 0.05f;
-
-		//Post-Translate Scale
-		flameNoiseUV *= (0.2f + kRandomValues.z * 0.5);
-
-		flameNoiseUV.x += distortionNoise.r * 0.0095f;
-		flameNoiseUV.y -= distortionNoise.g * 0.0055f;
-
-		vec2 flameNoise2;
-		flameNoise2.r = textureLod(FlameNoiseTexture, flameNoiseUV.xy, 0.f).r;
-		flameNoise2.g = textureLod(FlameNoiseTexture2, flameNoiseUV.xy, 0.f).r;
-
-		float flameNoise;
-		if(t < 1.f)
-		{
-			flameNoise = mix(flameNoise2.r, flameNoise2.g, t);
+			flameNoiseUV.x *= flameNoiseXScale;
+			
+			flameNoiseUV = MapToRange(flameNoiseUV, 0.0, 1.0, -1.0, 1.0);
+			flameNoiseUV.x *= ScreenRatio;
+			/* flameNoiseUV /= (1.f + CameraDesc.z);
+			flameNoiseUV *= (CameraDesc.w); */
+			flameNoiseUV = MapToRange(flameNoiseUV, -1.0, 1.0, 0.0, 1.0);
+			
+			//Translate
+			const float flameSpeed = 0.25f + (kRandomValues.y * 0.5); 
+			flameNoiseUV.y -= Time * flameSpeed;
+			flameNoiseUV.x += Time * 0.05f;
+			
+			//Post-Translate Scale
+			flameNoiseUV *= (0.2f + kRandomValues.z * 0.5);
+			
+			flameNoiseUV.x += distortionNoise.r * 0.0095f;
+			flameNoiseUV.y -= distortionNoise.g * 0.0055f;
+			
+			vec2 flameNoise2;
+			flameNoise2.r = textureLod(FlameNoiseTexture, flameNoiseUV.xy, 0.f).r;
+			flameNoise2.g = textureLod(FlameNoiseTexture2, flameNoiseUV.xy, 0.f).r;
+			
+			float flameNoise;
+			if(t < 1.f)
+			{
+				flameNoise = mix(flameNoise2.r, flameNoise2.g, t);
+			}
+			else
+			{
+				flameNoise = mix(flameNoise2.g, flameNoise2.r, t - 1.f);
+			}
+		
+			//OutColor = vec4(flameNoise, flameNoise,flameNoise, 1.0);return;
+		
+			flameNoise = 1.f - flameNoise;
+		
+			flame.rgb *= flameNoise * 1.f;
 		}
+
+		
+
+
+
+		#if 0 //MOVE IT TO EACH FLAME PARTICLE SEPARATE SHADER
+		flameSamplingUV = vsOutTexCoords;
+		//flameSamplingUV.y *= (0.75 + sin(Time) * 0.25);
+		flameSamplingUV.y *= 0.5;
+		flameSamplingUV.x *= 2.0;
+		flameSamplingUV *= 0.75;
+		vec3 fadeNoise = textureLod(NoiseTexture, flameSamplingUV.xy, 0.f).rgb;
+		vec3 fadeOptions;
+		fadeOptions.r = fadeNoise.r * fadeNoise.g;
+		fadeOptions.g = fadeNoise.g * fadeNoise.b;
+		fadeOptions.b = fadeNoise.b * fadeNoise.r;
+		float olp = mod(Time, 3.0);
+		if(olp > 2.0)
+		{
+			fadeNoise.r = mix(fadeOptions.b, fadeOptions.r, olp - 2.0);
+		}
+		else if(olp > 1.0)
+		{
+			fadeNoise.r = mix(fadeOptions.g, fadeOptions.b, olp - 1.0);
+		}	
 		else
 		{
-			flameNoise = mix(flameNoise2.g, flameNoise2.r, t - 1.f);
+			fadeNoise.r = mix(fadeOptions.r, fadeOptions.g, olp);
 		}
+		fadeNoise.r = 1.0 - fadeNoise.r * 1.5;
+		if(fadeNoise.r < 0.5) 
+		{
+			fadeNoise.r = 0.0;
+		}
+		fadeNoise.r = clamp(MapToRange(fadeNoise.r, 0.4, 0.6, 0.0, 1.0), 0.0, 1.0);
+		flame.rgb *= fadeNoise.r;
+		#endif
 
-		//OutColor = vec4(flameNoise, flameNoise,flameNoise, 1.0);return;
 
-		flameNoise = 1.f - flameNoise;
 
-		flame.rgb *= flameNoise * 1.f;
 
 		OutColor = flame;
 	}`
@@ -317,8 +360,8 @@ export function GetShaderSourceCombinerPassPS() {
     return (
         /* glsl */ `#version 300 es
 	
-		precision highp float;
-		precision highp sampler2D;
+		precision mediump float;
+		precision mediump sampler2D;
 	
 		out vec4 OutColor;
 
@@ -330,16 +373,16 @@ export function GetShaderSourceCombinerPassPS() {
 		uniform float Time;
 		
 	
-		uniform highp sampler2D FlameTexture;
-		uniform highp sampler2D FirePlaneTexture;
-		uniform highp sampler2D BloomTexture;
-		uniform highp sampler2D SmokeTexture;
-		uniform highp sampler2D NoiseTexture;
-		uniform highp sampler2D SpotlightTexture;
-		uniform highp sampler2D SmokeNoiseTexture;
-		uniform highp sampler2D PointLightsTexture;
-		uniform highp sampler2D LogoImageTexture;
-		uniform highp sampler2D LensTexture;
+		uniform sampler2D FlameTexture;
+		uniform sampler2D FirePlaneTexture;
+		uniform sampler2D BloomTexture;
+		uniform sampler2D SmokeTexture;
+		uniform sampler2D NoiseTexture;
+		uniform sampler2D SpotlightTexture;
+		uniform sampler2D SmokeNoiseTexture;
+		uniform sampler2D PointLightsTexture;
+		uniform sampler2D LogoImageTexture;
+		uniform sampler2D LensTexture;
 	
 		in vec2 vsOutTexCoords;
 
@@ -457,7 +500,8 @@ export function GetShaderSourceCombinerPassPS() {
         /* glsl */ `));
 
 			vec2 texCoords = vsOutTexCoords;
-			vec3 flame = textureLod(FlameTexture, texCoords.xy, 0.f).rgb;
+			ivec2 itexCoords = ivec2(gl_FragCoord.xy);
+			vec3 flame = texelFetch(FlameTexture, itexCoords, 0).rgb;
 			flame.rgb *= 1.1f;
 	
 		#if 1//heat distortion
@@ -499,13 +543,9 @@ export function GetShaderSourceCombinerPassPS() {
 			vec4 firePlane = textureLod(FirePlaneTexture, texCoords.xy, 0.f);
 			#endif
 			
-			vec3 bloom = textureLod(BloomTexture, texCoords.xy, 0.f).rgb;
-
 			float pointLights = textureLod(PointLightsTexture, texCoords.xy, 0.f).r; 
 
-			vec2 spotlightSamplingUV = vec2(texCoords.x, texCoords.y);
-
-			float light = textureLod(SpotlightTexture, spotlightSamplingUV, 0.f).r;
+			float light = textureLod(SpotlightTexture, texCoords, 0.f).r;
 			//float light = 1.f;
 			float lightInitial = light;
 			//light *= light;
@@ -558,6 +598,9 @@ export function GetShaderSourceCombinerPassPS() {
 			}
 			smoke.rgb *= 0.75f;
 			smoke.rgb *= 0.25f;
+
+
+			vec3 bloom = textureLod(BloomTexture, texCoords.xy, 0.f).rgb;
 
 			const float BloomStrength = 5.0f;
 			const vec2 SmokeBloomColorClampMinMax = vec2(0.15, 1.f);
@@ -615,11 +658,13 @@ export function GetShaderSourceCombinerPassPS() {
 			vec2 lensUV = texCoords.xy;
 			if(kViewSize.y > 1.f)
 			{
-				const float xScale = 0.95f; //TODO: Startup random
+				const float xScale = 0.99f; //TODO: Startup random
 				lensUV = vec2(-texCoords.y, texCoords.x) * vec2(1.0, xScale);
 			}
 			vec4 lensDirt = textureLod(LensTexture, lensUV, 0.f);
-			final.rgb += (bloom.rgb + pointLights) * lensDirt.rgb * 1.0f;
+			final.rgb += (bloom.rgb + pointLights * 0.25) * lensDirt.rgb * (0.5f + ` +
+        Math.random() * 1.0 +
+        /* glsl */ `);
 			//final.rgb = lensDirt.rgb;
 			//final = bloom.rgb;
 

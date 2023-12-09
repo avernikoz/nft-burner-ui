@@ -104,7 +104,7 @@ export class SceneLights {
         gl.useProgram(this.ShaderProgramUpdate);
 
         //Constants
-        gl.uniform1f(this.UniformParametersLocationListUpdate.Time, GTime.Cur);
+        gl.uniform1f(this.UniformParametersLocationListUpdate.Time, GTime.CurClamped);
 
         //Textures
         gl.activeTexture(gl.TEXTURE0 + 1);
@@ -167,7 +167,7 @@ export class RSpotlightRenderPass {
         this.SpotlightTexture = GTexturePool.CreateTexture(gl, false, `spotlightCut` + spotlightTextureId + `_R8`);
         //this.SpotlightTexture = CreateTexture(gl, 5, "assets/example.jpg");
 
-        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `lightGlare0`);
+        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `lightGlare2`);
         this.LightSourceTexture = GTexturePool.CreateTexture(gl, false, `spotlightMask0`);
     }
 
@@ -466,7 +466,7 @@ export class RBackgroundRenderPass {
         gl.uniform1f(this.UniformParametersLocationListFloor.FloorTexScale, this.FloorTransform.FloorTexScale);
 
         gl.uniform1f(this.UniformParametersLocationListFloor.FloorBrightness, this.FloorTransform.FloorBrightness);
-        gl.uniform1f(this.UniformParametersLocationListFloor.Time, GTime.Cur);
+        gl.uniform1f(this.UniformParametersLocationListFloor.Time, GTime.CurClamped);
 
         gl.uniform3f(
             this.UniformParametersLocationListFloor.SpotlightPos,
