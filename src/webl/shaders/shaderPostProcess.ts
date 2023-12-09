@@ -55,7 +55,7 @@ export const ShaderSourcePresentPassPS = /* glsl */ `#version 300 es
 	}`;
 export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 	
-	precision highp float;
+	precision mediump float;
 	precision mediump sampler2D;
 
 	out vec4 OutColor;
@@ -86,7 +86,7 @@ export const ShaderSourceBlurPassHorizontalPS = /* glsl */ `#version 300 es
 
 export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 	
-	precision highp float;
+	precision mediump float;
 	precision mediump sampler2D;
 
 	out vec4 OutColor;
@@ -117,7 +117,7 @@ export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 
 export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 	
-	precision highp float;
+	precision mediump float;
 	precision mediump sampler2D;
 
 	out vec4 OutColor;
