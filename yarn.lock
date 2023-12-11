@@ -49,10 +49,10 @@
   resolved "https://registry.yarnpkg.com/@apocentre/alias-sampling/-/alias-sampling-0.5.3.tgz#897ff181b48ad7b2bcb4ecf29400214888244f08"
   integrity sha512-7UDWIIF9hIeJqfKXkNIzkVandlwLf1FWTSdrb9iXvOP8oF544JRXQjCbiTmCv2c9n44n/FIWtehhBfNuAx2CZA==
 
-"@avernikoz/nft-sdk@2.0.3":
-  version "2.0.3"
-  resolved "https://npm.pkg.github.com/download/@avernikoz/nft-sdk/2.0.3/47d1531059f6e65c458bfbc3d499859cfdc0c98c#47d1531059f6e65c458bfbc3d499859cfdc0c98c"
-  integrity sha512-jfdL+cVjCTtF4bGkqE8/Za4N7PdcrXAYtUaGgfNxlhDHIfu5XjmQIQ/QZZQisn7kiqb0ZwDRQiiiy93vtVrogA==
+"@avernikoz/nft-sdk@2.0.5":
+  version "2.0.5"
+  resolved "https://npm.pkg.github.com/download/@avernikoz/nft-sdk/2.0.5/7ce5e755a15c0acc5b259f1d754b1c9ea689f288#7ce5e755a15c0acc5b259f1d754b1c9ea689f288"
+  integrity sha512-Ib5C8eAWRoAYwNSv61X0YKy1+5T3bCKdNa8iW7M6/KyJBXLhAl8eFyex0Th3e3B+eJEY2CxaNH82FOhAhLh59g==
   dependencies:
     "@metaplex-foundation/js" "^0.19.5"
     "@metaplex-foundation/mpl-token-metadata" "2.13.0"
@@ -5769,6 +5769,26 @@ ajv@^8.0.0, ajv@^8.6.0, ajv@^8.9.0:
     require-from-string "^2.0.2"
     uri-js "^4.2.2"
 
+alchemy-sdk@2.10.1:
+  version "2.10.1"
+  resolved "https://registry.npmjs.org/alchemy-sdk/-/alchemy-sdk-2.10.1.tgz#806bd7a1dca34d0af58ed7d7da03e6d533ad1334"
+  integrity sha512-zV6rBS2K0H3ickE28N7YiPvKPP9EQV+ZAiv9Zi3+aSzhcm0D1bkK+OS/+Tc7mU6EflSpZcDNC1fsLWlRqJOX4Q==
+  dependencies:
+    "@ethersproject/abi" "^5.7.0"
+    "@ethersproject/abstract-provider" "^5.7.0"
+    "@ethersproject/bignumber" "^5.7.0"
+    "@ethersproject/bytes" "^5.7.0"
+    "@ethersproject/contracts" "^5.7.0"
+    "@ethersproject/hash" "^5.7.0"
+    "@ethersproject/networks" "^5.7.0"
+    "@ethersproject/providers" "^5.7.0"
+    "@ethersproject/units" "^5.7.0"
+    "@ethersproject/wallet" "^5.7.0"
+    "@ethersproject/web" "^5.7.0"
+    axios "^0.26.1"
+    sturdy-websocket "^0.2.1"
+    websocket "^1.0.34"
+
 alchemy-sdk@^2.10.1:
   version "2.11.0"
   resolved "https://registry.npmjs.org/alchemy-sdk/-/alchemy-sdk-2.11.0.tgz#a6c9e32c56150492760c44debcc5ad73672d8aa5"
@@ -6939,6 +6959,11 @@ cli-width@^3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/cli-width/-/cli-width-3.0.0.tgz#a2f48437a2caa9a22436e794bf071ec9e61cedf6"
   integrity sha512-FxqpkPPwu1HjuN93Omfm4h8uIanXofW0RxVEW3k5RKx+mJJYSthzNhp32Kzxxy3YAEZ/Dc/EWN1vZRY0+kOhbw==
+
+client-only@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.npmjs.org/client-only/-/client-only-0.0.1.tgz#38bba5d403c41ab150bff64a95c85013cf73bca1"
+  integrity sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==
 
 cliui@^5.0.0:
   version "5.0.0"
@@ -14449,6 +14474,14 @@ svgo@^2.7.0, svgo@^2.8.0:
     csso "^4.2.0"
     picocolors "^1.0.0"
     stable "^0.1.8"
+
+swr@^2.2.4:
+  version "2.2.4"
+  resolved "https://registry.npmjs.org/swr/-/swr-2.2.4.tgz#03ec4c56019902fbdc904d78544bd7a9a6fa3f07"
+  integrity sha512-njiZ/4RiIhoOlAaLYDqwz5qH/KZXVilRLvomrx83HjzCWTfa+InyfAjv05PSFxnmLzZkNO9ZfvgoqzAaEI4sGQ==
+  dependencies:
+    client-only "^0.0.1"
+    use-sync-external-store "^1.2.0"
 
 symbol-tree@^3.2.4:
   version "3.2.4"
