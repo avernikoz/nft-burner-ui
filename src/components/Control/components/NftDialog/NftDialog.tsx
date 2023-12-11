@@ -79,11 +79,11 @@ export const NftDialog = ({
     }, [nft, toastController, visible]);
 
     const handleHold = async () => {
-        setSubmit(true);
         try {
             if (!nft) {
                 return;
             }
+            setSubmit(true);
             setLoading(true);
 
             const evmCondition =
@@ -151,9 +151,10 @@ export const NftDialog = ({
             }
         }
 
+        NftController.setNftStatus(ENftBurnStatus.BURNED_ONCHAIN);
         setVisible();
         setLoading(false);
-        NftController.setNftStatus(ENftBurnStatus.BURNED_ONCHAIN);
+        setSubmit(false);
     };
 
     const handleMouseDown = () => {
