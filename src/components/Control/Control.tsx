@@ -13,7 +13,6 @@ function Control() {
     const NftController = useContext(NftContext);
 
     useEffect(() => {
-        console.log("test");
         setNft(NftController?.activeNft ?? null);
     }, [NftController?.activeNft]);
 
@@ -37,7 +36,7 @@ function Control() {
                         setNft={() => {
                             NftController?.setNftStatus(ENftBurnStatus.BURNED);
                         }}
-                    ></NftDialog>
+                    />
                 </div>
                 <div className="control__social">
                     <Button label="Chedule Burn" severity="warning" />

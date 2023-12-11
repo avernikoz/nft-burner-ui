@@ -1,9 +1,9 @@
 import { JsonRpcSigner } from "ethers";
 import { NFT_IMAGES_CORS_PROXY_URL } from "../../config/proxy.config";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { OwnedNft } from "alchemy-sdk";
-import { ALLOWED_EVM_CHAINS, INft } from "../../utils/types";
+import { INft } from "../../utils/types";
 import { PublicKey } from "@solana/web3.js";
+import { evm } from "@avernikoz/nft-sdk";
 
 export function suiMapper(
     nfts: {
@@ -56,7 +56,7 @@ export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner): INft[] {
             contractType: nft.contract.tokenType,
             nftTokenId: nft.tokenId,
             owner: signer,
-            evm: ALLOWED_EVM_CHAINS.Polygon,
+            evm: evm.ALLOWED_EVM_CHAINS.Polygon,
         };
     });
 }

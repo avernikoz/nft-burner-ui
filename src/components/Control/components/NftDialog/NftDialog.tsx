@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { FillButton, StyledDialog } from "./NftDialog.styled";
 import { ProgressBar } from "primereact/progressbar";
-import { ALLOWED_EVM_CHAINS, INft } from "../../../../utils/types";
+import { INft } from "../../../../utils/types";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import {
     ALCHEMY_MULTICHAIN_CLIENT_INSTANCE,
@@ -12,16 +12,12 @@ import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adap
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import { Signer } from "ethers";
 import { PublicKey } from "@solana/web3.js";
-
-export enum NFTContractStandard {
-    ERC1155 = "ERC1155",
-    ERC721 = "ERC721",
-}
+import { evm } from "@avernikoz/nft-sdk";
 
 function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boolean; setVisible: () => void }) {
     const [submit, setSubmit] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
-    const [price, setPrice] = useState<number>(0.002);
+    const [price, setPrice] = useState<number | null>(null);
 
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { nft, visible, setVisible, setNft } = props;
@@ -44,15 +40,15 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                     },
                     (err) => {
                         console.log(err);
-                        toastController?.showError("Failed to connect: " + err.message);
+                        toastController?.showError("Failed to get floor price for nft: " + err.message);
                     },
                 );
             }
         } catch (error) {
             if (error instanceof Error) {
-                toastController?.showError("Failed to connect: " + error.message);
+                toastController?.showError("Failed to get floor price for nft: " + error.message);
             } else {
-                toastController?.showError("Failed to connect: " + error);
+                toastController?.showError("Failed to get floor price for nft: " + error);
             }
         }
     }, [nft?.kioskId, nft?.nftId, nft?.nftType, toastController, visible]);
@@ -67,29 +63,25 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 nft?.nftTokenId &&
                 nft?.owner &&
                 nft?.evm &&
-                (nft.contractType == NFTContractStandard.ERC1155 || nft.contractType == NFTContractStandard.ERC721);
+                (nft.contractType == evm.NFTContractStandard.ERC1155 ||
+                    nft.contractType == evm.NFTContractStandard.ERC721);
             const suiCondition = nft?.nftId && nft?.kioskId && nft?.nftType;
             const solanaCondition = nft?.solanaAccount && solanaWallet.publicKey;
             if (evmCondition) {
                 setLoading(true);
                 const payTransaction = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.pay({
-                    network: nft?.evm as ALLOWED_EVM_CHAINS,
+                    network: nft?.evm as evm.ALLOWED_EVM_CHAINS,
                     amount: 0.000001,
                 });
                 await nft.owner?.sendTransaction(payTransaction);
-                const res = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.burnNFT({
+                await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.burnNFT({
                     collection: {
                         contractAddress: nft?.contractAddress as string,
-                        contractType: nft?.contractType as NFTContractStandard,
+                        contractType: nft?.contractType as evm.NFTContractStandard,
                     },
                     nftTokenId: nft?.nftTokenId as string,
                     owner: nft?.owner as Signer,
                 });
-                console.log(res);
-
-                setVisible();
-                setLoading(false);
-                setNft();
             }
             if (suiCondition) {
                 setLoading(true);
@@ -105,9 +97,6 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 await signAndExecuteTransactionBlock({
                     transactionBlock: burnRes.transaction,
                 });
-                setVisible();
-                setLoading(false);
-                setNft();
             }
             if (solanaCondition) {
                 setLoading(true);
@@ -129,10 +118,6 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 });
 
                 await solanaWallet.sendTransaction(burnRes, solanaConnection.connection);
-
-                setVisible();
-                setLoading(false);
-                setNft();
             }
         } catch (error) {
             if (error instanceof Error) {
@@ -141,6 +126,10 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 toastController?.showError("Failed to process transactions: " + error);
             }
         }
+
+        setVisible();
+        setLoading(false);
+        setNft();
     };
 
     const handleMouseDown = () => {
@@ -162,11 +151,11 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
             onHide={() => setVisible()}
         >
             <img crossOrigin="anonymous" src={nft?.logoURI} alt={nft?.name} />
-            <p>Tetris</p>
+            <p>{nft?.name}</p>
 
             <div className="card">
                 <p>NFT price: {price}</p>
-                <p>Burner fee commission: 5$</p>
+                <p>Burner fee commission:</p>
                 {loading && <ProgressBar mode="indeterminate" style={{ height: "6px", width: "100%" }}></ProgressBar>}
             </div>
 

@@ -1,13 +1,6 @@
+import { evm } from "@avernikoz/nft-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { Signer } from "ethers";
-
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export enum ALLOWED_EVM_CHAINS {
-    Ethereum = "Ethereum",
-    Polygon = "Polygon",
-    Optimism = "Optimism",
-    Arbitrum = "Arbitrum",
-}
 
 export enum ENftBurnStatus {
     BURNED = "burned",
@@ -24,7 +17,7 @@ export interface INft {
     contractType?: string;
     nftTokenId?: string;
     owner?: Signer;
-    evm?: ALLOWED_EVM_CHAINS;
+    evm?: evm.ALLOWED_EVM_CHAINS;
 
     nftId?: string;
     kioskId?: string;

@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
+import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import React, { useContext, useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import {
     ALCHEMY_MULTICHAIN_CLIENT_INSTANCE,
@@ -8,20 +8,20 @@ import {
     SUI_NFT_CLIENT_INSTANCE,
 } from "../../config/nft.config";
 
-import { useEthersSigner } from "./variables";
-import { arbitrum, optimism, polygon } from "viem/chains";
-import { ProgressSpinner } from "primereact/progressspinner";
-import { FixedSizeGrid as Grid } from "react-window";
-import { AutoSizer } from "react-virtualized";
-import { ToastContext } from "../ToastProvider/ToastProvider";
-import { NftContext } from "../NftProvider/NftProvider";
-import NftItem from "../NftItem/NftItem";
-import { INft, ALLOWED_EVM_CHAINS, ENftBurnStatus } from "../../utils/types";
-import { List } from "./NftList.styled";
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { NftFilters } from "alchemy-sdk";
-import { evmMapper, solanaMapper, suiMapper } from "./mappers";
+import { evm } from "@avernikoz/nft-sdk";
 import { PublicKey } from "@solana/web3.js";
+import { NftFilters } from "alchemy-sdk";
+import { ProgressSpinner } from "primereact/progressspinner";
+import { AutoSizer } from "react-virtualized";
+import { FixedSizeGrid as Grid } from "react-window";
+import { arbitrum, optimism, polygon } from "viem/chains";
+import { ENftBurnStatus, INft } from "../../utils/types";
+import NftItem from "../NftItem/NftItem";
+import { NftContext } from "../NftProvider/NftProvider";
+import { ToastContext } from "../ToastProvider/ToastProvider";
+import { List } from "./NftList.styled";
+import { evmMapper, solanaMapper, suiMapper } from "./mappers";
+import { useEthersSigner } from "./variables";
 
 function NftList() {
     const suietWallet = suietUseWallet();
@@ -41,10 +41,6 @@ function NftList() {
         NftController?.setNftStatus(ENftBurnStatus.SELECTED);
     };
 
-    // function imageExists(imageUrl: string) {
-    //     return fetch(imageUrl, { method: "HEAD" });
-    // }
-
     useEffect(() => {
         try {
             if (
@@ -58,16 +54,16 @@ function NftList() {
                     setUserConnected(true);
                     setShowSpinner(true);
                     wagmiAccount.connector?.getChainId().then((id) => {
-                        let chainName: ALLOWED_EVM_CHAINS = ALLOWED_EVM_CHAINS.Ethereum;
+                        let chainName: evm.ALLOWED_EVM_CHAINS = evm.ALLOWED_EVM_CHAINS.Ethereum;
                         switch (id) {
                             case polygon.id:
-                                chainName = ALLOWED_EVM_CHAINS.Polygon;
+                                chainName = evm.ALLOWED_EVM_CHAINS.Polygon;
                                 break;
                             case optimism.id:
-                                chainName = ALLOWED_EVM_CHAINS.Optimism;
+                                chainName = evm.ALLOWED_EVM_CHAINS.Optimism;
                                 break;
                             case arbitrum.id:
-                                chainName = ALLOWED_EVM_CHAINS.Arbitrum;
+                                chainName = evm.ALLOWED_EVM_CHAINS.Arbitrum;
                                 break;
                         }
 
@@ -120,9 +116,9 @@ function NftList() {
             }
         } catch (error) {
             if (error instanceof Error) {
-                toastController?.showError("Error when receiving nft: " + error.message);
+                toastController?.showError("Error fetching nft: " + error.message);
             } else {
-                toastController?.showError("Error when receiving nft: " + error);
+                toastController?.showError("Error fetching nft: " + error);
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
