@@ -3,9 +3,9 @@ import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import React, { useContext, useEffect, useState } from "react";
 import { useAccount as useWagmiAccount } from "wagmi";
 
-import Control from "../../components/Control/Control";
+import { Control } from "../../components/Control/Control";
 import FullScreenButton from "../../components/FullscreenButton/FullscreenButton";
-import NftList from "../../components/NftList/NftList";
+import { NftList } from "../../components/NftList/NftList";
 import { NftContext } from "../../components/NftProvider/NftProvider";
 import Wallets from "../../components/wallets/Wallets";
 import { ENftBurnStatus } from "../../utils/types";
@@ -60,8 +60,8 @@ export const InternalApp: React.FC = () => {
             {showUI && (
                 <BodyContainer>
                     <div className="half">
-                        <NftList></NftList>
-                        <Control></Control>
+                        <NftList />
+                        <Control />
                     </div>
                 </BodyContainer>
             )}

@@ -1,4 +1,4 @@
-import { evm } from "@avernikoz/nft-sdk";
+import { ALLOWED_NETWORKS, evm } from "@avernikoz/nft-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { Signer } from "ethers";
 
@@ -9,9 +9,11 @@ export enum ENftBurnStatus {
 }
 
 export interface INft {
-    id?: number;
+    id: number;
     name: string;
     logoURI: string;
+
+    network: ALLOWED_NETWORKS;
 
     contractAddress?: string;
     contractType?: string;

@@ -6,7 +6,7 @@ import NftDialog from "./components/NftDialog/NftDialog";
 import { NftContext } from "../NftProvider/NftProvider";
 import { ENftBurnStatus, INft } from "../../utils/types";
 
-function Control() {
+export const Control = () => {
     const [visible, setVisible] = useState<boolean>(false);
     const [nft, setNft] = useState<INft | null>(null);
 
@@ -51,6 +51,4 @@ function Control() {
             </ControlContainer>
         </>
     );
-}
-
-export default Control;
+};

@@ -3,7 +3,7 @@ import { NFT_IMAGES_CORS_PROXY_URL } from "../../config/proxy.config";
 import { OwnedNft } from "alchemy-sdk";
 import { INft } from "../../utils/types";
 import { PublicKey } from "@solana/web3.js";
-import { evm } from "@avernikoz/nft-sdk";
+import { ALLOWED_NETWORKS, evm } from "@avernikoz/nft-sdk";
 
 export function suiMapper(
     nfts: {
@@ -28,6 +28,7 @@ export function suiMapper(
             name: nft.name,
             logoURI: ipfsHash,
             id: index,
+            network: ALLOWED_NETWORKS.Sui,
             nftId: nft.nftId,
             kioskId: nft.kioskId,
             nftType: nft.nftType,
@@ -35,7 +36,7 @@ export function suiMapper(
     });
 }
 
-export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner): INft[] {
+export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner, chainName: evm.ALLOWED_EVM_CHAINS): INft[] {
     const proxy = NFT_IMAGES_CORS_PROXY_URL;
     return data.map((nft, index) => {
         let ipfsHash = nft.rawMetadata?.image;
@@ -56,7 +57,8 @@ export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner): INft[] {
             contractType: nft.contract.tokenType,
             nftTokenId: nft.tokenId,
             owner: signer,
-            evm: evm.ALLOWED_EVM_CHAINS.Polygon,
+            evm: chainName,
+            network: ALLOWED_NETWORKS[chainName],
         };
     });
 }
@@ -88,5 +90,6 @@ export function solanaMapper(
         name: item.name,
         id: i,
         solanaAccount: item.accounts,
+        network: ALLOWED_NETWORKS.Solana,
     }));
 }
