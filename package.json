@@ -27,7 +27,7 @@
         "@mysten/sui.js": "0.41.1"
     },
     "dependencies": {
-        "@avernikoz/nft-sdk": "2.0.5",
+        "@avernikoz/nft-sdk": "2.0.10",
         "@mysten/sui.js": "0.41.1",
         "@rainbow-me/rainbowkit": "^1.1.1",
         "@sentry/browser": "^7.84.0",

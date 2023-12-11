@@ -1,9 +1,10 @@
+import { ALLOWED_EVM_CHAINS, ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
+import { PublicKey } from "@solana/web3.js";
+import { OwnedNft } from "alchemy-sdk";
 import { JsonRpcSigner } from "ethers";
 import { NFT_IMAGES_CORS_PROXY_URL } from "../../config/proxy.config";
-import { OwnedNft } from "alchemy-sdk";
-import { INft } from "../../utils/types";
-import { PublicKey } from "@solana/web3.js";
-import { ALLOWED_NETWORKS, evm } from "@avernikoz/nft-sdk";
+import { EvmNft, SolanaNft, SuiNft } from "../../utils/types";
+import { mapNftTokenTypeToContractStandard } from "./utils";
 
 export function suiMapper(
     nfts: {
@@ -14,7 +15,7 @@ export function suiMapper(
         nftId: string;
         nftType: string;
     }[],
-): INft[] {
+): SuiNft[] {
     const proxy = NFT_IMAGES_CORS_PROXY_URL;
     return nfts.map((nft, index) => {
         let ipfsHash = nft.url;
@@ -36,9 +37,9 @@ export function suiMapper(
     });
 }
 
-export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner, chainName: evm.ALLOWED_EVM_CHAINS): INft[] {
+export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner, chainName: ALLOWED_EVM_CHAINS): EvmNft[] {
     const proxy = NFT_IMAGES_CORS_PROXY_URL;
-    return data.map((nft, index) => {
+    const rawData = data.map((nft, index) => {
         let ipfsHash = nft.rawMetadata?.image;
         if (!ipfsHash) {
             ipfsHash = "../../assets/svg/empty.jpg";
@@ -49,18 +50,23 @@ export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner, chainName: ev
         if (ipfsHash.includes("ipfs://")) {
             ipfsHash = "https://ipfs.io/ipfs/" + ipfsHash.replace("ipfs://", "");
         }
+
+        const mappedContractType = mapNftTokenTypeToContractStandard(nft.contract.tokenType);
+
         return {
             name: nft.title,
             logoURI: ipfsHash,
             id: index,
             contractAddress: nft.contract.address,
-            contractType: nft.contract.tokenType,
+            contractType: mappedContractType,
             nftTokenId: nft.tokenId,
-            owner: signer,
-            evm: chainName,
+            evmNetworkType: chainName,
             network: ALLOWED_NETWORKS[chainName],
         };
     });
+    const filteredNfts = rawData.filter((el): el is EvmNft => el.contractType !== null);
+
+    return filteredNfts;
 }
 
 export function solanaMapper(
@@ -84,7 +90,7 @@ export function solanaMapper(
             isMasterEdition: boolean;
         };
     }[],
-): INft[] {
+): SolanaNft[] {
     return nfts.map((item, i) => ({
         logoURI: item.logoURI,
         name: item.name,

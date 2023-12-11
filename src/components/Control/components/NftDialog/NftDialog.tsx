@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { FillButton, StyledDialog } from "./NftDialog.styled";
 import { ProgressBar } from "primereact/progressbar";
-import { INft } from "../../../../utils/types";
+import { ENftBurnStatus, EvmNft, INft, SolanaNft, SuiNft } from "../../../../utils/types";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import {
     ALCHEMY_MULTICHAIN_CLIENT_INSTANCE,
@@ -10,88 +10,115 @@ import {
 } from "../../../../config/nft.config";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
-import { Signer } from "ethers";
-import { PublicKey } from "@solana/web3.js";
-import { evm } from "@avernikoz/nft-sdk";
+import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
+import { useEthersSigner } from "../../../NftList/variables";
+import { NftContext } from "../../../NftProvider/NftProvider";
 
-function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boolean; setVisible: () => void }) {
+export const NftDialog = ({
+    nft,
+    visible,
+    setVisible,
+}: {
+    nft: INft | null;
+    visible: boolean;
+    setVisible: () => void;
+}) => {
+    const NftController = useContext(NftContext);
+
     const [submit, setSubmit] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [price, setPrice] = useState<number | null>(null);
 
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const { nft, visible, setVisible, setNft } = props;
     const { signAndExecuteTransactionBlock } = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const solanaConnection = useConnection();
+    const signer = useEthersSigner();
+
     const toastController = useContext(ToastContext);
 
+    // TODO: Unmock
+    const burnerFee = 0.000000001;
+
     useEffect(() => {
-        const api = process.env.REACT_APP_SUI_NFT_PRICE_API;
-        try {
-            if (nft?.nftId && nft?.kioskId && nft?.nftType && api) {
-                SUI_NFT_CLIENT_INSTANCE.getFloorPrice({
-                    nftCollectionContractType: nft?.nftType,
-                    priceApiURL: api,
-                }).then(
-                    (res) => {
-                        console.log(res);
-                        setPrice(res.floorPrice);
-                    },
-                    (err) => {
-                        console.log(err);
-                        toastController?.showError("Failed to get floor price for nft: " + err.message);
-                    },
-                );
+        const fetchNftFloorPrice = async () => {
+            try {
+                if (!nft) {
+                    return;
+                }
+
+                switch (nft.network) {
+                    case ALLOWED_NETWORKS.Sui:
+                        const suiNFT = nft as SuiNft;
+                        const floorPriceMap = await SUI_NFT_CLIENT_INSTANCE.getFloorPricesMap({});
+                        const floorPrice = floorPriceMap.get(suiNFT.nftType);
+
+                        setPrice(floorPrice?.floorPrice ?? null);
+                        break;
+                    case ALLOWED_NETWORKS.Solana:
+                        // const solanaNFT = nft as SolanaNft;
+                        break;
+                    case ALLOWED_NETWORKS.Ethereum:
+                    case ALLOWED_NETWORKS.Arbitrum:
+                    case ALLOWED_NETWORKS.Optimism:
+                    case ALLOWED_NETWORKS.Polygon:
+                        // const evmNFT = nft as EvmNft;
+
+                        break;
+                }
+            } catch (error) {
+                if (error instanceof Error) {
+                    toastController?.showError("Failed to get floor price for nft: " + error.message);
+                } else {
+                    toastController?.showError("Failed to get floor price for nft: " + error);
+                }
             }
-        } catch (error) {
-            if (error instanceof Error) {
-                toastController?.showError("Failed to get floor price for nft: " + error.message);
-            } else {
-                toastController?.showError("Failed to get floor price for nft: " + error);
-            }
-        }
-    }, [nft?.kioskId, nft?.nftId, nft?.nftType, toastController, visible]);
+        };
+
+        fetchNftFloorPrice();
+    }, [nft, toastController, visible]);
 
     const handleHold = async () => {
         setSubmit(true);
         try {
+            if (!nft) {
+                return;
+            }
+            setLoading(true);
+
             const evmCondition =
-                nft &&
-                nft?.contractAddress &&
-                nft?.contractType &&
-                nft?.nftTokenId &&
-                nft?.owner &&
-                nft?.evm &&
-                (nft.contractType == evm.NFTContractStandard.ERC1155 ||
-                    nft.contractType == evm.NFTContractStandard.ERC721);
-            const suiCondition = nft?.nftId && nft?.kioskId && nft?.nftType;
-            const solanaCondition = nft?.solanaAccount && solanaWallet.publicKey;
+                nft.network === ALLOWED_NETWORKS.Arbitrum ||
+                nft.network === ALLOWED_NETWORKS.Ethereum ||
+                nft.network === ALLOWED_NETWORKS.Optimism ||
+                nft.network === ALLOWED_NETWORKS.Polygon;
+            const suiCondition = nft.network === ALLOWED_NETWORKS.Sui;
+            const solanaCondition = nft.network === ALLOWED_NETWORKS.Solana;
+
             if (evmCondition) {
-                setLoading(true);
+                if (!signer) {
+                    return;
+                }
+
+                const evmNFT = nft as EvmNft;
                 const payTransaction = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.pay({
-                    network: nft?.evm as evm.ALLOWED_EVM_CHAINS,
-                    amount: 0.000001,
+                    network: evmNFT.evmNetworkType,
+                    amount: burnerFee,
                 });
-                await nft.owner?.sendTransaction(payTransaction);
+                await signer.sendTransaction(payTransaction);
                 await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.burnNFT({
                     collection: {
-                        contractAddress: nft?.contractAddress as string,
-                        contractType: nft?.contractType as evm.NFTContractStandard,
+                        contractAddress: evmNFT.contractAddress,
+                        contractType: evmNFT.contractType,
                     },
-                    nftTokenId: nft?.nftTokenId as string,
-                    owner: nft?.owner as Signer,
+                    nftTokenId: evmNFT?.nftTokenId,
+                    owner: signer,
                 });
             }
             if (suiCondition) {
-                setLoading(true);
-                const payRes = await SUI_NFT_CLIENT_INSTANCE.pay({ amount: 0.01 });
+                const suiNFT = nft as SuiNft;
+                const payRes = await SUI_NFT_CLIENT_INSTANCE.pay({ amount: burnerFee });
                 const burnRes = await SUI_NFT_CLIENT_INSTANCE.burnNFT({
-                    nft: {
-                        nftId: nft.nftId as string,
-                        kioskId: nft.kioskId as string,
-                        nftType: nft.nftType as string,
-                    },
+                    nft: suiNFT,
                     transaction: payRes.transaction,
                 });
                 await signAndExecuteTransactionBlock({
@@ -99,21 +126,18 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
                 });
             }
             if (solanaCondition) {
-                setLoading(true);
+                if (!solanaWallet.publicKey) {
+                    return;
+                }
+
+                const solanaNFT = nft as SolanaNft;
                 const payRes = await SOLANA_NFT_CLIENT_INSTANCE.pay({
-                    amount: 0.01,
-                    owner: solanaWallet.publicKey as PublicKey,
+                    amount: burnerFee,
+                    owner: solanaWallet.publicKey,
                 });
                 const burnRes = await SOLANA_NFT_CLIENT_INSTANCE.burnNFT({
-                    owner: solanaWallet?.publicKey as PublicKey,
-                    nft: nft?.solanaAccount as {
-                        tokenAccount: PublicKey;
-                        mint: PublicKey;
-                        masterEditionPDA: PublicKey;
-                        metadataAccount: PublicKey;
-                        collectionMetadata: PublicKey | undefined;
-                        isMasterEdition: boolean;
-                    },
+                    owner: solanaWallet.publicKey,
+                    nft: solanaNFT.solanaAccount,
                     transaction: payRes,
                 });
 
@@ -129,7 +153,7 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
 
         setVisible();
         setLoading(false);
-        setNft();
+        NftController.setNftStatus(ENftBurnStatus.BURNED_ONCHAIN);
     };
 
     const handleMouseDown = () => {
@@ -145,7 +169,7 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
 
     return (
         <StyledDialog
-            header="Submit BURNING"
+            header="Submit burning"
             visible={visible}
             style={{ width: "min-content" }}
             onHide={() => setVisible()}
@@ -155,8 +179,8 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
 
             <div className="card">
                 <p>NFT price: {price}</p>
-                <p>Burner fee commission:</p>
-                {loading && <ProgressBar mode="indeterminate" style={{ height: "6px", width: "100%" }}></ProgressBar>}
+                <p>Burner fee commission: {burnerFee}</p>
+                {loading && <ProgressBar mode="indeterminate" style={{ height: "6px", width: "100%" }} />}
             </div>
 
             <FillButton
@@ -171,6 +195,4 @@ function NftDialog(props: { nft: INft | null; setNft: () => void; visible: boole
             ></FillButton>
         </StyledDialog>
     );
-}
-
-export default NftDialog;
+};

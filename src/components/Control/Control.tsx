@@ -2,9 +2,9 @@ import { Button } from "primereact/button";
 import { ControlContainer } from "./Control.styled";
 import { ReactComponent as TwitchLogo } from "../../assets/svg/twitch.svg";
 import { useContext, useEffect, useState } from "react";
-import NftDialog from "./components/NftDialog/NftDialog";
+import { NftDialog } from "./components/NftDialog/NftDialog";
 import { NftContext } from "../NftProvider/NftProvider";
-import { ENftBurnStatus, INft } from "../../utils/types";
+import { INft } from "../../utils/types";
 
 export const Control = () => {
     const [visible, setVisible] = useState<boolean>(false);
@@ -13,8 +13,8 @@ export const Control = () => {
     const NftController = useContext(NftContext);
 
     useEffect(() => {
-        setNft(NftController?.activeNft ?? null);
-    }, [NftController?.activeNft]);
+        setNft(NftController.activeNft ?? null);
+    }, [NftController.activeNft]);
 
     return (
         <>
@@ -32,9 +32,6 @@ export const Control = () => {
                         visible={visible}
                         setVisible={() => {
                             setVisible(false);
-                        }}
-                        setNft={() => {
-                            NftController?.setNftStatus(ENftBurnStatus.BURNED);
                         }}
                     />
                 </div>

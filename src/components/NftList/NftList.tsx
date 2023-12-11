@@ -36,16 +36,16 @@ export const NftList = () => {
 
     const handleItemClick = (nft: INft) => {
         setActiveNft(nft.id);
-        NftController?.setActiveNft(nft);
-        NftController?.setNftStatus(ENftBurnStatus.SELECTED);
+        NftController.setActiveNft(nft);
+        NftController.setNftStatus(ENftBurnStatus.SELECTED);
     };
 
     useEffect(() => {
         const fetchNfts = async () => {
             try {
                 if (
-                    NftController?.nftStatus === ENftBurnStatus.BURNED ||
-                    NftController?.nftStatus === ENftBurnStatus.EPMTY
+                    NftController.nftStatus === ENftBurnStatus.BURNED_ONCHAIN ||
+                    NftController.nftStatus === ENftBurnStatus.EMPTY
                 ) {
                     const wagmiChangeOrConnected = wagmiAccount.isConnected && wagmiAccount.address && signer;
                     const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;

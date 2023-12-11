@@ -42,11 +42,11 @@ export const InternalApp: React.FC = () => {
     ]);
 
     useEffect(() => {
-        if (NftController?.nftStatus === ENftBurnStatus.BURNED) {
+        if (NftController.nftStatus === ENftBurnStatus.BURNED_ONCHAIN) {
             GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady);
             setShowUI(false);
         }
-    }, [NftController?.nftStatus]);
+    }, [NftController.nftStatus]);
 
     return (
         <div className="App">
