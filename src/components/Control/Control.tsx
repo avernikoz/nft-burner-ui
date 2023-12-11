@@ -27,13 +27,15 @@ export const Control = () => {
                         onClick={() => setVisible(true)}
                         disabled={!nft}
                     />
-                    <NftDialog
-                        nft={nft}
-                        visible={visible}
-                        setVisible={() => {
-                            setVisible(false);
-                        }}
-                    />
+                    {nft && (
+                        <NftDialog
+                            nft={nft}
+                            visible={visible}
+                            setVisible={() => {
+                                setVisible(false);
+                            }}
+                        />
+                    )}
                 </div>
                 <div className="control__social">
                     <Button label="Chedule Burn" severity="warning" />

@@ -13,21 +13,15 @@ import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 import { useEthersSigner } from "../../../NftList/variables";
 import { NftContext } from "../../../NftProvider/NftProvider";
+import { useBurnerFee } from "../../../../hooks/useBurnerFee";
+import { getNetworkTokenSymbol } from "../../../../utils/getNetworkTokenSymbol";
 
-export const NftDialog = ({
-    nft,
-    visible,
-    setVisible,
-}: {
-    nft: INft | null;
-    visible: boolean;
-    setVisible: () => void;
-}) => {
+export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: boolean; setVisible: () => void }) => {
     const NftController = useContext(NftContext);
 
     const [submit, setSubmit] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
-    const [price, setPrice] = useState<number | null>(null);
+    const [floorPrice, setFloorPrice] = useState<number | null>(null);
 
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { signAndExecuteTransactionBlock } = suietUseWallet();
@@ -37,8 +31,8 @@ export const NftDialog = ({
 
     const toastController = useContext(ToastContext);
 
-    // TODO: Unmock
-    const burnerFee = 0.000000001;
+    const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
 
     useEffect(() => {
         const fetchNftFloorPrice = async () => {
@@ -51,9 +45,9 @@ export const NftDialog = ({
                     case ALLOWED_NETWORKS.Sui:
                         const suiNFT = nft as SuiNft;
                         const floorPriceMap = await SUI_NFT_CLIENT_INSTANCE.getFloorPricesMap({});
-                        const floorPrice = floorPriceMap.get(suiNFT.nftType);
+                        const NftfloorPrice = floorPriceMap.get(suiNFT.nftType);
 
-                        setPrice(floorPrice?.floorPrice ?? null);
+                        setFloorPrice(NftfloorPrice?.floorPrice ?? null);
                         break;
                     case ALLOWED_NETWORKS.Solana:
                         // const solanaNFT = nft as SolanaNft;
@@ -80,7 +74,7 @@ export const NftDialog = ({
 
     const handleHold = async () => {
         try {
-            if (!nft) {
+            if (!burnerFee) {
                 return;
             }
             setSubmit(true);
@@ -96,7 +90,7 @@ export const NftDialog = ({
 
             if (evmCondition) {
                 if (!signer) {
-                    return;
+                    throw new Error("The EVM NFT was chosen, but the wallet is not connected.");
                 }
 
                 const evmNFT = nft as EvmNft;
@@ -127,7 +121,7 @@ export const NftDialog = ({
             }
             if (solanaCondition) {
                 if (!solanaWallet.publicKey) {
-                    return;
+                    throw new Error("The Solana NFT was chosen, but the wallet is not connected.");
                 }
 
                 const solanaNFT = nft as SolanaNft;
@@ -179,8 +173,10 @@ export const NftDialog = ({
             <p>{nft?.name}</p>
 
             <div className="card">
-                <p>NFT price: {price}</p>
-                <p>Burner fee commission: {burnerFee}</p>
+                <p>NFT price: {floorPrice}</p>
+                <p>
+                    Burner fee commission: {burnerFee} {burnerFeeToken}
+                </p>
                 {loading && <ProgressBar mode="indeterminate" style={{ height: "6px", width: "100%" }} />}
             </div>
 
