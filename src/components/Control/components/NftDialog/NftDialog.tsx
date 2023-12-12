@@ -1,23 +1,19 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { FillButton, StyledDialog } from "./NftDialog.styled";
-import { ProgressBar } from "primereact/progressbar";
-import { ENftBurnStatus, EvmNft, INft, SolanaNft, SuiNft } from "../../../../utils/types";
-import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
-import {
-    ALCHEMY_MULTICHAIN_CLIENT_INSTANCE,
-    SOLANA_NFT_CLIENT_INSTANCE,
-    SUI_NFT_CLIENT_INSTANCE,
-} from "../../../../config/nft.config";
-import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
-import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
+import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
+import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import { ProgressBar } from "primereact/progressbar";
+import { useContext, useEffect, useRef, useState } from "react";
+import { SUI_NFT_CLIENT_INSTANCE } from "../../../../config/nft.config";
+import { useBurnerFee } from "../../../../hooks/useBurnerFee";
+import { handleEvmTransaction } from "../../../../transactions/handleEvmTransaction";
+import { handleSolanaTransaction } from "../../../../transactions/handleSolanaTransaction";
+import { handleSuiTransaction } from "../../../../transactions/handleSuiTransaction";
+import { getNetworkTokenSymbol } from "../../../../utils/getNetworkTokenSymbol";
+import { ENftBurnStatus, EvmNft, INft, SolanaNft, SuiNft } from "../../../../utils/types";
 import { useEthersSigner } from "../../../NftList/variables";
 import { NftContext } from "../../../NftProvider/NftProvider";
-import { useBurnerFee } from "../../../../hooks/useBurnerFee";
-import { getNetworkTokenSymbol } from "../../../../utils/getNetworkTokenSymbol";
-import { handleEvmTransaction } from "../../../../transactions/handleEvmTransaction";
-import { handleSuiTransaction } from "../../../../transactions/handleSuiTransaction";
-import { handleSolanaTransaction } from "../../../../transactions/handleSolanaTransaction";
+import { ToastContext } from "../../../ToastProvider/ToastProvider";
+import { FillButton, StyledDialog } from "./NftDialog.styled";
 
 export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: boolean; setVisible: () => void }) => {
     const NftController = useContext(NftContext);
@@ -92,6 +88,7 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
             const isSui = nft.network === ALLOWED_NETWORKS.Sui;
             const isSolana = nft.network === ALLOWED_NETWORKS.Solana;
 
+            // TODO ASAP IMPORTANT: Handle returns from transactions
             if (isEvm) {
                 handleEvmTransaction({ nft: nft as EvmNft, signer, burnerFee });
             } else if (isSui) {
