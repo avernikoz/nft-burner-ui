@@ -1,6 +1,7 @@
 import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 import { BURNER_FEE_CONFIG } from "../config/fee.config";
 import { useTokenPrices } from "./useTokenPrices";
+import { roundToDecimals } from "../utils/roundToDecimals";
 
 // TODO: use swr for caching
 export const useBurnerFee = ({ floorPrice, network }: { floorPrice: number | null; network: ALLOWED_NETWORKS }) => {
@@ -14,7 +15,7 @@ export const useBurnerFee = ({ floorPrice, network }: { floorPrice: number | nul
         const feeUSD = BURNER_FEE_CONFIG.lowerLimitUSD;
         const feeInNetworkToken = feeUSD / prices[network];
 
-        return { isLoading: false, feeInNetworkToken };
+        return { isLoading: false, feeInNetworkToken: roundToDecimals(feeInNetworkToken, 9) };
     }
 
     const floorPriceInUSD = floorPrice * prices[network];
@@ -28,5 +29,5 @@ export const useBurnerFee = ({ floorPrice, network }: { floorPrice: number | nul
 
     const feeInNetworkToken = feeUSD / prices[network];
 
-    return { isLoading: false, feeInNetworkToken };
+    return { isLoading: false, feeInNetworkToken: roundToDecimals(feeInNetworkToken, 9) };
 };

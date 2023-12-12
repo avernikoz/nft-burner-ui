@@ -3,7 +3,7 @@ import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adap
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import { ProgressBar } from "primereact/progressbar";
 import { useContext, useEffect, useRef, useState } from "react";
-import { SUI_NFT_CLIENT_INSTANCE } from "../../../../config/nft.config";
+// import { SUI_NFT_CLIENT_INSTANCE } from "../../../../config/nft.config";
 import { useBurnerFee } from "../../../../hooks/useBurnerFee";
 import { handleEvmPayTransaction, handleEvmBurnTransaction } from "../../../../transactions/handleEvmTransaction";
 import { handleSolanaTransaction } from "../../../../transactions/handleSolanaTransaction";
@@ -20,6 +20,7 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
 
     const [submit, setSubmit] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [floorPrice, setFloorPrice] = useState<number | null>(null);
 
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -34,6 +35,7 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
 
     useEffect(() => {
+        // TODO: Rewrite it with hook + swr
         const fetchNftFloorPrice = async () => {
             try {
                 if (!nft) {
@@ -42,11 +44,11 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
 
                 switch (nft.network) {
                     case ALLOWED_NETWORKS.Sui:
-                        const suiNFT = nft as SuiNft;
-                        const floorPriceMap = await SUI_NFT_CLIENT_INSTANCE.getFloorPricesMap({});
-                        const NftfloorPrice = floorPriceMap.get(suiNFT.nftType);
+                        // const suiNFT = nft as SuiNft;
+                        // const floorPriceMap = await SUI_NFT_CLIENT_INSTANCE.getFloorPricesMap({});
+                        // const NftfloorPrice = floorPriceMap.get(suiNFT.nftType);
 
-                        setFloorPrice(NftfloorPrice?.floorPrice ?? null);
+                        // setFloorPrice(NftfloorPrice?.floorPrice ?? null);
                         break;
                     case ALLOWED_NETWORKS.Solana:
                         // const solanaNFT = nft as SolanaNft;
