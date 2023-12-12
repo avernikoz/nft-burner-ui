@@ -15,6 +15,9 @@ import { useEthersSigner } from "../../../NftList/variables";
 import { NftContext } from "../../../NftProvider/NftProvider";
 import { useBurnerFee } from "../../../../hooks/useBurnerFee";
 import { getNetworkTokenSymbol } from "../../../../utils/getNetworkTokenSymbol";
+import { handleEvmTransaction } from "../../../../transactions/handleEvmTransaction";
+import { handleSuiTransaction } from "../../../../transactions/handleSuiTransaction";
+import { handleSolanaTransaction } from "../../../../transactions/handleSolanaTransaction";
 
 export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: boolean; setVisible: () => void }) => {
     const NftController = useContext(NftContext);
@@ -72,7 +75,7 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
         fetchNftFloorPrice();
     }, [nft, toastController, visible]);
 
-    const handleHold = async () => {
+    const handleBurningButtonHoldAction = async () => {
         try {
             if (!burnerFee) {
                 return;
@@ -80,63 +83,29 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
             setSubmit(true);
             setLoading(true);
 
-            const evmCondition =
-                nft.network === ALLOWED_NETWORKS.Arbitrum ||
-                nft.network === ALLOWED_NETWORKS.Ethereum ||
-                nft.network === ALLOWED_NETWORKS.Optimism ||
-                nft.network === ALLOWED_NETWORKS.Polygon;
-            const suiCondition = nft.network === ALLOWED_NETWORKS.Sui;
-            const solanaCondition = nft.network === ALLOWED_NETWORKS.Solana;
+            const isEvm = [
+                ALLOWED_NETWORKS.Arbitrum,
+                ALLOWED_NETWORKS.Ethereum,
+                ALLOWED_NETWORKS.Optimism,
+                ALLOWED_NETWORKS.Polygon,
+            ].includes(nft.network);
+            const isSui = nft.network === ALLOWED_NETWORKS.Sui;
+            const isSolana = nft.network === ALLOWED_NETWORKS.Solana;
 
-            if (evmCondition) {
-                if (!signer) {
-                    throw new Error("The EVM NFT was chosen, but the wallet is not connected.");
-                }
-
-                const evmNFT = nft as EvmNft;
-                const payTransaction = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.pay({
-                    network: evmNFT.evmNetworkType,
-                    amount: burnerFee,
-                });
-                await signer.sendTransaction(payTransaction);
-                await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.burnNFT({
-                    collection: {
-                        contractAddress: evmNFT.contractAddress,
-                        contractType: evmNFT.contractType,
-                    },
-                    nftTokenId: evmNFT?.nftTokenId,
-                    owner: signer,
+            if (isEvm) {
+                handleEvmTransaction({ nft: nft as EvmNft, signer, burnerFee });
+            } else if (isSui) {
+                handleSuiTransaction({ nft: nft as SuiNft, signAndExecuteTransactionBlock, burnerFee });
+            } else if (isSolana) {
+                handleSolanaTransaction({
+                    nft: nft as SolanaNft,
+                    solanaConnection: solanaConnection.connection,
+                    solanaWallet,
+                    burnerFee,
                 });
             }
-            if (suiCondition) {
-                const suiNFT = nft as SuiNft;
-                const payRes = await SUI_NFT_CLIENT_INSTANCE.pay({ amount: burnerFee });
-                const burnRes = await SUI_NFT_CLIENT_INSTANCE.burnNFT({
-                    nft: suiNFT,
-                    transaction: payRes.transaction,
-                });
-                await signAndExecuteTransactionBlock({
-                    transactionBlock: burnRes.transaction,
-                });
-            }
-            if (solanaCondition) {
-                if (!solanaWallet.publicKey) {
-                    throw new Error("The Solana NFT was chosen, but the wallet is not connected.");
-                }
 
-                const solanaNFT = nft as SolanaNft;
-                const payRes = await SOLANA_NFT_CLIENT_INSTANCE.pay({
-                    amount: burnerFee,
-                    owner: solanaWallet.publicKey,
-                });
-                const burnRes = await SOLANA_NFT_CLIENT_INSTANCE.burnNFT({
-                    owner: solanaWallet.publicKey,
-                    nft: solanaNFT.solanaAccount,
-                    transaction: payRes,
-                });
-
-                await solanaWallet.sendTransaction(burnRes, solanaConnection.connection);
-            }
+            NftController.setNftStatus(ENftBurnStatus.BURNED_ONCHAIN);
         } catch (error) {
             if (error instanceof Error) {
                 toastController?.showError("Failed to process transactions: " + error.message);
@@ -145,14 +114,13 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
             }
         }
 
-        NftController.setNftStatus(ENftBurnStatus.BURNED_ONCHAIN);
         setVisible();
         setLoading(false);
         setSubmit(false);
     };
 
     const handleMouseDown = () => {
-        timeoutRef.current = setTimeout(() => handleHold(), 2000);
+        timeoutRef.current = setTimeout(() => handleBurningButtonHoldAction(), 2000);
     };
 
     const handleMouseUp = (event: React.MouseEvent) => {
