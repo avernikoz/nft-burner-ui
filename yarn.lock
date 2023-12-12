@@ -49,10 +49,10 @@
   resolved "https://registry.yarnpkg.com/@apocentre/alias-sampling/-/alias-sampling-0.5.3.tgz#897ff181b48ad7b2bcb4ecf29400214888244f08"
   integrity sha512-7UDWIIF9hIeJqfKXkNIzkVandlwLf1FWTSdrb9iXvOP8oF544JRXQjCbiTmCv2c9n44n/FIWtehhBfNuAx2CZA==
 
-"@avernikoz/nft-sdk@2.0.10":
-  version "2.0.10"
-  resolved "https://npm.pkg.github.com/download/@avernikoz/nft-sdk/2.0.10/c8907e6f543e4744309b6857172693a74be26488#c8907e6f543e4744309b6857172693a74be26488"
-  integrity sha512-qb96VlE2NNJLovqXXIcQiRJXepvkS3GTu60H9ILOdHGBcqWpdi7GriaBT+BUDpb8lIrHIXnrJcAa4keGZrOSkg==
+"@avernikoz/nft-sdk@2.0.11":
+  version "2.0.11"
+  resolved "https://npm.pkg.github.com/download/@avernikoz/nft-sdk/2.0.11/4d0ded3f6a3fb1aa6119117b1999bd771317357f#4d0ded3f6a3fb1aa6119117b1999bd771317357f"
+  integrity sha512-pxiZLe6iXCgyhtQS8f6MilKRuoStLSr3GItmv2Im/mQCUpoDJvLFUDqWUxrZe8WFiL8rxmfo4lNJUaeK5ovwDw==
   dependencies:
     "@metaplex-foundation/js" "^0.19.5"
     "@metaplex-foundation/mpl-token-metadata" "2.13.0"
@@ -2629,7 +2629,7 @@
   dependencies:
     bs58 "^5.0.0"
 
-"@mysten/sui.js@0.41.1", "@mysten/sui.js@^0.42.0":
+"@mysten/sui.js@0.41.1", "@mysten/sui.js@0.48.0", "@mysten/sui.js@^0.42.0":
   version "0.41.1"
   resolved "https://registry.npmjs.org/@mysten/sui.js/-/sui.js-0.41.1.tgz#880b454829c5100b78f506f567f0575cbb621892"
   integrity sha512-qSFVqr6Z2LboHhiaP51kluZQaW2oCY4gOF8JBZOl/cB/tvOPoQvdvtfNqViDkTZcaJrYRk8gOCYjozvW4VGX0A==
@@ -2651,6 +2651,14 @@
   integrity sha512-qnx5bKkHtmqDrBjjfnF30cVHfLWF7fTK3OV5H2Yn4L+GCn0pHugBYwwvN8/75RyS5fgoa9rXDW9RS04E7S542g==
   dependencies:
     "@mysten/sui.js" "0.41.1"
+    "@wallet-standard/core" "1.0.3"
+
+"@mysten/wallet-standard@^0.8.11":
+  version "0.8.11"
+  resolved "https://registry.npmjs.org/@mysten/wallet-standard/-/wallet-standard-0.8.11.tgz#3e12289eaf43ed18177ac17701001990a7f7883c"
+  integrity sha512-kkD/8vBzI0wMyeN/2QRVESINeufIJnJLE0jUT2Bl2eRSJDYhIIpVppVGPaVjYP+qMThZMk6WEgUVMLs9dVjJ2Q==
+  dependencies:
+    "@mysten/sui.js" "0.48.0"
     "@wallet-standard/core" "1.0.3"
 
 "@ngraveio/bc-ur@^1.0.0", "@ngraveio/bc-ur@^1.1.5":
