@@ -5,7 +5,7 @@ import { ProgressBar } from "primereact/progressbar";
 import { useContext, useEffect, useRef, useState } from "react";
 import { SUI_NFT_CLIENT_INSTANCE } from "../../../../config/nft.config";
 import { useBurnerFee } from "../../../../hooks/useBurnerFee";
-import { handleEvmTransaction } from "../../../../transactions/handleEvmTransaction";
+import { handleEvmPayTransaction, handleEvmBurnTransaction } from "../../../../transactions/handleEvmTransaction";
 import { handleSolanaTransaction } from "../../../../transactions/handleSolanaTransaction";
 import { handleSuiTransaction } from "../../../../transactions/handleSuiTransaction";
 import { getNetworkTokenSymbol } from "../../../../utils/getNetworkTokenSymbol";
@@ -88,13 +88,13 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
             const isSui = nft.network === ALLOWED_NETWORKS.Sui;
             const isSolana = nft.network === ALLOWED_NETWORKS.Solana;
 
-            // TODO ASAP IMPORTANT: Handle returns from transactions
             if (isEvm) {
-                handleEvmTransaction({ nft: nft as EvmNft, signer, burnerFee });
+                await handleEvmPayTransaction({ nft: nft as EvmNft, signer, burnerFee });
+                await handleEvmBurnTransaction({ nft: nft as EvmNft, signer });
             } else if (isSui) {
-                handleSuiTransaction({ nft: nft as SuiNft, signAndExecuteTransactionBlock, burnerFee });
+                await handleSuiTransaction({ nft: nft as SuiNft, signAndExecuteTransactionBlock, burnerFee });
             } else if (isSolana) {
-                handleSolanaTransaction({
+                await handleSolanaTransaction({
                     nft: nft as SolanaNft,
                     solanaConnection: solanaConnection.connection,
                     solanaWallet,

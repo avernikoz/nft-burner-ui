@@ -28,5 +28,13 @@ export async function handleSolanaTransaction({
         transaction: payRes,
     });
 
-    await solanaWallet.sendTransaction(burnRes, solanaConnection);
+    const result = await solanaWallet.sendTransaction(burnRes, solanaConnection);
+    const { value } = await solanaConnection.confirmTransaction(result, "confirmed");
+
+    if (value === null || value === void 0 ? void 0 : value.err) {
+        const errorMessage = JSON.stringify(value.err);
+        throw new Error(`Transaction failed: ${errorMessage}`);
+    }
+
+    return result;
 }
