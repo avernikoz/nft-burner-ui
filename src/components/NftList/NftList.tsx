@@ -43,10 +43,12 @@ export const NftList = () => {
     useEffect(() => {
         const fetchNfts = async () => {
             try {
+                console.log(NftController.nftStatus);
                 if (
                     NftController.nftStatus === ENftBurnStatus.BURNED_ONCHAIN ||
                     NftController.nftStatus === ENftBurnStatus.EMPTY
                 ) {
+                    console.log(NftController.nftStatus);
                     const wagmiChangeOrConnected = wagmiAccount.isConnected && wagmiAccount.address && signer;
                     const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
                     const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
@@ -148,6 +150,9 @@ export const NftList = () => {
                     <AutoSizer>
                         {({ height, width }) => {
                             const columns = Math.round(width / 180);
+                            if (!columns || !height || !width) {
+                                return <></>;
+                            }
                             return (
                                 <Grid
                                     className="nft-list"
