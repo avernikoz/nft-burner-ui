@@ -18,7 +18,7 @@ export const BodyContainer = styled.div`
     /* display: grid;
     grid-template-columns: 1fr 1fr; */
     width: 50vw;
-    padding: 0 1rem;
+    padding: 0 3rem;
     position: absolute;
     top: 100px;
     left: 0;
