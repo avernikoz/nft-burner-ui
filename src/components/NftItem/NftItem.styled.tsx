@@ -25,12 +25,23 @@ export const Card = styled.div`
     position: relative;
     border-radius: 2px;
     overflow: hidden;
-    transition: box-shadow 0.3s ease-in-out;
 
     & {
         img {
             filter: brightness(0.75) saturate(0.5);
         }
+    }
+
+    &:hover {
+        img {
+            filter: none;
+        }
+    }
+
+    /* For title */
+    &:hover div {
+        opacity: 1;
+        z-index: 100;
     }
 
     &.active {
@@ -52,14 +63,10 @@ export const Card = styled.div`
         }
     }
 
-    &:hover {
-        box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    &:hover div {
-        opacity: 1;
-        z-index: 100;
-    }
+    /* &:hover {
+        opacity: 0.7;
+        transition: 1s ease;
+    } */
 `;
 
 export const CardImage = styled.img`
