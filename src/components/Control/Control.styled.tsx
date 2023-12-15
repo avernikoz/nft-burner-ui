@@ -2,7 +2,7 @@ import { styled } from "styled-components";
 
 export const BurnAndInfoContainer = styled.div`
     width: 100%;
-    height: 50%;
+
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -20,7 +20,7 @@ export const NftInfoContainer = styled.div`
     width: 100%;
     justify-content: space-between;
     align-items: center;
-    height: 10%;
+    height: 44px;
     //background-color: #00b272;
 `;
 export const NftInfoDivider = styled.div`
