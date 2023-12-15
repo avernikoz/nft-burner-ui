@@ -1,16 +1,25 @@
 import { styled } from "styled-components";
 
+export const NftListTitle = styled.h3`
+    color: #fff;
+
+    font-family: Khand;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 24px; /* 150% */
+    letter-spacing: 1.92px;
+    text-transform: uppercase;
+    text-align: left;
+    // TODO: Change that after refactoring of virtualization
+    padding-left: 1.4rem;
+`;
+
 export const List = styled.div`
     width: 100%;
     height: 80%;
     // border-bottom: 1px solid #4d4c4c;
 
-    h3 {
-        color: white;
-        @media (max-width: 1000px) {
-            display: none;
-        }
-    }
     .virtual-container {
         width: 100%;
         height: 90%;
