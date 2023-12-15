@@ -5,6 +5,8 @@ import { useContext, useEffect, useState } from "react";
 import { NftDialog } from "./components/NftDialog/NftDialog";
 import { NftContext } from "../NftProvider/NftProvider";
 import { INft } from "../../utils/types";
+import "../BurnButton/BurnButton.css";
+import { BurnButton } from "../BurnButton/BurnButton";
 
 export const Control = () => {
     const [visible, setVisible] = useState<boolean>(false);
@@ -20,13 +22,9 @@ export const Control = () => {
         <>
             <ControlContainer>
                 <div className="control__burn">
-                    <Button
-                        label="Burn NFT"
-                        severity="danger"
-                        size="large"
-                        onClick={() => setVisible(true)}
-                        disabled={!nft}
-                    />
+                    <BurnButton className="burnButton mainButton" onClick={() => setVisible(true)} disabled={!nft}>
+                        Burn
+                    </BurnButton>
                     {nft && (
                         <NftDialog
                             nft={nft}
