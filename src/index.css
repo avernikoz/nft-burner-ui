@@ -87,11 +87,21 @@ html {
 }
 
 @font-face {
-    font-family: "Rubik-Regular";
-    font-weight: normal;
+    font-family: "Rubik";
+    font-weight: 400;
     font-style: normal;
     src:
         local("Rubik-Regular"),
         local("Rubik-Regular"),
         url(./fonts/Rubik-Regular.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Rubik";
+    font-weight: 500;
+    font-style: normal;
+    src:
+        local("Rubik-Medium"),
+        local("Rubik-Medium"),
+        url(./fonts/Rubik-Medium.woff2) format("woff2");
 }

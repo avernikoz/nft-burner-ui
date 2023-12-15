@@ -44,7 +44,7 @@ export const NetworkFeeInfoContainer = styled.div`
 
 export const BurnerFuelInfoText = styled.span`
     color: #b5b5c2;
-    font-family: Rubik-Regular;
+    font-family: Rubik;
     font-style: normal;
     font-weight: 400;
     font-size: 12px;
@@ -53,16 +53,16 @@ export const BurnerFuelInfoText = styled.span`
 
 export const BurnerFuelInfoTextNumbers = styled.span`
     color: #fff;
-    font-family: Rubik-Regular;
+    font-family: Rubik;
     font-size: 12px;
     font-style: normal;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0.5px;
 `;
 
 export const NetworkFeeInfoText = styled.span`
     color: #b5b5c2;
-    font-family: Rubik-Regular;
+    font-family: Rubik;
     font-style: normal;
     font-weight: 400;
     font-size: 12px;
@@ -71,9 +71,9 @@ export const NetworkFeeInfoText = styled.span`
 
 export const NetworkFeeInfoTextNumbers = styled.span`
     color: #00b272;
-    font-family: Rubik-Regular;
+    font-family: Rubik;
     font-size: 12px;
     font-style: normal;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0.5px;
 `;

@@ -69,6 +69,8 @@ export const CardImage = styled.img`
 `;
 
 export const CardTitle = styled.div`
+    font-family: Rubik;
+    font-weight: 500;
     position: absolute;
     bottom: 0;
     width: 100%;
