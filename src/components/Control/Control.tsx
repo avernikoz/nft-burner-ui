@@ -3,7 +3,18 @@ import { INft } from "../../utils/types";
 import { BurnButton } from "../BurnButton/BurnButton";
 import "../BurnButton/BurnButton.css";
 import { NftContext } from "../NftProvider/NftProvider";
-import { BurnAndInfoContainer, BurnScheduleContainer, NftInfoContainer } from "./Control.styled";
+import {
+    BurnAndInfoContainer,
+    BurnScheduleContainer,
+    BurnerFuelInfoContainer,
+    BurnerFuelInfoText,
+    BurnerFuelInfoTextNumbers,
+    NetworkFeeInfoContainer,
+    NetworkFeeInfoText,
+    NetworkFeeInfoTextNumbers,
+    NftInfoContainer,
+    NftInfoDivider,
+} from "./Control.styled";
 import { NftDialog } from "./components/NftDialog/NftDialog";
 import { ShareButton } from "../ShareButton/ShareButton";
 
@@ -29,7 +40,17 @@ export const Control = () => {
                         SCHEDULE BURN EVENT
                     </ShareButton>
                 </BurnScheduleContainer>
-                <NftInfoContainer></NftInfoContainer>
+                <NftInfoContainer>
+                    <BurnerFuelInfoContainer>
+                        <BurnerFuelInfoText>Burner Fuel</BurnerFuelInfoText>
+                        <BurnerFuelInfoTextNumbers>~ 2.97$</BurnerFuelInfoTextNumbers>
+                    </BurnerFuelInfoContainer>
+                    <NftInfoDivider />
+                    <NetworkFeeInfoContainer>
+                        <NetworkFeeInfoText>Network Fee</NetworkFeeInfoText>
+                        <NetworkFeeInfoTextNumbers>2.8mtc</NetworkFeeInfoTextNumbers>
+                    </NetworkFeeInfoContainer>
+                </NftInfoContainer>
             </BurnAndInfoContainer>
             {nft && (
                 <NftDialog
