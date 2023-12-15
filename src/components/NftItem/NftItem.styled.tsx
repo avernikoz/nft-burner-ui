@@ -26,7 +26,6 @@ export const Card = styled.div`
     border-radius: 2px;
     overflow: hidden;
     transition: box-shadow 0.3s ease-in-out;
-    cursor: pointer;
 
     & {
         img {

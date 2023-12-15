@@ -8,8 +8,10 @@ function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: ()
     const { item, onClick, isActive } = props;
     const imgRef = useRef<HTMLImageElement>(null);
 
+    const isEmptyImage = !item.name;
+
     const handleCardClick = () => {
-        if (!item.name) {
+        if (isEmptyImage) {
             return;
         }
 
@@ -21,11 +23,15 @@ function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: ()
     };
 
     return (
-        <Card className={isActive ? "active" : ""} onClick={handleCardClick}>
+        <Card
+            className={isActive ? "active" : ""}
+            style={isEmptyImage ? {} : { cursor: "pointer" }}
+            onClick={handleCardClick}
+        >
             {/* {props.isActive ? <BurnEffect /> : null} */}
             {/* {props.isActive ? <FireParticles /> : null} */}
             <CardImage ref={imgRef} src={item.logoURI} alt={item.name ?? undefined} crossOrigin="anonymous" />
-            {item.name && <CardTitle>{item.name}</CardTitle>}
+            {!isEmptyImage && <CardTitle>{item.name}</CardTitle>}
         </Card>
     );
 }
