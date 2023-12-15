@@ -108,37 +108,6 @@ export const NftList = () => {
         wagmiAccount.isConnected,
     ]);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const Cell = ({
-        columnIndex,
-        rowIndex,
-        style,
-    }: {
-        columnIndex: number;
-        rowIndex: number;
-        style: React.CSSProperties;
-    }) => {
-        const index = rowIndex * 4 + columnIndex;
-        const defaultEmptyImage = { logoURI: EmptySVG };
-        const item = NFTList[index] ?? defaultEmptyImage;
-
-        return (
-            <div
-                style={{
-                    ...style,
-                }}
-            >
-                <NftItem
-                    item={item}
-                    key={index}
-                    id={index}
-                    isActive={index == activeNft}
-                    onClick={() => handleItemClick(item)}
-                />
-            </div>
-        );
-    };
-
     return (
         <List>
             {!userConnected ? (
