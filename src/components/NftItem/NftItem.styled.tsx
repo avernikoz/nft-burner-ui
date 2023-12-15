@@ -40,6 +40,8 @@ export const Card = styled.div`
         border-bottom: 2px solid #fff;
         background: rgba(255, 74, 0, 0.9);
         z-index: 1;
+        width: 100%;
+        height: 100%;
 
         img {
             filter: none;
