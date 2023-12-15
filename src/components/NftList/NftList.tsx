@@ -114,11 +114,8 @@ export const NftList = () => {
 
     return (
         <List>
-            {!userConnected ? (
-                <NftListTitle>Connect your wallet</NftListTitle>
-            ) : (
-                <NftListTitle>NFT Viewer</NftListTitle>
-            )}
+            {!userConnected && !isNFTListEmpty && <NftListTitle>Connect your wallet</NftListTitle>}
+            {userConnected && !isNFTListEmpty && <NftListTitle>NFT Viewer</NftListTitle>}
             {isNFTListEmpty && <EmptyNFTList />}
             {!isNFTListEmpty && (
                 <div className="nftListAutosizerContainer">
