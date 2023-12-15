@@ -68,6 +68,16 @@ html {
 
 @font-face {
     font-family: "Khand";
+    font-weight: medium;
+    font-style: normal;
+    src:
+        local("Khand-Medium"),
+        local("Khand-Medium"),
+        url(./fonts/Khand-Medium.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Khand";
     font-weight: normal;
     font-style: normal;
     src:
