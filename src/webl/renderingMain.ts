@@ -356,6 +356,7 @@ export function RenderMain() {
     //================================
     // 	INIT DEBUG STATE CONTROLLERS
     //================================
+    const DEBUG_STATE = 0 && DEBUG_ENV;
     const StateControllers: SpatialControlPoint[] = [];
     const stateControllerSize = 0.05;
     const numStateControllers = 6;
@@ -363,7 +364,7 @@ export function RenderMain() {
     const stateControllersViewSpaceLength = 0.5;
     const distBBetwenControllers = stateControllersViewSpaceLength / (numStateControllers - 1);
     let curStateControllerPos = stateControllersViewSpaceStart;
-    if (DEBUG_ENV) {
+    if (DEBUG_STATE) {
         StateControllers[0] = new SpatialControlPoint(
             gl,
             { x: curStateControllerPos, y: -0.75 },
@@ -595,7 +596,7 @@ export function RenderMain() {
     if (GDatGUI) {
         //For global vars
         {
-            //GDatGUI.close();
+            GDatGUI.close();
 
             GDatGUI.add(GSettings, "bRunSimulation").name("Run Simulation");
 
@@ -711,7 +712,7 @@ export function RenderMain() {
             //=========================
             // 	STATE DEBUG GUI UPDATE
             //=========================
-            if (DEBUG_ENV) {
+            if (DEBUG_STATE) {
                 StateControllers.forEach((controller) => {
                     controller.OnUpdate();
                 });
@@ -938,7 +939,7 @@ export function RenderMain() {
                         SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
                     }
 
-                    if (DEBUG_ENV) {
+                    if (DEBUG_STATE) {
                         StateControllers.forEach((controller) => {
                             SpatialControlUIVisualizer.Render(gl, controller);
                         });
