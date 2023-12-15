@@ -55,3 +55,33 @@ html {
 .dg.ac {
     z-index: 99 !important;
 }
+
+@font-face {
+    font-family: "Khand";
+    font-weight: bold;
+    font-style: normal;
+    src:
+        local("Khand-Bold"),
+        local("Khand-Bold"),
+        url(./fonts/Khand-Bold.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Khand";
+    font-weight: normal;
+    font-style: normal;
+    src:
+        local("Khand-Regular"),
+        local("Khand-Regular"),
+        url(./fonts/Khand-Regular.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Rubik-Regular";
+    font-weight: normal;
+    font-style: normal;
+    src:
+        local("Rubik-Regular"),
+        local("Rubik-Regular"),
+        url(./fonts/Rubik-Regular.woff2) format("woff2");
+}
