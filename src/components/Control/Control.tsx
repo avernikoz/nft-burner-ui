@@ -1,12 +1,11 @@
-import { Button } from "primereact/button";
-import { ControlContainer } from "./Control.styled";
-import { ReactComponent as TwitchLogo } from "../../assets/svg/twitch.svg";
 import { useContext, useEffect, useState } from "react";
-import { NftDialog } from "./components/NftDialog/NftDialog";
-import { NftContext } from "../NftProvider/NftProvider";
 import { INft } from "../../utils/types";
-import "../BurnButton/BurnButton.css";
 import { BurnButton } from "../BurnButton/BurnButton";
+import "../BurnButton/BurnButton.css";
+import { NftContext } from "../NftProvider/NftProvider";
+import { BurnAndInfoContainer, BurnScheduleContainer, NftInfoContainer } from "./Control.styled";
+import { NftDialog } from "./components/NftDialog/NftDialog";
+import { ShareButton } from "../ShareButton/ShareButton";
 
 export const Control = () => {
     const [visible, setVisible] = useState<boolean>(false);
@@ -20,32 +19,27 @@ export const Control = () => {
 
     return (
         <>
-            <ControlContainer>
-                <div className="control__burn">
+            <BurnAndInfoContainer>
+                <BurnScheduleContainer>
                     <BurnButton className="burnButton mainButton" onClick={() => setVisible(true)} disabled={!nft}>
-                        Burn
+                        BURN
                     </BurnButton>
-                    {nft && (
-                        <NftDialog
-                            nft={nft}
-                            visible={visible}
-                            setVisible={() => {
-                                setVisible(false);
-                            }}
-                        />
-                    )}
-                </div>
-                <div className="control__social">
-                    <Button label="Chedule Burn" severity="warning" />
-                    <div className="control__social--media">
-                        <Button icon="pi pi-twitter " rounded text severity="info" aria-label="Notification" />
-                        <Button rounded text severity="help" aria-label="Favorite">
-                            <TwitchLogo />
-                        </Button>
-                        <Button icon="pi pi-youtube" rounded text severity="danger" aria-label="Cancel" />
-                    </div>
-                </div>
-            </ControlContainer>
+
+                    <ShareButton className="shareButton mainButton width65" disabled={!nft}>
+                        SCHEDULE BURN EVENT
+                    </ShareButton>
+                </BurnScheduleContainer>
+                <NftInfoContainer></NftInfoContainer>
+            </BurnAndInfoContainer>
+            {nft && (
+                <NftDialog
+                    nft={nft}
+                    visible={visible}
+                    setVisible={() => {
+                        setVisible(false);
+                    }}
+                />
+            )}
         </>
     );
 };
