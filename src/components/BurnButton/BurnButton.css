@@ -17,7 +17,7 @@
 
     border-radius: 4px;
     border: 2px solid #ff4a00;
-    background: radial-gradient(872.72% 70.71% at 50% 50%, rgba(150, 45, 2, 0.24) 0%, rgba(76, 9, 9, 0) 100%),
+    background: radial-gradient(70.71% 872.72% at 50% 50%, rgba(150, 45, 2, 0.24) 0%, rgba(76, 9, 9, 0) 100%),
         rgba(11, 11, 12, 0.4);
 
     /* 1 */
@@ -33,13 +33,13 @@
     text-shadow:
         0px 1px 16px rgba(255, 255, 255, 0.6),
         0px 1px 4px rgba(255, 194, 170, 0.4);
-    background: radial-gradient(872.72% 70.71% at 50% 50%, rgba(150, 45, 2, 0.24) 0%, rgba(76, 9, 9, 0) 100%), #ff6a2d;
+    background: radial-gradient(70.71% 872.72% at 50% 50%, rgba(150, 45, 2, 0.24) 0%, rgba(76, 9, 9, 0) 100%), #ff6a2d;
 }
 
 .burnButton:disabled {
     border: 2px solid #515158;
     color: #515158;
-    background: radial-gradient(872.72% 70.71% at 50% 50%, rgba(150, 45, 2, 0) 0%, rgba(76, 9, 9, 0) 100%),
+    background: radial-gradient(70.71% 872.72% at 50% 50%, rgba(150, 45, 2, 0) 0%, rgba(76, 9, 9, 0) 100%),
         rgba(11, 11, 12, 0);
     text-shadow: none;
     box-shadow: none;
