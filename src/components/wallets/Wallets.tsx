@@ -18,6 +18,8 @@ import { ethers } from "ethers";
 import { createMenuItems } from "./variables";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
+import { NftContext } from "../NftProvider/NftProvider";
+import { ENftBurnStatus } from "../../utils/types";
 
 function Wallets(props: { hideUI: () => void }) {
     const [visible, setVisible] = useState(false);
@@ -32,6 +34,7 @@ function Wallets(props: { hideUI: () => void }) {
     const toastController = useContext(ToastContext);
     const lastEvmIndex = 3;
     const suiAccount = useAccountBalance();
+    const NftController = useContext(NftContext);
 
     const connect = useCallback(
         (acc: IAccount) => {
@@ -86,9 +89,10 @@ function Wallets(props: { hideUI: () => void }) {
                 });
         }
 
+        NftController.setNftStatus(ENftBurnStatus.EMPTY);
         setActiveRainbowConnector(null);
         setAccount(null);
-    }, [wagmiAccount.isConnected, suietWallet, solanaWallet, props]);
+    }, [wagmiAccount.isConnected, suietWallet, solanaWallet, NftController, props]);
 
     useEffect(() => {
         // Handle disconnect wallet in case wallet `A` was connected and then user

@@ -16,8 +16,6 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
     const toastController = useContext(ToastContext);
 
     useEffect(() => {
-        console.log(connected, publicKey);
-
         if (connected && publicKey) {
             connection.getBalance(new PublicKey(publicKey)).then(
                 (balance) => {
