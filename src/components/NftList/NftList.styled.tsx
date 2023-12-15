@@ -35,27 +35,13 @@ export const List = styled.div`
         overflow-y: auto !important;
         overflow-x: hidden !important;
 
-        ::-webkit-scrollbar {
-            width: 2px;
-            border-radius: 5px;
-        }
+        scrollbar-width: none;
+        scrollbar-color: transparent;
 
-        ::-webkit-scrollbar-track {
-            border-radius: 6px;
-            background: #f1f1f1;
+        &::-webkit-scrollbar {
+            display: none;
+            width: 0;
         }
-
-        ::-webkit-scrollbar-thumb {
-            border-radius: 6px;
-            background: #888;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-
-        scrollbar-width: 2px;
-        scrollbar-color: #888 #f1f1f1;
     }
 
     .spinner {
