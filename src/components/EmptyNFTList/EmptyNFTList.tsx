@@ -50,7 +50,7 @@ export const MarketReferencesContainer = styled.div`
     justify-content: space-around;
 `;
 
-export const Market = styled.div`
+export const Market = styled.a`
     width: 30%;
     height: 100%;
     display: flex;
@@ -65,13 +65,13 @@ export const EmptyNFTList = () => {
                 <TextOUH>OUH!</TextOUH>
                 <TextExplanation>Seems like you don’t have any NFTs to burn, so...</TextExplanation>
                 <MarketReferencesContainer>
-                    <Market>
+                    <Market target="_blank" rel="noopener noreferrer" href="https://rarible.com">
                         <RaribleLogo />
                     </Market>
-                    <Market>
+                    <Market target="_blank" rel="noopener noreferrer" href="https://magiceden.io">
                         <MagicEdenLogo />
                     </Market>
-                    <Market>
+                    <Market target="_blank" rel="noopener noreferrer" href="https://opensea.io">
                         <OpenSeaLogo />
                     </Market>
                 </MarketReferencesContainer>
