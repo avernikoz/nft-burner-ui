@@ -22,6 +22,7 @@ import { evmMapper, solanaMapper, suiMapper } from "./mappers";
 import { useEthersSigner } from "./variables";
 import { getChainName, getItemSize } from "./utils";
 import EmptySVG from "../../assets/svg/emptyNFT.svg";
+import { EmptyNFTList } from "../EmptyNFTList/EmptyNFTList";
 
 export const NftList = () => {
     const suietWallet = suietUseWallet();
@@ -108,6 +109,9 @@ export const NftList = () => {
         wagmiAccount.isConnected,
     ]);
 
+    const isNFTListLoaded = !showSpinner;
+    const isNFTListEmpty = isNFTListLoaded && NFTList.length === 0;
+
     return (
         <List>
             {!userConnected ? (
@@ -115,7 +119,8 @@ export const NftList = () => {
             ) : (
                 <NftListTitle>NFT Viewer</NftListTitle>
             )}
-            {!showSpinner ? (
+            {isNFTListEmpty && <EmptyNFTList />}
+            {!isNFTListEmpty && (
                 <div className="nftListAutosizerContainer">
                     <AutoSizer>
                         {({ height, width }) => {
@@ -177,7 +182,8 @@ export const NftList = () => {
                         }}
                     </AutoSizer>
                 </div>
-            ) : (
+            )}
+            {!isNFTListLoaded && (
                 <div className="spinner">
                     <ProgressSpinner />
                 </div>
