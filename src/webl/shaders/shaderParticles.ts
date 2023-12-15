@@ -796,7 +796,7 @@ function scEmbersSpecificShading() {
 		
 		curFire = 1.0;
 
-		vec3 colorBright = vec3(curFire * (1.0 + (4.0 * (1. - t))), curFire * 0.25, curFire * 0.1);
+		vec3 colorBright = vec3(curFire * (1.0 + (4.0 * (1. - t))), curFire * 0.75, curFire * 0.1);
 		vec3 colorLow = vec3(curFire, curFire * 0.75, curFire * 0.5);
 
 		colorFinal.rgb = mix(colorBright, colorLow , t);
@@ -828,7 +828,7 @@ function scEmbersSpecificShading() {
 		s = (1.f - clamp(s, 0.f, 1.f));
 		colorFinal.rgb *= s;
 		colorFinal.rgb *= 1.5f;
-		//colorFinal.r *= s;
+		//colorFinal.rgb *= 50.f;
 		`;
 }
 

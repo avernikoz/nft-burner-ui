@@ -7,7 +7,10 @@ import { CommonRenderingResources } from "./shaders/shaderConfig";
 import {
     GetShaderSourceCombinerPassPS,
     GetShaderSourceFlamePostProcessPS,
+    ShaderSourceBloomDownsampleFirstPassPS,
+    ShaderSourceBloomDownsamplePS,
     ShaderSourceBloomPrePassPS,
+    ShaderSourceBloomUpsamplePS,
     ShaderSourceBlurPassHorizontalPS,
     ShaderSourceBlurPassVerticalPS,
     ShaderSourceFullscreenPassVS,
@@ -28,6 +31,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         Time: gl.getUniformLocation(shaderProgram, "Time"),
         TextureSize: gl.getUniformLocation(shaderProgram, "TextureSize"),
         SourceTexture: gl.getUniformLocation(shaderProgram, "SourceTexture"),
+        DestTexelSize: gl.getUniformLocation(shaderProgram, "DestTexelSize"),
         FlameTexture: gl.getUniformLocation(shaderProgram, "FlameTexture"),
         SmokeTexture: gl.getUniformLocation(shaderProgram, "SmokeTexture"),
         SmokeNoiseTexture: gl.getUniformLocation(shaderProgram, "SmokeNoiseTexture"),
@@ -181,6 +185,24 @@ export class RBloomPass {
 
     public UniformParametersLocationListBloomPrePass;
 
+    public ShaderProgramBloomDownsampleFirstPass;
+
+    public UniformParametersLocationListBloomDownsampleFirstPass;
+
+    public ShaderProgramBloomDownsample;
+
+    public UniformParametersLocationListBloomDownsample;
+
+    public ShaderProgramBloomUpsample;
+
+    public UniformParametersLocationListBloomUpsample;
+
+    //Resources:
+
+    public DownsampleRTMipArr: WebGLTexture[] = [];
+
+    public DownsampleRTMipFrameBufferArr: WebGLFramebuffer[] = [];
+
     public BloomTexture;
 
     public BloomTextureIntermediate;
@@ -191,18 +213,51 @@ export class RBloomPass {
 
     public TextureSize: Vector2;
 
-    constructor(gl: WebGL2RenderingContext, bloomTextureSize: Vector2) {
+    public IndexOfMipUsedForBloom: number;
+
+    constructor(gl: WebGL2RenderingContext, bloomTextureSize: Vector2, bloomMipIndex: number) {
         //Create Shader Program
         this.ShaderProgramBloomPrePass = CreateShaderProgramVSPS(
             gl,
             ShaderSourceFullscreenPassVS,
             ShaderSourceBloomPrePassPS,
         );
+        this.UniformParametersLocationListBloomPrePass = GetUniformParametersList(gl, this.ShaderProgramBloomPrePass);
+
+        //Create Shader Program for first pass Downsample
+        this.ShaderProgramBloomDownsampleFirstPass = CreateShaderProgramVSPS(
+            gl,
+            ShaderSourceFullscreenPassVS,
+            ShaderSourceBloomDownsampleFirstPassPS,
+        );
+        this.UniformParametersLocationListBloomDownsampleFirstPass = GetUniformParametersList(
+            gl,
+            this.ShaderProgramBloomDownsampleFirstPass,
+        );
+
+        //Create Shader Program for generic Downsample
+        this.ShaderProgramBloomDownsample = CreateShaderProgramVSPS(
+            gl,
+            ShaderSourceFullscreenPassVS,
+            ShaderSourceBloomDownsamplePS,
+        );
+        this.UniformParametersLocationListBloomDownsample = GetUniformParametersList(
+            gl,
+            this.ShaderProgramBloomDownsample,
+        );
+
+        //Upsample
+        this.ShaderProgramBloomUpsample = CreateShaderProgramVSPS(
+            gl,
+            ShaderSourceFullscreenPassVS,
+            ShaderSourceBloomUpsamplePS,
+        );
+        this.UniformParametersLocationListBloomUpsample = GetUniformParametersList(gl, this.ShaderProgramBloomUpsample);
 
         this.TextureSize = bloomTextureSize;
+        this.IndexOfMipUsedForBloom = bloomMipIndex;
 
         //Shader Parameters
-        this.UniformParametersLocationListBloomPrePass = GetUniformParametersList(gl, this.ShaderProgramBloomPrePass);
 
         const textureInternalFormat = gl.R11F_G11F_B10F;
         const textureFormat = gl.RGB;
@@ -217,6 +272,29 @@ export class RBloomPass {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.BloomTextureFramebuffer);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.BloomTexture, 0);
 
+        this.DownsampleRTMipFrameBufferArr = [];
+        this.DownsampleRTMipArr = [];
+
+        const MipSize = { x: GScreenDesc.RenderTargetSize.x, y: GScreenDesc.RenderTargetSize.y };
+
+        for (let i = 0; i <= bloomMipIndex; i++) {
+            console.log(`Allocating Downsample Mip: ` + i + ` SizeX: ` + MipSize.x + ` SizeY: ` + MipSize.y);
+            this.DownsampleRTMipArr[i] = CreateTextureRT(
+                gl,
+                MipSize,
+                textureInternalFormat,
+                textureFormat,
+                textureType,
+                false,
+            )!;
+            this.DownsampleRTMipFrameBufferArr[i] = gl.createFramebuffer()!;
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.DownsampleRTMipFrameBufferArr[i]);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.DownsampleRTMipArr[i], 0);
+
+            MipSize.x = Math.floor(MipSize.x * 0.5);
+            MipSize.y = Math.floor(MipSize.y * 0.5);
+        }
+
         gl.activeTexture(gl.TEXTURE0 + 1);
         this.BloomTextureIntermediate = CreateTextureRT(
             gl,
@@ -228,6 +306,116 @@ export class RBloomPass {
         this.BloomTextureIntermediateFramebuffer = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.BloomTextureIntermediateFramebuffer);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.BloomTextureIntermediate, 0);
+    }
+
+    DownsamplePrePass(
+        gl: WebGL2RenderingContext,
+        flameTexture: WebGLTexture,
+        firePlaneTexture: WebGLTexture,
+        numBlurPasses: number,
+        BlurPass: RBlurPass,
+    ) {
+        //1. render to MIP 1
+        const destSize = {
+            x: Math.floor(GScreenDesc.RenderTargetSize.x * 0.5),
+            y: Math.floor(GScreenDesc.RenderTargetSize.y * 0.5),
+        };
+
+        gl.viewport(0, 0, destSize.x, destSize.y);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.DownsampleRTMipFrameBufferArr[1]);
+
+        gl.bindVertexArray(CommonRenderingResources.FullscreenPassVAO);
+
+        gl.useProgram(this.ShaderProgramBloomDownsampleFirstPass);
+
+        //Constants
+        gl.uniform2f(
+            this.UniformParametersLocationListBloomDownsampleFirstPass.DestTexelSize,
+            1.0 / destSize.x,
+            1.0 / destSize.y,
+        );
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, flameTexture);
+        gl.uniform1i(this.UniformParametersLocationListBloomDownsampleFirstPass.FlameTexture, 1);
+
+        gl.activeTexture(gl.TEXTURE0 + 2);
+        gl.bindTexture(gl.TEXTURE_2D, firePlaneTexture);
+        gl.uniform1i(this.UniformParametersLocationListBloomDownsampleFirstPass.FirePlaneTexture, 2);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        //Downsample from Mip1 to Desired Mip
+        for (let passIndex = 1; passIndex < this.IndexOfMipUsedForBloom; passIndex++) {
+            destSize.x = Math.floor(destSize.x * 0.5);
+            destSize.y = Math.floor(destSize.y * 0.5);
+
+            gl.useProgram(this.ShaderProgramBloomDownsample);
+
+            gl.viewport(0, 0, destSize.x, destSize.y);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.DownsampleRTMipFrameBufferArr[passIndex + 1]);
+
+            //Constants
+            gl.uniform2f(
+                this.UniformParametersLocationListBloomDownsample.DestTexelSize,
+                1.0 / destSize.x,
+                1.0 / destSize.y,
+            );
+
+            //Textures
+            gl.activeTexture(gl.TEXTURE0 + 1);
+            gl.bindTexture(gl.TEXTURE_2D, this.DownsampleRTMipArr[passIndex]);
+            gl.uniform1i(this.UniformParametersLocationListBloomDownsample.SourceTexture, 1);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
+
+        for (let i = 0; i < numBlurPasses; i++) {
+            BlurPass.ApplyBlur(
+                gl,
+                this.DownsampleRTMipArr[this.IndexOfMipUsedForBloom]!,
+                0,
+                this.DownsampleRTMipFrameBufferArr[this.IndexOfMipUsedForBloom],
+                this.BloomTextureIntermediate!,
+                this.BloomTextureIntermediateFramebuffer!,
+                this.TextureSize,
+            );
+        }
+
+        //Upsample
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.ONE, gl.CONSTANT_ALPHA);
+        gl.blendColor(1.0, 1.0, 1.0, 0.05);
+        gl.blendEquation(gl.FUNC_ADD);
+        for (let passIndex = this.IndexOfMipUsedForBloom; passIndex > 1; passIndex--) {
+            destSize.x = Math.floor(destSize.x * 2.0);
+            destSize.y = Math.floor(destSize.y * 2.0);
+
+            gl.useProgram(this.ShaderProgramBloomUpsample);
+
+            gl.viewport(0, 0, destSize.x, destSize.y);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.DownsampleRTMipFrameBufferArr[passIndex - 1]);
+
+            //Constants
+            gl.uniform2f(
+                this.UniformParametersLocationListBloomUpsample.DestTexelSize,
+                1.0 / destSize.x,
+                1.0 / destSize.y,
+            );
+
+            //Textures
+            gl.activeTexture(gl.TEXTURE0 + 1);
+            gl.bindTexture(gl.TEXTURE_2D, this.DownsampleRTMipArr[passIndex]);
+            gl.uniform1i(this.UniformParametersLocationListBloomUpsample.SourceTexture, 1);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
+        gl.disable(gl.BLEND);
+    }
+
+    GetFinalTexture() {
+        return this.DownsampleRTMipArr[1];
     }
 
     PrePass(
