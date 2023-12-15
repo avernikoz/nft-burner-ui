@@ -42,7 +42,7 @@ export const Control = () => {
                     <div className="control__social--media">
                         <Button icon="pi pi-twitter " rounded text severity="info" aria-label="Notification" />
                         <Button rounded text severity="help" aria-label="Favorite">
-                            <TwitchLogo></TwitchLogo>
+                            <TwitchLogo />
                         </Button>
                         <Button icon="pi pi-youtube" rounded text severity="danger" aria-label="Cancel" />
                     </div>
