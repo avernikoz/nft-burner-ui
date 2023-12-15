@@ -36,16 +36,17 @@ export const List = styled.div`
         overflow-x: hidden !important;
 
         ::-webkit-scrollbar {
-            width: 0;
+            width: 2px;
             border-radius: 5px;
         }
 
         ::-webkit-scrollbar-track {
-            border-radius: 5px;
+            border-radius: 6px;
             background: #f1f1f1;
         }
 
         ::-webkit-scrollbar-thumb {
+            border-radius: 6px;
             background: #888;
         }
 
@@ -53,7 +54,7 @@ export const List = styled.div`
             background: #555;
         }
 
-        scrollbar-width: none;
+        scrollbar-width: 2px;
         scrollbar-color: #888 #f1f1f1;
     }
 
