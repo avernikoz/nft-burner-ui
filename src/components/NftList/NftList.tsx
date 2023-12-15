@@ -11,7 +11,7 @@ import {
 import { PublicKey } from "@solana/web3.js";
 import { NftFilters } from "alchemy-sdk";
 import { ProgressSpinner } from "primereact/progressspinner";
-import { AutoSizer } from "react-virtualized";
+import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid as Grid } from "react-window";
 import { ENftBurnStatus, INft } from "../../utils/types";
 import NftItem from "../NftItem/NftItem";
@@ -20,7 +20,8 @@ import { ToastContext } from "../ToastProvider/ToastProvider";
 import { List, NftListTitle } from "./NftList.styled";
 import { evmMapper, solanaMapper, suiMapper } from "./mappers";
 import { useEthersSigner } from "./variables";
-import { getChainName } from "./utils";
+import { getChainName, getItemSize } from "./utils";
+import EmptySVG from "../../assets/svg/emptyNFT.svg";
 
 export const NftList = () => {
     const suietWallet = suietUseWallet();
@@ -107,6 +108,7 @@ export const NftList = () => {
         wagmiAccount.isConnected,
     ]);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const Cell = ({
         columnIndex,
         rowIndex,
@@ -116,17 +118,14 @@ export const NftList = () => {
         rowIndex: number;
         style: React.CSSProperties;
     }) => {
-        const index = rowIndex * 3 + columnIndex; // Assuming 3 columns
-        if (index > NFTList.length - 1) {
-            return null;
-        }
-        const item = NFTList[index];
+        const index = rowIndex * 4 + columnIndex;
+        const defaultEmptyImage = { logoURI: EmptySVG };
+        const item = NFTList[index] ?? defaultEmptyImage;
 
         return (
             <div
                 style={{
                     ...style,
-                    margin: "0.1rem",
                 }}
             >
                 <NftItem
@@ -148,21 +147,62 @@ export const NftList = () => {
                 <NftListTitle>NFT Viewer</NftListTitle>
             )}
             {!showSpinner ? (
-                <div className="virtual-container">
+                <div className="nftListAutosizerContainer">
                     <AutoSizer>
                         {({ height, width }) => {
-                            const columns = Math.round(width / 180);
+                            console.debug(`width: ${width} height ${height}`);
+                            // TODO: Change when responsive design
+                            const columnCount = 4;
+                            const rowCount = 4;
+
+                            const { itemSize, paddingSize } = getItemSize(width);
+
                             return (
                                 <Grid
                                     className="nft-list"
-                                    columnCount={columns} // Number of columns
-                                    columnWidth={width / columns} // Width of each item
+                                    columnCount={columnCount} // Number of columns
+                                    columnWidth={itemSize} // Width of each item
                                     height={height} // Height of the grid
-                                    rowCount={Math.ceil(NFTList.length / columns)} // Number of rows
-                                    rowHeight={170} // Height of each item
+                                    rowCount={rowCount} // Number of rows
+                                    rowHeight={itemSize} // Height of each item
                                     width={width} // Width of the grid
                                 >
-                                    {Cell}
+                                    {({ columnIndex, rowIndex, style }) => {
+                                        {
+                                            const CELL_GAP = paddingSize;
+                                            const index = rowIndex * 4 + columnIndex;
+                                            const defaultEmptyImage = { logoURI: EmptySVG };
+                                            const item = NFTList[index] ?? defaultEmptyImage;
+
+                                            return (
+                                                <div
+                                                    style={{
+                                                        ...style,
+                                                        left:
+                                                            columnIndex === 0
+                                                                ? style.left
+                                                                : Number(style.left) + columnIndex * CELL_GAP,
+                                                        right:
+                                                            columnIndex === columnCount
+                                                                ? style.right
+                                                                : Number(style.right) + columnIndex * CELL_GAP,
+                                                        top:
+                                                            rowIndex === 0
+                                                                ? style.top
+                                                                : Number(style.top) + rowIndex * CELL_GAP,
+                                                    }}
+                                                >
+                                                    <NftItem
+                                                        item={item}
+                                                        key={index}
+                                                        id={index}
+                                                        isActive={index == activeNft}
+                                                        onClick={() => handleItemClick(item)}
+                                                    />
+                                                </div>
+                                            );
+                                        }
+                                    }}
                                 </Grid>
                             );
                         }}

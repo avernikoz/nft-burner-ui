@@ -22,25 +22,29 @@ const burnAnimation = keyframes`
 `;
 
 export const Card = styled.div`
-    width: 150px;
-    height: 160px;
     position: relative;
     border-radius: 2px;
-    border: 1px solid #2d2d31;
     overflow: hidden;
-    margin: auto;
     transition: box-shadow 0.3s ease-in-out;
     cursor: pointer;
+
+    & {
+        img {
+            filter: brightness(0.75) saturate(0.5);
+        }
+    }
 
     &.active {
         border-radius: 2px;
         border-top: 2px solid #fff;
         border-bottom: 2px solid #fff;
-        background: rgba(255, 74, 0, 0.6);
-
+        background: rgba(255, 74, 0, 0.9);
         z-index: 1;
-        animation: ${burnAnimation} 1s infinite;
+
         img {
+            filter: none;
+            animation: ${burnAnimation} 1s infinite;
+
             position: absolute;
             top: 0;
             left: 0;

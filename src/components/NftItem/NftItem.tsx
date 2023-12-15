@@ -9,6 +9,10 @@ function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: ()
     const imgRef = useRef<HTMLImageElement>(null);
 
     const handleCardClick = () => {
+        if (!item.name) {
+            return;
+        }
+
         if (imgRef.current) {
             IMAGE_STORE_SINGLETON_INSTANCE.setImageUrl(item.logoURI);
             IMAGE_STORE_SINGLETON_INSTANCE.setImage(imgRef?.current);
@@ -20,8 +24,8 @@ function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: ()
         <Card className={isActive ? "active" : ""} onClick={handleCardClick}>
             {/* {props.isActive ? <BurnEffect /> : null} */}
             {/* {props.isActive ? <FireParticles /> : null} */}
-            <CardImage ref={imgRef} src={item.logoURI} alt={item.name} crossOrigin="anonymous" />
-            <CardTitle>{item.name}</CardTitle>
+            <CardImage ref={imgRef} src={item.logoURI} alt={item.name ?? undefined} crossOrigin="anonymous" />
+            {item.name && <CardTitle>{item.name}</CardTitle>}
         </Card>
     );
 }

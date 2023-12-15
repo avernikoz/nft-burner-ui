@@ -39,7 +39,7 @@ export const BodyContainer = styled.div`
         padding: 0.5rem;
         border-radius: 15px;
         height: 100%;
-        width: 90%;
+        width: 80%;
         z-index: 10;
         position: relative;
 

@@ -11,22 +11,19 @@ export const NftListTitle = styled.h3`
     letter-spacing: 1.92px;
     text-transform: uppercase;
     text-align: left;
-    // TODO: Change that after refactoring of virtualization
-    padding-left: 1.4rem;
 `;
 
 export const List = styled.div`
     width: 100%;
     height: 80%;
-    // border-bottom: 1px solid #4d4c4c;
 
-    .virtual-container {
+    .nftListAutosizerContainer {
         width: 100%;
         height: 90%;
         &::after {
             content: "";
             position: absolute;
-            bottom: 0;
+            bottom: 19%;
             left: 0;
             right: 0;
             height: 50px;
@@ -35,10 +32,6 @@ export const List = styled.div`
     }
 
     .nft-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        justify-items: center;
-        gap: 20px;
         overflow-y: auto !important;
         overflow-x: hidden !important;
 

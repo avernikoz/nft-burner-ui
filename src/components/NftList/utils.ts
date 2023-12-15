@@ -35,3 +35,12 @@ export function mapNftTokenTypeToContractStandard(tokenType: string | NftTokenTy
             return null; // Handle other cases or return null if not mappable
     }
 }
+
+export const getItemSize = (parentSizeWidth: number) => {
+    const paddingRatio = 0.0327868852459016;
+    const paddingSizePx = parentSizeWidth * paddingRatio;
+    const itemRatio = (1 - paddingRatio * 3) / 4;
+    const itemSizePx = parentSizeWidth * itemRatio;
+
+    return { itemSize: itemSizePx, paddingSize: paddingSizePx };
+};
