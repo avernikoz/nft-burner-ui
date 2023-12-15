@@ -68,7 +68,7 @@ html {
 
 @font-face {
     font-family: "Khand";
-    font-weight: medium;
+    font-weight: 500;
     font-style: normal;
     src:
         local("Khand-Medium"),
@@ -78,7 +78,7 @@ html {
 
 @font-face {
     font-family: "Khand";
-    font-weight: normal;
+    font-weight: 400;
     font-style: normal;
     src:
         local("Khand-Regular"),
