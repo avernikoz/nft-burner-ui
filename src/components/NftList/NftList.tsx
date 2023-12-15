@@ -17,7 +17,7 @@ import { ENftBurnStatus, INft } from "../../utils/types";
 import NftItem from "../NftItem/NftItem";
 import { NftContext } from "../NftProvider/NftProvider";
 import { ToastContext } from "../ToastProvider/ToastProvider";
-import { List } from "./NftList.styled";
+import { List, NftListTitle } from "./NftList.styled";
 import { evmMapper, solanaMapper, suiMapper } from "./mappers";
 import { useEthersSigner } from "./variables";
 import { getChainName } from "./utils";
@@ -142,7 +142,11 @@ export const NftList = () => {
 
     return (
         <List>
-            {!userConnected ? <h3>Connect your wallet</h3> : <h3>Choose NFT to burn</h3>}
+            {!userConnected ? (
+                <NftListTitle>Connect your wallet</NftListTitle>
+            ) : (
+                <NftListTitle>NFT Viewer</NftListTitle>
+            )}
             {!showSpinner ? (
                 <div className="virtual-container">
                     <AutoSizer>
