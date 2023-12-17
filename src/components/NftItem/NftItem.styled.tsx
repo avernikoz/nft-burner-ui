@@ -82,8 +82,8 @@ export const CardTitle = styled.div`
     bottom: 0;
     width: 100%;
     padding: 10px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
+    background: rgba(255, 255, 255, 255);
+    color: black;
     text-align: center;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
