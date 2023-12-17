@@ -52,10 +52,6 @@ export const NftList = () => {
                     const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
                     const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
 
-                    // if (wagmiChangeOrConnected || solanaChangeOrConnected || suiChangeOrConnected) {
-                    //     setShowSpinner(true);
-                    // }
-
                     if (wagmiChangeOrConnected) {
                         const chainId = await wagmiAccount.connector?.getChainId();
                         const chainName = getChainName(chainId);
@@ -109,12 +105,12 @@ export const NftList = () => {
     const isNFTListLoaded = !showSpinner;
     const isNFTListEmpty = NFTList.length === 0;
 
-    console.debug("isNFTListLoaded: ", isNFTListLoaded);
-    console.debug("isNFTListEmpty: ", isNFTListEmpty);
-    console.debug("showSpinner: ", showSpinner);
+    // console.debug("isNFTListLoaded: ", isNFTListLoaded);
+    // console.debug("isNFTListEmpty: ", isNFTListEmpty);
+    // console.debug("showSpinner: ", showSpinner);
 
     return (
-        <List>
+        <List isListEmpty={isNFTListLoaded && isNFTListEmpty}>
             {isNFTListLoaded && isNFTListEmpty && <EmptyNFTList />}
             {isNFTListLoaded && !isNFTListEmpty && (
                 <>

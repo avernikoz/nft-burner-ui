@@ -42,10 +42,19 @@ export const SpinnerContainer = styled.div`
     height: 100%;
 `;
 
-export const List = styled.div`
+export const List = styled.div<{ isListEmpty: boolean }>`
     width: 100%;
     height: 80%;
     margin-bottom: 1rem;
+
+    ${({ isListEmpty }) =>
+        isListEmpty &&
+        `
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    `}
+
     .nft-list {
         overflow-y: auto !important;
         overflow-x: hidden !important;

@@ -6,13 +6,10 @@ import { ReactComponent as MagicEdenLogo } from "../../assets/svg/magicEden.svg"
 export const EmptyNFTInfoBoxMain = styled.div`
     width: 75%;
     height: 30%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     display: flex;
     flex-direction: column;
-    justify-content: space-around;
+    /* justify-content: space-around; */
+    gap: 12px;
     align-items: center;
     padding: 16px;
 `;
