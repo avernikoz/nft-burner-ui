@@ -7,6 +7,10 @@
     line-height: 2;
     text-transform: uppercase;
     word-wrap: break-word;
+
+    @media (max-width: 600px) {
+        font-size: 14px;
+    }
 }
 
 .burnButton {

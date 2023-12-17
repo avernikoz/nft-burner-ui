@@ -24,6 +24,7 @@ export const NftListAutosizerContainer = styled.div`
         right: 0;
         height: 50px;
         box-shadow: inset 0px -23px 12px rgba(0, 0, 0, 0.81);
+        opacity: 0.6;
     }
 
     @media (max-width: 1024px) {

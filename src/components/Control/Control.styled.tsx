@@ -22,6 +22,10 @@ export const NftInfoContainer = styled.div`
     align-items: center;
     height: 44px;
     //background-color: #00b272;
+
+    @media (max-width: 600px) {
+        display: none;
+    }
 `;
 export const NftInfoDivider = styled.div`
     stroke-width: 4px;
