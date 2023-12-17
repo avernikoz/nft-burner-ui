@@ -31,8 +31,7 @@ export const NftList = () => {
     const [NFTList, setNFTList] = useState<INft[]>([]);
     const wagmiAccount = useAccount();
     const [activeNft, setActiveNft] = useState<number | null>(null);
-    const [userConnected, setUserConnected] = useState<boolean>(false);
-    const [showSpinner, setShowSpinner] = useState<boolean>(false);
+    const [showSpinner, setShowSpinner] = useState<boolean>(true);
     const toastController = useContext(ToastContext);
     const NftController = useContext(NftContext);
 
@@ -53,10 +52,9 @@ export const NftList = () => {
                     const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
                     const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
 
-                    if (wagmiChangeOrConnected || solanaChangeOrConnected || suiChangeOrConnected) {
-                        setUserConnected(true);
-                        setShowSpinner(true);
-                    }
+                    // if (wagmiChangeOrConnected || solanaChangeOrConnected || suiChangeOrConnected) {
+                    //     setShowSpinner(true);
+                    // }
 
                     if (wagmiChangeOrConnected) {
                         const chainId = await wagmiAccount.connector?.getChainId();
@@ -80,7 +78,6 @@ export const NftList = () => {
                         const convertedNfts = suiMapper(rawNfts);
                         setNFTList(convertedNfts);
                     } else {
-                        setUserConnected(false);
                         setActiveNft(null);
                         setNFTList([]);
                     }
@@ -110,75 +107,80 @@ export const NftList = () => {
     ]);
 
     const isNFTListLoaded = !showSpinner;
-    const isNFTListEmpty = isNFTListLoaded && NFTList.length === 0;
+    const isNFTListEmpty = NFTList.length === 0;
+
+    console.debug("isNFTListLoaded: ", isNFTListLoaded);
+    console.debug("isNFTListEmpty: ", isNFTListEmpty);
+    console.debug("showSpinner: ", showSpinner);
 
     return (
         <List>
-            {!userConnected && !isNFTListEmpty && <NftListTitle>Connect your wallet</NftListTitle>}
-            {userConnected && !isNFTListEmpty && <NftListTitle>NFT Viewer</NftListTitle>}
-            {isNFTListEmpty && <EmptyNFTList />}
-            {!isNFTListEmpty && (
-                <NftListAutosizerContainer className="nftListAutosizerContainer">
-                    <AutoSizer>
-                        {({ height, width }) => {
-                            console.debug(`width: ${width} height ${height}`);
-                            // TODO: Change when responsive design
-                            const columnCount = 4;
-                            const rowCount = 4;
+            {isNFTListLoaded && isNFTListEmpty && <EmptyNFTList />}
+            {isNFTListLoaded && !isNFTListEmpty && (
+                <>
+                    <NftListTitle>NFT Viewer</NftListTitle>
+                    <NftListAutosizerContainer className="nftListAutosizerContainer">
+                        <AutoSizer>
+                            {({ height, width }) => {
+                                console.debug(`width: ${width} height ${height}`);
+                                // TODO: Change when responsive design
+                                const columnCount = 4;
+                                const rowCount = 4;
 
-                            const { itemSize, paddingSize } = getItemSize(width);
+                                const { itemSize, paddingSize } = getItemSize(width);
 
-                            return (
-                                <Grid
-                                    className="nft-list"
-                                    columnCount={columnCount} // Number of columns
-                                    columnWidth={itemSize} // Width of each item
-                                    height={height} // Height of the grid
-                                    rowCount={rowCount} // Number of rows
-                                    rowHeight={itemSize} // Height of each item
-                                    width={width} // Width of the grid
-                                >
-                                    {({ columnIndex, rowIndex, style }) => {
-                                        {
-                                            const CELL_GAP = paddingSize;
-                                            const index = rowIndex * 4 + columnIndex;
-                                            const defaultEmptyImage = { logoURI: EmptySVG };
-                                            const item = NFTList[index] ?? defaultEmptyImage;
+                                return (
+                                    <Grid
+                                        className="nft-list"
+                                        columnCount={columnCount} // Number of columns
+                                        columnWidth={itemSize} // Width of each item
+                                        height={height} // Height of the grid
+                                        rowCount={rowCount} // Number of rows
+                                        rowHeight={itemSize} // Height of each item
+                                        width={width} // Width of the grid
+                                    >
+                                        {({ columnIndex, rowIndex, style }) => {
+                                            {
+                                                const CELL_GAP = paddingSize;
+                                                const index = rowIndex * 4 + columnIndex;
+                                                const defaultEmptyImage = { logoURI: EmptySVG };
+                                                const item = NFTList[index] ?? defaultEmptyImage;
 
-                                            return (
-                                                <div
-                                                    style={{
-                                                        ...style,
-                                                        left:
-                                                            columnIndex === 0
-                                                                ? style.left
-                                                                : Number(style.left) + columnIndex * CELL_GAP,
-                                                        right:
-                                                            columnIndex === columnCount
-                                                                ? style.right
-                                                                : Number(style.right) + columnIndex * CELL_GAP,
-                                                        top:
-                                                            rowIndex === 0
-                                                                ? style.top
-                                                                : Number(style.top) + rowIndex * CELL_GAP,
-                                                    }}
-                                                >
-                                                    <NftItem
-                                                        item={item}
-                                                        key={index}
-                                                        id={index}
-                                                        isActive={index == activeNft}
-                                                        onClick={() => handleItemClick(item)}
-                                                    />
-                                                </div>
-                                            );
-                                        }
-                                    }}
-                                </Grid>
-                            );
-                        }}
-                    </AutoSizer>
-                </NftListAutosizerContainer>
+                                                return (
+                                                    <div
+                                                        style={{
+                                                            ...style,
+                                                            left:
+                                                                columnIndex === 0
+                                                                    ? style.left
+                                                                    : Number(style.left) + columnIndex * CELL_GAP,
+                                                            right:
+                                                                columnIndex === columnCount
+                                                                    ? style.right
+                                                                    : Number(style.right) + columnIndex * CELL_GAP,
+                                                            top:
+                                                                rowIndex === 0
+                                                                    ? style.top
+                                                                    : Number(style.top) + rowIndex * CELL_GAP,
+                                                        }}
+                                                    >
+                                                        <NftItem
+                                                            item={item}
+                                                            key={index}
+                                                            id={index}
+                                                            isActive={index == activeNft}
+                                                            onClick={() => handleItemClick(item)}
+                                                        />
+                                                    </div>
+                                                );
+                                            }
+                                        }}
+                                    </Grid>
+                                );
+                            }}
+                        </AutoSizer>
+                    </NftListAutosizerContainer>
+                </>
             )}
             {!isNFTListLoaded && (
                 <SpinnerContainer>
