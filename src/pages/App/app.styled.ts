@@ -25,7 +25,7 @@ export const BodyContainer = styled.div`
     height: 85vh;
 
     @media (max-width: 1024px) {
-        height: 55%;
+        height: 50%;
         width: 100%;
         position: absolute;
         bottom: 0;
