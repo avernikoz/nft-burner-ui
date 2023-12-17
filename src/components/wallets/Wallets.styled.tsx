@@ -19,7 +19,7 @@ export const ButtonContainer = styled.div`
     }
 
     .phoneAdapt {
-        @media (max-width: 1000px) {
+        @media (max-width: 1024px) {
             display: none;
         }
     }

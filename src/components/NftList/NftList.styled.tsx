@@ -25,6 +25,13 @@ export const NftListAutosizerContainer = styled.div`
         height: 50px;
         box-shadow: inset 0px -23px 12px rgba(0, 0, 0, 0.81);
     }
+
+    @media (max-width: 1024px) {
+        &::after {
+            display: none;
+        }
+    }
+}
 `;
 
 export const SpinnerContainer = styled.div`
