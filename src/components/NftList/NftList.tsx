@@ -17,7 +17,7 @@ import { ENftBurnStatus, INft } from "../../utils/types";
 import NftItem from "../NftItem/NftItem";
 import { NftContext } from "../NftProvider/NftProvider";
 import { ToastContext } from "../ToastProvider/ToastProvider";
-import { List, NftListTitle } from "./NftList.styled";
+import { List, NftListAutosizerContainer, NftListTitle, SpinnerContainer } from "./NftList.styled";
 import { evmMapper, solanaMapper, suiMapper } from "./mappers";
 import { useEthersSigner } from "./variables";
 import { getChainName, getItemSize } from "./utils";
@@ -118,7 +118,7 @@ export const NftList = () => {
             {userConnected && !isNFTListEmpty && <NftListTitle>NFT Viewer</NftListTitle>}
             {isNFTListEmpty && <EmptyNFTList />}
             {!isNFTListEmpty && (
-                <div className="nftListAutosizerContainer">
+                <NftListAutosizerContainer className="nftListAutosizerContainer">
                     <AutoSizer>
                         {({ height, width }) => {
                             console.debug(`width: ${width} height ${height}`);
@@ -178,12 +178,12 @@ export const NftList = () => {
                             );
                         }}
                     </AutoSizer>
-                </div>
+                </NftListAutosizerContainer>
             )}
             {!isNFTListLoaded && (
-                <div className="spinner">
+                <SpinnerContainer>
                     <ProgressSpinner />
-                </div>
+                </SpinnerContainer>
             )}
         </List>
     );
