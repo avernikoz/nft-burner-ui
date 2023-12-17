@@ -81,10 +81,12 @@ export const CardTitle = styled.div`
     position: absolute;
     bottom: 0;
     width: 100%;
-    padding: 10px;
+    padding: 8px;
     background: rgba(255, 255, 255, 255);
     color: black;
     text-align: center;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
+    text-overflow: ellipsis;
+    overflow: hidden;
 `;

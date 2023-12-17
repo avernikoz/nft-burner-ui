@@ -31,7 +31,9 @@ function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: ()
             {/* {props.isActive ? <BurnEffect /> : null} */}
             {/* {props.isActive ? <FireParticles /> : null} */}
             <CardImage ref={imgRef} src={item.logoURI} alt={item.name ?? undefined} crossOrigin="anonymous" />
-            {!isEmptyImage && <CardTitle>{item.name}</CardTitle>}
+            {!isEmptyImage && (
+                <CardTitle>{item.name.length > 12 ? item.name.substring(0, 12) + "..." : item.name}</CardTitle>
+            )}
         </Card>
     );
 }
