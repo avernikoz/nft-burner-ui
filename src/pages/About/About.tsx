@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { styled } from "styled-components";
 import React, { RefObject, useRef } from "react";
 import "./About.css";
 import { ProgressBar } from "./ProgressBar";
@@ -17,6 +19,43 @@ const sectionTitleList = [
     "Crafting a Distinct Narrative",
 ];
 
+const titles = ["ANNIHILATE THE DEPRECTIATED", "ANNIHILATE THE DEPRECTIATED"];
+
+export const MainQuoteText = styled.span`
+    color: #fff;
+
+    text-shadow:
+        0px 0px 50px rgba(255, 255, 255, 0.5),
+        0px 0px 10px #fff;
+    font-family: Poppins;
+    font-size: clamp(24px, 10vw, 196px);
+    font-style: normal;
+    font-weight: 700;
+
+    text-align: center;
+
+    margin: 10%;
+
+    width: 90vw;
+    //height: 50%;
+`;
+
+export const HeaderContainer = styled.div`
+    width: 100%;
+    height: 10vh;
+    background-color: #500fe9cf;
+`;
+
+export const StartScreenWrapMain = styled.div`
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(233, 15, 15, 0.815);
+`;
+
 export const AboutFirstSection = ({
     setAboutPageActive,
     setShowMore,
@@ -25,13 +64,15 @@ export const AboutFirstSection = ({
     setShowMore: () => void;
 }) => {
     return (
-        <div className="section">
+        <StartScreenWrapMain>
+            <HeaderContainer></HeaderContainer>
+            <MainQuoteText>ANNIHILATE THE DEPRECTIATED</MainQuoteText>
+        </StartScreenWrapMain>
+
+        /* <div className="section">
             <ProgressBar />
             <div className="intro_quote">
-                <p>
-                    In the realm where illusory value crumbles to reveal its useless nature, we summon you to a covenant
-                    of cleansing flame
-                </p>
+                <p>{titles[Math.random()]}</p>
             </div>
             <button
                 className="startButton"
@@ -51,7 +92,7 @@ export const AboutFirstSection = ({
             >
                 ABOUT
             </button>
-        </div>
+        </div> */
     );
 };
 
