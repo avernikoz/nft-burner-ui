@@ -59,38 +59,6 @@
     transition: opacity 1s ease; /* Add a transition for a smooth effect */
 }
 
-.intro_quote {
-    color: #fff;
-    /* background-color: rgba(0, 0, 0, 0); */
-    text-shadow:
-        0px 0px 50px rgba(255, 255, 255, 0.5),
-        0px 0px 10px #fff;
-    /* font-family: Poppins; */
-    font-family: sans-serif; /* Use a sans-serif font */
-    font-size: 150px;
-    font-style: normal;
-    font-weight: 700;
-    line-height: 100%; /* 150px */
-
-    text-align: center;
-
-    width: 75%;
-    top: 45%; /* Adjust as needed */
-    left: 50%; /* Adjust as needed */
-
-    border: none;
-    cursor: none;
-
-    font-weight: bold; /* Make the font bold */
-    letter-spacing: 0px; /* Adjust letter-spacing as needed */
-    position: absolute;
-
-    transform: translate(-50%, -50%); /* Center the button */
-    text-align: center; /* Center the text horizontally */
-
-    transition: opacity 0.5s ease; /* Add a transition for a smooth effect */
-}
-
 .section_text {
     font-size: 24px;
     text-align: justify;
