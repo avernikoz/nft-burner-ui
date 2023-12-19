@@ -177,7 +177,7 @@ export const StyledDialog = styled(Dialog)`
 `;
 
 export const DialogImageContainer = styled.div`
-    position: "relative";
+    position: relative;
     width: 300px;
     height: 300px;
 
