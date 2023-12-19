@@ -34,6 +34,7 @@ import {
 } from "./NftDialog.styled";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { ConfirmBurningButton } from "../../../ConfirmBurningButton/ConfirmBurningButton";
+import { useNftFloorPrice } from "../../../../hooks/useNftFloorPrice";
 
 export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: boolean; setVisible: () => void }) => {
     const NftController = useContext(NftContext);
@@ -41,9 +42,6 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
     const [loadingFirstTransaction, setLoadingFirstTransaction] = useState<boolean>(false);
     const [loadingSecondTransaction, setLoadingSecondTransaction] = useState<boolean>(false);
     const [errorTransaction, setErrorTransaction] = useState<boolean>(false);
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [floorPrice, setFloorPrice] = useState<number | null>(null);
 
     useEffect(() => {
         if (visible) {
@@ -58,10 +56,10 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
     const solanaWallet = solanaUseWallet();
     const solanaConnection = useConnection();
     const signer = useEthersSigner();
-
     const toastController = useContext(ToastContext);
-
+    const { data: floorPrice } = useNftFloorPrice(nft);
     const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
 
     const isEvm = [
@@ -72,45 +70,6 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
     ].includes(nft.network);
     const isSui = nft.network === ALLOWED_NETWORKS.Sui;
     const isSolana = nft.network === ALLOWED_NETWORKS.Solana;
-
-    useEffect(() => {
-        // TODO: Rewrite it with hook + swr
-        const fetchNftFloorPrice = async () => {
-            try {
-                if (!nft) {
-                    return;
-                }
-
-                switch (nft.network) {
-                    case ALLOWED_NETWORKS.Sui:
-                        // const suiNFT = nft as SuiNft;
-                        // const floorPriceMap = await SUI_NFT_CLIENT_INSTANCE.getFloorPricesMap({});
-                        // const NftfloorPrice = floorPriceMap.get(suiNFT.nftType);
-
-                        // setFloorPrice(NftfloorPrice?.floorPrice ?? null);
-                        break;
-                    case ALLOWED_NETWORKS.Solana:
-                        // const solanaNFT = nft as SolanaNft;
-                        break;
-                    case ALLOWED_NETWORKS.Ethereum:
-                    case ALLOWED_NETWORKS.Arbitrum:
-                    case ALLOWED_NETWORKS.Optimism:
-                    case ALLOWED_NETWORKS.Polygon:
-                        // const evmNFT = nft as EvmNft;
-
-                        break;
-                }
-            } catch (error) {
-                if (error instanceof Error) {
-                    toastController?.showError("Failed to get floor price for nft: " + error.message);
-                } else {
-                    toastController?.showError("Failed to get floor price for nft: " + error);
-                }
-            }
-        };
-
-        fetchNftFloorPrice();
-    }, [nft, toastController, visible]);
 
     const handleBurn = async () => {
         try {
@@ -176,7 +135,7 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
                 </DialogImageContainer>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                     <div>
-                        {floorPrice !== null && (
+                        {floorPrice !== null && floorPrice !== undefined && (
                             <NftDialogInfoContainer>
                                 <NftDialogInfoTitle>Floor price:</NftDialogInfoTitle>
                                 <NftDialogInfoValue>{floorPrice}</NftDialogInfoValue>

@@ -21,7 +21,7 @@ interface NftProviderProps {
 
 interface INftController {
     getActiveNft: () => INft | null;
-    setActiveNft: (nft: INft) => void;
+    setActiveNft: (nft: INft | null) => void;
     setNftStatus: (nft: ENftBurnStatus) => void;
     activeNft: INft | null;
     nftStatus: ENftBurnStatus;
@@ -35,7 +35,7 @@ export const NftProvider: React.FC<NftProviderProps> = ({ children }) => {
         getActiveNft: () => {
             return activeNft;
         },
-        setActiveNft: (nft: INft) => {
+        setActiveNft: (nft: INft | null) => {
             setActiveNft(nft);
         },
         activeNft: activeNft,

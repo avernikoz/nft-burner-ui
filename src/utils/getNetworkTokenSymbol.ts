@@ -1,6 +1,6 @@
 import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 
-export const getNetworkTokenSymbol = (network: ALLOWED_NETWORKS): string => {
+export const getNetworkTokenSymbol = (network: ALLOWED_NETWORKS | null | undefined): string => {
     switch (network) {
         case ALLOWED_NETWORKS.Solana:
             return "SOL";
