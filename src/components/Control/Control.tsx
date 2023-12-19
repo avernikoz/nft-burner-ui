@@ -17,10 +17,16 @@ import {
 } from "./Control.styled";
 import { NftDialog } from "./components/NftDialog/NftDialog";
 import { ShareButton } from "../ShareButton/ShareButton";
+import { useNftFloorPrice } from "../../hooks/useNftFloorPrice";
+import { useBurnerFee } from "../../hooks/useBurnerFee";
+import { getNetworkTokenSymbol } from "../../utils/getNetworkTokenSymbol";
 
 export const Control = () => {
     const [visible, setVisible] = useState<boolean>(false);
     const [nft, setNft] = useState<INft | null>(null);
+    const { data: floorPrice } = useNftFloorPrice(nft);
+    const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
 
     const NftController = useContext(NftContext);
 
@@ -43,7 +49,9 @@ export const Control = () => {
                 <NftInfoContainer>
                     <BurnerFuelInfoContainer>
                         <BurnerFuelInfoText>Burner Fuel</BurnerFuelInfoText>
-                        <BurnerFuelInfoTextNumbers>~ 2.97$</BurnerFuelInfoTextNumbers>
+                        <BurnerFuelInfoTextNumbers>
+                            {burnerFee !== null && burnerFee !== undefined ? `${burnerFee} ${burnerFeeToken}` : `-`}
+                        </BurnerFuelInfoTextNumbers>
                     </BurnerFuelInfoContainer>
                     <NftInfoDivider />
                     <NetworkFeeInfoContainer>

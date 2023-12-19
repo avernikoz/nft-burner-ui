@@ -90,6 +90,7 @@ function Wallets(props: { hideUI: () => void }) {
         }
 
         NftController.setNftStatus(ENftBurnStatus.EMPTY);
+        NftController.setActiveNft(null);
         setActiveRainbowConnector(null);
         setAccount(null);
     }, [wagmiAccount.isConnected, suietWallet, solanaWallet, NftController, props]);

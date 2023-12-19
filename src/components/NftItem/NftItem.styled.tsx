@@ -25,6 +25,8 @@ export const Card = styled.div`
     position: relative;
     border-radius: 2px;
     overflow: hidden;
+    width: 100%;
+    height: 100%;
 
     & {
         img {
