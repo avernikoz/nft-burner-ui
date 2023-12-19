@@ -58,13 +58,13 @@ export const NftScheduleDialog = ({
                         <SocialMainText>Schedule a burn event and share it on social media:</SocialMainText>
                     </div>
                     <div style={{ display: "flex", gap: "20px" }}>
-                        <SocialIconContainer>
+                        <SocialIconContainer target="_blank" rel="noopener noreferrer" href="https://www.twitch.tv">
                             <TwichIcon />
                         </SocialIconContainer>
-                        <SocialIconContainer>
+                        <SocialIconContainer target="_blank" rel="noopener noreferrer" href="https://youtube.com">
                             <YoutTubeIcon />
                         </SocialIconContainer>
-                        <SocialIconContainer>
+                        <SocialIconContainer target="_blank" rel="noopener noreferrer" href="https://twitter.com">
                             <TwitterIcon />
                         </SocialIconContainer>
                     </div>

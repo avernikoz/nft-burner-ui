@@ -1,6 +1,6 @@
 import { styled } from "styled-components";
 
-export const SocialIconContainer = styled.div`
+export const SocialIconContainer = styled.a`
     width: 80px;
     height: 80px;
 
