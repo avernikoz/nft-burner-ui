@@ -12,6 +12,14 @@ export const EmptyNFTInfoBoxMain = styled.div`
     gap: 12px;
     align-items: center;
     padding: 16px;
+
+    @media (max-width: 1024px) {
+        height: 75%;
+    }
+
+    @media (max-width: 600px) {
+        height: 100%;
+    }
 `;
 
 export const TextOUH = styled.span`
