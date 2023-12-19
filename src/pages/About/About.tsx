@@ -1,7 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { styled } from "styled-components";
 import React, { RefObject, useRef } from "react";
 import "./About.css";
 import { ProgressBar } from "./ProgressBar";
 import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
+
+import { ReactComponent as DownArrowIcon } from "../../assets/svg/downArrow.svg";
+import { ReactComponent as RightArrowIcon } from "../../assets/svg/rightArrow.svg";
+import { ReactComponent as LogoIcon } from "../../assets/svg/logoH.svg";
 
 const sectionTextList = [
     "The NFT ecosystem is currently saturated with an overwhelming number of low-value tokens, diluting the essence of true artistic and collectible value. Burning NFTs serves as a means to clear the clutter, allowing more visibility and recognition for high-quality, meaningful digital creations.",
@@ -17,6 +23,122 @@ const sectionTitleList = [
     "Crafting a Distinct Narrative",
 ];
 
+const titles = ["ANNIHILATE THE DEPRECTIATED", "ANNIHILATE THE DEPRECTIATED"];
+
+export const MainQuoteText = styled.span`
+    color: #fff;
+
+    /* text-shadow:
+        0px 0px 50px rgba(255, 255, 255, 0.5),
+        0px 0px 10px #fff; */
+    font-family: Poppins;
+    font-size: clamp(24px, 10vw, 296px);
+    font-style: normal;
+    font-weight: 700;
+
+    text-align: center;
+
+    margin: 3vh;
+
+    width: 90vw;
+    //height: 50%;
+`;
+
+export const HeaderContainer = styled.div`
+    width: 100%;
+    height: 10vh;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    //background-color: #500fe9cf;
+`;
+
+export const HeaderLine = styled.div`
+    width: 75%;
+    height: 1px;
+    margin: 1vw;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #515158;
+`;
+
+export const StartScreenWrapMain = styled.div`
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: column;
+    align-items: center;
+    //background-color: rgba(233, 15, 15, 0.815);
+`;
+
+export const StartTitleAndButtonContainer = styled.div`
+    width: 100vw;
+    height: 80vh;
+    display: flex;
+    justify-content: space-around;
+    flex-direction: column;
+    align-items: center;
+    //background-color: rgba(233, 15, 15, 0.815);
+`;
+
+export const AboutStartContainer = styled.div`
+    width: clamp(300px, 80vw, 620px);
+    height: 80px;
+    display: inline-flex;
+    //margin: 50px;
+    /* justify-content: flex-end;
+    align-items: flex-end; */
+    background-color: rgba(0, 0, 0, 0);
+`;
+
+export const AboutText = styled.span`
+    color: #fff;
+
+    font-family: Rubik;
+    font-size: clamp(4px, 5vw, 24px);
+    font-style: normal;
+    font-weight: 400;
+
+    text-align: center;
+
+    letter-spacing: 3px;
+`;
+
+export const StartText = styled.span`
+    color: #b53600;
+
+    font-family: Rubik;
+    font-size: clamp(4px, 5vw, 24px);
+    font-style: normal;
+    font-weight: 400;
+
+    text-align: center;
+
+    letter-spacing: 3px;
+`;
+
+export const StartMenuButton = styled.button`
+    width: 50%;
+    height: 100%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10%;
+    border: 1px solid #fff;
+    background-color: rgba(0, 0, 0, 0);
+
+    &:hover {
+        background-color: #ffffff;
+
+        ${AboutText} {
+            color: rgba(0, 0, 0, 1);
+        }
+    }
+`;
+
 export const AboutFirstSection = ({
     setAboutPageActive,
     setShowMore,
@@ -25,33 +147,35 @@ export const AboutFirstSection = ({
     setShowMore: () => void;
 }) => {
     return (
-        <div className="section">
-            <ProgressBar />
-            <div className="intro_quote">
-                <p>
-                    In the realm where illusory value crumbles to reveal its useless nature, we summon you to a covenant
-                    of cleansing flame
-                </p>
-            </div>
-            <button
-                className="startButton"
-                onClick={() => {
-                    setAboutPageActive(false);
-                    GReactGLBridgeFunctions.OnStartButtonPressed();
-                }}
-            >
-                START
-            </button>
-            <button
-                className="aboutButton"
-                onClick={() => {
-                    GReactGLBridgeFunctions.OnAboutButtonPressed();
-                    setShowMore();
-                }}
-            >
-                ABOUT
-            </button>
-        </div>
+        <StartScreenWrapMain>
+            <HeaderContainer>
+                <LogoIcon />
+                <HeaderLine />
+            </HeaderContainer>
+            <StartTitleAndButtonContainer>
+                <MainQuoteText>ANNIHILATE THE DEPRECTIATED</MainQuoteText>
+                <AboutStartContainer>
+                    <StartMenuButton
+                        onClick={() => {
+                            GReactGLBridgeFunctions.OnAboutButtonPressed();
+                            setShowMore();
+                        }}
+                    >
+                        <AboutText>ABOUT</AboutText>
+                        <DownArrowIcon />
+                    </StartMenuButton>
+                    <StartMenuButton
+                        onClick={() => {
+                            setAboutPageActive(false);
+                            GReactGLBridgeFunctions.OnStartButtonPressed();
+                        }}
+                    >
+                        <StartText>START</StartText>
+                        <RightArrowIcon />
+                    </StartMenuButton>
+                </AboutStartContainer>
+            </StartTitleAndButtonContainer>
+        </StartScreenWrapMain>
     );
 };
 

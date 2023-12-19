@@ -59,25 +59,6 @@
     transition: opacity 1s ease; /* Add a transition for a smooth effect */
 }
 
-.intro_quote {
-    width: 75%;
-    font-size: 4vw; /* Adjust font size as needed */
-    background-color: rgba(0, 0, 0, 0);
-    color: #fff; /* Set your desired button text color */
-    border: none;
-    cursor: none;
-    font-family: sans-serif; /* Use a sans-serif font */
-    font-weight: bold; /* Make the font bold */
-    letter-spacing: 0px; /* Adjust letter-spacing as needed */
-    position: absolute;
-    top: 45%; /* Adjust as needed */
-    left: 50%; /* Adjust as needed */
-    transform: translate(-50%, -50%); /* Center the button */
-    text-align: center; /* Center the text horizontally */
-
-    transition: opacity 0.5s ease; /* Add a transition for a smooth effect */
-}
-
 .section_text {
     font-size: 24px;
     text-align: justify;
