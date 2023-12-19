@@ -42,13 +42,13 @@ export const SpinnerContainer = styled.div`
     height: 100%;
 `;
 
-export const List = styled.div<{ isListEmpty: boolean }>`
+export const List = styled.div<{ $isListEmpty: boolean }>`
     width: 100%;
     height: 80%;
     margin-bottom: 1rem;
 
-    ${({ isListEmpty }) =>
-        isListEmpty &&
+    ${({ $isListEmpty }) =>
+        $isListEmpty &&
         `
         display: flex;
         justify-content: center;

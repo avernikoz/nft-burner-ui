@@ -110,7 +110,7 @@ export const NftList = () => {
     // console.debug("showSpinner: ", showSpinner);
 
     return (
-        <List isListEmpty={isNFTListLoaded && isNFTListEmpty}>
+        <List $isListEmpty={isNFTListLoaded && isNFTListEmpty}>
             {isNFTListLoaded && isNFTListEmpty && <EmptyNFTList />}
             {isNFTListLoaded && !isNFTListEmpty && (
                 <>

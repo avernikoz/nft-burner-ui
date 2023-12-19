@@ -1,7 +1,6 @@
 import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
-import { ProgressBar } from "primereact/progressbar";
 import { useContext, useEffect, useRef, useState } from "react";
 // import { SUI_NFT_CLIENT_INSTANCE } from "../../../../config/nft.config";
 import { useBurnerFee } from "../../../../hooks/useBurnerFee";
@@ -12,16 +11,45 @@ import { getNetworkTokenSymbol } from "../../../../utils/getNetworkTokenSymbol";
 import { ENftBurnStatus, EvmNft, INft, SolanaNft, SuiNft } from "../../../../utils/types";
 import { useEthersSigner } from "../../../NftList/variables";
 import { NftContext } from "../../../NftProvider/NftProvider";
+import { ReactComponent as SuccessCheckmark } from "../../../../assets/svg/successCheckmark.svg";
+
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
-import { FillButton, StyledDialog } from "./NftDialog.styled";
+import {
+    BurningCeremonyHighlight,
+    BurningCeremonyText,
+    DialogImageContainer,
+    NftDialogContainer,
+    NftDialogImg,
+    NftDialogImgTitle,
+    NftDialogInfoContainer,
+    NftDialogInfoTitle,
+    NftDialogInfoValue,
+    StatusTransactionContainer,
+    StatusTransactionText,
+    StyledDialog,
+    WarningContainer,
+    WarningText,
+} from "./NftDialog.styled";
+import { ProgressSpinner } from "primereact/progressspinner";
+import { ConfirmBurningButton } from "../../../ConfirmBurningButton/ConfirmBurningButton";
 
 export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: boolean; setVisible: () => void }) => {
     const NftController = useContext(NftContext);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [submit, setSubmit] = useState<boolean>(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [loading, setLoading] = useState<boolean>(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [floorPrice, setFloorPrice] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (visible) {
+            document.body.classList.add("blur-background");
+        } else {
+            document.body.classList.remove("blur-background");
+        }
+    }, [visible]);
 
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { signAndExecuteTransactionBlock } = suietUseWallet();
@@ -118,10 +146,12 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
         setSubmit(false);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleMouseDown = () => {
         timeoutRef.current = setTimeout(() => handleBurningButtonHoldAction(), 2000);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleMouseUp = (event: React.MouseEvent) => {
         event.preventDefault();
         if (timeoutRef.current) {
@@ -131,32 +161,61 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
 
     return (
         <StyledDialog
-            header="Submit burning"
+            header="Confirm burning"
             visible={visible}
             style={{ width: "min-content" }}
             onHide={() => setVisible()}
+            draggable={false}
+            resizable={false}
         >
-            <img crossOrigin="anonymous" src={nft?.logoURI} alt={nft?.name} />
-            <p>{nft?.name}</p>
+            <NftDialogContainer>
+                <DialogImageContainer>
+                    <NftDialogImg crossOrigin="anonymous" src={nft.logoURI} alt={nft.name} />
 
-            <div className="card">
-                <p>NFT price: {floorPrice}</p>
-                <p>
-                    Burner fee commission: {burnerFee} {burnerFeeToken}
-                </p>
-                {loading && <ProgressBar mode="indeterminate" style={{ height: "6px", width: "100%" }} />}
+                    <NftDialogImgTitle>
+                        {nft.name.length > 12 ? nft.name.substring(0, 12) + "..." : nft.name}
+                    </NftDialogImgTitle>
+                </DialogImageContainer>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div>
+                        <NftDialogInfoContainer>
+                            <NftDialogInfoTitle>Floor price:</NftDialogInfoTitle>
+                            <NftDialogInfoValue>{nft.name}</NftDialogInfoValue>
+                        </NftDialogInfoContainer>
+                        <NftDialogInfoContainer>
+                            <NftDialogInfoTitle>Burning fee:</NftDialogInfoTitle>
+                            <NftDialogInfoValue>
+                                {burnerFee} {burnerFeeToken}
+                            </NftDialogInfoValue>
+                        </NftDialogInfoContainer>
+                    </div>
+                    <div>
+                        <BurningCeremonyText>
+                            Once the transaction is confirmed, you will be allowed to held the{" "}
+                            <BurningCeremonyHighlight>burning ceremony.</BurningCeremonyHighlight>
+                        </BurningCeremonyText>
+                    </div>
+
+                    <WarningContainer>
+                        <WarningText>
+                            Warning: your NFT will be burned forever; this action cannot be undone.
+                        </WarningText>
+                    </WarningContainer>
+                    <StatusTransactionContainer>
+                        <SuccessCheckmark />
+                        <StatusTransactionText>Confirming your burn fee transaction</StatusTransactionText>
+                    </StatusTransactionContainer>
+                    <StatusTransactionContainer>
+                        <ProgressSpinner style={{ width: "25px", height: "25px", margin: 0 }} />
+                        <StatusTransactionText $isActive={true}>
+                            Confirming your burn nft transaction
+                        </StatusTransactionText>
+                    </StatusTransactionContainer>
+                </div>
+            </NftDialogContainer>
+            <div>
+                <ConfirmBurningButton style={{ width: "100%" }}>Commence burning ritual</ConfirmBurningButton>
             </div>
-
-            <FillButton
-                onMouseDown={handleMouseDown}
-                onMouseUp={handleMouseUp}
-                label="Hold for submit"
-                className={submit ? "submit" : ""}
-                severity="danger"
-                outlined
-                disabled={submit}
-                size="large"
-            ></FillButton>
         </StyledDialog>
     );
 };
