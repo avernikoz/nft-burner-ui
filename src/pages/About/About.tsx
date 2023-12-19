@@ -8,6 +8,7 @@ import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
 import { ReactComponent as DownArrowIcon } from "../../assets/svg/downArrow.svg";
 import { ReactComponent as RightArrowIcon } from "../../assets/svg/rightArrow.svg";
 import { Header } from "../../components/Header/Header";
+import { Footer } from "../../components/Footer/Footer";
 
 const sectionTextList = [
     "The NFT ecosystem is currently saturated with an overwhelming number of low-value tokens, diluting the essence of true artistic and collectible value. Burning NFTs serves as a means to clear the clutter, allowing more visibility and recognition for high-quality, meaningful digital creations.",
