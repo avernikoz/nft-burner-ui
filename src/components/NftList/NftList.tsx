@@ -52,6 +52,10 @@ export const NftList = () => {
                     const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
                     const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
 
+                    if (!wagmiChangeOrConnected && !solanaChangeOrConnected && !suiChangeOrConnected) {
+                        return;
+                    }
+
                     if (wagmiChangeOrConnected) {
                         const chainId = await wagmiAccount.connector?.getChainId();
                         const chainName = getChainName(chainId);
@@ -89,8 +93,8 @@ export const NftList = () => {
         };
 
         fetchNfts();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
+        NftController.nftStatus,
         signer,
         solanaWallet.connected,
         solanaWallet.publicKey,
