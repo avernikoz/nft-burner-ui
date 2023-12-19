@@ -178,10 +178,12 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
                 </DialogImageContainer>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                     <div>
-                        <NftDialogInfoContainer>
-                            <NftDialogInfoTitle>Floor price:</NftDialogInfoTitle>
-                            <NftDialogInfoValue>{nft.name}</NftDialogInfoValue>
-                        </NftDialogInfoContainer>
+                        {floorPrice !== null && (
+                            <NftDialogInfoContainer>
+                                <NftDialogInfoTitle>Floor price:</NftDialogInfoTitle>
+                                <NftDialogInfoValue>{floorPrice}</NftDialogInfoValue>
+                            </NftDialogInfoContainer>
+                        )}
                         <NftDialogInfoContainer>
                             <NftDialogInfoTitle>Burning fee:</NftDialogInfoTitle>
                             <NftDialogInfoValue>
