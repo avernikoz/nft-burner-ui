@@ -90,6 +90,7 @@
     position: absolute;
     overflow: scroll;
     z-index: 2;
+    top: 64px;
 }
 
 .section {

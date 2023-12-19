@@ -7,7 +7,7 @@ import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
 
 import { ReactComponent as DownArrowIcon } from "../../assets/svg/downArrow.svg";
 import { ReactComponent as RightArrowIcon } from "../../assets/svg/rightArrow.svg";
-import { ReactComponent as LogoIcon } from "../../assets/svg/logoH.svg";
+import { Header } from "../../components/Header/Header";
 
 const sectionTextList = [
     "The NFT ecosystem is currently saturated with an overwhelming number of low-value tokens, diluting the essence of true artistic and collectible value. Burning NFTs serves as a means to clear the clutter, allowing more visibility and recognition for high-quality, meaningful digital creations.",
@@ -42,26 +42,6 @@ export const MainQuoteText = styled.span`
 
     width: 90vw;
     //height: 50%;
-`;
-
-export const HeaderContainer = styled.div`
-    width: 100%;
-    height: 10vh;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    //background-color: #500fe9cf;
-`;
-
-export const HeaderLine = styled.div`
-    width: 75%;
-    height: 1px;
-    margin: 1vw;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #515158;
 `;
 
 export const StartScreenWrapMain = styled.div`
@@ -111,9 +91,9 @@ export const StartText = styled.span`
     color: #b53600;
 
     font-family: Rubik;
-    font-size: clamp(4px, 5vw, 24px);
+    font-size: clamp(4px, 5vw, 28px);
     font-style: normal;
-    font-weight: 400;
+    font-weight: 500;
 
     text-align: center;
 
@@ -148,10 +128,6 @@ export const AboutFirstSection = ({
 }) => {
     return (
         <StartScreenWrapMain>
-            <HeaderContainer>
-                <LogoIcon />
-                <HeaderLine />
-            </HeaderContainer>
             <StartTitleAndButtonContainer>
                 <MainQuoteText>ANNIHILATE THE DEPRECTIATED</MainQuoteText>
                 <AboutStartContainer>
@@ -223,12 +199,15 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
     const executeScroll = () => myRef.current?.scrollIntoView({ behavior: "smooth" });
 
     return (
-        <div className="sectionContainer">
-            <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
-            <AboutSecondSection refProp={myRef} />
-            {sectionTextList.map((text, i) => (
-                <AboutGenericSection key={i} sectionText={text} sectionTitle={sectionTitleList[i]} />
-            ))}
-        </div>
+        <>
+            <Header />
+            <div className="sectionContainer">
+                <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
+                <AboutSecondSection refProp={myRef} />
+                {sectionTextList.map((text, i) => (
+                    <AboutGenericSection key={i} sectionText={text} sectionTitle={sectionTitleList[i]} />
+                ))}
+            </div>
+        </>
     );
 };
