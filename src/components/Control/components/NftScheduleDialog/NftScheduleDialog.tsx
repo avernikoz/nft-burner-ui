@@ -54,7 +54,7 @@ export const NftScheduleDialog = ({
                 </DialogImageContainer>
                 <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                     <div>
-                        <SocialTitleText>share in</SocialTitleText>
+                        <SocialTitleText>Share in</SocialTitleText>
                         <SocialMainText>Schedule a burn event and share it on social media:</SocialMainText>
                     </div>
                     <div style={{ display: "flex", gap: "20px" }}>

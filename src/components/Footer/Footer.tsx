@@ -3,13 +3,14 @@ import { useState } from "react";
 
 export const FooterContainer = styled.div`
     background-color: rgba(0, 0, 0, 0);
-    width: 100%;
+    width: 300px;
     display: inline-flex;
     justify-content: flex-end;
     padding: 16px;
     align-items: center;
     position: absolute;
     bottom: 0;
+    right: 0;
     z-index: 99;
     height: 128px;
 
