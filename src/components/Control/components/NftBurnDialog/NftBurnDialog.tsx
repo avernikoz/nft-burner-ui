@@ -20,23 +20,31 @@ import {
     BurningCeremonyHighlight,
     BurningCeremonyText,
     DialogImageContainer,
-    NftDialogContainer,
-    NftDialogImg,
-    NftDialogImgTitle,
-    NftDialogInfoContainer,
-    NftDialogInfoTitle,
-    NftDialogInfoValue,
+    NftBurnDialogContainer,
+    NftBurnDialogImg,
+    NftBurnDialogImgTitle,
+    NftBurnDialogInfoContainer,
+    NftBurnDialogInfoTitle,
+    NftBurnDialogInfoValue,
     StatusTransactionContainer,
     StatusTransactionText,
     StyledDialog,
     WarningContainer,
     WarningText,
-} from "./NftDialog.styled";
+} from "./NftBurnDialog.styled";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { ConfirmBurningButton } from "../../../ConfirmBurningButton/ConfirmBurningButton";
 import { useNftFloorPrice } from "../../../../hooks/useNftFloorPrice";
 
-export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: boolean; setVisible: () => void }) => {
+export const NftBurnDialog = ({
+    nft,
+    visible,
+    setVisible,
+}: {
+    nft: INft;
+    visible: boolean;
+    setVisible: () => void;
+}) => {
     const NftController = useContext(NftContext);
 
     const [loadingFirstTransaction, setLoadingFirstTransaction] = useState<boolean>(false);
@@ -50,6 +58,10 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
             setErrorTransaction(false);
             document.body.classList.remove("blur-background");
         }
+
+        return () => {
+            document.body.classList.remove("blur-background");
+        };
     }, [visible]);
 
     const { signAndExecuteTransactionBlock } = suietUseWallet();
@@ -125,28 +137,28 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
             draggable={false}
             resizable={false}
         >
-            <NftDialogContainer>
+            <NftBurnDialogContainer>
                 <DialogImageContainer>
-                    <NftDialogImg crossOrigin="anonymous" src={nft.logoURI} alt={nft.name} />
+                    <NftBurnDialogImg crossOrigin="anonymous" src={nft.logoURI} alt={nft.name} />
 
-                    <NftDialogImgTitle>
+                    <NftBurnDialogImgTitle>
                         {nft.name.length > 12 ? nft.name.substring(0, 12) + "..." : nft.name}
-                    </NftDialogImgTitle>
+                    </NftBurnDialogImgTitle>
                 </DialogImageContainer>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                     <div>
                         {floorPrice !== null && floorPrice !== undefined && (
-                            <NftDialogInfoContainer>
-                                <NftDialogInfoTitle>Floor price:</NftDialogInfoTitle>
-                                <NftDialogInfoValue>{floorPrice}</NftDialogInfoValue>
-                            </NftDialogInfoContainer>
+                            <NftBurnDialogInfoContainer>
+                                <NftBurnDialogInfoTitle>Floor price:</NftBurnDialogInfoTitle>
+                                <NftBurnDialogInfoValue>{floorPrice}</NftBurnDialogInfoValue>
+                            </NftBurnDialogInfoContainer>
                         )}
-                        <NftDialogInfoContainer>
-                            <NftDialogInfoTitle>Burning fee:</NftDialogInfoTitle>
-                            <NftDialogInfoValue>
+                        <NftBurnDialogInfoContainer>
+                            <NftBurnDialogInfoTitle>Burning fee:</NftBurnDialogInfoTitle>
+                            <NftBurnDialogInfoValue>
                                 {burnerFee} {burnerFeeToken}
-                            </NftDialogInfoValue>
-                        </NftDialogInfoContainer>
+                            </NftBurnDialogInfoValue>
+                        </NftBurnDialogInfoContainer>
                     </div>
                     <div>
                         <BurningCeremonyText>
@@ -189,7 +201,7 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
                         </StatusTransactionText>
                     </StatusTransactionContainer>
                 </div>
-            </NftDialogContainer>
+            </NftBurnDialogContainer>
             <div>
                 <ConfirmBurningButton style={{ width: "100%" }} onClick={handleBurn}>
                     Commence burning ritual

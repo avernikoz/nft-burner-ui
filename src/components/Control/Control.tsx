@@ -15,14 +15,17 @@ import {
     NftInfoContainer,
     NftInfoDivider,
 } from "./Control.styled";
-import { NftDialog } from "./components/NftDialog/NftDialog";
+import { NftBurnDialog } from "./components/NftBurnDialog/NftBurnDialog";
 import { ShareButton } from "../ShareButton/ShareButton";
 import { useNftFloorPrice } from "../../hooks/useNftFloorPrice";
 import { useBurnerFee } from "../../hooks/useBurnerFee";
 import { getNetworkTokenSymbol } from "../../utils/getNetworkTokenSymbol";
+import { NftScheduleDialog } from "./components/NftScheduleDialog/NftScheduleDialog";
 
 export const Control = () => {
-    const [visible, setVisible] = useState<boolean>(false);
+    const [burnPopupVisible, setBurnPopupVisible] = useState<boolean>(false);
+    const [schedulePopupVisible, setSchedulePopupVisible] = useState<boolean>(false);
+
     const [nft, setNft] = useState<INft | null>(null);
     const { data: floorPrice } = useNftFloorPrice(nft);
     const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
@@ -38,11 +41,19 @@ export const Control = () => {
         <>
             <BurnAndInfoContainer>
                 <BurnScheduleContainer>
-                    <BurnButton className="burnButton mainButton" onClick={() => setVisible(true)} disabled={!nft}>
+                    <BurnButton
+                        className="burnButton mainButton"
+                        onClick={() => setBurnPopupVisible(true)}
+                        disabled={!nft}
+                    >
                         BURN
                     </BurnButton>
 
-                    <ShareButton className="shareButton mainButton width65" disabled={!nft}>
+                    <ShareButton
+                        className="shareButton mainButton width65"
+                        onClick={() => setSchedulePopupVisible(true)}
+                        disabled={!nft}
+                    >
                         SCHEDULE BURN EVENT
                     </ShareButton>
                 </BurnScheduleContainer>
@@ -61,11 +72,20 @@ export const Control = () => {
                 </NftInfoContainer>
             </BurnAndInfoContainer>
             {nft && (
-                <NftDialog
+                <NftBurnDialog
                     nft={nft}
-                    visible={visible}
+                    visible={burnPopupVisible}
                     setVisible={() => {
-                        setVisible(false);
+                        setBurnPopupVisible(false);
+                    }}
+                />
+            )}
+            {nft && (
+                <NftScheduleDialog
+                    nft={nft}
+                    visible={schedulePopupVisible}
+                    setVisible={() => {
+                        setSchedulePopupVisible(false);
                     }}
                 />
             )}

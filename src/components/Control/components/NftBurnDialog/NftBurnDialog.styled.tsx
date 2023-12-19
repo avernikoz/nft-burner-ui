@@ -2,10 +2,10 @@ import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
 import { styled, keyframes, css } from "styled-components";
 
-export const NftDialogContainer = styled.div`
+export const NftBurnDialogContainer = styled.div`
     display: flex;
     min-width: 650px;
-    gap: 0px 20px;
+    gap: 0px 30px;
     margin-bottom: 1.5rem;
 
     @media (max-width: 1024px) {
@@ -15,12 +15,12 @@ export const NftDialogContainer = styled.div`
     }
 `;
 
-export const NftDialogInfoContainer = styled.div`
+export const NftBurnDialogInfoContainer = styled.div`
     display: flex;
     justify-content: space-between;
 `;
 
-export const NftDialogInfoTitle = styled.p`
+export const NftBurnDialogInfoTitle = styled.p`
     color: #787885;
 
     font-family: Rubik;
@@ -33,7 +33,7 @@ export const NftDialogInfoTitle = styled.p`
     margin: 0 0 0.5rem 0;
 `;
 
-export const NftDialogInfoValue = styled.p`
+export const NftBurnDialogInfoValue = styled.p`
     color: #fff;
 
     font-family: Rubik;
@@ -112,7 +112,7 @@ export const StatusTransactionText = styled.p<{
         `}
 `;
 
-export const NftDialogImg = styled.img`
+export const NftBurnDialogImg = styled.img`
     border-radius: 2px;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
     object-fit: cover;
@@ -124,7 +124,7 @@ export const NftDialogImg = styled.img`
     }
 `;
 
-export const NftDialogImgTitle = styled.div`
+export const NftBurnDialogImgTitle = styled.div`
     font-family: Rubik;
     font-weight: 500;
     position: absolute;
