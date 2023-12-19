@@ -4,14 +4,20 @@ import { useTokenPrices } from "./useTokenPrices";
 import { roundToDecimals } from "../utils/roundToDecimals";
 
 // TODO: use swr for caching
-export const useBurnerFee = ({ floorPrice, network }: { floorPrice: number | null; network: ALLOWED_NETWORKS }) => {
+export const useBurnerFee = ({
+    floorPrice,
+    network,
+}: {
+    floorPrice: number | null | undefined;
+    network: ALLOWED_NETWORKS | null | undefined;
+}) => {
     const { data: prices } = useTokenPrices();
 
-    if (!prices) {
+    if (!prices || !network) {
         return { isLoading: true };
     }
 
-    if (floorPrice === null) {
+    if (floorPrice === null || floorPrice === undefined) {
         const feeUSD = BURNER_FEE_CONFIG.lowerLimitUSD;
         const feeInNetworkToken = feeUSD / prices[network];
 
