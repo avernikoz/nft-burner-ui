@@ -1,7 +1,7 @@
 import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 // import { SUI_NFT_CLIENT_INSTANCE } from "../../../../config/nft.config";
 import { useBurnerFee } from "../../../../hooks/useBurnerFee";
 import { handleEvmPayTransaction, handleEvmBurnTransaction } from "../../../../transactions/handleEvmTransaction";
@@ -12,6 +12,8 @@ import { ENftBurnStatus, EvmNft, INft, SolanaNft, SuiNft } from "../../../../uti
 import { useEthersSigner } from "../../../NftList/variables";
 import { NftContext } from "../../../NftProvider/NftProvider";
 import { ReactComponent as SuccessCheckmark } from "../../../../assets/svg/successCheckmark.svg";
+import { ReactComponent as FailedIcon } from "../../../../assets/svg/failedIcon.svg";
+import { ReactComponent as BurnIcon } from "../../../../assets/svg/burnIcon.svg";
 
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import {
@@ -36,10 +38,10 @@ import { ConfirmBurningButton } from "../../../ConfirmBurningButton/ConfirmBurni
 export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: boolean; setVisible: () => void }) => {
     const NftController = useContext(NftContext);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [submit, setSubmit] = useState<boolean>(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loadingFirstTransaction, setLoadingFirstTransaction] = useState<boolean>(false);
+    const [loadingSecondTransaction, setLoadingSecondTransaction] = useState<boolean>(false);
+    const [errorTransaction, setErrorTransaction] = useState<boolean>(false);
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [floorPrice, setFloorPrice] = useState<number | null>(null);
 
@@ -47,11 +49,11 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
         if (visible) {
             document.body.classList.add("blur-background");
         } else {
+            setErrorTransaction(false);
             document.body.classList.remove("blur-background");
         }
     }, [visible]);
 
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { signAndExecuteTransactionBlock } = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const solanaConnection = useConnection();
@@ -61,6 +63,15 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
 
     const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
+
+    const isEvm = [
+        ALLOWED_NETWORKS.Arbitrum,
+        ALLOWED_NETWORKS.Ethereum,
+        ALLOWED_NETWORKS.Optimism,
+        ALLOWED_NETWORKS.Polygon,
+    ].includes(nft.network);
+    const isSui = nft.network === ALLOWED_NETWORKS.Sui;
+    const isSolana = nft.network === ALLOWED_NETWORKS.Solana;
 
     useEffect(() => {
         // TODO: Rewrite it with hook + swr
@@ -101,25 +112,23 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
         fetchNftFloorPrice();
     }, [nft, toastController, visible]);
 
-    const handleBurningButtonHoldAction = async () => {
+    const handleBurn = async () => {
         try {
             if (!burnerFee) {
                 return;
             }
-            setSubmit(true);
-            setLoading(true);
 
-            const isEvm = [
-                ALLOWED_NETWORKS.Arbitrum,
-                ALLOWED_NETWORKS.Ethereum,
-                ALLOWED_NETWORKS.Optimism,
-                ALLOWED_NETWORKS.Polygon,
-            ].includes(nft.network);
-            const isSui = nft.network === ALLOWED_NETWORKS.Sui;
-            const isSolana = nft.network === ALLOWED_NETWORKS.Solana;
+            if (isEvm) {
+                setLoadingFirstTransaction(true);
+            } else {
+                setLoadingFirstTransaction(true);
+                setLoadingSecondTransaction(true);
+            }
 
             if (isEvm) {
                 await handleEvmPayTransaction({ nft: nft as EvmNft, signer, burnerFee });
+                setLoadingFirstTransaction(false);
+                setLoadingSecondTransaction(true);
                 await handleEvmBurnTransaction({ nft: nft as EvmNft, signer });
             } else if (isSui) {
                 await handleSuiTransaction({ nft: nft as SuiNft, signAndExecuteTransactionBlock, burnerFee });
@@ -133,30 +142,19 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
             }
 
             NftController.setNftStatus(ENftBurnStatus.BURNED_ONCHAIN);
+            setVisible();
         } catch (error) {
             if (error instanceof Error) {
                 toastController?.showError("Failed to process transactions: " + error.message);
             } else {
                 toastController?.showError("Failed to process transactions: " + error);
             }
+
+            setErrorTransaction(true);
         }
 
-        setVisible();
-        setLoading(false);
-        setSubmit(false);
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const handleMouseDown = () => {
-        timeoutRef.current = setTimeout(() => handleBurningButtonHoldAction(), 2000);
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const handleMouseUp = (event: React.MouseEvent) => {
-        event.preventDefault();
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
+        setLoadingFirstTransaction(false);
+        setLoadingSecondTransaction(false);
     };
 
     return (
@@ -204,19 +202,39 @@ export const NftDialog = ({ nft, visible, setVisible }: { nft: INft; visible: bo
                         </WarningText>
                     </WarningContainer>
                     <StatusTransactionContainer>
-                        <SuccessCheckmark />
-                        <StatusTransactionText>Confirming your burn fee transaction</StatusTransactionText>
+                        {loadingFirstTransaction ? (
+                            <ProgressSpinner style={{ width: "25px", height: "25px", margin: 0 }} />
+                        ) : errorTransaction ? (
+                            <FailedIcon />
+                        ) : !loadingFirstTransaction ? (
+                            <BurnIcon />
+                        ) : (
+                            <SuccessCheckmark />
+                        )}
+                        <StatusTransactionText $isActive={loadingFirstTransaction}>
+                            Confirming your burn fee transaction
+                        </StatusTransactionText>
                     </StatusTransactionContainer>
                     <StatusTransactionContainer>
-                        <ProgressSpinner style={{ width: "25px", height: "25px", margin: 0 }} />
-                        <StatusTransactionText $isActive={true}>
+                        {loadingSecondTransaction ? (
+                            <ProgressSpinner style={{ width: "25px", height: "25px", margin: 0 }} />
+                        ) : errorTransaction ? (
+                            <FailedIcon />
+                        ) : !loadingSecondTransaction ? (
+                            <BurnIcon />
+                        ) : (
+                            <SuccessCheckmark />
+                        )}
+                        <StatusTransactionText $isActive={loadingSecondTransaction}>
                             Confirming your burn nft transaction
                         </StatusTransactionText>
                     </StatusTransactionContainer>
                 </div>
             </NftDialogContainer>
             <div>
-                <ConfirmBurningButton style={{ width: "100%" }}>Commence burning ritual</ConfirmBurningButton>
+                <ConfirmBurningButton style={{ width: "100%" }} onClick={handleBurn}>
+                    Commence burning ritual
+                </ConfirmBurningButton>
             </div>
         </StyledDialog>
     );
