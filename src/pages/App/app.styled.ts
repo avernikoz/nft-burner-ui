@@ -1,19 +1,5 @@
 import { styled } from "styled-components";
 
-export const Footer = styled.div`
-    @media (max-width: 1024px) {
-        display: none;
-    }
-
-    Button {
-        background-color: transparent;
-        position: fixed;
-        margin: 1rem;
-        bottom: 0;
-        right: 0;
-    }
-`;
-
 export const BodyContainer = styled.div`
     /* display: grid;
     grid-template-columns: 1fr 1fr; */

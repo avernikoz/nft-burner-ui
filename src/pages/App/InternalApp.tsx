@@ -4,14 +4,14 @@ import React, { useContext, useEffect, useState } from "react";
 import { useAccount as useWagmiAccount } from "wagmi";
 
 import { Control } from "../../components/Control/Control";
-import FullScreenButton from "../../components/FullscreenButton/FullscreenButton";
 import { NftList } from "../../components/NftList/NftList";
 import { NftContext } from "../../components/NftProvider/NftProvider";
 import Wallets from "../../components/wallets/Wallets";
 import { ENftBurnStatus } from "../../utils/types";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import "./App.css";
-import { BodyContainer, Footer } from "./app.styled";
+import { BodyContainer } from "./app.styled";
+import { Footer } from "../../components/Footer/Footer";
 
 export const InternalApp: React.FC = () => {
     const suietWallet = suietUseWallet();
@@ -66,9 +66,7 @@ export const InternalApp: React.FC = () => {
                 </BodyContainer>
             )}
 
-            <Footer>
-                <FullScreenButton />
-            </Footer>
+            <Footer />
         </div>
     );
 };
