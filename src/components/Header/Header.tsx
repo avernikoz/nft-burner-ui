@@ -7,20 +7,17 @@ export const HeaderContainer = styled.div`
     width: 100%;
     display: inline-flex;
     align-items: center;
-    position: absolute;
+    position: fixed;
     top: 0;
     z-index: 99;
     padding: 1.25vw 4vw;
-    height: 64px;
+    height: 102px;
 `;
 
 export const HeaderLine = styled.div`
     width: 85%;
     height: 1px;
     margin: 1vw;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
     background-color: #515158;
 `;
 
