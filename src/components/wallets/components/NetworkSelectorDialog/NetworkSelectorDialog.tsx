@@ -43,7 +43,7 @@ export const NftSelectorDialog = ({
                         tabs={tabItems.current}
                         // TODO: Replace with more descriptive condition
                         activeTab={activeIndex < 4 ? 0 : activeIndex - 3}
-                    ></DialogWalletList>
+                    />
                 </DialogWalletListContainer>
             </NftBurnDialogContainer>
         </StyledDialog>

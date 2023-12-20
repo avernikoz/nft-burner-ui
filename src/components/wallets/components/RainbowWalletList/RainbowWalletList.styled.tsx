@@ -22,8 +22,15 @@ export const StyledListBox = styled(ListBox)`
     font-weight: 400;
 
     .p-listbox-item:hover {
-        color: #fff;
-        background: transparent;
-        font-weight: 500;
+    }
+
+    .p-listbox-list .p-listbox-item {
+        color: #b5b5c2;
+
+        &:hover {
+            color: #fff;
+            background: transparent;
+            font-weight: 500;
+        }
     }
 `;
