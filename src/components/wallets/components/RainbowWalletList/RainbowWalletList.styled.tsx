@@ -11,7 +11,7 @@ export const Item = styled.div`
 `;
 
 export const StyledListBox = styled(ListBox)`
-    max-height: 240px;
+    max-height: 216px;
     overflow: scroll;
     background: transparent;
     border: none;

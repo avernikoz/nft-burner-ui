@@ -3,13 +3,13 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 // eslint-disable-next-line import/no-unresolved
 import { MenuItem } from "primereact/menuitem";
 import { Menu } from "primereact/menu";
-import { ButtonContainer, ProfileLabel, StyledPanelMenu, WalletButton } from "./Wallets.styled";
+import { ButtonContainer, ProfileLabel, StyledMenu, StyledPanelMenu, WalletButton } from "./Wallets.styled";
 import { useWallet as suietUseWallet, useAccountBalance } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
 import { ConnectorData, disconnect as wagmiDisconnect, fetchBalance } from "@wagmi/core";
 
-import IconTemplate from "../IconTemplate/IconTemplate";
+// import IconTemplate from "../IconTemplate/IconTemplate";
 import { IAccount, IMenuConnectionItem } from "./types";
 import { ethers } from "ethers";
 import { createMenuItems } from "./variables";
@@ -182,16 +182,16 @@ function Wallets(props: { hideUI: () => void }) {
     ];
 
     const profileItems: MenuItem[] = [
-        {
-            label: "Copy address",
-            icon: "pi pi-copy",
-            command: () => {
-                if (account !== null && account?.id !== null) {
-                    navigator.clipboard.writeText(account?.id ?? "");
-                    toastController?.showSuccess("Copy address");
-                }
-            },
-        },
+        // {
+        //     label: "Copy address",
+        //     icon: "pi pi-copy",
+        //     command: () => {
+        //         if (account !== null && account?.id !== null) {
+        //             navigator.clipboard.writeText(account?.id ?? "");
+        //             toastController?.showSuccess("Copy address");
+        //         }
+        //     },
+        // },
         {
             label: "Disconnect",
             icon: "pi pi-power-off",
@@ -295,29 +295,24 @@ function Wallets(props: { hideUI: () => void }) {
                 )}
                 {account && (
                     <>
-                        <Menu
-                            model={profileItems}
-                            popup
-                            ref={profileMenu}
-                            id="popup_menu_right"
-                            popupAlignment="right"
-                        />
+                        <StyledMenu model={profileItems} popup ref={profileMenu} popupAlignment="right" />
                         <ProfileLabel
                             className="label"
                             onClick={(event) => profileMenu.current?.toggle(event)}
                             aria-controls="popup_menu_right"
                             aria-haspopup
                         >
-                            <div className="icon">
-                                {typeof account.walletIcon === "string" ? (
+                            <i className="pi pi-wallet" />
+                            {/* <div className="icon"> */}
+                            {/* {typeof account.walletIcon === "string" ? (
                                     <IconTemplate svgString={account.walletIcon} />
                                 ) : (
                                     account.walletIcon
-                                )}
-                            </div>
+                                )} */}
+                            {/* </div> */}
                             <div className="content">
                                 <span className="balance">{account.balance}</span>
-                                <span className="chain-id">{account.id}</span>
+                                {/* <span className="chain-id">{account.id}</span> */}
                             </div>
                         </ProfileLabel>
                     </>

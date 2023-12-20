@@ -29,11 +29,6 @@ textarea {
     font-size: 16px;
 }
 
-* {
-    letter-spacing: 0.01em;
-    box-sizing: border-box;
-}
-
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }

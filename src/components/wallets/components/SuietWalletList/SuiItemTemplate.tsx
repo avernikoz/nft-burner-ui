@@ -5,7 +5,7 @@ import React from "react";
 function SuiItemTemplate(item: IWallet) {
     return (
         <Item className="flex align-items-center" style={{ flexDirection: "row" }}>
-            <img src={item.iconUrl} width={30} height={30} alt={item.name} />
+            <img src={item.iconUrl} width={24} height={24} alt={item.name} />
             <div>{item.label}</div>
         </Item>
     );

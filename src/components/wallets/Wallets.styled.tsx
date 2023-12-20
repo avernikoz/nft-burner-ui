@@ -3,6 +3,7 @@ import { Dialog } from "primereact/dialog";
 import { STYLES_CONFIG } from "../../config/styles.config";
 import { Button } from "primereact/button";
 import { PanelMenu } from "primereact/panelmenu";
+import { Menu } from "primereact/menu";
 
 export const StyledDialog = styled(Dialog)`
     width: 450px;
@@ -32,23 +33,34 @@ export const ButtonContainer = styled.div`
 `;
 
 export const ProfileLabel = styled.div`
+    padding: 1.25rem;
+    height: 50px;
+    width: 180px;
+
     display: flex;
     align-items: center;
-    padding: 10px;
-    border: ${STYLES_CONFIG.button.border};
-    border-radius: ${STYLES_CONFIG.button.borderRadius};
-    background-color: ${STYLES_CONFIG.button.backgroundColor};
-    font-family: Arial, sans-serif;
-    font-size: 18px;
-    color: ${STYLES_CONFIG.button.color};
-    width: 200px;
-    margin-left: 0.5rem;
-    height: 72px;
+    border-radius: 4px;
+    background: rgba(11, 11, 12, 0.8);
+    color: #fff;
+    gap: 16px;
+
+    text-align: center;
+    font-family: Rubik;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 16px; /* 114.286% */
+    text-transform: uppercase;
+
     margin-top: 0;
 
-    .icon {
-        margin-right: 8px;
+    .balance {
+        letter-spacing: 3px;
     }
+
+    /* .icon {
+        margin-right: 8px;
+    } */
 
     .content {
         display: flex;
@@ -56,19 +68,11 @@ export const ProfileLabel = styled.div`
         width: 80%;
     }
 
-    .chain-id {
+    /* .chain-id {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-    }
-
-    .balance {
-        font-weight: bold;
-    }
-
-    &:hover {
-        color: ${STYLES_CONFIG.button.active.color};
-    }
+    } */
 `;
 
 export const WalletButton = styled(Button)`
@@ -131,17 +135,66 @@ export const StyledPanelMenu = styled(PanelMenu)`
         font-family: Rubik;
         font-size: 14px;
         font-style: normal;
-        font-weight: 500;
         line-height: 16px; /* 114.286% */
         letter-spacing: 1px;
     }
 
     .p-menuitem-text:hover {
+        font-weight: 500;
         color: #fff;
     }
 
     .p-toggleable-content {
         position: absolute;
         min-width: 210px;
+    }
+`;
+
+export const StyledMenu = styled(Menu)`
+    width: 180px;
+    color: #b5b5c2;
+
+    font-family: Rubik;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 16px; /* 114.286% */
+    letter-spacing: 1px;
+
+    border-radius: 0px 0px 4px 4px;
+    background: var(--Liner-bg-popup, linear-gradient(180deg, rgba(24, 24, 26, 0.8) 0%, rgba(11, 11, 12, 0.8) 100%));
+    backdrop-filter: blur(12px);
+
+    .p-menuitem-link .p-menuitem-text,
+    .p-menuitem-link .p-menuitem-icon {
+        color: #b5b5c2;
+    }
+
+    .p-menuitem-link:hover .p-menuitem-icon {
+        color: #fff;
+    }
+
+    .p-menuitem-link:hover .p-menuitem-text {
+        font-weight: 500;
+        color: #fff;
+    }
+
+    .p-menuitem-text {
+        text-align: center;
+        font-family: Rubik;
+        font-size: 14px;
+        font-style: normal;
+        line-height: 16px; /* 114.286% */
+        letter-spacing: 1px;
+    }
+
+    &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: var(--Orange--01, #ff4a00);
     }
 `;
