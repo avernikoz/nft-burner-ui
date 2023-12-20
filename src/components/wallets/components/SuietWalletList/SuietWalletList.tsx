@@ -1,12 +1,12 @@
 import * as Sentry from "@sentry/react";
-import React, { useContext, useEffect, useState } from "react";
-import { ListBox } from "primereact/listbox";
 import { useAccountBalance, useWallet } from "@suiet/wallet-kit";
 import { IWallet } from "@suiet/wallet-kit/dist/types/wallet";
-import { IAccount } from "../../types";
 import { ethers } from "ethers";
-import SuiItemTemplate from "./SuiItemTemplate";
+import { useContext, useEffect, useState } from "react";
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
+import { IAccount } from "../../types";
+import { StyledListBox } from "../RainbowWalletList/RainbowWalletList.styled";
+import SuiItemTemplate from "./SuiItemTemplate";
 
 function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<IWallet | null>(null);
@@ -60,7 +60,7 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
 
     return (
         <>
-            <ListBox
+            <StyledListBox
                 value={selectedOption}
                 itemTemplate={SuiItemTemplate}
                 onChange={async (e) => {

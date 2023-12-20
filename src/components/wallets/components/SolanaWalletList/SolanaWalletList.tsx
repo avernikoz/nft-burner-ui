@@ -1,13 +1,13 @@
 import * as Sentry from "@sentry/react";
-import React, { useContext, useEffect, useState } from "react";
-import { ListBox } from "primereact/listbox";
-import { useConnection, useWallet, Wallet } from "@solana/wallet-adapter-react";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
-import { IAccount } from "../../types";
-import { ethers } from "ethers";
+import { Wallet, useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
-import SolanaItemTemplate from "./SolanaItemTemplate";
+import { ethers } from "ethers";
+import { useContext, useEffect, useState } from "react";
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
+import { IAccount } from "../../types";
+import { StyledListBox } from "../RainbowWalletList/RainbowWalletList.styled";
+import SolanaItemTemplate from "./SolanaItemTemplate";
 
 function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<Wallet | null>(null);
@@ -36,7 +36,7 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
 
     return (
         <>
-            <ListBox
+            <StyledListBox
                 value={selectedOption}
                 itemTemplate={SolanaItemTemplate}
                 onChange={async (e) => {
@@ -68,7 +68,6 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                     }
                 }}
                 options={wallets}
-                listStyle={{ maxHeight: "330px" }}
                 optionLabel="label"
             />
         </>

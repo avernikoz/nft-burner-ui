@@ -5,7 +5,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { MenuItem } from "primereact/menuitem";
 import { PanelMenu } from "primereact/panelmenu";
 import { Menu } from "primereact/menu";
-import { ButtonContainer, ProfileLabel, StyledDialog } from "./Wallets.styled";
+import { ButtonContainer, ProfileLabel } from "./Wallets.styled";
 import { useWallet as suietUseWallet, useAccountBalance } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
@@ -13,15 +13,16 @@ import { ConnectorData, disconnect as wagmiDisconnect, fetchBalance } from "@wag
 
 import IconTemplate from "../IconTemplate/IconTemplate";
 import { IAccount, IMenuConnectionItem } from "./types";
-import DialogWalletList from "./components/DialogWalletList/DialogWalletList";
 import { ethers } from "ethers";
 import { createMenuItems } from "./variables";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import { NftContext } from "../NftProvider/NftProvider";
 import { ENftBurnStatus } from "../../utils/types";
+import { NftSelectorDialog } from "./components/NetworkSelectorDialog/NetworkSelectorDialog";
 
 function Wallets(props: { hideUI: () => void }) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [visible, setVisible] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
     const [activeRainbowConnector, setActiveRainbowConnector] = useState<Connector | null>(null);
@@ -332,13 +333,12 @@ function Wallets(props: { hideUI: () => void }) {
                     </>
                 )}
             </ButtonContainer>
-            <StyledDialog header="Choose your wallet" visible={visible} onHide={() => setVisible(false)}>
-                <DialogWalletList
-                    tabs={tabItems.current}
-                    // TODO: Replace with more descriptive condition
-                    activeTab={activeIndex < 4 ? 0 : activeIndex - 3}
-                ></DialogWalletList>
-            </StyledDialog>
+            <NftSelectorDialog
+                visible={visible}
+                setVisible={() => setVisible(false)}
+                activeIndex={activeIndex}
+                tabItems={tabItems}
+            />
         </div>
     );
 }
