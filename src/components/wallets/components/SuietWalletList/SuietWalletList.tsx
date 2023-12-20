@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/react";
 import { useAccountBalance, useWallet } from "@suiet/wallet-kit";
 import { IWallet } from "@suiet/wallet-kit/dist/types/wallet";
 import { ethers } from "ethers";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import { IAccount } from "../../types";
 import { StyledListBox } from "../RainbowWalletList/RainbowWalletList.styled";
@@ -13,6 +13,10 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
     const wallet = useWallet();
     const { error, loading, balance } = useAccountBalance();
     const toastController = useContext(ToastContext);
+
+    const walletsList = useMemo(() => {
+        return wallet.configuredWallets.filter((el) => !el.name.includes("Spacecy Sui Wallet"));
+    }, [wallet.configuredWallets]);
 
     useEffect(() => {
         if (balance === undefined) {
@@ -66,7 +70,7 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
                 onChange={async (e) => {
                     connect(e.value);
                 }}
-                options={wallet.configuredWallets.filter((el) => !el.name.includes("Spacecy Sui Wallet"))}
+                options={walletsList}
                 optionLabel="name"
             />
         </>
