@@ -1,11 +1,9 @@
 import * as Sentry from "@sentry/react";
-import { Button } from "primereact/button";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line import/no-unresolved
 import { MenuItem } from "primereact/menuitem";
-import { PanelMenu } from "primereact/panelmenu";
 import { Menu } from "primereact/menu";
-import { ButtonContainer, ProfileLabel } from "./Wallets.styled";
+import { ButtonContainer, ProfileLabel, StyledPanelMenu, WalletButton } from "./Wallets.styled";
 import { useWallet as suietUseWallet, useAccountBalance } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
@@ -284,21 +282,13 @@ function Wallets(props: { hideUI: () => void }) {
         wagmiAccount.isConnected,
     ]);
 
-    const panelMenuClass = `w-full md:w-25rem ${account ? "phoneAdapt" : ""}`;
-
     return (
         <div className="wallet">
             <ButtonContainer>
-                <PanelMenu
-                    model={menuItems}
-                    className={panelMenuClass}
-                    color={"primary"}
-                    style={{ minWidth: "200px" }}
-                />
+                <StyledPanelMenu model={menuItems} color={"primary"} />
                 {!account && (
-                    <Button
+                    <WalletButton
                         aria-label="Choose your wallet"
-                        rounded
                         icon="pi pi-wallet"
                         onClick={() => setVisible(true)}
                     />

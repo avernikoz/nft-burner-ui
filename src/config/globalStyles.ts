@@ -14,14 +14,17 @@ export const GlobalStyles = createGlobalStyle`
     }
 
     #pr_id_2_content .p-panelmenu-content {
-        background-color: ${STYLES_CONFIG.button.backgroundColor};
+        border-radius: 0px 0px 4px 4px;
+        background: var(--Liner-bg-popup, linear-gradient(180deg, rgba(24, 24, 26, 0.80) 0%, rgba(11, 11, 12, 0.80) 100%));
+        backdrop-filter: blur(12px);
+        border: none;
     }
 
     #pr_id_2_header {
-        color: ${STYLES_CONFIG.button.color};
+        color: #fff;
 
         &:hover {
-            color: ${STYLES_CONFIG.button.active.color};
+            color: #fff;
         }
     }
 

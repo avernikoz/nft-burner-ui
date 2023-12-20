@@ -24,22 +24,22 @@ function RainbowWalletList(props: {
 
     const wallets: IWallet[] = [
         {
-            logo: <Metamask width={30} height={30} style={{ marginRight: "5px" }} />,
+            logo: <Metamask width={30} height={30} style={{ marginRight: "10px" }} />,
             label: "Metamask",
             wallet: connectorsList[0],
         },
         {
-            logo: <CoinBase width={30} height={30} style={{ marginRight: "5px" }} />,
+            logo: <CoinBase width={30} height={30} style={{ marginRight: "10px" }} />,
             label: "CoinBase",
             wallet: connectorsList[1],
         },
         {
-            logo: <Phantom width={30} height={30} style={{ marginRight: "5px" }} />,
+            logo: <Phantom width={30} height={30} style={{ marginRight: "10px" }} />,
             label: "Phantom wallet",
             wallet: connectorsList[2],
         },
         {
-            logo: <WalletConnect width={30} height={30} style={{ marginRight: "5px" }} />,
+            logo: <WalletConnect width={30} height={30} style={{ marginRight: "10px" }} />,
             label: "Wallet Connect",
             wallet: connectorsList[3],
         },
