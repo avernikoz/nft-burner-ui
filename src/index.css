@@ -120,10 +120,20 @@ html {
 
 @font-face {
     font-family: "Poppins";
-    font-weight: bold;
+    font-weight: 700;
     font-style: normal;
     src:
         local("Poppins-Bold"),
         local("Poppins-Bold"),
         url(./fonts/Poppins-Bold.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Poppins";
+    font-weight: 600;
+    font-style: normal;
+    src:
+        local("Poppins-SemiBold"),
+        local("Poppins-SemiBold"),
+        url(./fonts/Poppins-SemiBold.woff2) format("woff2");
 }
