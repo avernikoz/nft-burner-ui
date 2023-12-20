@@ -1,6 +1,6 @@
 import React, { createContext, useRef } from "react";
 import { Toast } from "primereact/toast";
-import { STYLES_CONFIG } from "../../config/styles.config";
+import { StyledToast } from "./ToastProvider.styled";
 
 export const ToastContext = createContext<IToastController | null>(null);
 
@@ -16,10 +16,6 @@ interface IToastController {
 
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     const toastRef = useRef<Toast>(null);
-    const {
-        toast: { color, backgroundColor, borderColor },
-    } = STYLES_CONFIG;
-    const toastStyle = { color, backgroundColor, borderColor };
 
     const toastController = {
         showInfo: (summary: string, message: string) => {
@@ -27,8 +23,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
                 severity: "info",
                 summary: summary,
                 detail: message,
-                icon: <i className="pi pi-spin pi-cog"></i>,
-                style: toastStyle,
+                style: { borderColor: "#fff" },
             });
         },
         showError: (message: string) => {
@@ -36,7 +31,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
                 severity: "error",
                 summary: "Error",
                 detail: message,
-                style: toastStyle,
+                style: { borderColor: "#A92323" },
             });
         },
         showSuccess: (message: string) => {
@@ -44,14 +39,14 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
                 severity: "success",
                 summary: "Success",
                 detail: message,
-                style: toastStyle,
+                style: { borderColor: "#00B272" },
             });
         },
     };
 
     return (
         <ToastContext.Provider value={toastController}>
-            <Toast ref={toastRef} position="top-left" />
+            <StyledToast ref={toastRef} position="top-left" />
             {children}
         </ToastContext.Provider>
     );

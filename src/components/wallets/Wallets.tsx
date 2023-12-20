@@ -284,6 +284,7 @@ function Wallets(props: { hideUI: () => void }) {
     ]);
 
     const panelMenuClass = `w-full md:w-25rem ${account ? "phoneAdapt" : ""}`;
+
     return (
         <div className="wallet">
             <ButtonContainer>
