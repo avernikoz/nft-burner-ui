@@ -8,6 +8,7 @@ import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import { IAccount } from "../../types";
 import { StyledListBox } from "../RainbowWalletList/RainbowWalletList.styled";
 import SolanaItemTemplate from "./SolanaItemTemplate";
+import { sleep } from "../../../../utils/sleep";
 
 function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<Wallet | null>(null);
@@ -51,7 +52,16 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                             toastController?.showError("Wallet is not unsupported: ");
                         }
                         toastController?.showInfo("Connecting", "Please accept connection in wallet");
-                        await select(e.value.adapter.name);
+
+                        select(e.value.adapter.name);
+                        // Temporary hotfix for a known issue in WalletProviderBase of the @solana/wallet-adapter-react library.
+                        // Reference: https://github.com/solana-labs/wallet-adapter/issues/743#issuecomment-1468702784
+                        // Issue: When disconnecting the Solana wallet and then reconnecting, the first trial may throw a 'WalletNotSelectedError' despite explicitly selecting the wallet before.
+                        // Workaround: Introduce a brief sleep to mitigate the error.
+                        // Note: Library owners recommend avoiding the 'connect' method and relying on autoConnect, which conflicts with our app's multi-chain architecture.
+                        // TODO: Monitor for library updates or find a more robust solution when the issue is resolved.
+
+                        await sleep(100);
                         await connect();
                         setSelectedOption(e.value);
                     } catch (error) {
