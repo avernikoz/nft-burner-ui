@@ -66,8 +66,7 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
                 onChange={async (e) => {
                     connect(e.value);
                 }}
-                listStyle={{ maxHeight: "310px" }}
-                options={wallet.configuredWallets}
+                options={wallet.configuredWallets.filter((el) => !el.name.includes("Spacecy Sui Wallet"))}
                 optionLabel="name"
             />
         </>
