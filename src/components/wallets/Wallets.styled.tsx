@@ -86,9 +86,6 @@ export const StyledPanelMenu = styled(PanelMenu)`
     min-width: 210px;
     border-radius: 4px;
     background: rgba(11, 11, 12, 0.8);
-    /* padding: 0 16px; */
-
-    /* height: 50px; */
     display: flex;
     align-items: center;
 
