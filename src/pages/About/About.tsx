@@ -152,30 +152,71 @@ export const LPContainerMain = styled.div`
     height: 100vh; */
     position: absolute;
     overflow: scroll;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
+    display: block;
+    z-index: 1;
     top: 64px;
 `;
 
-export const LPSection = styled.div`
+export const LPSectionExtendable = styled.div`
     width: 100vw;
-    height: 100vh;
     position: relative;
     display: flex;
     flex-direction: column;
+`;
+
+export const LPSectionExtendableCentered = styled(LPSectionExtendable)`
     justify-content: space-around;
     align-items: center;
 `;
 
-export const LPSectionHalf = styled.div`
+const LPSectionFullscreenCentered = styled(LPSectionExtendableCentered)`
+    height: 100vh;
     width: 100vw;
-    height: 50vh;
-    position: relative;
+`;
+
+export const LPShrinkContainer = styled(LPSectionExtendableCentered)`
+    width: 75vw;
+    max-width: 2000px;
+
+    @media screen and (max-width: 1000px) {
+        width: 85vw; /* Adjusted width for screen widths up to 2000px */
+    }
+
+    @media screen and (max-width: 500px) {
+        width: 95vw; /* Adjusted width for screen widths up to 1000px */
+    }
+`;
+
+export const LPShrinkContainerMid = styled(LPSectionExtendableCentered)`
+    width: 60vw;
+    max-width: 1600px;
+
+    @media screen and (max-width: 1000px) {
+        width: 70vw; /* Adjusted width for screen widths up to 2000px */
+    }
+
+    @media screen and (max-width: 500px) {
+        width: 80vw; /* Adjusted width for screen widths up to 1000px */
+    }
+`;
+
+export const TextContainerAlignLeftIndent25 = styled.div`
+    width: 100%;
+    //padding-left: 10vw;
+    //display: inline-flex;
+`;
+
+export const TextContainerCenter = styled.div`
+    width: 100vw;
+    display: inline-flex;
+`;
+
+export const DescTextContainerAlignRight = styled.div`
+    width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-around;
-    align-items: center;
+    align-items: flex-end;
+    justify-content: flex-end;
 `;
 
 export const SectionDivider = styled.div`
@@ -185,37 +226,58 @@ export const SectionDivider = styled.div`
     background-color: #515158;
 `;
 
-export const LPTitleTextSemibold = styled.span`
+export const LPTitleText = styled.span`
     color: #fff;
     /* text-shadow:
         0px 0px 50px rgba(255, 255, 255, 0.5),
         0px 0px 10px #fff; */
+    font-size: clamp(24px, 5vw, 160px);
     font-family: Poppins;
     font-style: normal;
     font-weight: 600;
     line-height: 120%;
     letter-spacing: 2px;
     text-transform: uppercase;
-`;
-
-export const LPTitleTextBold = styled(LPTitleTextSemibold)`
-    font-weight: 700;
+    width: 100%;
 `;
 
 export const LPDescText = styled.span`
     color: #fff;
 
     font-family: Rubik;
-    font-size: 24px;
+    font-size: clamp(16px, 1.25vw, 36px);
     font-style: normal;
     font-weight: 400;
     line-height: 160%;
     letter-spacing: 0.48px;
-    width: 40vw;
+    //width: clamp(32px, 40vw, 512px);
 `;
 
-export const LPTitleBackground = styled.div`
-    width: 75vw;
+//=========================
+// 	  	   PAGE 2
+//=========================
+
+export const Page2Title = styled(LPTitleText)`
+    margin-top: clamp(56px, 11vh, 160px);
+`;
+
+export const Page2AdditionalTitle = styled(Page2Title)`
+    margin-top: clamp(56px, 15vh, 160px);
+    font-size: clamp(24px, 5vw, 160px);
+    width: 100%;
+`;
+
+export const Page2Title2 = styled(LPTitleText)`
+    font-size: clamp(24px, 3vw, 296px);
+    font-weight: 700;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+`;
+
+export const Page2Title2Background = styled.div`
     height: 40vh;
     background-color: orangered;
     display: flex;
@@ -223,54 +285,499 @@ export const LPTitleBackground = styled.div`
     justify-content: center;
 `;
 
-//=========================
-// 	  	   PAGE 2
-//=========================
-
-export const Page2Title = styled(LPTitleTextSemibold)`
-    margin-top: 10vh;
-    font-size: clamp(24px, 5vw, 296px);
-    width: 75vw;
+export const Page2AdditionalImage = styled.div`
+    --sizeVar: clamp(256px, 30vw, 1024px);
+    width: var(--sizeVar);
+    height: var(--sizeVar);
+    background-color: #0051ff;
+    position: absolute;
+    left: 50%;
+    //top: 12.5%;
+    bottom: 5%;
+    z-index: -1;
 `;
 
-export const Page2Title2 = styled(LPTitleTextBold)`
-    font-size: clamp(24px, 3vw, 296px);
-    text-align: center;
-    display: flex;
+export const Page2AddWrapper = styled(LPSectionExtendable)`
     align-items: center;
-    width: 80%;
-    justify-content: center;
+    margin-top: 10vh;
+    margin-bottom: clamp(64px, 15vw, 1024px);
+    width: 100%;
+
+    @media screen and (max-width: 576px) {
+        margin-bottom: clamp(64px, 45vw, 1024px);
+    }
 `;
+
+export const Page2DescText = styled(LPDescText)`
+    margin-top: 6vh;
+    margin-bottom: 8vh;
+    width: 50%;
+    @media screen and (max-width: 576px) {
+        width: 75%;
+    }
+`;
+
+export const LPPage2Additional = () => (
+    <Page2AddWrapper>
+        <TextContainerAlignLeftIndent25>
+            <LPDescText>
+                The proposal on the table is unconventional <br /> yet thought-provoking:
+            </LPDescText>
+        </TextContainerAlignLeftIndent25>
+        <LPShrinkContainerMid>
+            <Page2AdditionalTitle>
+                the deliberate act <br /> of burning NFTs
+            </Page2AdditionalTitle>
+        </LPShrinkContainerMid>
+    </Page2AddWrapper>
+);
 
 export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => {
     return (
-        <LPSection ref={refProp}>
-            <Page2Title>
-                A Call for Renewal: <br /> The Case for Burning NFTs
-            </Page2Title>
-            <LPDescText>
-                <p>The NFT market, once vibrant and dynamic, now faces a critical juncture, and the question arises:</p>
-            </LPDescText>
-            <LPTitleBackground>
-                <Page2Title2>
-                    How can we breathe new life into a space that was once synonymous with innovation and artistic
-                    expression?
-                </Page2Title2>
-            </LPTitleBackground>
-        </LPSection>
+        <LPSectionExtendableCentered ref={refProp}>
+            <LPShrinkContainer>
+                <Page2Title>
+                    A Call for Renewal: <br /> The Case for Burning NFTs
+                </Page2Title>
+                <Page2DescText>
+                    The NFT market, once vibrant and dynamic, now faces a critical juncture, and the question arises:
+                </Page2DescText>
+                <Page2Title2Background>
+                    <Page2Title2>
+                        How can we breathe new life into a space that was once synonymous with innovation and artistic
+                        expression?
+                    </Page2Title2>
+                </Page2Title2Background>
+                <LPPage2Additional />
+                <Page2AdditionalImage />
+            </LPShrinkContainer>
+        </LPSectionExtendableCentered>
     );
 };
 
-export const LPPage2Additional = () => (
-    <LPSectionHalf>
-        <Page2Title>
-            A Call for Renewal: <br /> The Case for Burning NFTs
-        </Page2Title>
-    </LPSectionHalf>
-);
-
 //=========================
 // 	  	   PAGE 3
+//=========================
+
+export const Page3StartTitle = styled(LPTitleText)`
+    margin-top: 10vh;
+    font-weight: 800;
+    font-size: clamp(24px, 2vw, 296px);
+`;
+
+export const Page3MainTitle = styled(LPTitleText)`
+    margin-top: 2vh;
+    margin-bottom: 6vh;
+    font-size: clamp(24px, 7vw, 296px);
+`;
+
+export const Page3DescText = styled(LPDescText)`
+    margin: 2vh;
+    width: 35%;
+    @media screen and (max-width: 1024px) {
+        width: 55%;
+    }
+    @media screen and (max-width: 512px) {
+        width: 95%;
+    }
+`;
+
+export const Page3DescContainer = styled.div`
+    background-color: #0051ff;
+    display: flex;
+    flex-direction: column;
+`;
+
+export const Page3BackgroundImage = styled.div`
+    width: 75vw;
+    height: 75vh;
+    background-color: #0051ff;
+    position: absolute;
+    z-index: -1;
+    left: 5%;
+    bottom: 0%;
+    transform: translate(-10vw, 0);
+`;
+
+export const Page3OffsetSpace = styled(LPSectionExtendable)`
+    width: 100vw;
+    height: 15vh;
+`;
+
+export const LPPage3 = () => {
+    return (
+        <LPSectionExtendableCentered>
+            <LPShrinkContainer>
+                <Page3StartTitle>Elevate the Burn:</Page3StartTitle>
+                <LPShrinkContainerMid>
+                    <Page3MainTitle>Ignite a Visual Spectacle! </Page3MainTitle>
+                </LPShrinkContainerMid>
+                <DescTextContainerAlignRight>
+                    <Page3DescText>
+                        Sure, you can technically burn your NFT with a simple transaction on the blockchain. But let's
+                        face it — who beyond the NFT or DeFi community cares about a transaction buried in the depths of
+                        the blockchain?
+                    </Page3DescText>
+                    <Page3DescText>
+                        Enter our app, where burning your NFT is not just a transaction; it's a visual spectacle, a
+                        performance on a digital canvas. Picture this: Your NFTs annihilated in the myriad of effective
+                        ways, all meticulously crafted to seize attention and resonate beyond the niche community.
+                    </Page3DescText>
+                </DescTextContainerAlignRight>
+                <Page3OffsetSpace />
+                <Page3BackgroundImage />
+            </LPShrinkContainer>
+        </LPSectionExtendableCentered>
+    );
+};
+
+//=========================
+// 	  	   PAGE 4
+//=========================
+
+export const LPShrinkContainerSpaceAround = styled(LPShrinkContainer)`
+    height: 100vh;
+    justify-content: space-around;
+    padding: 15vh 0;
+`;
+
+export const Page4TitleText = styled(LPTitleText)`
+    font-size: clamp(42px, 9vw, 296px);
+    text-align: center;
+    width: 100%;
+`;
+
+export const Page4DescText = styled(LPTitleText)`
+    color: #ff852d;
+    font-size: clamp(24px, 3.375vw, 296px);
+    text-align: center;
+    width: 100%;
+`;
+
+export const LPPage4 = () => {
+    return (
+        <LPSectionFullscreenCentered>
+            <LPShrinkContainerSpaceAround>
+                <Page4TitleText>It's not just about burning</Page4TitleText>
+                <Page4DescText>it's a combination of more profound meanings:</Page4DescText>
+            </LPShrinkContainerSpaceAround>
+        </LPSectionFullscreenCentered>
+    );
+};
+
+//=========================
+// 	  SUB-PAGES COMMON
+//=========================
+
+export const SubPageNumber = styled(LPTitleText)`
+    color: #ff852d;
+    font-size: clamp(24px, 2vw, 128px);
+    width: 100%;
+    margin-top: 20vh;
+`;
+
+export const SubPageFullHeightWrapContainer = styled.div`
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    //justify-content: space-evenly;
+`;
+
+export const SubPageTitle = styled(LPTitleText)`
+    margin-top: clamp(56px, 5vh, 160px);
+    margin-bottom: clamp(56px, 10vh, 160px);
+    width: 70%;
+
+    @media screen and (max-width: 1024px) {
+        width: 85%;
+    }
+    @media screen and (max-width: 512px) {
+        width: 95%;
+    }
+`;
+
+export const SubPageDescText = styled(LPDescText)`
+    margin-bottom: 8vh;
+    width: 50%;
+    @media screen and (max-width: 1024px) {
+        width: 85%;
+    }
+    @media screen and (max-width: 512px) {
+        width: 95%;
+    }
+`;
+
+//=========================
+// 	  SUB-PAGE 1
+//=========================
+
+export const SubPage1Image = styled.div`
+    --sizeVar: clamp(256px, 30vw, 1024px);
+    width: var(--sizeVar);
+    height: var(--sizeVar);
+    background-color: #0051ff;
+    position: absolute;
+    left: 50%;
+    //top: 12.5%;
+    bottom: 10%;
+    z-index: -1;
+
+    @media screen and (max-width: 1024px) {
+        left: 35%;
+    }
+    @media screen and (max-width: 512px) {
+        left: 15%;
+    }
+`;
+
+export const SubPage1 = () => {
+    return (
+        <LPSectionExtendableCentered>
+            <LPShrinkContainer>
+                <SubPageFullHeightWrapContainer>
+                    <SubPageNumber>01</SubPageNumber>
+                    <SubPageTitle>Crafting a Distinct Narrative</SubPageTitle>
+                    <SubPageDescText>
+                        In subtle dance between destruction and creation, NFT burners are not seeking mere attention;
+                        rather, they are embracing a role as contributors to a larger narrative. It's a nuanced
+                        approach, allowing for personal expression within the evolving dynamics of the digital space,
+                        where visibility is earned through meaningful performances.
+                    </SubPageDescText>
+                </SubPageFullHeightWrapContainer>
+                <SubPage1Image />
+            </LPShrinkContainer>
+        </LPSectionExtendableCentered>
+    );
+};
+
+//=========================
+// 	  SUB-PAGE 2
+//=========================
+
+export const SubPage2Title = styled(SubPageTitle)`
+    font-size: clamp(24px, 4vw, 160px);
+`;
+
+export const SubPage2Image = styled.div`
+    --sizeVar: clamp(256px, 25vw, 1024px);
+    width: var(--sizeVar);
+    height: var(--sizeVar);
+    background-color: #0051ff;
+    position: absolute;
+    left: -10%;
+    bottom: 15%;
+    z-index: -1;
+
+    @media screen and (max-width: 1024px) {
+        left: 35%;
+    }
+    @media screen and (max-width: 512px) {
+        left: 20%;
+    }
+`;
+
+export const SubPageFullHeightWrapContainerIndent = styled(SubPageFullHeightWrapContainer)`
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-left: 20vw;
+    //justify-content: space-evenly;
+`;
+
+export const SubPage2 = () => {
+    return (
+        <LPSectionExtendableCentered>
+            <LPShrinkContainer>
+                <SubPageFullHeightWrapContainerIndent>
+                    <SubPageNumber>02</SubPageNumber>
+                    <SubPage2Title>Sharing Your Performance</SubPage2Title>
+                    <SubPageDescText>
+                        Users have the option to share their NFT burning performance directly on social media platforms.
+                        This invites others to witness and engage in the evolving narrative. It's not just burning an
+                        NFT; it's creating a shared experience that draws attention organically, fostering community
+                        engagement around the unique stories each user is crafting.
+                    </SubPageDescText>
+                </SubPageFullHeightWrapContainerIndent>
+                <SubPage2Image />
+            </LPShrinkContainer>
+        </LPSectionExtendableCentered>
+    );
+};
+
+//=========================
+// 	  SUB-PAGE 3
+//=========================
+
+export const SubPageNumberWhite = styled(LPTitleText)`
+    color: #ffffff;
+    font-size: clamp(24px, 2vw, 128px);
+    width: 100%;
+    margin-top: 7%;
+`;
+
+export const SubPage3Title = styled(LPTitleText)`
+    margin-top: clamp(32px, 2vh, 160px);
+    margin-bottom: clamp(56px, 5vh, 160px);
+    width: 100%;
+    font-size: clamp(24px, 4vw, 160px);
+`;
+
+export const SubPage3DescText = styled(LPDescText)`
+    width: 80%;
+    margin-bottom: 20vh;
+`;
+
+export const SubPage3Canvas = styled.div`
+    width: 100%;
+    height: 60vh;
+    position: absolute;
+    bottom: 20%;
+    background-color: orangered;
+    display: flex;
+    flex-direction: column;
+    padding-left: 5vw;
+    //justify-content: space-evenly;
+    //align-items: flex-start;
+`;
+
+export const SubPage3 = () => {
+    return (
+        <LPSectionExtendableCentered>
+            <LPShrinkContainer>
+                <SubPageFullHeightWrapContainer>
+                    <SubPage3Canvas>
+                        <SubPageNumberWhite>03</SubPageNumberWhite>
+                        <SubPage3Title>Reclaiming Authenticity</SubPage3Title>
+                        <SubPage3DescText>
+                            As the market floods with NFTs lacking genuine artistic or cultural significance, burning
+                            tokens becomes a symbolic act of reclaiming authenticity. By letting go of uninspiring
+                            assets, users contribute to a narrative that champions quality over quantity, renewing the
+                            focus on genuine artistic expression.
+                        </SubPage3DescText>
+                    </SubPage3Canvas>
+                </SubPageFullHeightWrapContainer>
+            </LPShrinkContainer>
+        </LPSectionExtendableCentered>
+    );
+};
+
+//=========================
+// 	  SUB-PAGE 4
+//=========================
+
+export const SubPage4DescText = styled(LPDescText)`
+    margin-left: 5vw;
+
+    width: 75%;
+    @media screen and (max-width: 1024px) {
+        width: 85%;
+    }
+    @media screen and (max-width: 512px) {
+        width: 90%;
+    }
+`;
+
+export const SubPage4DescTextColored = styled(LPTitleText)`
+    margin-top: 5vw;
+    font-size: clamp(24px, 2vw, 160px);
+    margin-left: 5vw;
+    color: #ff852d;
+    width: 75%;
+    @media screen and (max-width: 1024px) {
+        width: 85%;
+    }
+    @media screen and (max-width: 512px) {
+        width: 90%;
+    }
+`;
+
+export const SubPage4 = () => {
+    return (
+        <LPSectionExtendableCentered>
+            <LPShrinkContainer>
+                <SubPageFullHeightWrapContainer>
+                    <SubPageNumber>04</SubPageNumber>
+                    <SubPage3Title>Regaining hope</SubPage3Title>
+                    <SubPage4DescText>
+                        The call to burn NFTs is not a demand for destruction but a plea for renewal. It's a strategic
+                        move to elevate the NFT market from its current state of stagnation, encouraging a renaissance.
+                    </SubPage4DescText>
+                    <SubPage4DescTextColored>
+                        The decision to burn NFTs becomes a declaration of commitment to a future where the digital art
+                        space thrives on merit and purpose.
+                    </SubPage4DescTextColored>
+                </SubPageFullHeightWrapContainer>
+            </LPShrinkContainer>
+        </LPSectionExtendableCentered>
+    );
+};
+
+//=========================
+// 	  	   PAGE ECO
+//=========================
+
+export const EcoDescText = styled(Page2DescText)`
+    background-color: #ffffff;
+    color: #003100;
+    padding: 48px;
+    border-radius: 24px;
+
+    @media screen and (max-width: 576px) {
+        width: 95%;
+    }
+`;
+
+export const EcoTitle = styled(Page2Title)`
+    font-size: clamp(24px, 3vw, 160px);
+`;
+
+export const CallToActionTitle = styled(LPTitleText)`
+    font-size: clamp(24px, 2vw, 296px);
+    font-weight: 700;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+`;
+
+export const CallToActionBackground = styled.div`
+    height: 40vh;
+    background-color: #e00000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;
+
+export const LPPageFinal = () => {
+    return (
+        <LPSectionExtendableCentered>
+            <LPShrinkContainer>
+                <EcoTitle>
+                    Digital Responsibility: <br /> Embracing Eco-Friendly NFT Practices
+                </EcoTitle>
+                <EcoDescText>
+                    Letting go of your digital tokens isn't just saying goodbye to a virtual possession – it's a big
+                    step toward a more eco-friendly digital world! In a space where the value and legitimacy of many
+                    NFTs are uncertain, our approach promotes responsible ownership. Across different blockchains, we
+                    strive for eco-friendly practices! Potentially reducing{" "}
+                    <span style={{ color: "#D90000" }}>CO2</span> emissions!
+                </EcoDescText>
+                <CallToActionBackground>
+                    <CallToActionTitle>
+                        Join us in creating a story where digital ownership aligns with taking care of the environment,
+                        subtly lessening the impact of your digital presence!
+                    </CallToActionTitle>
+                </CallToActionBackground>
+            </LPShrinkContainer>
+        </LPSectionExtendableCentered>
+    );
+};
+
+//=========================
+// 	  	   ENTRY
 //=========================
 
 export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: boolean) => void }) => {
@@ -284,8 +791,17 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
                 <LPPage2 refProp={myRef} />
-                <LPPage2Additional />
                 <SectionDivider />
+                <LPPage3 />
+                <SectionDivider />
+                <LPPage4 />
+                <SectionDivider />
+                <SubPage1 />
+                <SubPage2 />
+                <SubPage3 />
+                <SubPage4 />
+                <SectionDivider />
+                <LPPageFinal />
             </LPContainerMain>
         </>
     );
