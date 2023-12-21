@@ -369,6 +369,7 @@ export const Page3MainTitle = styled(LPTitleText)`
     margin-top: 2vh;
     margin-bottom: 6vh;
     font-size: clamp(24px, 7vw, 296px);
+    line-height: 100%;
 `;
 
 export const Page3DescText = styled(LPDescText)`
@@ -445,6 +446,8 @@ export const Page4TitleText = styled(LPTitleText)`
     font-size: clamp(42px, 9vw, 296px);
     text-align: center;
     width: 100%;
+    line-height: 100%;
+    margin-top: 10vh;
 `;
 
 export const Page4DescText = styled(LPTitleText)`
