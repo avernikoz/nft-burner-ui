@@ -5,6 +5,7 @@ import { ReactComponent as SoundEnabledIcon } from "../../assets/svg/soundEnable
 import { ReactComponent as SoundDisabledIcon } from "../../assets/svg/soundDisabled.svg";
 import { ReactComponent as FAQIcon } from "../../assets/svg/faq.svg";
 import { ReactComponent as FullScreenIcon } from "../../assets/svg/fullScreen.svg";
+import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 
 export const FooterContainer = styled.div`
     background-color: rgba(0, 0, 0, 0);
@@ -144,7 +145,17 @@ export const Footer = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPag
             <Divider />
             <FAQComponent />
             <Divider />
-            <AboutContainer onClick={() => setAboutPageActive(true)}>ABOUT</AboutContainer>
+            <AboutContainer
+                onClick={() => {
+                    if (GRenderingStateMachine.GetInstance().currentState > ERenderingState.Inventory) {
+                        return;
+                    }
+
+                    setAboutPageActive(true);
+                }}
+            >
+                ABOUT
+            </AboutContainer>
         </FooterButtonsContainer>
     </FooterContainer>
 );
