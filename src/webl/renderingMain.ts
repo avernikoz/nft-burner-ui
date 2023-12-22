@@ -66,7 +66,7 @@ import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController } from "./animationController";
-import { AudioEngine } from "./audioEngine";
+import { AudioEngineSingleton } from "./audioEngine";
 import { LighterTool } from "./tools";
 import { GTexturePool } from "./texturePool";
 
@@ -283,7 +283,7 @@ export function RenderMain() {
 
     const canvas = getCanvas();
 
-    const GAudioEngine = new AudioEngine();
+    const GAudioEngine = AudioEngineSingleton.getInstance();
     if (GAudioEngine.audioContext) {
         GAudioEngine.loadSounds();
     }

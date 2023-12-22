@@ -1,3 +1,4 @@
+import { AudioEngineSingleton } from "./audioEngine";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
 
@@ -19,5 +20,13 @@ export class GReactGLBridgeFunctions {
 
     static OnConnectWalletSuccess() {
         GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory);
+    }
+
+    static OnToggleSoundInAudioEngine() {
+        AudioEngineSingleton.getInstance().toggleSound();
+    }
+
+    static GetIsSoundEnabled() {
+        return AudioEngineSingleton.getInstance().isSoundEnabled;
     }
 }
