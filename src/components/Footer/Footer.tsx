@@ -133,6 +133,12 @@ const FAQIconElement = () => (
     </IconContainer>
 );
 
+export const FAQComponent = () => (
+    <a target="_blank" rel="noopener noreferrer" href="https://nft-burner.gitbook.io/overview/">
+        <FAQIconElement />
+    </a>
+);
+
 export const Footer = () => (
     <FooterContainer>
         <FooterButtonsContainer>
@@ -140,7 +146,7 @@ export const Footer = () => (
             <Divider />
             <FullScreenButton />
             <Divider />
-            <FAQIconElement />
+            <FAQComponent />
             <Divider />
             <AboutContainer>ABOUT</AboutContainer>
         </FooterButtonsContainer>
