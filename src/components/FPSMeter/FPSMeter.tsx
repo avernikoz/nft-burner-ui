@@ -2,11 +2,11 @@ import { styled } from "styled-components";
 import React, { useState } from "react";
 
 interface FPSContainerProps {
-    isVisible: boolean;
+    $isVisible: boolean;
 }
 
 const FPSContainer = styled.div<FPSContainerProps>`
-    display: ${(props) => (props.isVisible ? "block" : "none")};
+    display: ${(props) => (props.$isVisible ? "block" : "none")};
     position: absolute;
     top: 0;
     left: 0;
@@ -26,7 +26,7 @@ export const FPSMeter = () => {
     };
 
     return (
-        <FPSContainer isVisible={isVisible} className="fpsContainer">
+        <FPSContainer $isVisible={isVisible} className="fpsContainer">
             fps: <span id="fps">0.0</span>
         </FPSContainer>
     );
