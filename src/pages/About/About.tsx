@@ -63,8 +63,6 @@ export const AboutStartContainer = styled.div`
 `;
 
 export const AboutText = styled.span`
-    color: #fff;
-
     font-family: Rubik;
     font-size: clamp(4px, 5vw, 24px);
     font-style: normal;
@@ -89,6 +87,8 @@ export const StartText = styled.span`
 `;
 
 export const StartMenuButton = styled.button`
+    color: #fff;
+
     width: 50%;
     height: 100%;
     display: inline-flex;
@@ -102,6 +102,10 @@ export const StartMenuButton = styled.button`
         background-color: #ffffff;
 
         ${AboutText} {
+            color: rgba(0, 0, 0, 1);
+        }
+
+        svg {
             color: rgba(0, 0, 0, 1);
         }
     }
