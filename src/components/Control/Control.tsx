@@ -59,7 +59,7 @@ export const Control = () => {
                 </BurnScheduleContainer>
                 <NftInfoContainer>
                     <BurnerFuelInfoContainer>
-                        <BurnerFuelInfoText>Burner Fuel</BurnerFuelInfoText>
+                        <BurnerFuelInfoText>Burner Fuel Fee</BurnerFuelInfoText>
                         <BurnerFuelInfoTextNumbers>
                             {burnerFee !== null && burnerFee !== undefined ? `${burnerFee} ${burnerFeeToken}` : `-`}
                         </BurnerFuelInfoTextNumbers>

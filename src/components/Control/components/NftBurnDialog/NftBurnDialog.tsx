@@ -154,7 +154,7 @@ export const NftBurnDialog = ({
                             </NftBurnDialogInfoContainer>
                         )}
                         <NftBurnDialogInfoContainer>
-                            <NftBurnDialogInfoTitle>Burning fee:</NftBurnDialogInfoTitle>
+                            <NftBurnDialogInfoTitle>Burner Fuel Fee:</NftBurnDialogInfoTitle>
                             <NftBurnDialogInfoValue>
                                 {burnerFee} {burnerFeeToken}
                             </NftBurnDialogInfoValue>
