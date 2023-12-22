@@ -13,7 +13,11 @@ import "./App.css";
 import { BodyContainer } from "./app.styled";
 import { Footer } from "../../components/Footer/Footer";
 
-export const InternalApp: React.FC = () => {
+export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
+    setAboutPageActive,
+}: {
+    setAboutPageActive: (isAboutPageActive: boolean) => void;
+}) => {
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const wagmiAccount = useWagmiAccount();
@@ -66,7 +70,7 @@ export const InternalApp: React.FC = () => {
                 </BodyContainer>
             )}
 
-            <Footer />
+            <Footer setAboutPageActive={setAboutPageActive} />
         </div>
     );
 };

@@ -139,7 +139,7 @@ export const FAQComponent = () => (
     </a>
 );
 
-export const Footer = () => (
+export const Footer = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: boolean) => void }) => (
     <FooterContainer>
         <FooterButtonsContainer>
             <SoundIconElement />
@@ -148,7 +148,7 @@ export const Footer = () => (
             <Divider />
             <FAQComponent />
             <Divider />
-            <AboutContainer>ABOUT</AboutContainer>
+            <AboutContainer onClick={() => setAboutPageActive(true)}>ABOUT</AboutContainer>
         </FooterButtonsContainer>
     </FooterContainer>
 );
