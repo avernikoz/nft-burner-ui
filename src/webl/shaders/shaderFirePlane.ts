@@ -787,7 +787,9 @@ export function GetShaderSourceFireVisualizerPS() {
 					{
 						ivec2 lightIndex2D = ivec2(x,y);
 						float curLightIntensity = texelFetch(PointLightsTexture, lightIndex2D, 0).r;
-
+						curLightIntensity *= float(` +
+        (0.5 + Math.random() * 0.5) +
+        /* glsl */ `);
 						vec3 lightPos;
 						lightPos.x = domainStart + float(lightIndex2D.x) * distanceBetweenLightsNDC;
 	    	    		lightPos.y = domainStart + float(lightIndex2D.y) * distanceBetweenLightsNDC;
@@ -910,7 +912,7 @@ export function GetShaderSourceFireVisualizerPS() {
 		#if 1 //BURNED IMAGE
 			vec3 burnedImageTexture = vec3(0.f);
 			const float kRandomValue = float(` +
-        MathLerp(0.01, 0.1, Math.random()) +
+        MathLerp(0.005, 0.075, Math.random()) +
         /* glsl */ `);
 			const float BurnedImageSharpness = kRandomValue;
 			float h = BurnedImageSharpness * 0.1;
@@ -1034,7 +1036,7 @@ export function GetShaderSourceFireVisualizerPS() {
 		//fireColor = vec3(uvu,uvu,uvu);
 	#else
 
-		const float FireBrightnessScale = 0.5f;
+		const float FireBrightnessScale = 0.25f;
 
 		curFire *= FireBrightnessScale;
 
