@@ -316,15 +316,9 @@ export class RBloomPass {
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.BloomTextureIntermediate, 0);
     }
 
-    DownsamplePrePass(
-        gl: WebGL2RenderingContext,
-        flameTexture: WebGLTexture,
-        firePlaneTexture: WebGLTexture,
-        numBlurPasses: number,
-        BlurPass: RBlurPass,
-    ) {
+    HQBloomPrePass(gl: WebGL2RenderingContext, flameTexture: WebGLTexture, firePlaneTexture: WebGLTexture) {
         //1. render to MIP 1
-        let destSize = {
+        const destSize = {
             x: this.DownsampleRTMipSizes[1].x,
             y: this.DownsampleRTMipSizes[1].y,
         };
@@ -353,8 +347,11 @@ export class RBloomPass {
         gl.uniform1i(this.UniformParametersLocationListBloomDownsampleFirstPass.FirePlaneTexture, 2);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
 
+    HQBloomDownsample(gl: WebGL2RenderingContext) {
         //Downsample from Mip1 to Desired Mip
+        let destSize = { x: 0, y: 0 };
         for (let passIndex = 1; passIndex < this.IndexOfMipUsedForBloom; passIndex++) {
             destSize = {
                 x: this.DownsampleRTMipSizes[passIndex + 1].x,
@@ -380,7 +377,16 @@ export class RBloomPass {
 
             gl.drawArrays(gl.TRIANGLES, 0, 3);
         }
+    }
 
+    HQBloomBlurAndUpsample(
+        gl: WebGL2RenderingContext,
+        flameTexture: WebGLTexture,
+        firePlaneTexture: WebGLTexture,
+        numBlurPasses: number,
+        BlurPass: RBlurPass,
+    ) {
+        //Blur last MIP
         for (let i = 0; i < numBlurPasses; i++) {
             BlurPass.ApplyBlur(
                 gl,
@@ -398,6 +404,7 @@ export class RBloomPass {
         gl.blendFunc(gl.ONE, gl.CONSTANT_ALPHA);
         gl.blendColor(1.0, 1.0, 1.0, 0.05);
         gl.blendEquation(gl.FUNC_ADD);
+        let destSize = { x: 0, y: 0 };
         for (let passIndex = this.IndexOfMipUsedForBloom; passIndex > this.IndexOfMipReturned; passIndex--) {
             destSize = {
                 x: this.DownsampleRTMipSizes[passIndex - 1].x,

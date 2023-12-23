@@ -990,7 +990,18 @@ export function RenderMain() {
                     gl.bindTexture(gl.TEXTURE_2D, flameSourceTextureRef);
                     gl.generateMipmap(gl.TEXTURE_2D);
 
-                    GPostProcessPasses.Bloom!.DownsamplePrePass(
+                    GPostProcessPasses.Bloom!.HQBloomPrePass(
+                        gl,
+                        flameSourceTextureRef!,
+                        GRenderTargets.FirePlaneTexture,
+                    );
+                    gl.enable(gl.BLEND);
+                    gl.blendFunc(gl.ONE, gl.ONE);
+                    gl.blendEquation(gl.FUNC_ADD);
+                    GlowRender.Render(gl);
+                    gl.disable(gl.BLEND);
+                    GPostProcessPasses.Bloom!.HQBloomDownsample(gl);
+                    GPostProcessPasses.Bloom!.HQBloomBlurAndUpsample(
                         gl,
                         flameSourceTextureRef!,
                         GRenderTargets.FirePlaneTexture,

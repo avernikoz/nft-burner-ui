@@ -576,11 +576,11 @@ export class RRenderGlow {
 
         //Constants
         gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
-        gl.uniform1f(this.UniformParametersLocationList.Size, 0.1);
+        gl.uniform1f(this.UniformParametersLocationList.Size, 0.25);
         gl.uniform2f(
             this.UniformParametersLocationList.Position,
-            GUserInputDesc.InputPosCurViewSpace.x,
-            GUserInputDesc.InputPosCurViewSpace.y,
+            GUserInputDesc.InputPosPrevViewSpace.x,
+            GUserInputDesc.InputPosPrevViewSpace.y,
         );
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
