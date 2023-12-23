@@ -150,7 +150,8 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 		
 	}`;
 
-export const ShaderSourceBloomDownsampleFirstPassPS = /* glsl */ `#version 300 es
+export const ShaderSourceBloomDownsampleFirstPassPS =
+    /* glsl */ `#version 300 es
 	
 	precision mediump float;
 	precision mediump sampler2D;
@@ -203,7 +204,9 @@ export const ShaderSourceBloomDownsampleFirstPassPS = /* glsl */ `#version 300 e
 
 		vec3 firePlane = textureLod(FirePlaneTexture, texCoord.xy, 0.0).rgb;
 		float brightness = dot(firePlane.rgb, vec3( 0.33f, 0.33f, 0.33f ));
-		const float Threshold = 0.5f;
+		const float Threshold = float(` +
+    MathLerp(0.0, 0.75, Math.random()) +
+    /* glsl */ `);
 		float s = 1.0f;
 		if(brightness < Threshold)
 		{
@@ -778,6 +781,8 @@ export function GetShaderSourceCombinerPassPS() {
 
 			vec3 bloom = textureLod(BloomTexture, texCoords.xy, 0.f).rgb;
 
+			//OutColor = vec4(bloom.rgb, 1); return;
+
 			const float BloomStrength = 5.0f;
 			const vec2 SmokeBloomColorClampMinMax = vec2(0.15, 1.f);
 			const vec2 SmokeBloomAlphaClampMinMax = vec2(0.f, 1.f);
@@ -876,7 +881,9 @@ export function GetShaderSourceCombinerPassPS() {
 			}
 			gradParam = clamp(gradParam, 0.0, 1.0);
 			//colorFilter1 = mix(colorFilter1, vec3(1.0), 0.25);
-			final.rgb = mix(colorFilter1 * final.rgb, final.rgb, 1.f - clamp(gradParam, 0.75, 1.0));
+			final.rgb = mix(colorFilter1 * final.rgb, final.rgb, 1.f - clamp(gradParam, float(` +
+        Math.random() +
+        /* glsl */ `), 1.0));
 
 			/* colorFilter1 = mix(colorFilter1 * final.rgb, final.rgb, gradParam);
 			final.rgb = mix(colorFilter1, final.rgb, 1.f - (gradParam * 0.5)); */

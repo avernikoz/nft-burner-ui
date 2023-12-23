@@ -177,13 +177,14 @@ const GPostProcessPasses: {
     Bloom: null,
     FlamePostProcess: null,
     Combiner: null,
-    BloomNumBlurPasses: 2,
+    BloomNumBlurPasses: 3,
     RenderTargetMIPForBloom: 4,
 };
 
 //TODO: Backup texture for reallocation, to avoid flickering when window is resized
 function SetupBloomPostProcessPass(gl: WebGL2RenderingContext) {
-    const desiredBloomTexSize = 64; //aligned to smallest screen side
+    //const desiredBloomTexSize = 64; //aligned to smallest screen side
+    const desiredBloomTexSize = 32; //aligned to smallest screen side
 
     const alignedRTSize = {
         x: MathAlignToPowerOf2(GScreenDesc.RenderTargetSize.x),
@@ -887,7 +888,7 @@ export function RenderMain() {
                     //Render Background floor
                     BackGroundRenderPass.RenderFloor(
                         gl,
-                        GPostProcessPasses.Bloom!.GetBloomTextureMIP(4)!,
+                        GPostProcessPasses.Bloom!.GetBloomTextureMIP(3)!,
                         GPostProcessPasses.Combiner!.SmokeNoiseTexture,
                     );
                 }
@@ -911,7 +912,7 @@ export function RenderMain() {
                         GRenderTargets.SpotlightTexture!,
                     );
 
-                    if (RenderStateMachine.currentState === ERenderingState.BurningFinished) {
+                    if (0 && RenderStateMachine.currentState === ERenderingState.BurningFinished) {
                         //Render BURNT Stamp
                         BurntStampSprite.RunAnimation();
                         if (BurntStampSprite.AnimationT >= 0.95 && !BurntStampSprite.AnimationFinishedEventProcessed) {
@@ -995,11 +996,14 @@ export function RenderMain() {
                         flameSourceTextureRef!,
                         GRenderTargets.FirePlaneTexture,
                     );
-                    gl.enable(gl.BLEND);
-                    gl.blendFunc(gl.ONE, gl.ONE);
-                    gl.blendEquation(gl.FUNC_ADD);
-                    GlowRender.Render(gl);
-                    gl.disable(gl.BLEND);
+                    if (RenderStateMachine.currentState === ERenderingState.Preloading) {
+                        gl.enable(gl.BLEND);
+                        gl.blendFunc(gl.ONE, gl.ONE);
+                        gl.blendEquation(gl.FUNC_ADD);
+                        GlowRender.Render(gl);
+                        gl.disable(gl.BLEND);
+                    }
+
                     GPostProcessPasses.Bloom!.HQBloomDownsample(gl);
                     GPostProcessPasses.Bloom!.HQBloomBlurAndUpsample(
                         gl,

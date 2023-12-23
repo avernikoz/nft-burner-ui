@@ -910,7 +910,7 @@ export function GetShaderSourceFireVisualizerPS() {
 		#if 1 //BURNED IMAGE
 			vec3 burnedImageTexture = vec3(0.f);
 			const float kRandomValue = float(` +
-        MathLerp(0.01, 0.1, Math.random()) +
+        MathLerp(0.01, 0.075, Math.random()) +
         /* glsl */ `);
 			const float BurnedImageSharpness = kRandomValue;
 			float h = BurnedImageSharpness * 0.1;

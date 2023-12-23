@@ -1237,7 +1237,7 @@ export function GetShaderSourceGlowRenderPS() {
 	void main()
 	{
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
-		vec3 color = vec3(1.0, 0.8, 0.5);
+		vec3 color = vec3(1.0, 0.8, 0.7) * 0.5;
 		//color.rgb *= 3.f;
 		float s = 1.0 - min(1.0, 2.0 * length(flippedUVs - vec2(0.5)));
 		color *= s * s;

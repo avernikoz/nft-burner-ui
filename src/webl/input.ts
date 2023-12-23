@@ -99,12 +99,12 @@ export function UserInputUpdatePerFrame() {
 }
 
 export function InitUserInputEvents(canvas: HTMLCanvasElement) {
-    canvas.addEventListener("mousemove", (e) => {
+    document.addEventListener("mousemove", (e) => {
         e.preventDefault(); // Prevent default touchmove behavior, like scrolling
         RegisterUserInput(canvas, e);
     });
 
-    canvas.addEventListener("touchmove", (e) => {
+    document.addEventListener("touchmove", (e) => {
         e.preventDefault(); // Prevent default touchmove behavior, like scrolling
         RegisterUserInput(canvas, e);
     });

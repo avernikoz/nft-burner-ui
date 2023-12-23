@@ -18,7 +18,7 @@ import {
 } from "./shaders/shaderPostProcess";
 import { GTexturePool } from "./texturePool";
 import { Vector2 } from "./types";
-import { GTime, MathClamp } from "./utils";
+import { GTime, MathClamp, MathLerp } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -217,8 +217,6 @@ export class RBloomPass {
 
     public IndexOfMipUsedForBloom: number;
 
-    IndexOfMipReturned = 1;
-
     constructor(gl: WebGL2RenderingContext, bloomTextureSize: Vector2, bloomMipIndex: number) {
         //Create Shader Program
         this.ShaderProgramBloomPrePass = CreateShaderProgramVSPS(
@@ -260,6 +258,8 @@ export class RBloomPass {
 
         this.TextureSize = bloomTextureSize;
         this.IndexOfMipUsedForBloom = bloomMipIndex;
+        this.IndexOfMipReturned = Math.min(this.IndexOfMipReturned, bloomMipIndex);
+        this.NonConstBlendWeight = MathLerp(0.1, 0.4, Math.random());
 
         //Shader Parameters
 
@@ -351,14 +351,16 @@ export class RBloomPass {
 
     HQBloomDownsample(gl: WebGL2RenderingContext) {
         //Downsample from Mip1 to Desired Mip
+
+        gl.bindVertexArray(CommonRenderingResources.FullscreenPassVAO);
+        gl.useProgram(this.ShaderProgramBloomDownsample);
+
         let destSize = { x: 0, y: 0 };
         for (let passIndex = 1; passIndex < this.IndexOfMipUsedForBloom; passIndex++) {
             destSize = {
                 x: this.DownsampleRTMipSizes[passIndex + 1].x,
                 y: this.DownsampleRTMipSizes[passIndex + 1].y,
             };
-
-            gl.useProgram(this.ShaderProgramBloomDownsample);
 
             gl.viewport(0, 0, destSize.x, destSize.y);
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.DownsampleRTMipFrameBufferArr[passIndex + 1]);
@@ -378,6 +380,10 @@ export class RBloomPass {
             gl.drawArrays(gl.TRIANGLES, 0, 3);
         }
     }
+
+    IndexOfMipReturned = 3;
+
+    NonConstBlendWeight = 0.2;
 
     HQBloomBlurAndUpsample(
         gl: WebGL2RenderingContext,
@@ -399,10 +405,17 @@ export class RBloomPass {
             );
         }
 
+        const bConstBlendWeight = false;
+        const blendWeight = 0.025;
+
+        let blendWeightCur = this.NonConstBlendWeight;
+
         //Upsample
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.ONE, gl.CONSTANT_ALPHA);
-        gl.blendColor(1.0, 1.0, 1.0, 0.05);
+        if (bConstBlendWeight) {
+            gl.blendColor(1.0, 1.0, 1.0, blendWeight);
+        }
         gl.blendEquation(gl.FUNC_ADD);
         let destSize = { x: 0, y: 0 };
         for (let passIndex = this.IndexOfMipUsedForBloom; passIndex > this.IndexOfMipReturned; passIndex--) {
@@ -412,6 +425,11 @@ export class RBloomPass {
             };
 
             gl.useProgram(this.ShaderProgramBloomUpsample);
+
+            if (!bConstBlendWeight) {
+                gl.blendColor(1.0, 1.0, 1.0, blendWeightCur);
+                blendWeightCur *= blendWeightCur;
+            }
 
             gl.viewport(0, 0, destSize.x, destSize.y);
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.DownsampleRTMipFrameBufferArr[passIndex - 1]);
