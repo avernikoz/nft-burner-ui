@@ -1,4 +1,4 @@
-import { RBackgroundRenderPass, RBurntStampVisualizer, RSpotlightRenderPass } from "./backgroundScene";
+import { RBackgroundRenderPass, RBurntStampVisualizer, RRenderGlow, RSpotlightRenderPass } from "./backgroundScene";
 import { RFirePlanePass } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUISingleton } from "./helpers/gui";
@@ -177,7 +177,7 @@ const GPostProcessPasses: {
     Bloom: null,
     FlamePostProcess: null,
     Combiner: null,
-    BloomNumBlurPasses: 5,
+    BloomNumBlurPasses: 2,
     RenderTargetMIPForBloom: 4,
 };
 
@@ -198,7 +198,7 @@ function SetupBloomPostProcessPass(gl: WebGL2RenderingContext) {
         x: GScreenDesc.RenderTargetSize.x / Math.pow(2.0, GPostProcessPasses.RenderTargetMIPForBloom),
         y: GScreenDesc.RenderTargetSize.y / Math.pow(2.0, GPostProcessPasses.RenderTargetMIPForBloom),
     };
-    GPostProcessPasses.Bloom = new RBloomPass(gl, bloomTextureSize);
+    GPostProcessPasses.Bloom = new RBloomPass(gl, bloomTextureSize, GPostProcessPasses.RenderTargetMIPForBloom);
 }
 
 function SetupPostProcessPasses(gl: WebGL2RenderingContext) {
@@ -356,6 +356,7 @@ export function RenderMain() {
     //================================
     // 	INIT DEBUG STATE CONTROLLERS
     //================================
+    const bEnableStateDebug = false;
     const StateControllers: SpatialControlPoint[] = [];
     const stateControllerSize = 0.05;
     const numStateControllers = 6;
@@ -363,7 +364,7 @@ export function RenderMain() {
     const stateControllersViewSpaceLength = 0.5;
     const distBBetwenControllers = stateControllersViewSpaceLength / (numStateControllers - 1);
     let curStateControllerPos = stateControllersViewSpaceStart;
-    if (DEBUG_ENV) {
+    if (DEBUG_ENV && bEnableStateDebug) {
         StateControllers[0] = new SpatialControlPoint(
             gl,
             { x: curStateControllerPos, y: -0.75 },
@@ -449,6 +450,9 @@ export function RenderMain() {
     const SpotlightRenderPass = new RSpotlightRenderPass(gl);
     const BurntStampSprite = new RBurntStampVisualizer(gl);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const GlowRender = new RRenderGlow(gl);
+
     SetupPostProcessPasses(gl);
 
     const SpatialControlUIVisualizer = new RSpatialControllerVisualizationRenderer(gl);
@@ -466,6 +470,7 @@ export function RenderMain() {
     const FirePlaneSizePixels = { x: 512, y: 512 };
     //const FirePlaneSizePixels = { x: 1024, y: 1024 };
     const BurningSurface = new RFirePlanePass(gl, FirePlaneSizePixels);
+    //BurningSurface.SetToBurned(gl);
 
     const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
     const FirePlaneAnimationController = new AnimationController(
@@ -711,7 +716,7 @@ export function RenderMain() {
             //=========================
             // 	STATE DEBUG GUI UPDATE
             //=========================
-            if (DEBUG_ENV) {
+            if (DEBUG_ENV && bEnableStateDebug) {
                 StateControllers.forEach((controller) => {
                     controller.OnUpdate();
                 });
@@ -882,7 +887,7 @@ export function RenderMain() {
                     //Render Background floor
                     BackGroundRenderPass.RenderFloor(
                         gl,
-                        GPostProcessPasses.Bloom!.BloomTexture!,
+                        GPostProcessPasses.Bloom!.GetBloomTextureMIP(4)!,
                         GPostProcessPasses.Combiner!.SmokeNoiseTexture,
                     );
                 }
@@ -938,7 +943,7 @@ export function RenderMain() {
                         SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
                     }
 
-                    if (DEBUG_ENV) {
+                    if (DEBUG_ENV && bEnableStateDebug) {
                         StateControllers.forEach((controller) => {
                             SpatialControlUIVisualizer.Render(gl, controller);
                         });
@@ -985,17 +990,42 @@ export function RenderMain() {
                     gl.bindTexture(gl.TEXTURE_2D, flameSourceTextureRef);
                     gl.generateMipmap(gl.TEXTURE_2D);
 
-                    GPostProcessPasses.Bloom!.PrePass(
+                    GPostProcessPasses.Bloom!.HQBloomPrePass(
+                        gl,
+                        flameSourceTextureRef!,
+                        GRenderTargets.FirePlaneTexture,
+                    );
+                    gl.enable(gl.BLEND);
+                    gl.blendFunc(gl.ONE, gl.ONE);
+                    gl.blendEquation(gl.FUNC_ADD);
+                    GlowRender.Render(gl);
+                    gl.disable(gl.BLEND);
+                    GPostProcessPasses.Bloom!.HQBloomDownsample(gl);
+                    GPostProcessPasses.Bloom!.HQBloomBlurAndUpsample(
+                        gl,
+                        flameSourceTextureRef!,
+                        GRenderTargets.FirePlaneTexture,
+                        GPostProcessPasses.BloomNumBlurPasses,
+                        GPostProcessPasses.Blur!,
+                    );
+
+                    /* GPostProcessPasses.Bloom!.PrePass(
                         gl,
                         flameSourceTextureRef!,
                         GRenderTargets.FirePlaneTexture,
                         GRenderTargets.SpotlightTexture!,
                         GPostProcessPasses.RenderTargetMIPForBloom,
-                    );
+                    ); */
 
-                    for (let i = 0; i < GPostProcessPasses.BloomNumBlurPasses; i++) {
+                    /* gl.enable(gl.BLEND);
+                    gl.blendFunc(gl.ONE, gl.ONE);
+                    gl.blendEquation(gl.FUNC_ADD);
+                    GlowRender.Render(gl);
+                    gl.disable(gl.BLEND); */
+
+                    /* for (let i = 0; i < GPostProcessPasses.BloomNumBlurPasses; i++) {
                         GPostProcessPasses.Bloom!.Blur(gl, GPostProcessPasses.Blur!);
-                    }
+                    } */
                 }
 
                 //======================
@@ -1019,7 +1049,7 @@ export function RenderMain() {
                     gl,
                     GRenderTargets.FirePlaneTexture!,
                     flameSourceTextureRef!,
-                    GPostProcessPasses.Bloom!.BloomTexture!,
+                    GPostProcessPasses.Bloom!.GetFinalTexture()!,
                     GRenderTargets.SmokeTexture!,
                     GRenderTargets.SpotlightTexture!,
                     BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
