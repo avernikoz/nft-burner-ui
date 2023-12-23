@@ -787,7 +787,9 @@ export function GetShaderSourceFireVisualizerPS() {
 					{
 						ivec2 lightIndex2D = ivec2(x,y);
 						float curLightIntensity = texelFetch(PointLightsTexture, lightIndex2D, 0).r;
-
+						curLightIntensity *= float(` +
+        (0.5 + Math.random() * 0.5) +
+        /* glsl */ `);
 						vec3 lightPos;
 						lightPos.x = domainStart + float(lightIndex2D.x) * distanceBetweenLightsNDC;
 	    	    		lightPos.y = domainStart + float(lightIndex2D.y) * distanceBetweenLightsNDC;
