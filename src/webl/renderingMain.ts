@@ -519,7 +519,7 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
     //
-    SmokeParticlesDesc.inAlphaScale = 0.05 + Math.random() * 0.9;
+    SmokeParticlesDesc.inAlphaScale = 0.2 + Math.random() * 0.8;
     SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
