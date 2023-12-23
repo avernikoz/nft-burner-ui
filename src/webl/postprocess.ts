@@ -259,7 +259,7 @@ export class RBloomPass {
         this.TextureSize = bloomTextureSize;
         this.IndexOfMipUsedForBloom = bloomMipIndex;
         this.IndexOfMipReturned = Math.min(this.IndexOfMipReturned, bloomMipIndex);
-        this.NonConstBlendWeight = MathLerp(0.1, 0.35, Math.random());
+        this.NonConstBlendWeight = MathLerp(0.1, 0.3, Math.random());
 
         //Shader Parameters
 

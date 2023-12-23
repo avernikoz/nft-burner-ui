@@ -203,6 +203,7 @@ export const ShaderSourceBloomDownsampleFirstPassPS =
 	#endif
 
 		vec3 firePlane = textureLod(FirePlaneTexture, texCoord.xy, 0.0).rgb;
+		firePlane *= 0.75;
 		float brightness = dot(firePlane.rgb, vec3( 0.33f, 0.33f, 0.33f ));
 		const float Threshold = float(` +
     MathLerp(0.0, 0.75, Math.random()) +
@@ -780,6 +781,7 @@ export function GetShaderSourceCombinerPassPS() {
 
 
 			vec3 bloom = textureLod(BloomTexture, texCoords.xy, 0.f).rgb;
+			//bloom *= 0.5;
 
 			//OutColor = vec4(bloom.rgb, 1); return;
 
