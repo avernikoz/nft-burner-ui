@@ -210,7 +210,7 @@ export const ShaderSourceBloomDownsampleFirstPassPS = /* glsl */ `#version 300 e
 			s = 0.0;
 		}
 
-		OutColor = max(flame.rgb * 30.25f, firePlane.rgb * s).rgb;
+		OutColor = max(flame.rgb * 1.25f, firePlane.rgb * s).rgb;
 	}`;
 export const ShaderSourceBloomDownsamplePS = /* glsl */ `#version 300 es
 	

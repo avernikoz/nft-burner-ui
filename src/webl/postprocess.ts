@@ -18,7 +18,7 @@ import {
 } from "./shaders/shaderPostProcess";
 import { GTexturePool } from "./texturePool";
 import { Vector2 } from "./types";
-import { GTime } from "./utils";
+import { GTime, MathClamp } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -203,6 +203,8 @@ export class RBloomPass {
 
     public DownsampleRTMipFrameBufferArr: WebGLFramebuffer[] = [];
 
+    DownsampleRTMipSizes: Vector2[] = [];
+
     public BloomTexture;
 
     public BloomTextureIntermediate;
@@ -214,6 +216,8 @@ export class RBloomPass {
     public TextureSize: Vector2;
 
     public IndexOfMipUsedForBloom: number;
+
+    IndexOfMipReturned = 1;
 
     constructor(gl: WebGL2RenderingContext, bloomTextureSize: Vector2, bloomMipIndex: number) {
         //Create Shader Program
@@ -274,11 +278,13 @@ export class RBloomPass {
 
         this.DownsampleRTMipFrameBufferArr = [];
         this.DownsampleRTMipArr = [];
+        this.DownsampleRTMipSizes = [];
 
         const MipSize = { x: GScreenDesc.RenderTargetSize.x, y: GScreenDesc.RenderTargetSize.y };
+        //this.DownsampleRTMipSizes[0] = { x: GScreenDesc.RenderTargetSize.x, y: GScreenDesc.RenderTargetSize.y };
 
         for (let i = 0; i <= bloomMipIndex; i++) {
-            console.log(`Allocating Downsample Mip: ` + i + ` SizeX: ` + MipSize.x + ` SizeY: ` + MipSize.y);
+            //console.log(`Allocating Downsample Mip: ` + i + ` SizeX: ` + MipSize.x + ` SizeY: ` + MipSize.y);
             this.DownsampleRTMipArr[i] = CreateTextureRT(
                 gl,
                 MipSize,
@@ -291,8 +297,10 @@ export class RBloomPass {
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.DownsampleRTMipFrameBufferArr[i]);
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.DownsampleRTMipArr[i], 0);
 
-            MipSize.x = Math.floor(MipSize.x * 0.5);
-            MipSize.y = Math.floor(MipSize.y * 0.5);
+            this.DownsampleRTMipSizes[i] = { x: MipSize.x, y: MipSize.y };
+
+            MipSize.x = Math.floor(MipSize.x / 2.0);
+            MipSize.y = Math.floor(MipSize.y / 2.0);
         }
 
         gl.activeTexture(gl.TEXTURE0 + 1);
@@ -316,9 +324,9 @@ export class RBloomPass {
         BlurPass: RBlurPass,
     ) {
         //1. render to MIP 1
-        const destSize = {
-            x: Math.floor(GScreenDesc.RenderTargetSize.x * 0.5),
-            y: Math.floor(GScreenDesc.RenderTargetSize.y * 0.5),
+        let destSize = {
+            x: this.DownsampleRTMipSizes[1].x,
+            y: this.DownsampleRTMipSizes[1].y,
         };
 
         gl.viewport(0, 0, destSize.x, destSize.y);
@@ -348,8 +356,10 @@ export class RBloomPass {
 
         //Downsample from Mip1 to Desired Mip
         for (let passIndex = 1; passIndex < this.IndexOfMipUsedForBloom; passIndex++) {
-            destSize.x = Math.floor(destSize.x * 0.5);
-            destSize.y = Math.floor(destSize.y * 0.5);
+            destSize = {
+                x: this.DownsampleRTMipSizes[passIndex + 1].x,
+                y: this.DownsampleRTMipSizes[passIndex + 1].y,
+            };
 
             gl.useProgram(this.ShaderProgramBloomDownsample);
 
@@ -388,9 +398,11 @@ export class RBloomPass {
         gl.blendFunc(gl.ONE, gl.CONSTANT_ALPHA);
         gl.blendColor(1.0, 1.0, 1.0, 0.05);
         gl.blendEquation(gl.FUNC_ADD);
-        for (let passIndex = this.IndexOfMipUsedForBloom; passIndex > 1; passIndex--) {
-            destSize.x = Math.floor(destSize.x * 2.0);
-            destSize.y = Math.floor(destSize.y * 2.0);
+        for (let passIndex = this.IndexOfMipUsedForBloom; passIndex > this.IndexOfMipReturned; passIndex--) {
+            destSize = {
+                x: this.DownsampleRTMipSizes[passIndex - 1].x,
+                y: this.DownsampleRTMipSizes[passIndex - 1].y,
+            };
 
             gl.useProgram(this.ShaderProgramBloomUpsample);
 
@@ -415,7 +427,11 @@ export class RBloomPass {
     }
 
     GetFinalTexture() {
-        return this.DownsampleRTMipArr[1];
+        return this.DownsampleRTMipArr[this.IndexOfMipReturned];
+    }
+
+    GetBloomTextureMIP(mipIndex: number) {
+        return this.DownsampleRTMipArr[MathClamp(mipIndex, this.IndexOfMipReturned, this.IndexOfMipUsedForBloom)];
     }
 
     PrePass(

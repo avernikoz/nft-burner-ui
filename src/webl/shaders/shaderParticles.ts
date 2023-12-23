@@ -827,7 +827,7 @@ function scEmbersSpecificShading() {
 		//s += 0.15f;
 		s = (1.f - clamp(s, 0.f, 1.f));
 		colorFinal.rgb *= s;
-		colorFinal.rgb *= 1.5f;
+		colorFinal.rgb *= 2.25f;
 		//colorFinal.rgb *= 50.f;
 		`;
 }

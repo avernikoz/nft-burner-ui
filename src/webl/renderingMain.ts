@@ -887,7 +887,7 @@ export function RenderMain() {
                     //Render Background floor
                     BackGroundRenderPass.RenderFloor(
                         gl,
-                        GPostProcessPasses.Bloom!.BloomTexture!,
+                        GPostProcessPasses.Bloom!.GetBloomTextureMIP(4)!,
                         GPostProcessPasses.Combiner!.SmokeNoiseTexture,
                     );
                 }
