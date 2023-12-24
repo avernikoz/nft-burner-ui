@@ -537,7 +537,7 @@ export function RenderMain() {
     if (GDatGUI) {
         //For global vars
         {
-            //GDatGUI.close();
+            GDatGUI.close();
 
             GDatGUI.add(GSettings, "bRunSimulation").name("Run Simulation");
 
