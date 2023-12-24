@@ -56,19 +56,19 @@ export class GRenderingStateMachine {
 
     public get bCanBurn(): boolean {
         return (
-            this.currentState === ERenderingState.BurningReady ||
-            this.currentState === ERenderingState.BurningNow ||
-            this.currentState === ERenderingState.BurningFinished ||
-            this.currentState === ERenderingState.Intro
+            this.currentState == ERenderingState.BurningReady ||
+            this.currentState == ERenderingState.BurningNow ||
+            this.currentState == ERenderingState.BurningFinished ||
+            this.currentState == ERenderingState.Intro
         );
     }
 
     public get bCurStateHasSceneDesc(): boolean {
         return (
-            this.currentState === ERenderingState.Preloading ||
-            this.currentState === ERenderingState.Intro ||
-            this.currentState === ERenderingState.Inventory ||
-            this.currentState === ERenderingState.BurningReady
+            this.currentState == ERenderingState.Preloading ||
+            this.currentState == ERenderingState.Intro ||
+            this.currentState == ERenderingState.Inventory ||
+            this.currentState == ERenderingState.BurningReady
         );
     }
 

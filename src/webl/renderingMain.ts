@@ -278,6 +278,7 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
 }
 
 export function RenderMain() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const DEBUG_ENV = APP_ENVIRONMENT === "development";
 
     const canvas = getCanvas();
@@ -353,73 +354,6 @@ export function RenderMain() {
     }
 
     GTexturePool.ExtASTC = gl.getExtension("WEBGL_compressed_texture_astc");
-
-    //================================
-    // 	INIT DEBUG STATE CONTROLLERS
-    //================================
-    const bEnableStateDebug = false;
-    const StateControllers: SpatialControlPoint[] = [];
-    const stateControllerSize = 0.05;
-    const numStateControllers = 6;
-    const stateControllersViewSpaceStart = -0.25;
-    const stateControllersViewSpaceLength = 0.5;
-    const distBBetwenControllers = stateControllersViewSpaceLength / (numStateControllers - 1);
-    let curStateControllerPos = stateControllersViewSpaceStart;
-    if (DEBUG_ENV && bEnableStateDebug) {
-        StateControllers[0] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon0`,
-            `stateIcon01`,
-        );
-        curStateControllerPos += distBBetwenControllers;
-        StateControllers[1] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon1`,
-            `stateIcon11`,
-        );
-        curStateControllerPos += distBBetwenControllers;
-        StateControllers[2] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon2`,
-            `stateIcon21`,
-        );
-        curStateControllerPos += distBBetwenControllers;
-        StateControllers[3] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon3`,
-            `stateIcon31`,
-        );
-        curStateControllerPos += distBBetwenControllers;
-        StateControllers[4] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon3`,
-            `stateIcon31`,
-        );
-        curStateControllerPos += distBBetwenControllers;
-        StateControllers[5] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon3`,
-            `stateIcon31`,
-        );
-    }
 
     //==============================
     // 		ALLOCATE RESOURCES
@@ -544,6 +478,7 @@ export function RenderMain() {
         `spotLightIcon2_R8`,
         `spotLightIcon2Inv`,
     );
+    SpotlightPositionController.bEnabled = false;
     function ApplySpotlightControlFromGUI() {
         if (SpotlightPositionController.bIntersectionThisFrame) {
             //Control Spotlight
@@ -588,6 +523,7 @@ export function RenderMain() {
         `connectButton`,
         `connectButton1`,
     );
+    ConnectWalletButtonController.bEnabled = false;
     //==============================
     // 	 INIT SCENE STATES DESCS
     //==============================
@@ -616,6 +552,16 @@ export function RenderMain() {
             folder.add(GGpuReadData, "CurFireValueCPU").listen().step(0.001);
 
             folder.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses");
+
+            //State Debug UI
+            const stateFolder = GDatGUI.addFolder("States");
+            const StateMachineInner = { StateCurrent: ERenderingState.Intro };
+            const stateController = stateFolder
+                .add(StateMachineInner, "StateCurrent", ERenderingState)
+                .name("Current State");
+            stateController.onChange((value: ERenderingState) => {
+                GRenderingStateMachine.SetRenderingState(value as ERenderingState);
+            });
         }
 
         GSceneDescSubmitDebugUI(GDatGUI);
@@ -690,61 +636,31 @@ export function RenderMain() {
                 RenderStateMachine.AdvanceTransitionParameter();
 
                 if (RenderStateMachine.currentState == ERenderingState.Intro) {
-                    //Connect wallet button position alignment
-                    {
-                        if (GScreenDesc.ViewRatioXY.x > 1) {
-                            ConnectWalletButtonController.PositionViewSpace.x = -0.5 * GScreenDesc.ViewRatioXY.x;
-                            ConnectWalletButtonController.PositionViewSpace.y = 0.0;
-                        } else {
-                            ConnectWalletButtonController.PositionViewSpace.x = 0.0;
-                            ConnectWalletButtonController.PositionViewSpace.y = 0.5;
+                    if (ConnectWalletButtonController.bEnabled) {
+                        //Connect wallet button position alignment
+                        {
+                            if (GScreenDesc.ViewRatioXY.x > 1) {
+                                ConnectWalletButtonController.PositionViewSpace.x = -0.5 * GScreenDesc.ViewRatioXY.x;
+                                ConnectWalletButtonController.PositionViewSpace.y = 0.0;
+                            } else {
+                                ConnectWalletButtonController.PositionViewSpace.x = 0.0;
+                                ConnectWalletButtonController.PositionViewSpace.y = 0.5;
+                            }
+                        }
+                        ConnectWalletButtonController.OnUpdate();
+                        if (ConnectWalletButtonController.bSelectedThisFrame) {
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                            newState = ERenderingState.Inventory;
+                        }
+                        if (
+                            ConnectWalletButtonController.bIntersectionThisFrame &&
+                            ConnectWalletButtonController.bIntersectionThisFrame !==
+                                ConnectWalletButtonController.bIntersectionPrevFrame
+                        ) {
+                            GAudioEngine.PlayClickSound();
                         }
                     }
-                    ConnectWalletButtonController.OnUpdate();
-                    if (ConnectWalletButtonController.bSelectedThisFrame) {
-                        newState = ERenderingState.Inventory;
-                    }
-                    if (
-                        ConnectWalletButtonController.bIntersectionThisFrame &&
-                        ConnectWalletButtonController.bIntersectionThisFrame !==
-                            ConnectWalletButtonController.bIntersectionPrevFrame
-                    ) {
-                        GAudioEngine.PlayClickSound();
-                    }
                 }
-            }
-
-            //=========================
-            // 	STATE DEBUG GUI UPDATE
-            //=========================
-            if (DEBUG_ENV && bEnableStateDebug) {
-                StateControllers.forEach((controller) => {
-                    controller.OnUpdate();
-                });
-                //Check for clicked states UIs
-                for (let i = 0; i < numStateControllers; i++) {
-                    if (StateControllers[i].bSelectedThisFrame) {
-                        newState = i;
-                    }
-                    if (
-                        StateControllers[i].bIntersectionThisFrame &&
-                        StateControllers[i].bIntersectionThisFrame !== StateControllers[i].bIntersectionPrevFrame
-                    ) {
-                        GAudioEngine.PlayClickSound();
-                    }
-                }
-                if (newState != RenderStateMachine.currentState) {
-                    //...
-                    //GAudioEngine.PlayIntroSound();
-
-                    GRenderingStateMachine.SetRenderingState(newState);
-                }
-
-                /* StateControllers.forEach((controller) => {
-                controller.ClearState();
-            	}); */
-                StateControllers[RenderStateMachine.currentState].bSelectedThisFrame = true;
-                StateControllers[RenderStateMachine.currentState].bIntersectionThisFrame = true;
             }
 
             //============================
@@ -757,8 +673,10 @@ export function RenderMain() {
             ) {
                 ApplyCameraControl();
 
-                SpotlightPositionController.OnUpdate();
-                ApplySpotlightControlFromGUI();
+                if (SpotlightPositionController.bEnabled) {
+                    SpotlightPositionController.OnUpdate();
+                    ApplySpotlightControlFromGUI();
+                }
 
                 //=========================
                 // 		TOOL UPDATE
@@ -938,16 +856,14 @@ export function RenderMain() {
                     gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ONE, gl.ONE);
                     gl.blendEquation(gl.MAX);
-                    //SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
-
-                    if (RenderStateMachine.currentState == ERenderingState.Intro) {
-                        SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
+                    if (SpotlightPositionController.bEnabled) {
+                        SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
                     }
 
-                    if (DEBUG_ENV && bEnableStateDebug) {
-                        StateControllers.forEach((controller) => {
-                            SpatialControlUIVisualizer.Render(gl, controller);
-                        });
+                    if (ConnectWalletButtonController.bEnabled) {
+                        if (RenderStateMachine.currentState == ERenderingState.Intro) {
+                            SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
+                        }
                     }
 
                     gl.disable(gl.BLEND);
