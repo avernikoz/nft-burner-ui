@@ -203,10 +203,11 @@ export const ShaderSourceBloomDownsampleFirstPassPS =
 	#endif
 
 		vec3 firePlane = textureLod(FirePlaneTexture, texCoord.xy, 0.0).rgb;
-		firePlane *= 0.75;
+		//firePlane *= 0.75;
+		//firePlane *= 1.5;
 		float brightness = dot(firePlane.rgb, vec3( 0.33f, 0.33f, 0.33f ));
 		const float Threshold = float(` +
-    MathLerp(0.0, 0.75, Math.random()) +
+    MathLerp(0.2, 0.6, Math.random()) +
     /* glsl */ `);
 		float s = 1.0f;
 		if(brightness < Threshold)
@@ -214,7 +215,7 @@ export const ShaderSourceBloomDownsampleFirstPassPS =
 			s = 0.0;
 		}
 
-		OutColor = max(flame.rgb * 1.25f, firePlane.rgb * s).rgb;
+		OutColor = max(flame.rgb * 1.0f, firePlane.rgb * s).rgb;
 	}`;
 export const ShaderSourceBloomDownsamplePS = /* glsl */ `#version 300 es
 	
@@ -884,7 +885,7 @@ export function GetShaderSourceCombinerPassPS() {
 			gradParam = clamp(gradParam, 0.0, 1.0);
 			//colorFilter1 = mix(colorFilter1, vec3(1.0), 0.25);
 			final.rgb = mix(colorFilter1 * final.rgb, final.rgb, 1.f - clamp(gradParam, float(` +
-        Math.random() +
+        (0.2 + Math.random() * 0.8) +
         /* glsl */ `), 1.0));
 
 			/* colorFilter1 = mix(colorFilter1 * final.rgb, final.rgb, gradParam);
