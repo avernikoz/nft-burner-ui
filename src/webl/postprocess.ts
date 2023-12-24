@@ -381,7 +381,7 @@ export class RBloomPass {
         }
     }
 
-    IndexOfMipReturned = 3;
+    IndexOfMipReturned = 1;
 
     NonConstBlendWeight = 0.2;
 
@@ -405,8 +405,8 @@ export class RBloomPass {
             );
         }
 
-        const bConstBlendWeight = false;
-        const blendWeight = 0.025;
+        const bConstBlendWeight = true;
+        const blendWeight = 0.0375;
 
         let blendWeightCur = this.NonConstBlendWeight;
 
