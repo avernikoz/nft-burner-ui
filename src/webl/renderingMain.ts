@@ -581,7 +581,9 @@ export function RenderMain() {
     //
     //=============================================================================================================================
 
-    const GFirstRenderingFrame = true;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, prefer-const
+    let GFirstRenderingFrame = true;
+    let bInitialImagePreProcessed = false;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
         if (gl !== null && GRenderTargets.FirePlaneTexture !== null && GPostProcessPasses.CopyPresemt !== null) {
@@ -666,16 +668,30 @@ export function RenderMain() {
             //============================
             // 		AFTER PRELOADER
             //============================
+
+            if (GTexturePool.AreAllTexturesLoaded() && !bInitialImagePreProcessed) {
+                BurningSurface.FirePlaneImagePreProcess(gl);
+                bInitialImagePreProcessed = true;
+            }
+
             if (
                 /* GTexturePool.AreAllTexturesLoaded() && */
-                GFirstRenderingFrame ||
-                RenderStateMachine.currentState !== ERenderingState.Preloading
+                1
             ) {
                 ApplyCameraControl();
 
                 if (SpotlightPositionController.bEnabled) {
                     SpotlightPositionController.OnUpdate();
                     ApplySpotlightControlFromGUI();
+                }
+
+                //Update Iamge Surface with one selected from Inventory
+                if (RenderStateMachine.currentState === ERenderingState.Inventory) {
+                    const srcImage = IMAGE_STORE_SINGLETON_INSTANCE.getImage();
+                    const srcImageUrl = IMAGE_STORE_SINGLETON_INSTANCE.getImageUrl();
+                    if (srcImage && srcImageUrl) {
+                        BurningSurface.UpdatePlaneSurfaceImage(gl, srcImage, srcImageUrl);
+                    }
                 }
 
                 //=========================
@@ -815,15 +831,6 @@ export function RenderMain() {
                 // 		BURNING SURFACE RENDER
                 //=================================
                 if (!bPreloaderState) {
-                    //Update Iamge Surface with one selected from Inventory
-                    if (RenderStateMachine.currentState === ERenderingState.Inventory) {
-                        const srcImage = IMAGE_STORE_SINGLETON_INSTANCE.getImage();
-                        const srcImageUrl = IMAGE_STORE_SINGLETON_INSTANCE.getImageUrl();
-                        if (srcImage && srcImageUrl) {
-                            BurningSurface.UpdatePlaneSurfaceImage(gl, srcImage, srcImageUrl);
-                        }
-                    }
-
                     BurningSurface.VisualizeFirePlane(
                         gl,
                         BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,

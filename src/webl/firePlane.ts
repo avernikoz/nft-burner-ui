@@ -8,6 +8,7 @@ import {
     ShaderSourceApplyFireVS,
     ShaderSourceFireUpdatePS,
     GetShaderSourceFireVisualizerPS,
+    GetShaderSourceFirePlanePreProcess,
 } from "./shaders/shaderFirePlane";
 import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
 import { GUserInputDesc } from "./input";
@@ -139,6 +140,8 @@ export class RFirePlanePass {
 
     UniformParametersLocationListFireUpdate;
 
+    UniformParametersLocationListPreProcess;
+
     NoiseTexture: WebGLTexture;
 
     NoiseTextureLQ: WebGLTexture;
@@ -146,6 +149,8 @@ export class RFirePlanePass {
     NoiseTextureInterpolator: number;
 
     VisualizerShaderProgram: WebGLProgram;
+
+    ImagePreProcessShaderProgram: WebGLProgram;
 
     public VisualizerUniformParametersLocationList;
 
@@ -166,6 +171,12 @@ export class RFirePlanePass {
     VisualizerAfterBurnNoiseTexture: WebGLTexture;
 
     VisualizerFirePlaneNoiseTexture: WebGLTexture;
+
+    ProcessedImageTexture: WebGLTexture;
+
+    ProcessedImageTextureFBO: WebGLFramebuffer;
+
+    ProcessedImageTextureSize: number;
 
     //Paper
 
@@ -287,6 +298,32 @@ export class RFirePlanePass {
 
         this.NoiseTextureInterpolator = 0;
 
+        //================================================ PreProcess Shader
+
+        this.ProcessedImageTextureSize = 1024;
+
+        this.ProcessedImageTexture = CreateTextureRT(
+            gl,
+            { x: this.ProcessedImageTextureSize, y: this.ProcessedImageTextureSize },
+            gl.RGBA,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            true,
+        )!;
+
+        this.ProcessedImageTextureFBO = gl.createFramebuffer()!;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.ProcessedImageTextureFBO);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.ProcessedImageTexture, 0);
+
+        this.ImagePreProcessShaderProgram = CreateShaderProgramVSPS(
+            gl,
+            ShaderSourceFullscreenPassVS,
+            GetShaderSourceFirePlanePreProcess(),
+        );
+
+        //Shader Parameters
+        this.UniformParametersLocationListPreProcess = GetUniformParametersList(gl, this.ImagePreProcessShaderProgram);
+
         //================================================ Fire Visualize Shader
 
         //Create Shader Program
@@ -304,6 +341,7 @@ export class RFirePlanePass {
         this.CurrentImageTextureSrc = "apeBlue";
         //this.CurrentImageTextureSrc = "assets/example2.png";
         this.VisualizerImageTexture = GTexturePool.CreateTexture(gl, false, this.CurrentImageTextureSrc, true, true);
+        this.FirePlaneImagePreProcess(gl);
         this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "ashTexture_R8", true);
 
         this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(gl, false, "afterBurnNoise2_R8");
@@ -485,21 +523,34 @@ export class RFirePlanePass {
 
             gl.bindTexture(gl.TEXTURE_2D, texRef);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, inImage);
-            gl.generateMipmap(gl.TEXTURE_2D);
 
-            if (1 /* bGenerateMips */) {
-                if (1 /* bUseTrilinearFilter */) {
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-                } else {
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
-                }
-            } else {
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            }
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+            this.FirePlaneImagePreProcess(gl);
         }
+    }
+
+    FirePlaneImagePreProcess(gl: WebGL2RenderingContext) {
+        gl.viewport(0, 0, this.ProcessedImageTextureSize, this.ProcessedImageTextureSize);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.ProcessedImageTextureFBO);
+
+        gl.bindVertexArray(CommonRenderingResources.FullscreenPassVAO);
+
+        gl.useProgram(this.ImagePreProcessShaderProgram);
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 5);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerImageTexture);
+        gl.uniform1i(this.UniformParametersLocationListPreProcess.ImageTexture, 5);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        gl.bindTexture(gl.TEXTURE_2D, this.ProcessedImageTexture);
+        gl.generateMipmap(gl.TEXTURE_2D);
     }
 
     VisualizeFirePlane(gl: WebGL2RenderingContext, pointLightsTexture: WebGLTexture, spotlightTexture: WebGLTexture) {
@@ -596,7 +647,8 @@ export class RFirePlanePass {
         gl.uniform1i(this.VisualizerUniformParametersLocationList.FlameColorLUT, 4);
 
         gl.activeTexture(gl.TEXTURE0 + 5);
-        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerImageTexture);
+        //gl.bindTexture(gl.TEXTURE_2D, this.VisualizerImageTexture);
+        gl.bindTexture(gl.TEXTURE_2D, this.ProcessedImageTexture);
         gl.uniform1i(this.VisualizerUniformParametersLocationList.ImageTexture, 5);
 
         gl.activeTexture(gl.TEXTURE0 + 6);
