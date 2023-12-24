@@ -55,6 +55,8 @@ export const ProfileLabel = styled.div`
     margin-top: 0;
 
     .balance {
+        overflow: hidden;
+        text-overflow: ellipsis;
         letter-spacing: 3px;
     }
 
