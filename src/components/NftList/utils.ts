@@ -44,3 +44,18 @@ export const getItemSize = (parentSizeWidth: number) => {
 
     return { itemSize: itemSizePx, paddingSize: paddingSizePx };
 };
+
+export const getRowCount = (itemsList: unknown[]): number => {
+    const itemsCount = itemsList.length;
+
+    // If items are less than 16, return 4 rows
+    if (itemsCount <= 16) {
+        return 4;
+    }
+
+    // Otherwise, calculate the number of rows needed to accommodate all items
+    // We add 3 to itemsCount before dividing by 4 to handle any remainder
+    const rows = Math.floor((itemsCount + 3) / 4);
+
+    return rows;
+};

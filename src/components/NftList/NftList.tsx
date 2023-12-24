@@ -22,7 +22,7 @@ import { ToastContext } from "../ToastProvider/ToastProvider";
 import { List, NftListAutosizerContainer, NftListTitle, SpinnerContainer } from "./NftList.styled";
 import { evmMapper, solanaMapper, suiMapper } from "./mappers";
 import { useEthersSigner } from "./variables";
-import { getChainName, getItemSize } from "./utils";
+import { getChainName, getItemSize, getRowCount } from "./utils";
 import EmptySVG from "../../assets/svg/emptyNFT.svg";
 import { EmptyNFTList } from "../EmptyNFTList/EmptyNFTList";
 
@@ -30,7 +30,7 @@ export const NftList = () => {
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const signer = useEthersSigner();
-    const [NFTList, setNFTList] = useState<INft[]>([]);
+    const [nftList, setNFTList] = useState<INft[]>([]);
     const wagmiAccount = useAccount();
     const [activeNft, setActiveNft] = useState<number | null>(null);
     const [showSpinner, setShowSpinner] = useState<boolean>(true);
@@ -115,7 +115,7 @@ export const NftList = () => {
     ]);
 
     const isNFTListLoaded = !showSpinner;
-    const isNFTListEmpty = NFTList.length === 0;
+    const isNFTListEmpty = nftList.length === 0;
 
     // console.debug("isNFTListLoaded: ", isNFTListLoaded);
     // console.debug("isNFTListEmpty: ", isNFTListEmpty);
@@ -133,7 +133,8 @@ export const NftList = () => {
                                 console.debug(`width: ${width} height ${height}`);
                                 // TODO: Change when responsive design
                                 const columnCount = 4;
-                                const rowCount = 4;
+                                console.debug("nftList.length", nftList.length);
+                                const rowCount = getRowCount(nftList);
 
                                 const { itemSize, paddingSize } = getItemSize(width);
 
@@ -152,7 +153,7 @@ export const NftList = () => {
                                                 const CELL_GAP = paddingSize;
                                                 const index = rowIndex * 4 + columnIndex;
                                                 const defaultEmptyImage = { logoURI: EmptySVG };
-                                                const item = NFTList[index] ?? defaultEmptyImage;
+                                                const item = nftList[index] ?? defaultEmptyImage;
 
                                                 return (
                                                     <div
