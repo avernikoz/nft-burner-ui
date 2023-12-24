@@ -13,10 +13,10 @@ export class DrawUISingleton {
         return DrawUISingleton._instance;
     }
 
-    public getDrawUI(guiParams: dat.GUIParams = {}): dat.GUI | null {
+    public getDrawUI(): dat.GUI | null {
         if (APP_ENVIRONMENT === "development") {
             if (!this.drawUI) {
-                this.drawUI = new dat.GUI({ ...guiParams });
+                this.drawUI = new dat.GUI({ width: 500 });
             }
             return this.drawUI;
         } else {

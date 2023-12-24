@@ -9,6 +9,8 @@ import { MathClamp, MathIntersectionSphereSphere } from "./utils";
 
 ///Screen Space Interactable GUI allowing to spatially control such Data as Position/Velocity
 export class SpatialControlPoint {
+    public bEnabled = true;
+
     public Radius;
 
     public PositionViewSpace;
