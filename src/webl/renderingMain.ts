@@ -888,7 +888,7 @@ export function RenderMain() {
                     //Render Background floor
                     BackGroundRenderPass.RenderFloor(
                         gl,
-                        GPostProcessPasses.Bloom!.GetBloomTextureMIP(3)!,
+                        GPostProcessPasses.Bloom!.GetBloomTextureMIP(1)!,
                         GPostProcessPasses.Combiner!.SmokeNoiseTexture,
                     );
                 }
@@ -964,7 +964,7 @@ export function RenderMain() {
                 }
 
                 if (1 || RenderStateMachine.bCanBurn) {
-                    FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
+                    //FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
 
                     GPostProcessPasses.FlamePostProcess!.Execute(
                         gl,

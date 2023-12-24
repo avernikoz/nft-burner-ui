@@ -18,6 +18,7 @@ import {
 } from "./shaders/shaderPostProcess";
 import { GTexturePool } from "./texturePool";
 import { Vector2 } from "./types";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { GTime, MathClamp, MathLerp } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
@@ -259,7 +260,7 @@ export class RBloomPass {
         this.TextureSize = bloomTextureSize;
         this.IndexOfMipUsedForBloom = bloomMipIndex;
         this.IndexOfMipReturned = Math.min(this.IndexOfMipReturned, bloomMipIndex);
-        this.NonConstBlendWeight = MathLerp(0.1, 0.3, Math.random());
+        //this.NonConstBlendWeight = MathLerp(0.1, 0.3, Math.random());
 
         //Shader Parameters
 
@@ -381,9 +382,9 @@ export class RBloomPass {
         }
     }
 
-    IndexOfMipReturned = 3;
+    IndexOfMipReturned = 1;
 
-    NonConstBlendWeight = 0.2;
+    NonConstBlendWeight = 0.1;
 
     HQBloomBlurAndUpsample(
         gl: WebGL2RenderingContext,
@@ -405,7 +406,7 @@ export class RBloomPass {
             );
         }
 
-        const bConstBlendWeight = false;
+        const bConstBlendWeight = true;
         const blendWeight = 0.025;
 
         let blendWeightCur = this.NonConstBlendWeight;
@@ -428,7 +429,7 @@ export class RBloomPass {
 
             if (!bConstBlendWeight) {
                 gl.blendColor(1.0, 1.0, 1.0, blendWeightCur);
-                blendWeightCur *= blendWeightCur;
+                blendWeightCur *= 0.5;
             }
 
             gl.viewport(0, 0, destSize.x, destSize.y);
@@ -456,7 +457,7 @@ export class RBloomPass {
     }
 
     GetBloomTextureMIP(mipIndex: number) {
-        return this.DownsampleRTMipArr[MathClamp(mipIndex, this.IndexOfMipReturned, this.IndexOfMipUsedForBloom)];
+        return this.DownsampleRTMipArr[mipIndex];
     }
 
     PrePass(

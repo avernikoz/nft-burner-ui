@@ -28,7 +28,7 @@ export const FlameParticlesDesc = {
 
 export const EmberParticlesDesc = {
     inName: "Ember Particles",
-    inNumSpawners2D: 48,
+    inNumSpawners2D: 24,
     inNumParticlesPerSpawner: 1,
     inSpawnRange: { x: 1.0, y: 1000.0 },
     inParticleLife: 2.8,
