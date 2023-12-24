@@ -12,6 +12,7 @@ import { ReactComponent as TwichIcon } from "../../../../assets/svg/twitch.svg";
 import { ReactComponent as YoutTubeIcon } from "../../../../assets/svg/youtube.svg";
 import { ReactComponent as TwitterIcon } from "../../../../assets/svg/twitter.svg";
 import { SocialIconContainer, SocialMainText, SocialTitleText } from "./NftScheduleDialog.styled";
+import { generateTwitterIntentScheduleText } from "../../../../utils/generateTwitterIntentScheduleText";
 
 export const NftScheduleDialog = ({
     nft,
@@ -58,14 +59,26 @@ export const NftScheduleDialog = ({
                         <SocialMainText>Schedule a burn event and share it on social media:</SocialMainText>
                     </div>
                     <div style={{ display: "flex", gap: "20px" }}>
-                        <SocialIconContainer target="_blank" rel="noopener noreferrer" href="https://www.twitch.tv">
+                        <SocialIconContainer
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={generateTwitterIntentScheduleText(nft)}
+                        >
+                            <TwitterIcon />
+                        </SocialIconContainer>
+                        <SocialIconContainer
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href="https://dashboard.twitch.tv/settings/channel/schedule"
+                        >
                             <TwichIcon />
                         </SocialIconContainer>
-                        <SocialIconContainer target="_blank" rel="noopener noreferrer" href="https://youtube.com">
+                        <SocialIconContainer
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href="https://studio.youtube.com"
+                        >
                             <YoutTubeIcon />
-                        </SocialIconContainer>
-                        <SocialIconContainer target="_blank" rel="noopener noreferrer" href="https://twitter.com">
-                            <TwitterIcon />
                         </SocialIconContainer>
                     </div>
                 </div>
