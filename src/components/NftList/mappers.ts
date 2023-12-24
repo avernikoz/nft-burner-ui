@@ -10,7 +10,7 @@ export function suiMapper(
     nfts: {
         name: string;
         url: string;
-        description: string;
+        description: string | null | undefined;
         kioskId: string;
         nftId: string;
         nftType: string;
