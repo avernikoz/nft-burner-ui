@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/react";
+
 import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
@@ -86,7 +88,7 @@ export const NftBurnDialog = ({
     const handleBurn = async () => {
         try {
             if (!burnerFee) {
-                return;
+                throw new Error("Empty burner fuel fee");
             }
 
             if (isEvm) {
@@ -121,6 +123,11 @@ export const NftBurnDialog = ({
             } else {
                 toastController?.showError("Failed to process transactions: " + error);
             }
+
+            Sentry.captureException(error, {
+                tags: { scenario: "burn_transaction_sign_and_send" },
+                extra: { chain: { id: nft.network } },
+            });
 
             setErrorTransaction(true);
         }
