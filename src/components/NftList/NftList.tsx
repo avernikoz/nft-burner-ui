@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/react";
+
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import React, { useContext, useEffect, useState } from "react";
@@ -90,6 +92,11 @@ export const NftList = () => {
                 } else {
                     toastController?.showError("Error fetching nft: " + error);
                 }
+
+                // TODO: Improve that log
+                Sentry.captureException(error, {
+                    tags: { scenario: "fetch_nfts" },
+                });
             }
         };
 
