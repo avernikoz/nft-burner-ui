@@ -58,6 +58,7 @@ function Wallets(props: { hideUI: () => void }) {
             });
         }
         if (suiAccount.error) {
+            console.error(suiAccount.error);
             toastController?.showError("Failed to fetch balances: " + suiAccount.error);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,6 +152,7 @@ function Wallets(props: { hideUI: () => void }) {
                     extra: { chain: { id: chainId } },
                 });
 
+                console.error(error);
                 if (error instanceof Error) {
                     toastController?.showError("Failed to switch chain: " + error.message);
                 } else {
@@ -229,6 +231,7 @@ function Wallets(props: { hideUI: () => void }) {
                 },
 
                 (err) => {
+                    console.error(err);
                     solanaWallet.disconnect();
                     toastController?.showError("Failed to fetch balance: " + err.message);
                 },

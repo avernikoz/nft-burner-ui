@@ -28,6 +28,7 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                     });
                 },
                 (err) => {
+                    console.error(err);
                     disconnect();
                     toastController?.showError("Failed to fetch balances: " + err.message);
                 },
@@ -69,6 +70,8 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                             tags: { scenario: "connect_wallet" },
                             extra: { chain: { id: "solana" } },
                         });
+
+                        console.error(error);
 
                         if (error instanceof Error) {
                             toastController?.showError("Failed to connect: " + error.message);

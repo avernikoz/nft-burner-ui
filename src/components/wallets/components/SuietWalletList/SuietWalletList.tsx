@@ -31,6 +31,7 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
             });
         }
         if (error) {
+            console.error(error);
             toastController?.showError("Failed to fetch balances: " + error);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -53,6 +54,7 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
                 tags: { scenario: "connect_wallet" },
                 extra: { chain: { id: "sui" } },
             });
+            console.error(error);
 
             if (e instanceof Error) {
                 toastController?.showError("Failed to connect: " + e.message);

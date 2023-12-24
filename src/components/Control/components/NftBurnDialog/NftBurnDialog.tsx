@@ -115,6 +115,7 @@ export const NftBurnDialog = ({
             NftController.setNftStatus(ENftBurnStatus.BURNED_ONCHAIN);
             setVisible();
         } catch (error) {
+            console.error(error);
             if (error instanceof Error) {
                 toastController?.showError("Failed to process transactions: " + error.message);
             } else {

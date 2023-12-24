@@ -84,6 +84,7 @@ export const NftList = () => {
                     setShowSpinner(false);
                 }
             } catch (error) {
+                console.error(error);
                 if (error instanceof Error) {
                     toastController?.showError("Error fetching nft: " + error.message);
                 } else {

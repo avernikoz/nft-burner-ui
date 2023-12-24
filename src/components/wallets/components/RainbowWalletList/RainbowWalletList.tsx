@@ -73,6 +73,7 @@ function RainbowWalletList(props: {
             });
 
             if (error instanceof Error) {
+                console.error(error);
                 toastController?.showError("Failed to connect: " + error.message);
             } else {
                 toastController?.showError("Failed to connect: " + error);
