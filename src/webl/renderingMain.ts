@@ -995,11 +995,11 @@ export function RenderMain() {
                         flameSourceTextureRef!,
                         GRenderTargets.FirePlaneTexture,
                     );
-                    gl.enable(gl.BLEND);
+                    /* gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ONE, gl.ONE);
                     gl.blendEquation(gl.FUNC_ADD);
                     GlowRender.Render(gl);
-                    gl.disable(gl.BLEND);
+                    gl.disable(gl.BLEND); */
                     GPostProcessPasses.Bloom!.HQBloomDownsample(gl);
                     GPostProcessPasses.Bloom!.HQBloomBlurAndUpsample(
                         gl,

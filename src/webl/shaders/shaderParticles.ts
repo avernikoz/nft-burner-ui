@@ -401,9 +401,9 @@ function scTransformBasedOnMotion(condition: boolean) {
 			//velLength = 0.0;
 			if(velLength > 0.f)
 			{
-				pos.y *= clamp(1.f - velLength, 0.5f, 1.f);
+				pos.y *= clamp(1.f - velLength, 0.25f, 1.f);
 				//pos.y *= 0.5;
-				pos.x *= (1.f + velLength * 3.0);
+				pos.x *= (1.f + velLength * 1.0);
 				//pos.x *= 5.0;
 				
 				// Calculate the angle between the initial direction (1, 0) and the desired direction
