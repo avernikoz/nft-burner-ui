@@ -1,31 +1,17 @@
 import { styled } from "styled-components";
 
-export const Footer = styled.div`
-    @media (max-width: 1000px) {
-        display: none;
-    }
-
-    Button {
-        background-color: transparent;
-        position: fixed;
-        margin: 1rem;
-        bottom: 0;
-        right: 0;
-    }
-`;
-
 export const BodyContainer = styled.div`
     /* display: grid;
     grid-template-columns: 1fr 1fr; */
     width: 50vw;
-    padding: 0 1rem;
+    padding: 0 3rem;
     position: absolute;
     top: 100px;
     left: 0;
     height: 85vh;
 
-    @media (max-width: 1000px) {
-        height: 55%;
+    @media (max-width: 1024px) {
+        height: 50%;
         width: 100%;
         position: absolute;
         bottom: 0;
@@ -39,11 +25,11 @@ export const BodyContainer = styled.div`
         padding: 0.5rem;
         border-radius: 15px;
         height: 100%;
-        width: 90%;
+        width: 80%;
         z-index: 10;
         position: relative;
 
-        @media (max-width: 1000px) {
+        @media (max-width: 1024px) {
             width: 100%;
         }
 

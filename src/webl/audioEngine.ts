@@ -1,4 +1,8 @@
-export class AudioEngine {
+export class AudioEngineSingleton {
+    private static instance: AudioEngineSingleton;
+
+    public isSoundEnabled: boolean = true;
+
     public audioContext;
 
     private clickAudioBuffer: AudioBuffer | null = null;
@@ -29,7 +33,14 @@ export class AudioEngine {
 
     private gasSoundSourceGain: GainNode | null = null;
 
-    constructor() {
+    public static getInstance(): AudioEngineSingleton {
+        if (!AudioEngineSingleton.instance) {
+            AudioEngineSingleton.instance = new AudioEngineSingleton();
+        }
+        return AudioEngineSingleton.instance;
+    }
+
+    private constructor() {
         if (window.AudioContext) {
             this.audioContext = new AudioContext();
             this.initSources();
@@ -76,6 +87,10 @@ export class AudioEngine {
     }
 
     PlaySoundBuffer(inSoundBuffer: AudioBuffer | null) {
+        if (!this.isSoundEnabled) {
+            return;
+        }
+
         if (this.audioContext != null) {
             this.currentSource = this.audioContext.createBufferSource();
             if (inSoundBuffer) {
@@ -87,6 +102,10 @@ export class AudioEngine {
     }
 
     PlayClickSound() {
+        if (!this.isSoundEnabled) {
+            return;
+        }
+
         if (this.audioContext != null) {
             this.currentSource = this.audioContext.createBufferSource();
             if (this.clickAudioBuffer) {
@@ -118,6 +137,10 @@ export class AudioEngine {
     bIsGasSoundPlaying = false;
 
     PlayLighterGasSound() {
+        if (!this.isSoundEnabled) {
+            return;
+        }
+
         if (!this.bIsGasSoundPlaying) {
             if (this.audioContext != null) {
                 this.gasSoundSource = this.audioContext.createBufferSource();
@@ -151,6 +174,10 @@ export class AudioEngine {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     PlayBurningSound(volume: number) {
+        if (!this.isSoundEnabled) {
+            return;
+        }
+
         if (!this.bIsBurningSoundPlaying) {
             if (this.audioContext != null) {
                 this.burningSoundSource = this.audioContext.createBufferSource();
@@ -186,5 +213,9 @@ export class AudioEngine {
             }
         }
         this.burningSoundSourceGain!.gain.value = volume;
+    }
+
+    toggleSound() {
+        this.isSoundEnabled = !this.isSoundEnabled;
     }
 }

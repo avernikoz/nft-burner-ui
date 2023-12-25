@@ -1,25 +1,26 @@
 import * as Sentry from "@sentry/react";
-import { Button } from "primereact/button";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line import/no-unresolved
 import { MenuItem } from "primereact/menuitem";
-import { PanelMenu } from "primereact/panelmenu";
 import { Menu } from "primereact/menu";
-import { ButtonContainer, ProfileLabel, StyledDialog } from "./Wallets.styled";
+import { ButtonContainer, ProfileLabel, StyledMenu, StyledPanelMenu, WalletButton } from "./Wallets.styled";
 import { useWallet as suietUseWallet, useAccountBalance } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
 import { ConnectorData, disconnect as wagmiDisconnect, fetchBalance } from "@wagmi/core";
 
-import IconTemplate from "../IconTemplate/IconTemplate";
+// import IconTemplate from "../IconTemplate/IconTemplate";
 import { IAccount, IMenuConnectionItem } from "./types";
-import DialogWalletList from "./components/DialogWalletList/DialogWalletList";
 import { ethers } from "ethers";
 import { createMenuItems } from "./variables";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
+import { NftContext } from "../NftProvider/NftProvider";
+import { ENftBurnStatus } from "../../utils/types";
+import { NftSelectorDialog } from "./components/NetworkSelectorDialog/NetworkSelectorDialog";
 
 function Wallets(props: { hideUI: () => void }) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [visible, setVisible] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
     const [activeRainbowConnector, setActiveRainbowConnector] = useState<Connector | null>(null);
@@ -32,6 +33,7 @@ function Wallets(props: { hideUI: () => void }) {
     const toastController = useContext(ToastContext);
     const lastEvmIndex = 3;
     const suiAccount = useAccountBalance();
+    const NftController = useContext(NftContext);
 
     const connect = useCallback(
         (acc: IAccount) => {
@@ -56,6 +58,7 @@ function Wallets(props: { hideUI: () => void }) {
             });
         }
         if (suiAccount.error) {
+            console.error(suiAccount.error);
             toastController?.showError("Failed to fetch balances: " + suiAccount.error);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,9 +89,11 @@ function Wallets(props: { hideUI: () => void }) {
                 });
         }
 
+        NftController.setNftStatus(ENftBurnStatus.EMPTY);
+        NftController.setActiveNft(null);
         setActiveRainbowConnector(null);
         setAccount(null);
-    }, [wagmiAccount.isConnected, suietWallet, solanaWallet, props]);
+    }, [wagmiAccount.isConnected, suietWallet, solanaWallet, NftController, props]);
 
     useEffect(() => {
         // Handle disconnect wallet in case wallet `A` was connected and then user
@@ -147,6 +152,7 @@ function Wallets(props: { hideUI: () => void }) {
                     extra: { chain: { id: chainId } },
                 });
 
+                console.error(error);
                 if (error instanceof Error) {
                     toastController?.showError("Failed to switch chain: " + error.message);
                 } else {
@@ -178,16 +184,16 @@ function Wallets(props: { hideUI: () => void }) {
     ];
 
     const profileItems: MenuItem[] = [
-        {
-            label: "Copy address",
-            icon: "pi pi-copy",
-            command: () => {
-                if (account !== null && account?.id !== null) {
-                    navigator.clipboard.writeText(account?.id ?? "");
-                    toastController?.showSuccess("Copy address");
-                }
-            },
-        },
+        // {
+        //     label: "Copy address",
+        //     icon: "pi pi-copy",
+        //     command: () => {
+        //         if (account !== null && account?.id !== null) {
+        //             navigator.clipboard.writeText(account?.id ?? "");
+        //             toastController?.showSuccess("Copy address");
+        //         }
+        //     },
+        // },
         {
             label: "Disconnect",
             icon: "pi pi-power-off",
@@ -225,6 +231,7 @@ function Wallets(props: { hideUI: () => void }) {
                 },
 
                 (err) => {
+                    console.error(err);
                     solanaWallet.disconnect();
                     toastController?.showError("Failed to fetch balance: " + err.message);
                 },
@@ -278,61 +285,48 @@ function Wallets(props: { hideUI: () => void }) {
         wagmiAccount.isConnected,
     ]);
 
-    const panelMenuClass = `w-full md:w-25rem ${account ? "phoneAdapt" : ""}`;
     return (
         <div className="wallet">
             <ButtonContainer>
-                <PanelMenu
-                    model={menuItems}
-                    className={panelMenuClass}
-                    color={"primary"}
-                    style={{ minWidth: "200px" }}
-                />
+                <StyledPanelMenu model={menuItems} color={"primary"} />
                 {!account && (
-                    <Button
+                    <WalletButton
                         aria-label="Choose your wallet"
-                        rounded
                         icon="pi pi-wallet"
                         onClick={() => setVisible(true)}
                     />
                 )}
                 {account && (
                     <>
-                        <Menu
-                            model={profileItems}
-                            popup
-                            ref={profileMenu}
-                            id="popup_menu_right"
-                            popupAlignment="right"
-                        />
+                        <StyledMenu model={profileItems} popup ref={profileMenu} popupAlignment="right" />
                         <ProfileLabel
                             className="label"
                             onClick={(event) => profileMenu.current?.toggle(event)}
                             aria-controls="popup_menu_right"
                             aria-haspopup
                         >
-                            <div className="icon">
-                                {typeof account.walletIcon === "string" ? (
+                            <i className="pi pi-wallet" />
+                            {/* <div className="icon"> */}
+                            {/* {typeof account.walletIcon === "string" ? (
                                     <IconTemplate svgString={account.walletIcon} />
                                 ) : (
                                     account.walletIcon
-                                )}
-                            </div>
+                                )} */}
+                            {/* </div> */}
                             <div className="content">
                                 <span className="balance">{account.balance}</span>
-                                <span className="chain-id">{account.id}</span>
+                                {/* <span className="chain-id">{account.id}</span> */}
                             </div>
                         </ProfileLabel>
                     </>
                 )}
             </ButtonContainer>
-            <StyledDialog header="Choose your wallet" visible={visible} onHide={() => setVisible(false)}>
-                <DialogWalletList
-                    tabs={tabItems.current}
-                    // TODO: Replace with more descriptive condition
-                    activeTab={activeIndex < 4 ? 0 : activeIndex - 3}
-                ></DialogWalletList>
-            </StyledDialog>
+            <NftSelectorDialog
+                visible={visible}
+                setVisible={() => setVisible(false)}
+                activeIndex={activeIndex}
+                tabItems={tabItems}
+            />
         </div>
     );
 }

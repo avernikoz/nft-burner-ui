@@ -29,11 +29,6 @@ textarea {
     font-size: 16px;
 }
 
-* {
-    letter-spacing: 0.01em;
-    box-sizing: border-box;
-}
-
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
@@ -54,4 +49,96 @@ html {
 
 .dg.ac {
     z-index: 99 !important;
+}
+
+.blur-background::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: blur(5px);
+    transition: 0.3ms ease-in-out;
+    z-index: 999;
+}
+
+@font-face {
+    font-family: "Khand";
+    font-weight: bold;
+    font-style: normal;
+    src:
+        local("Khand-Bold"),
+        local("Khand-Bold"),
+        url(./fonts/Khand-Bold.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Khand";
+    font-weight: 500;
+    font-style: normal;
+    src:
+        local("Khand-Medium"),
+        local("Khand-Medium"),
+        url(./fonts/Khand-Medium.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Khand";
+    font-weight: 400;
+    font-style: normal;
+    src:
+        local("Khand-Regular"),
+        local("Khand-Regular"),
+        url(./fonts/Khand-Regular.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Rubik";
+    font-weight: 400;
+    font-style: normal;
+    src:
+        local("Rubik-Regular"),
+        local("Rubik-Regular"),
+        url(./fonts/Rubik-Regular.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Rubik";
+    font-weight: 500;
+    font-style: normal;
+    src:
+        local("Rubik-Medium"),
+        local("Rubik-Medium"),
+        url(./fonts/Rubik-Medium.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Poppins";
+    font-weight: 700;
+    font-style: normal;
+    src:
+        local("Poppins-Bold"),
+        local("Poppins-Bold"),
+        url(./fonts/Poppins-Bold.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Poppins";
+    font-weight: 600;
+    font-style: normal;
+    src:
+        local("Poppins-SemiBold"),
+        local("Poppins-SemiBold"),
+        url(./fonts/Poppins-SemiBold.woff2) format("woff2");
+}
+
+@font-face {
+    font-family: "Poppins";
+    font-weight: 800;
+    font-style: normal;
+    src:
+        local("Poppins-ExtraBold"),
+        local("Poppins-ExtraBold"),
+        url(./fonts/Poppins-ExtraBold.woff2) format("woff2");
 }

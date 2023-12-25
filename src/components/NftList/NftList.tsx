@@ -1,6 +1,8 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import * as Sentry from "@sentry/react";
+
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
+import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import React, { useContext, useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import {
     ALCHEMY_MULTICHAIN_CLIENT_INSTANCE,
@@ -8,125 +10,99 @@ import {
     SUI_NFT_CLIENT_INSTANCE,
 } from "../../config/nft.config";
 
-import { useEthersSigner } from "./variables";
-import { arbitrum, optimism, polygon } from "viem/chains";
-import { ProgressSpinner } from "primereact/progressspinner";
-import { FixedSizeGrid as Grid } from "react-window";
-import { AutoSizer } from "react-virtualized";
-import { ToastContext } from "../ToastProvider/ToastProvider";
-import { NftContext } from "../NftProvider/NftProvider";
-import NftItem from "../NftItem/NftItem";
-import { INft, ALLOWED_EVM_CHAINS, ENftBurnStatus } from "../../utils/types";
-import { List } from "./NftList.styled";
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { NftFilters } from "alchemy-sdk";
-import { evmMapper, solanaMapper, suiMapper } from "./mappers";
 import { PublicKey } from "@solana/web3.js";
+import { NftFilters } from "alchemy-sdk";
+import { ProgressSpinner } from "primereact/progressspinner";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { FixedSizeGrid as Grid } from "react-window";
+import { ENftBurnStatus, INft } from "../../utils/types";
+import NftItem from "../NftItem/NftItem";
+import { NftContext } from "../NftProvider/NftProvider";
+import { ToastContext } from "../ToastProvider/ToastProvider";
+import { List, NftListAutosizerContainer, NftListTitle, SpinnerContainer } from "./NftList.styled";
+import { evmMapper, solanaMapper, suiMapper } from "./mappers";
+import { useEthersSigner } from "./variables";
+import { getChainName, getItemSize } from "./utils";
+import EmptySVG from "../../assets/svg/emptyNFT.svg";
+import { EmptyNFTList } from "../EmptyNFTList/EmptyNFTList";
 
-function NftList() {
+export const NftList = () => {
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const signer = useEthersSigner();
     const [NFTList, setNFTList] = useState<INft[]>([]);
     const wagmiAccount = useAccount();
     const [activeNft, setActiveNft] = useState<number | null>(null);
-    const [userConnected, setUserConnected] = useState<boolean>(false);
-    const [showSpinner, setShowSpinner] = useState<boolean>(false);
+    const [showSpinner, setShowSpinner] = useState<boolean>(true);
     const toastController = useContext(ToastContext);
     const NftController = useContext(NftContext);
 
     const handleItemClick = (nft: INft) => {
-        setActiveNft(nft.id ?? null);
-        NftController?.setActiveNft(nft);
-        NftController?.setNftStatus(ENftBurnStatus.SELECTED);
+        setActiveNft(nft.id);
+        NftController.setActiveNft(nft);
+        NftController.setNftStatus(ENftBurnStatus.SELECTED);
     };
 
-    // function imageExists(imageUrl: string) {
-    //     return fetch(imageUrl, { method: "HEAD" });
-    // }
-
     useEffect(() => {
-        try {
-            if (
-                NftController?.nftStatus === ENftBurnStatus.BURNED ||
-                NftController?.nftStatus === ENftBurnStatus.EPMTY
-            ) {
-                const wagmiChangeOrConnected = wagmiAccount.isConnected && wagmiAccount.address && signer;
-                const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
-                const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
-                if (wagmiChangeOrConnected) {
-                    setUserConnected(true);
-                    setShowSpinner(true);
-                    wagmiAccount.connector?.getChainId().then((id) => {
-                        let chainName: ALLOWED_EVM_CHAINS = ALLOWED_EVM_CHAINS.Ethereum;
-                        switch (id) {
-                            case polygon.id:
-                                chainName = ALLOWED_EVM_CHAINS.Polygon;
-                                break;
-                            case optimism.id:
-                                chainName = ALLOWED_EVM_CHAINS.Optimism;
-                                break;
-                            case arbitrum.id:
-                                chainName = ALLOWED_EVM_CHAINS.Arbitrum;
-                                break;
-                        }
+        const fetchNfts = async () => {
+            try {
+                if (
+                    NftController.nftStatus === ENftBurnStatus.BURNED_ONCHAIN ||
+                    NftController.nftStatus === ENftBurnStatus.EMPTY
+                ) {
+                    const wagmiChangeOrConnected = wagmiAccount.isConnected && wagmiAccount.address && signer;
+                    const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
+                    const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
 
-                        ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
+                    if (!wagmiChangeOrConnected && !solanaChangeOrConnected && !suiChangeOrConnected) {
+                        return;
+                    }
+
+                    if (wagmiChangeOrConnected) {
+                        const chainId = await wagmiAccount.connector?.getChainId();
+                        const chainName = getChainName(chainId);
+                        const rawNftsData = await ALCHEMY_MULTICHAIN_CLIENT_INSTANCE.getNFTs({
                             network: chainName,
                             owner: signer,
                             options: {
                                 excludeFilters: [NftFilters.SPAM, NftFilters.AIRDROPS],
                             },
-                        }).then((data) => {
-                            const convertedNfts = evmMapper(data.ownedNfts, signer);
-                            setNFTList(convertedNfts.filter((a) => !a.name.includes("Airdrop")));
-                            setShowSpinner(false);
-                            // const promises = convertedNfts.map((nft) => {
-                            //     return imageExists(nft.logoURI)
-                            //         .then(() => true)
-                            //         .catch(() => false);
-                            // });
-                            // Promise.all(promises).catch((results) => {
-                            //     convertedNfts = convertedNfts.filter((nft, index) => results[index]);
-                            //     setNFTList(convertedNfts);
-                            //     setShowSpinner(false);
-                            // });
                         });
-                    });
-                    return;
-                } else if (solanaChangeOrConnected) {
-                    setUserConnected(true);
-                    setShowSpinner(true);
-                    SOLANA_NFT_CLIENT_INSTANCE.getNFTs(solanaWallet.publicKey as PublicKey).then((nfts) => {
-                        setShowSpinner(false);
-                        const mappedNFts: INft[] = solanaMapper(nfts);
+                        const convertedNfts = evmMapper(rawNftsData.ownedNfts, signer, chainName);
+                        const filtredNfts = convertedNfts.filter((a) => !a.name.includes("Airdrop"));
+                        setNFTList(filtredNfts);
+                    } else if (solanaChangeOrConnected) {
+                        const rawNfts = await SOLANA_NFT_CLIENT_INSTANCE.getNFTs(solanaWallet.publicKey as PublicKey);
+                        const mappedNFts: INft[] = solanaMapper(rawNfts);
                         setNFTList(mappedNFts);
-                    });
-                    return;
-                } else if (suiChangeOrConnected) {
-                    setUserConnected(true);
-                    setShowSpinner(true);
-                    SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address as string }).then((nfts) => {
-                        setShowSpinner(false);
-                        const convertedNfts = suiMapper(nfts);
+                    } else if (suiChangeOrConnected) {
+                        const rawNfts = await SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address as string });
+                        const convertedNfts = suiMapper(rawNfts);
                         setNFTList(convertedNfts);
-                    });
-                    return;
-                } else {
-                    setUserConnected(false);
-                    setActiveNft(null);
-                    setNFTList([]);
+                    } else {
+                        setActiveNft(null);
+                        setNFTList([]);
+                    }
+                    setShowSpinner(false);
                 }
+            } catch (error) {
+                console.error(error);
+                if (error instanceof Error) {
+                    toastController?.showError("Error fetching nft: " + error.message);
+                } else {
+                    toastController?.showError("Error fetching nft: " + error);
+                }
+
+                // TODO: Improve that log
+                Sentry.captureException(error, {
+                    tags: { scenario: "fetch_nfts" },
+                });
             }
-        } catch (error) {
-            if (error instanceof Error) {
-                toastController?.showError("Error when receiving nft: " + error.message);
-            } else {
-                toastController?.showError("Error when receiving nft: " + error);
-            }
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        };
+
+        fetchNfts();
     }, [
+        NftController.nftStatus,
         signer,
         solanaWallet.connected,
         solanaWallet.publicKey,
@@ -138,70 +114,87 @@ function NftList() {
         wagmiAccount.isConnected,
     ]);
 
-    const Cell = ({
-        columnIndex,
-        rowIndex,
-        style,
-    }: {
-        columnIndex: number;
-        rowIndex: number;
-        style: React.CSSProperties;
-    }) => {
-        const index = rowIndex * 3 + columnIndex; // Assuming 3 columns
-        if (index > NFTList.length - 1) {
-            return null;
-        }
-        const item = NFTList[index];
+    const isNFTListLoaded = !showSpinner;
+    const isNFTListEmpty = NFTList.length === 0;
 
-        return (
-            <div
-                style={{
-                    ...style,
-                    margin: "0.1rem",
-                }}
-            >
-                <NftItem
-                    item={item}
-                    key={index}
-                    id={index}
-                    isActive={index == activeNft}
-                    onClick={() => handleItemClick(item)}
-                />
-            </div>
-        );
-    };
+    // console.debug("isNFTListLoaded: ", isNFTListLoaded);
+    // console.debug("isNFTListEmpty: ", isNFTListEmpty);
+    // console.debug("showSpinner: ", showSpinner);
 
     return (
-        <List>
-            {!userConnected ? <h3>Connect your wallet</h3> : <h3>Choose NFT to burn</h3>}
-            {!showSpinner ? (
-                <div className="virtual-container">
-                    <AutoSizer>
-                        {({ height, width }) => {
-                            const columns = Math.round(width / 180);
-                            return (
-                                <Grid
-                                    className="nft-list"
-                                    columnCount={columns} // Number of columns
-                                    columnWidth={width / columns} // Width of each item
-                                    height={height} // Height of the grid
-                                    rowCount={Math.ceil(NFTList.length / columns)} // Number of rows
-                                    rowHeight={170} // Height of each item
-                                    width={width} // Width of the grid
-                                >
-                                    {Cell}
-                                </Grid>
-                            );
-                        }}
-                    </AutoSizer>
-                </div>
-            ) : (
-                <div className="spinner">
+        <List $isListEmpty={isNFTListLoaded && isNFTListEmpty}>
+            {isNFTListLoaded && isNFTListEmpty && <EmptyNFTList />}
+            {isNFTListLoaded && !isNFTListEmpty && (
+                <>
+                    <NftListTitle>NFT Viewer</NftListTitle>
+                    <NftListAutosizerContainer className="nftListAutosizerContainer">
+                        <AutoSizer>
+                            {({ height, width }) => {
+                                console.debug(`width: ${width} height ${height}`);
+                                // TODO: Change when responsive design
+                                const columnCount = 4;
+                                const rowCount = 4;
+
+                                const { itemSize, paddingSize } = getItemSize(width);
+
+                                return (
+                                    <Grid
+                                        className="nft-list"
+                                        columnCount={columnCount} // Number of columns
+                                        columnWidth={itemSize} // Width of each item
+                                        height={height} // Height of the grid
+                                        rowCount={rowCount} // Number of rows
+                                        rowHeight={itemSize} // Height of each item
+                                        width={width} // Width of the grid
+                                    >
+                                        {({ columnIndex, rowIndex, style }) => {
+                                            {
+                                                const CELL_GAP = paddingSize;
+                                                const index = rowIndex * 4 + columnIndex;
+                                                const defaultEmptyImage = { logoURI: EmptySVG };
+                                                const item = NFTList[index] ?? defaultEmptyImage;
+
+                                                return (
+                                                    <div
+                                                        style={{
+                                                            ...style,
+                                                            left:
+                                                                columnIndex === 0
+                                                                    ? style.left
+                                                                    : Number(style.left) + columnIndex * CELL_GAP,
+                                                            right:
+                                                                columnIndex === columnCount
+                                                                    ? style.right
+                                                                    : Number(style.right) + columnIndex * CELL_GAP,
+                                                            top:
+                                                                rowIndex === 0
+                                                                    ? style.top
+                                                                    : Number(style.top) + rowIndex * CELL_GAP,
+                                                        }}
+                                                    >
+                                                        <NftItem
+                                                            item={item}
+                                                            key={index}
+                                                            id={index}
+                                                            isActive={index == activeNft}
+                                                            onClick={() => handleItemClick(item)}
+                                                        />
+                                                    </div>
+                                                );
+                                            }
+                                        }}
+                                    </Grid>
+                                );
+                            }}
+                        </AutoSizer>
+                    </NftListAutosizerContainer>
+                </>
+            )}
+            {!isNFTListLoaded && (
+                <SpinnerContainer>
                     <ProgressSpinner />
-                </div>
+                </SpinnerContainer>
             )}
         </List>
     );
-}
-
-export default NftList;
+};

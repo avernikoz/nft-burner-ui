@@ -23,7 +23,7 @@ export function createMenuItems(
     return [
         {
             label: "Ethereum",
-            icon: <EthereumLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            icon: <EthereumLogo width={24} height={24} style={{ marginRight: "10px" }} />,
             command: () => {
                 switchChain(0, mainnet.id);
             },
@@ -40,7 +40,7 @@ export function createMenuItems(
         },
         {
             label: "Polygon",
-            icon: <PolygonLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            icon: <PolygonLogo width={24} height={24} style={{ marginRight: "10px" }} />,
             command: () => {
                 switchChain(1, polygon.id);
             },
@@ -57,7 +57,7 @@ export function createMenuItems(
         },
         {
             label: "Arbitrum",
-            icon: <ArbitrumLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            icon: <ArbitrumLogo width={24} height={24} style={{ marginRight: "10px" }} />,
             command: () => {
                 switchChain(2, arbitrum.id);
             },
@@ -74,7 +74,7 @@ export function createMenuItems(
         },
         {
             label: "Optimism",
-            icon: <OptimismLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            icon: <OptimismLogo width={24} height={24} style={{ marginRight: "10px" }} />,
             command: () => {
                 switchChain(3, optimism.id);
             },
@@ -91,7 +91,7 @@ export function createMenuItems(
         },
         {
             label: "Sui",
-            icon: <SuietLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            icon: <SuietLogo width={24} height={24} style={{ marginRight: "10px" }} />,
             command: () => {
                 // TODO: Replace with more descriptive condition
                 if (activeIndex !== 4) {
@@ -103,7 +103,7 @@ export function createMenuItems(
         },
         {
             label: "Solana",
-            icon: <SolanaLogo width={30} height={30} style={{ marginRight: "5px" }} />,
+            icon: <SolanaLogo width={24} height={24} style={{ marginRight: "10px" }} />,
             command: () => {
                 // TODO: Replace with more descriptive condition
                 if (activeIndex !== 5) {

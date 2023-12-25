@@ -3,17 +3,21 @@ import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import React, { useContext, useEffect, useState } from "react";
 import { useAccount as useWagmiAccount } from "wagmi";
 
-import Control from "../../components/Control/Control";
-import FullScreenButton from "../../components/FullscreenButton/FullscreenButton";
-import NftList from "../../components/NftList/NftList";
+import { Control } from "../../components/Control/Control";
+import { NftList } from "../../components/NftList/NftList";
 import { NftContext } from "../../components/NftProvider/NftProvider";
 import Wallets from "../../components/wallets/Wallets";
 import { ENftBurnStatus } from "../../utils/types";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import "./App.css";
-import { BodyContainer, Footer } from "./app.styled";
+import { BodyContainer } from "./app.styled";
+import { Footer } from "../../components/Footer/Footer";
 
-export const InternalApp: React.FC = () => {
+export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
+    setAboutPageActive,
+}: {
+    setAboutPageActive: (isAboutPageActive: boolean) => void;
+}) => {
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const wagmiAccount = useWagmiAccount();
@@ -42,11 +46,11 @@ export const InternalApp: React.FC = () => {
     ]);
 
     useEffect(() => {
-        if (NftController?.nftStatus === ENftBurnStatus.BURNED) {
+        if (NftController.nftStatus === ENftBurnStatus.BURNED_ONCHAIN) {
             GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady);
             setShowUI(false);
         }
-    }, [NftController?.nftStatus]);
+    }, [NftController.nftStatus]);
 
     return (
         <div className="App">
@@ -60,15 +64,13 @@ export const InternalApp: React.FC = () => {
             {showUI && (
                 <BodyContainer>
                     <div className="half">
-                        <NftList></NftList>
-                        <Control></Control>
+                        <NftList />
+                        <Control />
                     </div>
                 </BodyContainer>
             )}
 
-            <Footer>
-                <FullScreenButton />
-            </Footer>
+            <Footer setAboutPageActive={setAboutPageActive} />
         </div>
     );
 };
