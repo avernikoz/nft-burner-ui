@@ -422,6 +422,48 @@ export function GetShaderSourceFireVisualizerVS() {
 			vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
 		}`;
 }
+
+export function GetShaderSourceFirePlanePreProcess() {
+    return (
+        /* glsl */ `#version 300 es
+
+		precision mediump float;
+		precision mediump sampler2D;
+
+		layout(location = 0) out vec4 OutFirePlane;
+
+		uniform sampler2D ImageTexture;
+
+		in vec2 vsOutTexCoords;
+
+		void main()
+		{
+			vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+
+			vec3 surfaceColor = textureLod(ImageTexture, flippedUVs.xy, 0.0).rgb;
+
+			const float kRandomValue = float(` +
+        MathLerp(0.005, 0.075, Math.random()) +
+        /* glsl */ `);
+			const float BurnedImageSharpness = kRandomValue;
+			float h = BurnedImageSharpness * 0.1;
+			vec3 n = textureLod(ImageTexture, flippedUVs + vec2(0, h), 0.f).rgb;
+			vec3 e = textureLod(ImageTexture, flippedUVs + vec2(h, 0), 0.f).rgb;
+			vec3 s = textureLod(ImageTexture, flippedUVs + vec2(0, -h), 0.f).rgb;
+			vec3 w = textureLod(ImageTexture, flippedUVs + vec2(-h, 0), 0.f).rgb;
+
+			vec3 dy = (n - s)*.5;
+			vec3 dx = (e - w)*.5;
+
+			vec3 edge = sqrt(dx*dx + dy*dy);
+			float luminance = dot( edge.rgb, vec3( 0.299f, 0.587f, 0.114f ) );
+
+			OutFirePlane = vec4(surfaceColor.rgb, luminance);
+
+		}`
+    );
+}
+
 export function GetShaderSourceFireVisualizerPS() {
     return (
         /* glsl */ `#version 300 es
@@ -817,6 +859,7 @@ export function GetShaderSourceFireVisualizerPS() {
 			#endif////VIRTUAL POINT LIGHTS
 
 
+			vec4 firePlaneImageTexture = texture(ImageTexture, vsOutTexCoords.xy).rgba;
 
 
 
@@ -827,7 +870,7 @@ export function GetShaderSourceFireVisualizerPS() {
 			if(!bIsBurntSurface)
 			{
 				//Surface Material
-				surfaceColor = texture(ImageTexture, flippedUVs.xy).rgb;
+				surfaceColor = firePlaneImageTexture.rgb;
 
 				vec3 surfaceMaterialColor = texture(SurfaceMaterialColorTexture, materialSamplingUV.xy).rgb;
 				surfaceMaterialColor = min(vec3(1.0), surfaceMaterialColor *= 3.0f);
@@ -893,7 +936,7 @@ export function GetShaderSourceFireVisualizerPS() {
 			emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.25f, 2.f);
 			emberScale *= 1.5;
 			//emberScale *= clamp(noiseConst + 0.5, 0.5, 1.5);
-			emberScale *= clamp(noiseConst, 0.75, 1.0);
+			emberScale *= clamp(noiseConst * 1.25, 0.75, 1.25);
 			#endif
 
 
@@ -910,7 +953,9 @@ export function GetShaderSourceFireVisualizerPS() {
 			#endif
 
 		#if 1 //BURNED IMAGE
+
 			vec3 burnedImageTexture = vec3(0.f);
+		#if 0//NOT PREPROCESSED
 			const float kRandomValue = float(` +
         MathLerp(0.005, 0.075, Math.random()) +
         /* glsl */ `);
@@ -926,6 +971,10 @@ export function GetShaderSourceFireVisualizerPS() {
 
 			vec3 edge = sqrt(dx*dx + dy*dy);
 			float luminance = dot( edge.rgb, vec3( 0.299f, 0.587f, 0.114f ) );
+		#else//PREPROCESS
+			float luminance = firePlaneImageTexture.a;
+		#endif//PREPROCESS
+			
 			burnedImageTexture = luminance * 10.0 * vec3(1, 0.2, 0.1);
 			//burnedImageTexture = luminance * 10.0 * vec3(0.5, 0.2, 0.7);
 			//burnedImageTexture = luminance * 10.0 * vec3(0.2, 0.2, 1.0);
