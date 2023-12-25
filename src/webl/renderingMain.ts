@@ -1,4 +1,4 @@
-import { RBackgroundRenderPass, RBurntStampVisualizer, RSpotlightRenderPass } from "./backgroundScene";
+import { RBackgroundRenderPass, RBurntStampVisualizer, RRenderGlow, RSpotlightRenderPass } from "./backgroundScene";
 import { RFirePlanePass } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUISingleton } from "./helpers/gui";
@@ -177,13 +177,14 @@ const GPostProcessPasses: {
     Bloom: null,
     FlamePostProcess: null,
     Combiner: null,
-    BloomNumBlurPasses: 5,
+    BloomNumBlurPasses: 3,
     RenderTargetMIPForBloom: 4,
 };
 
 //TODO: Backup texture for reallocation, to avoid flickering when window is resized
 function SetupBloomPostProcessPass(gl: WebGL2RenderingContext) {
-    const desiredBloomTexSize = 64; //aligned to smallest screen side
+    //const desiredBloomTexSize = 64; //aligned to smallest screen side
+    const desiredBloomTexSize = 32; //aligned to smallest screen side
 
     const alignedRTSize = {
         x: MathAlignToPowerOf2(GScreenDesc.RenderTargetSize.x),
@@ -198,7 +199,7 @@ function SetupBloomPostProcessPass(gl: WebGL2RenderingContext) {
         x: GScreenDesc.RenderTargetSize.x / Math.pow(2.0, GPostProcessPasses.RenderTargetMIPForBloom),
         y: GScreenDesc.RenderTargetSize.y / Math.pow(2.0, GPostProcessPasses.RenderTargetMIPForBloom),
     };
-    GPostProcessPasses.Bloom = new RBloomPass(gl, bloomTextureSize);
+    GPostProcessPasses.Bloom = new RBloomPass(gl, bloomTextureSize, GPostProcessPasses.RenderTargetMIPForBloom);
 }
 
 function SetupPostProcessPasses(gl: WebGL2RenderingContext) {
@@ -277,9 +278,10 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
 }
 
 export function RenderMain() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const DEBUG_ENV = APP_ENVIRONMENT === "development";
-    const DEBUG_UI = 0 && DEBUG_ENV;
-    const DEBUG_STOP_SIMULATION = 1 && DEBUG_ENV;
+    const DEBUG_UI = 1 && DEBUG_ENV;
+    const DEBUG_STOP_SIMULATION = 0 && DEBUG_ENV;
 
     const canvas = getCanvas();
 
@@ -355,73 +357,6 @@ export function RenderMain() {
 
     GTexturePool.ExtASTC = gl.getExtension("WEBGL_compressed_texture_astc");
 
-    //================================
-    // 	INIT DEBUG STATE CONTROLLERS
-    //================================
-    const DEBUG_STATE = 0 && DEBUG_ENV;
-    const StateControllers: SpatialControlPoint[] = [];
-    const stateControllerSize = 0.05;
-    const numStateControllers = 6;
-    const stateControllersViewSpaceStart = -0.25;
-    const stateControllersViewSpaceLength = 0.5;
-    const distBBetwenControllers = stateControllersViewSpaceLength / (numStateControllers - 1);
-    let curStateControllerPos = stateControllersViewSpaceStart;
-    if (DEBUG_STATE) {
-        StateControllers[0] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon0`,
-            `stateIcon01`,
-        );
-        curStateControllerPos += distBBetwenControllers;
-        StateControllers[1] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon1`,
-            `stateIcon11`,
-        );
-        curStateControllerPos += distBBetwenControllers;
-        StateControllers[2] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon2`,
-            `stateIcon21`,
-        );
-        curStateControllerPos += distBBetwenControllers;
-        StateControllers[3] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon3`,
-            `stateIcon31`,
-        );
-        curStateControllerPos += distBBetwenControllers;
-        StateControllers[4] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon3`,
-            `stateIcon31`,
-        );
-        curStateControllerPos += distBBetwenControllers;
-        StateControllers[5] = new SpatialControlPoint(
-            gl,
-            { x: curStateControllerPos, y: -0.75 },
-            stateControllerSize,
-            false,
-            `stateIcon3`,
-            `stateIcon31`,
-        );
-    }
-
     //==============================
     // 		ALLOCATE RESOURCES
     //==============================
@@ -452,6 +387,9 @@ export function RenderMain() {
     const SpotlightRenderPass = new RSpotlightRenderPass(gl);
     const BurntStampSprite = new RBurntStampVisualizer(gl);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const GlowRender = new RRenderGlow(gl);
+
     SetupPostProcessPasses(gl);
 
     const SpatialControlUIVisualizer = new RSpatialControllerVisualizationRenderer(gl);
@@ -469,6 +407,7 @@ export function RenderMain() {
     const FirePlaneSizePixels = { x: 512, y: 512 };
     //const FirePlaneSizePixels = { x: 1024, y: 1024 };
     const BurningSurface = new RFirePlanePass(gl, FirePlaneSizePixels);
+    //BurningSurface.SetToBurned(gl);
 
     const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
     const FirePlaneAnimationController = new AnimationController(
@@ -516,7 +455,7 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
     //
-    SmokeParticlesDesc.inAlphaScale = 0.05 + Math.random() * 0.9;
+    SmokeParticlesDesc.inAlphaScale = 0.2 + Math.random() * 0.8;
     SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
@@ -541,6 +480,7 @@ export function RenderMain() {
         `spotLightIcon2_R8`,
         `spotLightIcon2Inv`,
     );
+    SpotlightPositionController.bEnabled = false;
     function ApplySpotlightControlFromGUI() {
         if (SpotlightPositionController.bIntersectionThisFrame) {
             //Control Spotlight
@@ -585,6 +525,7 @@ export function RenderMain() {
         `connectButton`,
         `connectButton1`,
     );
+    ConnectWalletButtonController.bEnabled = false;
     //==============================
     // 	 INIT SCENE STATES DESCS
     //==============================
@@ -615,6 +556,16 @@ export function RenderMain() {
                 folder.add(GGpuReadData, "CurFireValueCPU").listen().step(0.001);
 
                 folder.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses");
+
+                //State Debug UI
+                const stateFolder = GDatGUI.addFolder("States");
+                const StateMachineInner = { StateCurrent: ERenderingState.Intro };
+                const stateController = stateFolder
+                    .add(StateMachineInner, "StateCurrent", ERenderingState)
+                    .name("Current State");
+                stateController.onChange((value: ERenderingState) => {
+                    GRenderingStateMachine.SetRenderingState(value as ERenderingState);
+                });
             }
 
             GSceneDescSubmitDebugUI(GDatGUI);
@@ -635,7 +586,9 @@ export function RenderMain() {
     //
     //=============================================================================================================================
 
-    const GFirstRenderingFrame = true;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, prefer-const
+    let GFirstRenderingFrame = true;
+    let bInitialImagePreProcessed = false;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function RenderLoop() {
         if (gl !== null && GRenderTargets.FirePlaneTexture !== null && GPostProcessPasses.CopyPresemt !== null) {
@@ -690,75 +643,61 @@ export function RenderMain() {
                 RenderStateMachine.AdvanceTransitionParameter();
 
                 if (RenderStateMachine.currentState == ERenderingState.Intro) {
-                    //Connect wallet button position alignment
-                    {
-                        if (GScreenDesc.ViewRatioXY.x > 1) {
-                            ConnectWalletButtonController.PositionViewSpace.x = -0.5 * GScreenDesc.ViewRatioXY.x;
-                            ConnectWalletButtonController.PositionViewSpace.y = 0.0;
-                        } else {
-                            ConnectWalletButtonController.PositionViewSpace.x = 0.0;
-                            ConnectWalletButtonController.PositionViewSpace.y = 0.5;
+                    if (ConnectWalletButtonController.bEnabled) {
+                        //Connect wallet button position alignment
+                        {
+                            if (GScreenDesc.ViewRatioXY.x > 1) {
+                                ConnectWalletButtonController.PositionViewSpace.x = -0.5 * GScreenDesc.ViewRatioXY.x;
+                                ConnectWalletButtonController.PositionViewSpace.y = 0.0;
+                            } else {
+                                ConnectWalletButtonController.PositionViewSpace.x = 0.0;
+                                ConnectWalletButtonController.PositionViewSpace.y = 0.5;
+                            }
+                        }
+                        ConnectWalletButtonController.OnUpdate();
+                        if (ConnectWalletButtonController.bSelectedThisFrame) {
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                            newState = ERenderingState.Inventory;
+                        }
+                        if (
+                            ConnectWalletButtonController.bIntersectionThisFrame &&
+                            ConnectWalletButtonController.bIntersectionThisFrame !==
+                                ConnectWalletButtonController.bIntersectionPrevFrame
+                        ) {
+                            GAudioEngine.PlayClickSound();
                         }
                     }
-                    ConnectWalletButtonController.OnUpdate();
-                    if (ConnectWalletButtonController.bSelectedThisFrame) {
-                        newState = ERenderingState.Inventory;
-                    }
-                    if (
-                        ConnectWalletButtonController.bIntersectionThisFrame &&
-                        ConnectWalletButtonController.bIntersectionThisFrame !==
-                            ConnectWalletButtonController.bIntersectionPrevFrame
-                    ) {
-                        GAudioEngine.PlayClickSound();
-                    }
                 }
-            }
-
-            //=========================
-            // 	STATE DEBUG GUI UPDATE
-            //=========================
-            if (DEBUG_STATE) {
-                StateControllers.forEach((controller) => {
-                    controller.OnUpdate();
-                });
-                //Check for clicked states UIs
-                for (let i = 0; i < numStateControllers; i++) {
-                    if (StateControllers[i].bSelectedThisFrame) {
-                        newState = i;
-                    }
-                    if (
-                        StateControllers[i].bIntersectionThisFrame &&
-                        StateControllers[i].bIntersectionThisFrame !== StateControllers[i].bIntersectionPrevFrame
-                    ) {
-                        GAudioEngine.PlayClickSound();
-                    }
-                }
-                if (newState != RenderStateMachine.currentState) {
-                    //...
-                    //GAudioEngine.PlayIntroSound();
-
-                    GRenderingStateMachine.SetRenderingState(newState);
-                }
-
-                /* StateControllers.forEach((controller) => {
-                controller.ClearState();
-            	}); */
-                StateControllers[RenderStateMachine.currentState].bSelectedThisFrame = true;
-                StateControllers[RenderStateMachine.currentState].bIntersectionThisFrame = true;
             }
 
             //============================
             // 		AFTER PRELOADER
             //============================
+
+            if (GTexturePool.AreAllTexturesLoaded() && !bInitialImagePreProcessed) {
+                BurningSurface.FirePlaneImagePreProcess(gl);
+                bInitialImagePreProcessed = true;
+            }
+
             if (
                 /* GTexturePool.AreAllTexturesLoaded() && */
-                GFirstRenderingFrame ||
-                RenderStateMachine.currentState !== ERenderingState.Preloading
+                1
             ) {
                 ApplyCameraControl();
 
-                SpotlightPositionController.OnUpdate();
-                ApplySpotlightControlFromGUI();
+                if (SpotlightPositionController.bEnabled) {
+                    SpotlightPositionController.OnUpdate();
+                    ApplySpotlightControlFromGUI();
+                }
+
+                //Update Iamge Surface with one selected from Inventory
+                if (RenderStateMachine.currentState === ERenderingState.Inventory) {
+                    const srcImage = IMAGE_STORE_SINGLETON_INSTANCE.getImage();
+                    const srcImageUrl = IMAGE_STORE_SINGLETON_INSTANCE.getImageUrl();
+                    if (srcImage && srcImageUrl) {
+                        BurningSurface.UpdatePlaneSurfaceImage(gl, srcImage, srcImageUrl);
+                    }
+                }
 
                 //=========================
                 // 		TOOL UPDATE
@@ -888,7 +827,7 @@ export function RenderMain() {
                     //Render Background floor
                     BackGroundRenderPass.RenderFloor(
                         gl,
-                        GPostProcessPasses.Bloom!.BloomTexture!,
+                        GPostProcessPasses.Bloom!.GetBloomTextureMIP(3)!,
                         GPostProcessPasses.Combiner!.SmokeNoiseTexture,
                     );
                 }
@@ -897,22 +836,13 @@ export function RenderMain() {
                 // 		BURNING SURFACE RENDER
                 //=================================
                 if (!bPreloaderState) {
-                    //Update Iamge Surface with one selected from Inventory
-                    if (RenderStateMachine.currentState === ERenderingState.Inventory) {
-                        const srcImage = IMAGE_STORE_SINGLETON_INSTANCE.getImage();
-                        const srcImageUrl = IMAGE_STORE_SINGLETON_INSTANCE.getImageUrl();
-                        if (srcImage && srcImageUrl) {
-                            BurningSurface.UpdatePlaneSurfaceImage(gl, srcImage, srcImageUrl);
-                        }
-                    }
-
                     BurningSurface.VisualizeFirePlane(
                         gl,
                         BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
                         GRenderTargets.SpotlightTexture!,
                     );
 
-                    if (RenderStateMachine.currentState === ERenderingState.BurningFinished) {
+                    if (0 && RenderStateMachine.currentState === ERenderingState.BurningFinished) {
                         //Render BURNT Stamp
                         BurntStampSprite.RunAnimation();
                         if (BurntStampSprite.AnimationT >= 0.95 && !BurntStampSprite.AnimationFinishedEventProcessed) {
@@ -938,16 +868,14 @@ export function RenderMain() {
                     gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ONE, gl.ONE);
                     gl.blendEquation(gl.MAX);
-                    //SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
-
-                    if (RenderStateMachine.currentState == ERenderingState.Intro) {
-                        SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
+                    if (SpotlightPositionController.bEnabled) {
+                        SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
                     }
 
-                    if (DEBUG_STATE) {
-                        StateControllers.forEach((controller) => {
-                            SpatialControlUIVisualizer.Render(gl, controller);
-                        });
+                    if (ConnectWalletButtonController.bEnabled) {
+                        if (RenderStateMachine.currentState == ERenderingState.Intro) {
+                            SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
+                        }
                     }
 
                     gl.disable(gl.BLEND);
@@ -991,17 +919,45 @@ export function RenderMain() {
                     gl.bindTexture(gl.TEXTURE_2D, flameSourceTextureRef);
                     gl.generateMipmap(gl.TEXTURE_2D);
 
-                    GPostProcessPasses.Bloom!.PrePass(
+                    GPostProcessPasses.Bloom!.HQBloomPrePass(
+                        gl,
+                        flameSourceTextureRef!,
+                        GRenderTargets.FirePlaneTexture,
+                    );
+                    if (RenderStateMachine.currentState === ERenderingState.Preloading) {
+                        gl.enable(gl.BLEND);
+                        gl.blendFunc(gl.ONE, gl.ONE);
+                        gl.blendEquation(gl.FUNC_ADD);
+                        GlowRender.Render(gl);
+                        gl.disable(gl.BLEND);
+                    }
+
+                    GPostProcessPasses.Bloom!.HQBloomDownsample(gl);
+                    GPostProcessPasses.Bloom!.HQBloomBlurAndUpsample(
+                        gl,
+                        flameSourceTextureRef!,
+                        GRenderTargets.FirePlaneTexture,
+                        GPostProcessPasses.BloomNumBlurPasses,
+                        GPostProcessPasses.Blur!,
+                    );
+
+                    /* GPostProcessPasses.Bloom!.PrePass(
                         gl,
                         flameSourceTextureRef!,
                         GRenderTargets.FirePlaneTexture,
                         GRenderTargets.SpotlightTexture!,
                         GPostProcessPasses.RenderTargetMIPForBloom,
-                    );
+                    ); */
 
-                    for (let i = 0; i < GPostProcessPasses.BloomNumBlurPasses; i++) {
+                    /* gl.enable(gl.BLEND);
+                    gl.blendFunc(gl.ONE, gl.ONE);
+                    gl.blendEquation(gl.FUNC_ADD);
+                    GlowRender.Render(gl);
+                    gl.disable(gl.BLEND); */
+
+                    /* for (let i = 0; i < GPostProcessPasses.BloomNumBlurPasses; i++) {
                         GPostProcessPasses.Bloom!.Blur(gl, GPostProcessPasses.Blur!);
-                    }
+                    } */
                 }
 
                 //======================
@@ -1025,7 +981,7 @@ export function RenderMain() {
                     gl,
                     GRenderTargets.FirePlaneTexture!,
                     flameSourceTextureRef!,
-                    GPostProcessPasses.Bloom!.BloomTexture!,
+                    GPostProcessPasses.Bloom!.GetFinalTexture()!,
                     GRenderTargets.SmokeTexture!,
                     GRenderTargets.SpotlightTexture!,
                     BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,

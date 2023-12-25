@@ -144,7 +144,7 @@ export class LighterTool {
             inDefaultSize: { x: 0.125 * 0.1, y: 0.125 * 0.25 },
             inSizeRangeMinMax: { x: 0.25, y: 1.25 },
             inSizeClampMax: { x: 0.0, y: 0.0 },
-            inInitialVelocityScale: 40.0,
+            inInitialVelocityScale: 50.0,
             inVelocityFieldForceScale: 100.0,
             inBuoyancyForceScale: 15.0,
             inDownwardForceScale: 1.0,
