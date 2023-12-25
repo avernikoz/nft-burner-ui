@@ -1,57 +1,94 @@
-import { Button } from "primereact/button";
-import { ControlContainer } from "./Control.styled";
-import { ReactComponent as TwitchLogo } from "../../assets/svg/twitch.svg";
 import { useContext, useEffect, useState } from "react";
-import NftDialog from "./components/NftDialog/NftDialog";
+import { INft } from "../../utils/types";
+import { BurnButton } from "../BurnButton/BurnButton";
+import "../BurnButton/BurnButton.css";
 import { NftContext } from "../NftProvider/NftProvider";
-import { ENftBurnStatus, INft } from "../../utils/types";
+import {
+    BurnAndInfoContainer,
+    BurnScheduleContainer,
+    BurnerFuelInfoContainer,
+    BurnerFuelInfoText,
+    BurnerFuelInfoTextNumbers,
+    NetworkFeeInfoContainer,
+    NetworkFeeInfoText,
+    NetworkFeeInfoTextNumbers,
+    NftInfoContainer,
+    NftInfoDivider,
+} from "./Control.styled";
+import { NftBurnDialog } from "./components/NftBurnDialog/NftBurnDialog";
+import { ShareButton } from "../ShareButton/ShareButton";
+import { useNftFloorPrice } from "../../hooks/useNftFloorPrice";
+import { useBurnerFee } from "../../hooks/useBurnerFee";
+import { getNetworkTokenSymbol } from "../../utils/getNetworkTokenSymbol";
+import { NftScheduleDialog } from "./components/NftScheduleDialog/NftScheduleDialog";
 
-function Control() {
-    const [visible, setVisible] = useState<boolean>(false);
+export const Control = () => {
+    const [burnPopupVisible, setBurnPopupVisible] = useState<boolean>(false);
+    const [schedulePopupVisible, setSchedulePopupVisible] = useState<boolean>(false);
+
     const [nft, setNft] = useState<INft | null>(null);
+    const { data: floorPrice } = useNftFloorPrice(nft);
+    const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
 
     const NftController = useContext(NftContext);
 
     useEffect(() => {
-        console.log("test");
-        setNft(NftController?.activeNft ?? null);
-    }, [NftController?.activeNft]);
+        setNft(NftController.activeNft ?? null);
+    }, [NftController.activeNft]);
 
     return (
         <>
-            <ControlContainer>
-                <div className="control__burn">
-                    <Button
-                        label="Burn NFT"
-                        severity="danger"
-                        size="large"
-                        onClick={() => setVisible(true)}
+            <BurnAndInfoContainer>
+                <BurnScheduleContainer>
+                    <BurnButton
+                        className="burnButton mainButton"
+                        onClick={() => setBurnPopupVisible(true)}
                         disabled={!nft}
-                    />
-                    <NftDialog
-                        nft={nft}
-                        visible={visible}
-                        setVisible={() => {
-                            setVisible(false);
-                        }}
-                        setNft={() => {
-                            NftController?.setNftStatus(ENftBurnStatus.BURNED);
-                        }}
-                    ></NftDialog>
-                </div>
-                <div className="control__social">
-                    <Button label="Chedule Burn" severity="warning" />
-                    <div className="control__social--media">
-                        <Button icon="pi pi-twitter " rounded text severity="info" aria-label="Notification" />
-                        <Button rounded text severity="help" aria-label="Favorite">
-                            <TwitchLogo></TwitchLogo>
-                        </Button>
-                        <Button icon="pi pi-youtube" rounded text severity="danger" aria-label="Cancel" />
-                    </div>
-                </div>
-            </ControlContainer>
+                    >
+                        BURN
+                    </BurnButton>
+
+                    <ShareButton
+                        className="shareButton mainButton width65"
+                        onClick={() => setSchedulePopupVisible(true)}
+                        disabled={!nft}
+                    >
+                        SCHEDULE BURN EVENT
+                    </ShareButton>
+                </BurnScheduleContainer>
+                <NftInfoContainer>
+                    <BurnerFuelInfoContainer>
+                        <BurnerFuelInfoText>Burner Fuel Fee</BurnerFuelInfoText>
+                        <BurnerFuelInfoTextNumbers>
+                            {burnerFee !== null && burnerFee !== undefined ? `${burnerFee} ${burnerFeeToken}` : `-`}
+                        </BurnerFuelInfoTextNumbers>
+                    </BurnerFuelInfoContainer>
+                    <NftInfoDivider />
+                    <NetworkFeeInfoContainer>
+                        <NetworkFeeInfoText>Network Fee</NetworkFeeInfoText>
+                        <NetworkFeeInfoTextNumbers>2.8mtc</NetworkFeeInfoTextNumbers>
+                    </NetworkFeeInfoContainer>
+                </NftInfoContainer>
+            </BurnAndInfoContainer>
+            {nft && (
+                <NftBurnDialog
+                    nft={nft}
+                    visible={burnPopupVisible}
+                    setVisible={() => {
+                        setBurnPopupVisible(false);
+                    }}
+                />
+            )}
+            {nft && (
+                <NftScheduleDialog
+                    nft={nft}
+                    visible={schedulePopupVisible}
+                    setVisible={() => {
+                        setSchedulePopupVisible(false);
+                    }}
+                />
+            )}
         </>
     );
-}
-
-export default Control;
+};

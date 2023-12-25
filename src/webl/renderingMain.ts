@@ -66,7 +66,7 @@ import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController } from "./animationController";
-import { AudioEngine } from "./audioEngine";
+import { AudioEngineSingleton } from "./audioEngine";
 import { LighterTool } from "./tools";
 import { GTexturePool } from "./texturePool";
 
@@ -280,10 +280,12 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
 export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const DEBUG_ENV = APP_ENVIRONMENT === "development";
+    const DEBUG_UI = 1 && DEBUG_ENV;
+    const DEBUG_STOP_SIMULATION = 0 && DEBUG_ENV;
 
     const canvas = getCanvas();
 
-    const GAudioEngine = new AudioEngine();
+    const GAudioEngine = AudioEngineSingleton.getInstance();
     if (GAudioEngine.audioContext) {
         GAudioEngine.loadSounds();
     }
@@ -533,47 +535,50 @@ export function RenderMain() {
     //===================
     // 		DEBUG UI
     //===================
-    const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
-    if (GDatGUI) {
-        //For global vars
-        {
-            GDatGUI.close();
+    let fpsElem: Element | null;
+    if (DEBUG_UI) {
+        const GDatGUI = DrawUISingleton.getInstance().getDrawUI();
+        if (GDatGUI) {
+            //For global vars
+            {
+                GDatGUI.close();
 
-            GDatGUI.add(GSettings, "bRunSimulation").name("Run Simulation");
+                GDatGUI.add(GSettings, "bRunSimulation").name("Run Simulation");
 
-            const folder = GDatGUI.addFolder("Main");
+                const folder = GDatGUI.addFolder("Main");
 
-            folder.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
-            folder.add(GTime, "Cur").name("CurTime").listen().step(0.0001);
+                folder.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
+                folder.add(GTime, "Cur").name("CurTime").listen().step(0.0001);
 
-            folder.add(GScreenDesc, "ScreenRatio").name("ScreenRatio").listen().step(0.01);
-            folder.add(GScreenDesc.WindowSize, "y").name("Resolution").listen().step(0.01);
+                folder.add(GScreenDesc, "ScreenRatio").name("ScreenRatio").listen().step(0.01);
+                folder.add(GScreenDesc.WindowSize, "y").name("Resolution").listen().step(0.01);
 
-            folder.add(GGpuReadData, "CurFireValueCPU").listen().step(0.001);
+                folder.add(GGpuReadData, "CurFireValueCPU").listen().step(0.001);
 
-            folder.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses");
+                folder.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses");
 
-            //State Debug UI
-            const stateFolder = GDatGUI.addFolder("States");
-            const StateMachineInner = { StateCurrent: ERenderingState.Intro };
-            const stateController = stateFolder
-                .add(StateMachineInner, "StateCurrent", ERenderingState)
-                .name("Current State");
-            stateController.onChange((value: ERenderingState) => {
-                GRenderingStateMachine.SetRenderingState(value as ERenderingState);
-            });
+                //State Debug UI
+                const stateFolder = GDatGUI.addFolder("States");
+                const StateMachineInner = { StateCurrent: ERenderingState.Intro };
+                const stateController = stateFolder
+                    .add(StateMachineInner, "StateCurrent", ERenderingState)
+                    .name("Current State");
+                stateController.onChange((value: ERenderingState) => {
+                    GRenderingStateMachine.SetRenderingState(value as ERenderingState);
+                });
+            }
+
+            GSceneDescSubmitDebugUI(GDatGUI);
+
+            BurningSurface.SubmitDebugUI(GDatGUI);
+            BackGroundRenderPass.SubmitDebugUI(GDatGUI);
+            CurTool.SubmitDebugUI(GDatGUI);
+            GTexturePool.SubmitDebugUI(GDatGUI);
         }
 
-        GSceneDescSubmitDebugUI(GDatGUI);
-
-        BurningSurface.SubmitDebugUI(GDatGUI);
-        BackGroundRenderPass.SubmitDebugUI(GDatGUI);
-        CurTool.SubmitDebugUI(GDatGUI);
-        GTexturePool.SubmitDebugUI(GDatGUI);
+        //deprecated fpsElem = document.querySelector("#fps");
+        //enableFPSContainer();
     }
-
-    //let fpsElem: Element | null;
-    const fpsElem = document.querySelector("#fps");
 
     //=============================================================================================================================
     //
@@ -1028,6 +1033,10 @@ export function RenderMain() {
             }
 
             RenderStateMachine.MarkNewStateProcessed();
+
+            if (DEBUG_STOP_SIMULATION && GTexturePool.AreAllTexturesLoaded()) {
+                GSettings.bRunSimulation = false;
+            }
 
             if (gl !== null) {
                 if (CheckGL(gl) && GSettings.bRunSimulation) {

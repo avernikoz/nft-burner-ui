@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { TabMenu } from "primereact/tabmenu";
 
 import { IMenuConnectionItem } from "../../types";
+import { StyledTabMenu } from "./DialogWalletList.styled";
 
 function DialogWalletList(props: { tabs: IMenuConnectionItem[]; activeTab: number }) {
     const [activeTabIndex, setTabActiveIndex] = useState<number>(props.activeTab);
@@ -9,10 +9,9 @@ function DialogWalletList(props: { tabs: IMenuConnectionItem[]; activeTab: numbe
 
     return (
         <>
-            <TabMenu
+            <StyledTabMenu
                 model={tabs}
                 activeIndex={activeTabIndex}
-                style={{ width: "90%", margin: "0 auto" }}
                 onTabChange={(e) => {
                     tabs[e.index].command?.({ originalEvent: e.originalEvent, item: e.value });
                     setTabActiveIndex(e.index);

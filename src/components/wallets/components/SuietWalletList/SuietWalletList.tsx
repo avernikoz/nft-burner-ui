@@ -1,12 +1,12 @@
 import * as Sentry from "@sentry/react";
-import React, { useContext, useEffect, useState } from "react";
-import { ListBox } from "primereact/listbox";
 import { useAccountBalance, useWallet } from "@suiet/wallet-kit";
 import { IWallet } from "@suiet/wallet-kit/dist/types/wallet";
-import { IAccount } from "../../types";
 import { ethers } from "ethers";
-import SuiItemTemplate from "./SuiItemTemplate";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
+import { IAccount } from "../../types";
+import { StyledListBox } from "../RainbowWalletList/RainbowWalletList.styled";
+import SuiItemTemplate from "./SuiItemTemplate";
 
 function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<IWallet | null>(null);
@@ -14,14 +14,16 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
     const { error, loading, balance } = useAccountBalance();
     const toastController = useContext(ToastContext);
 
+    const walletsList = useMemo(() => {
+        return wallet.configuredWallets.filter((el) => !el.name.includes("Spacecy Sui Wallet"));
+    }, [wallet.configuredWallets]);
+
     useEffect(() => {
         if (balance === undefined) {
             return;
         }
         if (wallet.connected && !loading && error == null) {
             const balanceInSUI = ethers.formatUnits(balance, 9).substring(0, 5);
-            console.log(balanceInSUI);
-            console.log(balance);
             props.connect({
                 id: wallet.account?.address,
                 balance: balanceInSUI + " SUI",
@@ -29,6 +31,7 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
             });
         }
         if (error) {
+            console.error(error);
             toastController?.showError("Failed to fetch balances: " + error);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -51,6 +54,7 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
                 tags: { scenario: "connect_wallet" },
                 extra: { chain: { id: "sui" } },
             });
+            console.error(error);
 
             if (e instanceof Error) {
                 toastController?.showError("Failed to connect: " + e.message);
@@ -62,14 +66,13 @@ function SuietWallet(props: { connect: (account: IAccount) => void }): JSX.Eleme
 
     return (
         <>
-            <ListBox
+            <StyledListBox
                 value={selectedOption}
                 itemTemplate={SuiItemTemplate}
                 onChange={async (e) => {
                     connect(e.value);
                 }}
-                listStyle={{ maxHeight: "310px" }}
-                options={wallet.configuredWallets}
+                options={walletsList}
                 optionLabel="name"
             />
         </>

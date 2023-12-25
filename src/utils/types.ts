@@ -1,36 +1,23 @@
+import { ALLOWED_EVM_CHAINS, ALLOWED_NETWORKS, NFTContractStandard } from "@avernikoz/nft-sdk";
 import { PublicKey } from "@solana/web3.js";
-import { Signer } from "ethers";
-
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export enum ALLOWED_EVM_CHAINS {
-    Ethereum = "Ethereum",
-    Polygon = "Polygon",
-    Optimism = "Optimism",
-    Arbitrum = "Arbitrum",
-}
 
 export enum ENftBurnStatus {
-    BURNED = "burned",
+    BURNED_ONCHAIN = "burned",
     SELECTED = "selected",
-    EPMTY = "empty",
+    EMPTY = "empty",
 }
 
-export interface INft {
-    id?: number;
+// Base interface with properties common to all networks
+export interface BaseNft {
+    id: number;
     name: string;
     logoURI: string;
+    network: ALLOWED_NETWORKS;
+}
 
-    contractAddress?: string;
-    contractType?: string;
-    nftTokenId?: string;
-    owner?: Signer;
-    evm?: ALLOWED_EVM_CHAINS;
-
-    nftId?: string;
-    kioskId?: string;
-    nftType?: string;
-
-    solanaAccount?: {
+// Interface for Solana network
+export interface SolanaNft extends BaseNft {
+    solanaAccount: {
         metadataAccount: PublicKey;
         mint: PublicKey;
         tokenAccount: PublicKey;
@@ -39,3 +26,21 @@ export interface INft {
         isMasterEdition: boolean;
     };
 }
+
+// Interface for Sui network
+export interface SuiNft extends BaseNft {
+    nftId: string;
+    kioskId: string;
+    nftType: string;
+}
+
+// Interface for EVM networks
+export interface EvmNft extends BaseNft {
+    contractAddress: string;
+    contractType: NFTContractStandard;
+    nftTokenId: string;
+    evmNetworkType: ALLOWED_EVM_CHAINS;
+}
+
+// Combined interface for NFT, including properties from all networks
+export type INft = SolanaNft | SuiNft | EvmNft;

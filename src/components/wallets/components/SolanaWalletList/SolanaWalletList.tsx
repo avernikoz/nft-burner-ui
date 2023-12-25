@@ -1,13 +1,14 @@
 import * as Sentry from "@sentry/react";
-import React, { useContext, useEffect, useState } from "react";
-import { ListBox } from "primereact/listbox";
-import { useConnection, useWallet, Wallet } from "@solana/wallet-adapter-react";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
-import { IAccount } from "../../types";
-import { ethers } from "ethers";
+import { Wallet, useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
-import SolanaItemTemplate from "./SolanaItemTemplate";
+import { ethers } from "ethers";
+import { useContext, useEffect, useState } from "react";
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
+import { IAccount } from "../../types";
+import { StyledListBox } from "../RainbowWalletList/RainbowWalletList.styled";
+import SolanaItemTemplate from "./SolanaItemTemplate";
+import { sleep } from "../../../../utils/sleep";
 
 function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<Wallet | null>(null);
@@ -16,8 +17,6 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
     const toastController = useContext(ToastContext);
 
     useEffect(() => {
-        console.log(connected, publicKey);
-
         if (connected && publicKey) {
             connection.getBalance(new PublicKey(publicKey)).then(
                 (balance) => {
@@ -29,6 +28,7 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                     });
                 },
                 (err) => {
+                    console.error(err);
                     disconnect();
                     toastController?.showError("Failed to fetch balances: " + err.message);
                 },
@@ -38,7 +38,7 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
 
     return (
         <>
-            <ListBox
+            <StyledListBox
                 value={selectedOption}
                 itemTemplate={SolanaItemTemplate}
                 onChange={async (e) => {
@@ -53,7 +53,16 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                             toastController?.showError("Wallet is not unsupported: ");
                         }
                         toastController?.showInfo("Connecting", "Please accept connection in wallet");
-                        await select(e.value.adapter.name);
+
+                        select(e.value.adapter.name);
+                        // Temporary hotfix for a known issue in WalletProviderBase of the @solana/wallet-adapter-react library.
+                        // Reference: https://github.com/solana-labs/wallet-adapter/issues/743#issuecomment-1468702784
+                        // Issue: When disconnecting the Solana wallet and then reconnecting, the first trial may throw a 'WalletNotSelectedError' despite explicitly selecting the wallet before.
+                        // Workaround: Introduce a brief sleep to mitigate the error.
+                        // Note: Library owners recommend avoiding the 'connect' method and relying on autoConnect, which conflicts with our app's multi-chain architecture.
+                        // TODO: Monitor for library updates or find a more robust solution when the issue is resolved.
+
+                        await sleep(100);
                         await connect();
                         setSelectedOption(e.value);
                     } catch (error) {
@@ -61,6 +70,8 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                             tags: { scenario: "connect_wallet" },
                             extra: { chain: { id: "solana" } },
                         });
+
+                        console.error(error);
 
                         if (error instanceof Error) {
                             toastController?.showError("Failed to connect: " + error.message);
@@ -70,7 +81,6 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
                     }
                 }}
                 options={wallets}
-                listStyle={{ maxHeight: "330px" }}
                 optionLabel="label"
             />
         </>
