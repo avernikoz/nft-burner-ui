@@ -74,7 +74,8 @@ export const AboutText = styled.span`
 `;
 
 export const StartText = styled.span`
-    color: #b53600;
+    color: rgba(1, 1, 1, 0);
+    //color: #df4300;
 
     font-family: Rubik;
     font-size: clamp(4px, 5vw, 28px);
@@ -84,6 +85,10 @@ export const StartText = styled.span`
     text-align: center;
 
     letter-spacing: 3px;
+
+    --progress: 00%;
+    background: linear-gradient(90deg, #df4300 0, #df4300 var(--progress), #efefef var(--progress));
+    background-clip: text;
 `;
 
 export const StartMenuButton = styled.button`
