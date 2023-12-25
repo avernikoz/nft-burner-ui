@@ -29,4 +29,6 @@ export class GReactGLBridgeFunctions {
     static GetIsSoundEnabled() {
         return AudioEngineSingleton.getInstance().isSoundEnabled;
     }
+
+    static OnBurningFinished() {}
 }

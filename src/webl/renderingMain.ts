@@ -69,6 +69,7 @@ import { AnimationController } from "./animationController";
 import { AudioEngineSingleton } from "./audioEngine";
 import { LighterTool } from "./tools";
 import { GTexturePool } from "./texturePool";
+import { GReactGLBridgeFunctions } from "./reactglBridge";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -782,6 +783,7 @@ export function RenderMain() {
                 } else if (RenderStateMachine.currentState === ERenderingState.BurningNow) {
                     if (GGpuReadData.CurFireValueCPU < 0.05) {
                         GRenderingStateMachine.SetRenderingState(ERenderingState.BurningFinished);
+                        GReactGLBridgeFunctions.OnBurningFinished();
                         //all callback calls here...
                     }
                 }
