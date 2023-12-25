@@ -86,7 +86,7 @@ export const StartText = styled.span`
 
     letter-spacing: 3px;
 
-    --progress: 100%;
+    --progress: 0%;
     background: linear-gradient(90deg, #ce3e00 0, #ce3e00 var(--progress), #969696 var(--progress));
     background-clip: text;
 `;
