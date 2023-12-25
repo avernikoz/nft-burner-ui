@@ -74,8 +74,8 @@ export const AboutText = styled.span`
 `;
 
 export const StartText = styled.span`
-    color: rgba(1, 1, 1, 0);
-    //color: #df4300;
+    color: rgba(0.5, 0.5, 0.5, 0);
+    //color: #b53600;
 
     font-family: Rubik;
     font-size: clamp(4px, 5vw, 28px);
@@ -86,8 +86,8 @@ export const StartText = styled.span`
 
     letter-spacing: 3px;
 
-    --progress: 00%;
-    background: linear-gradient(90deg, #df4300 0, #df4300 var(--progress), #efefef var(--progress));
+    --progress: 100%;
+    background: linear-gradient(90deg, #ce3e00 0, #ce3e00 var(--progress), #969696 var(--progress));
     background-clip: text;
 `;
 
