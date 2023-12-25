@@ -564,8 +564,8 @@ export function RenderMain() {
                 const stateController = stateFolder
                     .add(StateMachineInner, "StateCurrent", ERenderingState)
                     .name("Current State");
-                stateController.onChange((value: ERenderingState) => {
-                    GRenderingStateMachine.SetRenderingState(value as ERenderingState);
+                stateController.onChange((value: number) => {
+                    GRenderingStateMachine.SetRenderingState(+value);
                 });
             }
 
@@ -642,8 +642,7 @@ export function RenderMain() {
                 }
 
                 RenderStateMachine.AdvanceTransitionParameter();
-
-                if (RenderStateMachine.currentState == ERenderingState.Intro) {
+                if (RenderStateMachine.currentState === ERenderingState.Intro) {
                     if (ConnectWalletButtonController.bEnabled) {
                         //Connect wallet button position alignment
                         {
@@ -733,7 +732,7 @@ export function RenderMain() {
                 // BURNING SURFACE UPDATE
                 //=========================
                 //Animation during Viewer state
-                if (RenderStateMachine.currentState == ERenderingState.Inventory) {
+                if (RenderStateMachine.currentState === ERenderingState.Inventory) {
                     //Animate Burning Surface
                     FirePlaneAnimationController.UpdateSelf();
                     GSceneDesc.FirePlane.PositionOffset = FirePlaneAnimationController.UpdateObjectPosition(
@@ -875,7 +874,7 @@ export function RenderMain() {
                     }
 
                     if (ConnectWalletButtonController.bEnabled) {
-                        if (RenderStateMachine.currentState == ERenderingState.Intro) {
+                        if (RenderStateMachine.currentState === ERenderingState.Intro) {
                             SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
                         }
                     }
