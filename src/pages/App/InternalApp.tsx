@@ -12,6 +12,7 @@ import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import "./App.css";
 import { BodyContainer } from "./app.styled";
 import { Footer } from "../../components/Footer/Footer";
+import { BurningComplete } from "../../components/BurningComplete/BurningComplete";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
     setAboutPageActive,
@@ -22,6 +23,8 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
     const solanaWallet = solanaUseWallet();
     const wagmiAccount = useWagmiAccount();
     const [showUI, setShowUI] = useState<boolean>(false);
+    const [showBurnedScreen, setShowBurnedScreen] = useState<boolean>(false);
+
     const NftController = useContext(NftContext);
 
     useEffect(() => {
@@ -46,11 +49,47 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
     ]);
 
     useEffect(() => {
+        if (NftController.nftStatus === ENftBurnStatus.EMPTY) {
+            console.debug("set show UI true");
+            setShowUI(true);
+            setShowBurnedScreen(false);
+        }
+    }, [NftController.nftStatus]);
+
+    useEffect(() => {
         if (NftController.nftStatus === ENftBurnStatus.BURNED_ONCHAIN) {
             GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady);
             setShowUI(false);
         }
     }, [NftController.nftStatus]);
+
+    useEffect(() => {
+        if (NftController.nftStatus === ENftBurnStatus.BURNED_IN_SIMULATION) {
+            setShowBurnedScreen(true);
+        }
+    }, [NftController.nftStatus]);
+
+    useEffect(() => {
+        const handleWebGLEvent = (event: Event) => {
+            const { nftBurned } = (
+                event as CustomEvent<{
+                    nftBurned: boolean;
+                }>
+            ).detail;
+
+            console.debug("nftBurned: ", nftBurned);
+
+            if (nftBurned) {
+                NftController.setNftStatus(ENftBurnStatus.BURNED_IN_SIMULATION);
+            }
+        };
+
+        document.addEventListener("webglEvent", handleWebGLEvent);
+
+        return () => {
+            document.removeEventListener("webglEvent", handleWebGLEvent);
+        };
+    }, [NftController, NftController.setNftStatus]);
 
     return (
         <div className="App">
@@ -61,7 +100,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                     }}
                 />
             </div>
-            {showUI && (
+            {showUI && !showBurnedScreen && (
                 <BodyContainer>
                     <div className="half">
                         <NftList />
@@ -69,6 +108,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                     </div>
                 </BodyContainer>
             )}
+            {showBurnedScreen && <BurningComplete />}
 
             <Footer setAboutPageActive={setAboutPageActive} />
         </div>
