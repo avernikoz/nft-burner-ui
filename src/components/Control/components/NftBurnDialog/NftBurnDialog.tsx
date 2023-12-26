@@ -1,5 +1,7 @@
 import * as Sentry from "@sentry/react";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { Tooltip } from "primereact/tooltip";
 import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
@@ -16,6 +18,7 @@ import { NftContext } from "../../../NftProvider/NftProvider";
 import { ReactComponent as SuccessCheckmark } from "../../../../assets/svg/successCheckmark.svg";
 import { ReactComponent as FailedIcon } from "../../../../assets/svg/failedIcon.svg";
 import { ReactComponent as BurnIcon } from "../../../../assets/svg/burnIcon.svg";
+import { ReactComponent as InfoIcon } from "../../../../assets/svg/infoIcon.svg";
 
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import {
@@ -162,7 +165,16 @@ export const NftBurnDialog = ({
                             </NftBurnDialogInfoContainer>
                         )}
                         <NftBurnDialogInfoContainer>
-                            <NftBurnDialogInfoTitle>Burner Fuel Fee:</NftBurnDialogInfoTitle>
+                            <Tooltip
+                                className="tooltip-burner-fee"
+                                content="💸 Why the fee? It keeps NFT Burner running smoothly. Your support fuels the fire. Thank you!"
+                                target={".burn-fuel-fee"}
+                                position="top"
+                            />
+                            <NftBurnDialogInfoTitle className="burn-fuel-fee">
+                                Burner Fuel Fee <InfoIcon />:
+                            </NftBurnDialogInfoTitle>
+                            {/* </Tooltip> */}
                             <NftBurnDialogInfoValue>
                                 {burnerFee} {burnerFeeToken}
                             </NftBurnDialogInfoValue>

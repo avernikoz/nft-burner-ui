@@ -21,6 +21,8 @@ import { useNftFloorPrice } from "../../hooks/useNftFloorPrice";
 import { useBurnerFee } from "../../hooks/useBurnerFee";
 import { getNetworkTokenSymbol } from "../../utils/getNetworkTokenSymbol";
 import { NftScheduleDialog } from "./components/NftScheduleDialog/NftScheduleDialog";
+import { Tooltip } from "primereact/tooltip";
+import { ReactComponent as InfoIcon } from "../../assets/svg/infoIcon.svg";
 
 export const Control = () => {
     const [burnPopupVisible, setBurnPopupVisible] = useState<boolean>(false);
@@ -59,7 +61,15 @@ export const Control = () => {
                 </BurnScheduleContainer>
                 <NftInfoContainer>
                     <BurnerFuelInfoContainer>
-                        <BurnerFuelInfoText>Burner Fuel Fee</BurnerFuelInfoText>
+                        <Tooltip
+                            className="tooltip-burner-fee"
+                            content="💸 Why the fee? It keeps NFT Burner running smoothly. Your support fuels the fire. Thank you!"
+                            target={".burn-fuel-fee"}
+                            position="top"
+                        />
+                        <BurnerFuelInfoText className="burn-fuel-fee">
+                            Burner Fuel Fee <InfoIcon />
+                        </BurnerFuelInfoText>
                         <BurnerFuelInfoTextNumbers>
                             {burnerFee !== null && burnerFee !== undefined ? `${burnerFee} ${burnerFeeToken}` : `-`}
                         </BurnerFuelInfoTextNumbers>

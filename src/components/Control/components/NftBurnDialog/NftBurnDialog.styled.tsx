@@ -31,6 +31,9 @@ export const NftBurnDialogInfoTitle = styled.p`
     letter-spacing: 0.48px;
 
     margin: 0 0 0.5rem 0;
+
+    display: flex;
+    gap: 5px;
 `;
 
 export const NftBurnDialogInfoValue = styled.p`
