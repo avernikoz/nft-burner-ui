@@ -15,7 +15,5 @@ export function generateTwitterIntentScheduleText(nft: INft): string {
     // Construct the final Twitter intent URL
     const twitterIntentURL = `${baseUrl}?text=${text}${newLineCharacter}&hashtags=${hashtags.join(",")}`;
 
-    console.debug("twitterIntentURL: ", twitterIntentURL);
-
     return twitterIntentURL;
 }
