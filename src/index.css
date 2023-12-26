@@ -142,3 +142,14 @@ html {
         local("Poppins-ExtraBold"),
         url(./fonts/Poppins-ExtraBold.woff2) format("woff2");
 }
+
+/* For Firefox */
+* {
+    scrollbar-width: none;
+    scrollbar-color: transparent transparent;
+}
+
+/* For Webkit (Chrome, Safari, Opera) */
+*::-webkit-scrollbar {
+    display: none;
+}
