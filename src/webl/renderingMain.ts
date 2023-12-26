@@ -280,7 +280,7 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
 export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const DEBUG_ENV = APP_ENVIRONMENT === "development";
-    const DEBUG_UI = 1 && DEBUG_ENV;
+    const DEBUG_UI = 0 && DEBUG_ENV;
     const DEBUG_STOP_SIMULATION = 0 && DEBUG_ENV;
 
     const canvas = getCanvas();

@@ -1,11 +1,12 @@
 import { styled } from "styled-components";
-import React, { RefObject, useRef } from "react";
+import React, { RefObject, useEffect, useRef, useState } from "react";
 import "./About.css";
 import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
 
 import { ReactComponent as DownArrowIcon } from "../../assets/svg/downArrow.svg";
 import { ReactComponent as RightArrowIcon } from "../../assets/svg/rightArrow.svg";
 import { Header } from "../../components/Header/Header";
+import { ProgressSpinner } from "primereact/progressspinner";
 
 //=========================
 // 	  PAGE 1 : START
@@ -74,7 +75,8 @@ export const AboutText = styled.span`
 `;
 
 export const StartText = styled.span`
-    color: #b53600;
+    color: rgba(0.5, 0.5, 0.5, 0);
+    //color: #b53600;
 
     font-family: Rubik;
     font-size: clamp(4px, 5vw, 28px);
@@ -84,6 +86,10 @@ export const StartText = styled.span`
     text-align: center;
 
     letter-spacing: 3px;
+
+    /* --progress: 20%; */
+    /* background: linear-gradient(90deg, #ce3e00 0, #ce3e00 20%, #969696 20%); */
+    /* background-clip: text; */
 `;
 
 export const StartMenuButton = styled.button`
@@ -109,6 +115,12 @@ export const StartMenuButton = styled.button`
             color: rgba(0, 0, 0, 1);
         }
     }
+
+    &:disabled {
+        &:hover {
+            background-color: rgba(0, 0, 0, 0);
+        }
+    }
 `;
 
 export const AboutFirstSection = ({
@@ -118,6 +130,34 @@ export const AboutFirstSection = ({
     setAboutPageActive: (isAboutPageActive: boolean) => void;
     setShowMore: () => void;
 }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [loadingPercentage, setLoadingPercentage] = useState(0);
+    const [loadingFinished, setLoadingFinished] = useState(false);
+
+    useEffect(() => {
+        // eslint-disable-next-line prefer-const
+        let intervalId: string | number | NodeJS.Timeout | undefined;
+
+        const updateProgressBar = () => {
+            // Calculate the loading percentage based on your requirements
+            const loadProgressRes = GReactGLBridgeFunctions.GetLoadingProgressParameterNormalised();
+            if (loadProgressRes !== null) {
+                const percentage = loadProgressRes * 100;
+                console.debug("loadingPercentage: ", percentage);
+
+                setLoadingPercentage(percentage);
+            } else {
+                setLoadingPercentage(100);
+                setLoadingFinished(true);
+                clearInterval(intervalId);
+            }
+        };
+
+        intervalId = setInterval(updateProgressBar, 250);
+
+        return () => clearInterval(intervalId);
+    }, []);
+
     return (
         <StartScreenWrapMain>
             <StartTitleAndButtonContainer>
@@ -133,13 +173,29 @@ export const AboutFirstSection = ({
                         <DownArrowIcon />
                     </StartMenuButton>
                     <StartMenuButton
+                        disabled={!loadingFinished}
                         onClick={() => {
                             setAboutPageActive(false);
                             GReactGLBridgeFunctions.OnStartButtonPressed();
                         }}
                     >
-                        <StartText>START</StartText>
-                        <RightArrowIcon />
+                        <StartText
+                            style={{
+                                background: `text linear-gradient(90deg, #ce3e00 0, #ce3e00 ${loadingPercentage}%, #969696 ${loadingPercentage}%)`,
+                                // backgroundClip: "text",
+                            }}
+                        >
+                            START
+                        </StartText>
+                        {loadingFinished ? (
+                            <RightArrowIcon />
+                        ) : (
+                            <ProgressSpinner
+                                strokeWidth={"7"}
+                                //color={"white"}
+                                style={{ width: "25px", height: "25px", margin: 0 }}
+                            />
+                        )}
                     </StartMenuButton>
                 </AboutStartContainer>
             </StartTitleAndButtonContainer>
@@ -155,10 +211,11 @@ export const LPContainerMain = styled.div`
     /* width: 100vw;
     height: 100vh; */
     position: absolute;
-    overflow: scroll;
     display: block;
     z-index: 1;
     top: 64px;
+    overflow: hidden;
+    width: 100%;
 `;
 
 export const LPSectionExtendable = styled.div`
