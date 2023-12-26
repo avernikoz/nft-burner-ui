@@ -42,7 +42,7 @@ export const Control = () => {
             <BurnAndInfoContainer>
                 <BurnScheduleContainer>
                     <BurnButton
-                        className="burnButton mainButton"
+                        className="burnButton mainButton width35"
                         onClick={() => setBurnPopupVisible(true)}
                         disabled={!nft}
                     >
