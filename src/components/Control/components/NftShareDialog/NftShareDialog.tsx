@@ -7,11 +7,12 @@ import {
     StyledDialog,
 } from "../NftBurnDialog/NftBurnDialog.styled";
 
-import { ReactComponent as TwichIcon } from "../../../../assets/svg/twitch.svg";
-import { ReactComponent as YoutTubeIcon } from "../../../../assets/svg/youtube.svg";
+// import { ReactComponent as TwichIcon } from "../../../../assets/svg/twitch.svg";
+// import { ReactComponent as YoutTubeIcon } from "../../../../assets/svg/youtube.svg";
 import { ReactComponent as TwitterIcon } from "../../../../assets/svg/twitter.svg";
 import { SocialIconContainer, SocialMainText, SocialTitleText } from "../NftScheduleDialog/NftScheduleDialog.styled";
-import { ConfirmBurningButton } from "../../../ConfirmBurningButton/ConfirmBurningButton";
+// import { ConfirmBurningButton } from "../../../ConfirmBurningButton/ConfirmBurningButton";
+import { generateTwitterIntentShare } from "../../../../utils/generateTwitterIntentShareText";
 
 export const NftShareDialog = ({
     nft,
@@ -51,22 +52,26 @@ export const NftShareDialog = ({
                 <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
                     <div>
                         <SocialTitleText>Share in</SocialTitleText>
-                        <SocialMainText>Share your burnt nft it on social media::</SocialMainText>
+                        <SocialMainText>Share your burnt nft it on social media:</SocialMainText>
                     </div>
                     <div style={{ display: "flex", gap: "20px" }}>
-                        <SocialIconContainer target="_blank" rel="noopener noreferrer" href="https://www.twitch.tv">
+                        <SocialIconContainer
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={generateTwitterIntentShare()}
+                        >
+                            <TwitterIcon />
+                        </SocialIconContainer>
+                        {/* <SocialIconContainer target="_blank" rel="noopener noreferrer" href="https://www.twitch.tv">
                             <TwichIcon />
                         </SocialIconContainer>
                         <SocialIconContainer target="_blank" rel="noopener noreferrer" href="https://youtube.com">
                             <YoutTubeIcon />
-                        </SocialIconContainer>
-                        <SocialIconContainer target="_blank" rel="noopener noreferrer" href="https://twitter.com">
-                            <TwitterIcon />
-                        </SocialIconContainer>
+                        </SocialIconContainer> */}
                     </div>
-                    <div>
+                    {/* <div>
                         <ConfirmBurningButton style={{ width: "100%" }}>Save</ConfirmBurningButton>
-                    </div>
+                    </div> */}
                 </div>
             </NftBurnDialogContainer>
         </StyledDialog>
