@@ -13,6 +13,7 @@ import "./App.css";
 import { BodyContainer } from "./app.styled";
 import { Footer } from "../../components/Footer/Footer";
 import { BurningComplete } from "../../components/BurningComplete/BurningComplete";
+import { useEthersSigner } from "../../components/NftList/variables";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
     setAboutPageActive,
@@ -22,17 +23,20 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const wagmiAccount = useWagmiAccount();
+    const signer = useEthersSigner();
+
     const [showUI, setShowUI] = useState<boolean>(false);
     const [showBurnedScreen, setShowBurnedScreen] = useState<boolean>(false);
 
     const NftController = useContext(NftContext);
 
+    // for connect wallet show ui
     useEffect(() => {
-        if (wagmiAccount.isConnected && wagmiAccount.address) {
-            setShowUI(true);
-        } else if (solanaWallet.connected && solanaWallet.publicKey) {
-            setShowUI(true);
-        } else if (suietWallet.connected && suietWallet.address) {
+        const wagmiChangeOrConnected = wagmiAccount.isConnected && wagmiAccount.address && signer;
+        const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
+        const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
+
+        if (wagmiChangeOrConnected || solanaChangeOrConnected || suiChangeOrConnected) {
             setShowUI(true);
         } else {
             setShowUI(false);
@@ -46,15 +50,31 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
         solanaWallet.publicKey,
         solanaWallet.disconnecting,
         NftController,
+        signer,
     ]);
 
+    // for burn more
     useEffect(() => {
-        if (NftController.nftStatus === ENftBurnStatus.EMPTY) {
-            console.debug("set show UI true");
-            setShowUI(true);
-            setShowBurnedScreen(false);
+        const wagmiChangeOrConnected = wagmiAccount.isConnected && wagmiAccount.address && signer;
+        const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
+        const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
+
+        if (wagmiChangeOrConnected || solanaChangeOrConnected || suiChangeOrConnected) {
+            if (NftController.nftStatus === ENftBurnStatus.EMPTY) {
+                setShowUI(true);
+                setShowBurnedScreen(false);
+            }
         }
-    }, [NftController.nftStatus]);
+    }, [
+        NftController.nftStatus,
+        signer,
+        solanaWallet.connected,
+        solanaWallet.publicKey,
+        suietWallet.address,
+        suietWallet.connected,
+        wagmiAccount.address,
+        wagmiAccount.isConnected,
+    ]);
 
     useEffect(() => {
         if (NftController.nftStatus === ENftBurnStatus.BURNED_ONCHAIN) {
