@@ -31,7 +31,6 @@ export class GReactGLBridgeFunctions {
     }
 
     static OnBurningFinished() {
-        console.debug("[OnBurningFinished] fired");
         document.dispatchEvent(new CustomEvent("webglEvent", { detail: { nftBurned: true } }));
     }
 
