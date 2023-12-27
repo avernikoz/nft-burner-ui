@@ -21,10 +21,42 @@ const burnAnimation = keyframes`
     }
 `;
 
+const pulseColorAnimation = keyframes`
+  0%, 100% {
+    background-color: #080808;  // Darker color
+  }
+  50% {
+    background-color: #444444;  // Dark gray
+  }
+`;
+
 export interface CardProps {
-    isActive: boolean;
-    isPlaceholderImage: boolean;
+    $isActive: boolean;
+    $isImageClickable: boolean;
+    $loaded: boolean;
 }
+
+export const ImageLoaderPlaceholder = styled.div<{ $loaded: boolean }>`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Set a higher z-index to ensure it's on top of the image */
+
+    ${({ $loaded }) =>
+        !$loaded &&
+        css`
+            animation: ${pulseColorAnimation} 1s infinite; // Adjust the animation duration as needed
+            cursor: progress;
+        `}
+
+    ${({ $loaded }) =>
+        $loaded &&
+        css`
+            display: none;
+        `}
+`;
 
 export const Card = styled.div<CardProps>`
     position: relative;
@@ -33,14 +65,20 @@ export const Card = styled.div<CardProps>`
     width: 100%;
     height: 100%;
 
-    ${({ isPlaceholderImage }) =>
-        !isPlaceholderImage &&
+    ${({ $loaded }) =>
+        !$loaded &&
+        css`
+            cursor: progress;
+        `}
+
+    ${({ $isImageClickable }) =>
+        $isImageClickable &&
         css`
             cursor: pointer;
         `}
 
-    ${({ isActive }) =>
-        isActive &&
+    ${({ $isActive }) =>
+        $isActive &&
         css`
             border-radius: 2px;
             border-top: 2px solid #fff;
@@ -75,25 +113,6 @@ export const Card = styled.div<CardProps>`
     &:hover div {
         opacity: 1;
         z-index: 100;
-    }
-
-    &.active {
-        border-radius: 2px;
-        border-top: 2px solid #fff;
-        border-bottom: 2px solid #fff;
-        background: rgba(255, 74, 0, 0.9);
-        z-index: 1;
-        width: 100%;
-        height: 100%;
-
-        img {
-            filter: none;
-            animation: ${burnAnimation} 1s infinite;
-
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
     }
 `;
 
