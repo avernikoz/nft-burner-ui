@@ -23,7 +23,7 @@ export const StartScreenWrapMain = styled.div`
 `;
 
 export const MainQuoteText = styled.span`
-    color: #fff;
+    color: #ebebeb;
 
     /* text-shadow:
         0px 0px 50px rgba(255, 255, 255, 0.5),
@@ -33,11 +33,11 @@ export const MainQuoteText = styled.span`
     font-style: normal;
     font-weight: 700;
 
-    line-height: 100%;
+    line-height: 85%;
 
     text-align: center;
 
-    margin: 3vh;
+    margin: 10vh;
 
     width: 90vw;
     //height: 50%;
@@ -123,6 +123,82 @@ export const StartMenuButton = styled.button`
     }
 `;
 
+const titleArray = [
+    () => (
+        <MainQuoteText>
+            ANNIHILATE <br /> THE <br /> DEPRECIATED
+        </MainQuoteText>
+    ),
+    //
+    () => (
+        <MainQuoteText>
+            BURN YOUR <br /> OBSOLETE <br /> RELICS
+        </MainQuoteText>
+    ),
+    //
+    () => (
+        <MainQuoteText>
+            CONFLAGRATION <br /> BRINGS <br /> REDEMPTION
+        </MainQuoteText>
+    ),
+    //
+    () => (
+        <MainQuoteText>
+            SUMMON THE <br /> CLEANSING <br /> FLAMES
+        </MainQuoteText>
+    ),
+    //
+    () => (
+        <MainQuoteText>
+            ERADICATE <br /> HOLLOW <br /> CREATIONS
+        </MainQuoteText>
+    ),
+    //
+    () => (
+        <MainQuoteText>
+            INCINERATE <br /> THE FAUX <br /> TREASURES
+        </MainQuoteText>
+    ),
+    //
+    () => (
+        <MainQuoteText>
+            LET THE FLAMES <br /> DEVOUR <br /> THE PRETENSE
+        </MainQuoteText>
+    ),
+    //
+    () => (
+        <MainQuoteText>
+            PURGE AWAY <br /> THE RESENTMENT
+        </MainQuoteText>
+    ),
+    //
+    () => (
+        <MainQuoteText>
+            THE DEMISE OF <br /> THE INFAMY
+        </MainQuoteText>
+    ),
+    //
+    () => (
+        <MainQuoteText>
+            VINDICATION FOR <br /> THE DECEIVED
+        </MainQuoteText>
+    ),
+    //
+    () => (
+        <MainQuoteText>
+            CULMINATION <br /> OF THE <br /> PLAGUED ERA
+        </MainQuoteText>
+    ),
+];
+
+const GetRandomTitle = () => {
+    const randomIndex = Math.floor(Math.random() * titleArray.length);
+    return titleArray[randomIndex]();
+};
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const RandomTitle = GetRandomTitle();
+
 export const AboutFirstSection = ({
     setAboutPageActive,
     setShowMore,
@@ -161,7 +237,7 @@ export const AboutFirstSection = ({
     return (
         <StartScreenWrapMain>
             <StartTitleAndButtonContainer>
-                <MainQuoteText>ANNIHILATE THE DEPRECTIATED</MainQuoteText>
+                {RandomTitle}
                 <AboutStartContainer>
                     <StartMenuButton
                         onClick={() => {

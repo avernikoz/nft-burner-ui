@@ -58,6 +58,12 @@ export function MathSmoothstep(edge0: number, edge1: number, x: number): number 
 export function MathLerp(start: number, end: number, t: number): number {
     return start * (1 - t) + end * t;
 }
+export function MathLerpVec2(start: Vector2, end: Vector2, t: number): Vector2 {
+    return {
+        x: MathLerp(start.x, end.x, t),
+        y: MathLerp(start.y, end.y, t),
+    };
+}
 export function MathLerpVec3(start: Vector3, end: Vector3, t: number): Vector3 {
     return {
         x: MathLerp(start.x, end.x, t),
