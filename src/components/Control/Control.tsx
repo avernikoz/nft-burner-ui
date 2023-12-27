@@ -21,6 +21,9 @@ import { useNftFloorPrice } from "../../hooks/useNftFloorPrice";
 import { useBurnerFee } from "../../hooks/useBurnerFee";
 import { getNetworkTokenSymbol } from "../../utils/getNetworkTokenSymbol";
 import { NftScheduleDialog } from "./components/NftScheduleDialog/NftScheduleDialog";
+import { Tooltip } from "primereact/tooltip";
+import { ReactComponent as InfoIcon } from "../../assets/svg/infoIcon.svg";
+import { useNetworkFee } from "../../hooks/useNetworkFee";
 
 export const Control = () => {
     const [burnPopupVisible, setBurnPopupVisible] = useState<boolean>(false);
@@ -29,7 +32,9 @@ export const Control = () => {
     const [nft, setNft] = useState<INft | null>(null);
     const { data: floorPrice } = useNftFloorPrice(nft);
     const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    const { networkFee } = useNetworkFee({ network: nft?.network });
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
+    const networkFeeToken = getNetworkTokenSymbol(nft?.network);
 
     const NftController = useContext(NftContext);
 
@@ -59,7 +64,15 @@ export const Control = () => {
                 </BurnScheduleContainer>
                 <NftInfoContainer>
                     <BurnerFuelInfoContainer>
-                        <BurnerFuelInfoText>Burner Fuel Fee</BurnerFuelInfoText>
+                        <Tooltip
+                            className="tooltip-burner-fee"
+                            content="💸 Why the fee? It keeps NFT Burner running smoothly. Your support fuels the fire. Thank you!"
+                            target={".burn-fuel-fee"}
+                            position="top"
+                        />
+                        <BurnerFuelInfoText className="burn-fuel-fee">
+                            Burner Fuel Fee <InfoIcon />
+                        </BurnerFuelInfoText>
                         <BurnerFuelInfoTextNumbers>
                             {burnerFee !== null && burnerFee !== undefined ? `${burnerFee} ${burnerFeeToken}` : `-`}
                         </BurnerFuelInfoTextNumbers>
@@ -67,7 +80,9 @@ export const Control = () => {
                     <NftInfoDivider />
                     <NetworkFeeInfoContainer>
                         <NetworkFeeInfoText>Network Fee</NetworkFeeInfoText>
-                        <NetworkFeeInfoTextNumbers>2.8mtc</NetworkFeeInfoTextNumbers>
+                        <NetworkFeeInfoTextNumbers>
+                            {networkFee !== null && networkFee !== undefined ? `${networkFee} ${networkFeeToken}` : `-`}
+                        </NetworkFeeInfoTextNumbers>
                     </NetworkFeeInfoContainer>
                 </NftInfoContainer>
             </BurnAndInfoContainer>

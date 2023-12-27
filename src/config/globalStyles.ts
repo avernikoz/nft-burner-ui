@@ -26,4 +26,18 @@ export const GlobalStyles = createGlobalStyle`
     .p-toast button {
         color: ${STYLES_CONFIG.button.active.color};
     }
+
+    .tooltip-burner-fee.p-tooltip .p-tooltip-text  {
+        background: rgba(11, 11, 12);
+        border: none;
+
+        color: #787885;
+        font-family: Rubik;
+        font-size: 12px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 16px;
+        letter-spacing: 0.48px;
+        border-radius: 2px;
+    }
 `;
