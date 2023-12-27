@@ -408,7 +408,7 @@ export function RenderMain() {
     const FirePlaneSizePixels = { x: 512, y: 512 };
     //const FirePlaneSizePixels = { x: 1024, y: 1024 };
     const BurningSurface = new RFirePlanePass(gl, FirePlaneSizePixels);
-    BurningSurface.SetToBurned(gl);
+    //BurningSurface.SetToBurned(gl);
 
     const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
     const FirePlaneAnimationController = new AnimationController(
@@ -699,6 +699,7 @@ export function RenderMain() {
 
             if (GTexturePool.AreAllTexturesLoaded() && !bInitialImagePreProcessed) {
                 BurningSurface.FirePlaneImagePreProcess(gl);
+                BurningSurface.SetToBurned(gl);
                 bInitialImagePreProcessed = true;
             }
 

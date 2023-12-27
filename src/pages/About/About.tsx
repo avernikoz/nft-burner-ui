@@ -156,7 +156,7 @@ const titleArray = [
     //
     () => (
         <MainQuoteText>
-            INCINERATE <br /> THE FAUX <br /> TREASURES
+            INCINERATE <br /> YOUR FAUX <br /> TREASURES
         </MainQuoteText>
     ),
     //
@@ -168,19 +168,19 @@ const titleArray = [
     //
     () => (
         <MainQuoteText>
-            PURGE AWAY <br /> THE RESENTMENT
+            PURGE AWAY <br /> THE <br /> RESENTMENT
         </MainQuoteText>
     ),
     //
     () => (
         <MainQuoteText>
-            THE DEMISE OF <br /> THE INFAMY
+            THE DEMISE <br /> OF ETERNAL <br /> INFAMY
         </MainQuoteText>
     ),
     //
     () => (
         <MainQuoteText>
-            VINDICATION FOR <br /> THE DECEIVED
+            VINDICATION <br /> FOR <br /> THE DECEIVED
         </MainQuoteText>
     ),
     //
