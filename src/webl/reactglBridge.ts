@@ -1,4 +1,4 @@
-import { AudioEngineSingleton } from "./audioEngine";
+import { GAudioEngine } from "./audioEngine";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
 
@@ -23,11 +23,11 @@ export class GReactGLBridgeFunctions {
     }
 
     static OnToggleSoundInAudioEngine() {
-        AudioEngineSingleton.getInstance().toggleSound();
+        GAudioEngine.getInstance().toggleSound();
     }
 
     static GetIsSoundEnabled() {
-        return AudioEngineSingleton.getInstance().isSoundEnabled;
+        return GAudioEngine.getInstance().isSoundEnabled;
     }
 
     static OnBurningFinished() {

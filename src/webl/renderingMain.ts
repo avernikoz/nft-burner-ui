@@ -66,7 +66,7 @@ import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController } from "./animationController";
-import { AudioEngineSingleton } from "./audioEngine";
+import { GAudioEngine } from "./audioEngine";
 import { LighterTool } from "./tools";
 import { GTexturePool } from "./texturePool";
 import { GReactGLBridgeFunctions } from "./reactglBridge";
@@ -286,9 +286,9 @@ export function RenderMain() {
 
     const canvas = getCanvas();
 
-    const GAudioEngine = AudioEngineSingleton.getInstance();
-    if (GAudioEngine.audioContext) {
-        GAudioEngine.loadSounds();
+    const audioEngine = GAudioEngine.getInstance();
+    if (audioEngine.Context) {
+        audioEngine.LoadSoundsAsync();
     }
 
     //=========================
@@ -576,7 +576,7 @@ export function RenderMain() {
                 const stateController = stateFolder
                     .add(StateMachineInner, "StateCurrent", ERenderingState)
                     .name("Current State");
-                stateController.onChange((value: number) => {
+                stateController.onChange((value: string) => {
                     GRenderingStateMachine.SetRenderingState(+value);
                 });
             }
@@ -676,7 +676,7 @@ export function RenderMain() {
                             ConnectWalletButtonController.bIntersectionThisFrame !==
                                 ConnectWalletButtonController.bIntersectionPrevFrame
                         ) {
-                            GAudioEngine.PlayClickSound();
+                            audioEngine.PlayClickSound();
                         }
                     }
                 }
@@ -736,12 +736,12 @@ export function RenderMain() {
                         if (RenderStateMachine.currentState !== ERenderingState.BurningFinished) {
                             if (GUserInputDesc.bPointerInputPressedCurFrame) {
                                 if (!GUserInputDesc.bPointerInputPressedPrevFrame) {
-                                    GAudioEngine.PlayLighterStartSound();
+                                    audioEngine.PlayLighterStartSound();
                                 } else {
-                                    GAudioEngine.PlayLighterGasSound();
+                                    audioEngine.PlayLighterGasSound();
                                 }
                             } else {
-                                GAudioEngine.ForceStopLighterGasSound();
+                                audioEngine.ForceStopLighterGasSound();
                             }
                         }
                     }
@@ -815,7 +815,7 @@ export function RenderMain() {
                 //=========================
                 if (GGpuReadData.CurFireValueCPU > 0.01) {
                     const curBurnVolume = MathMapToRange(GGpuReadData.CurFireValueCPU, 0.0, 2.0, 0.3, 1.0);
-                    GAudioEngine.PlayBurningSound(curBurnVolume);
+                    audioEngine.PlayBurningSound(curBurnVolume);
                 }
 
                 //=========================
@@ -870,7 +870,7 @@ export function RenderMain() {
                         //Render BURNT Stamp
                         BurntStampSprite.RunAnimation();
                         if (BurntStampSprite.AnimationT >= 0.95 && !BurntStampSprite.AnimationFinishedEventProcessed) {
-                            GAudioEngine.PlayStampSound();
+                            audioEngine.PlayStampSound();
                             BurntStampSprite.AnimationFinishedEventProcessed = true;
                         }
                         gl.enable(gl.BLEND);

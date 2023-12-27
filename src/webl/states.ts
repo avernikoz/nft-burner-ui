@@ -58,8 +58,7 @@ export class GRenderingStateMachine {
         return (
             this.currentState == ERenderingState.BurningReady ||
             this.currentState == ERenderingState.BurningNow ||
-            this.currentState == ERenderingState.BurningFinished ||
-            this.currentState == ERenderingState.Intro
+            this.currentState == ERenderingState.BurningFinished
         );
     }
 
