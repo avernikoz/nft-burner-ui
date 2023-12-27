@@ -4,10 +4,8 @@ import { Card, CardImage, CardTitle } from "./NftItem.styled";
 import { IMAGE_STORE_SINGLETON_INSTANCE } from "../../config/config";
 import { INft } from "../../utils/types";
 
-function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: () => void }) {
-    const { item, onClick, isActive } = props;
+export const NftItem = ({ item, isActive, onClick }: { item: INft; isActive: boolean; onClick: () => void }) => {
     const imgRef = useRef<HTMLImageElement>(null);
-
     const isEmptyImage = !item.name;
 
     const handleCardClick = () => {
@@ -28,14 +26,15 @@ function NftItem(props: { item: INft; isActive: boolean; id: number; onClick: ()
             style={isEmptyImage ? {} : { cursor: "pointer" }}
             onClick={handleCardClick}
         >
-            {/* {props.isActive ? <BurnEffect /> : null} */}
-            {/* {props.isActive ? <FireParticles /> : null} */}
-            <CardImage ref={imgRef} src={item.logoURI} alt={item.name ?? undefined} crossOrigin="anonymous" />
+            <CardImage
+                ref={imgRef}
+                src={item.logoURI}
+                alt={isEmptyImage ? undefined : item.name}
+                crossOrigin="anonymous"
+            />
             {!isEmptyImage && (
                 <CardTitle>{item.name.length > 12 ? item.name.substring(0, 12) + "..." : item.name}</CardTitle>
             )}
         </Card>
     );
-}
-
-export default NftItem;
+};

@@ -16,7 +16,7 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid as Grid } from "react-window";
 import { ENftBurnStatus, INft } from "../../utils/types";
-import NftItem from "../NftItem/NftItem";
+import { NftItem } from "../NftItem/NftItem";
 import { NftContext } from "../NftProvider/NftProvider";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { List, NftListAutosizerContainer, NftListTitle, SpinnerContainer } from "./NftList.styled";
@@ -174,7 +174,6 @@ export const NftList = () => {
                                                         <NftItem
                                                             item={item}
                                                             key={index}
-                                                            id={index}
                                                             isActive={index == activeNft}
                                                             onClick={() => handleItemClick(item)}
                                                         />
