@@ -64,11 +64,6 @@ export const Card = styled.div`
             left: 0;
         }
     }
-
-    /* &:hover {
-        opacity: 0.7;
-        transition: 1s ease;
-    } */
 `;
 
 export const CardImage = styled.img`

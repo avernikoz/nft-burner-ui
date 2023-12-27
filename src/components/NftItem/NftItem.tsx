@@ -6,10 +6,10 @@ import { INft } from "../../utils/types";
 
 export const NftItem = ({ item, isActive, onClick }: { item: INft; isActive: boolean; onClick: () => void }) => {
     const imgRef = useRef<HTMLImageElement>(null);
-    const isEmptyImage = !item.name;
+    const isPlaceholderImage = !item.name;
 
     const handleCardClick = () => {
-        if (isEmptyImage) {
+        if (isPlaceholderImage) {
             return;
         }
 
@@ -23,16 +23,16 @@ export const NftItem = ({ item, isActive, onClick }: { item: INft; isActive: boo
     return (
         <Card
             className={isActive ? "active" : ""}
-            style={isEmptyImage ? {} : { cursor: "pointer" }}
+            style={isPlaceholderImage ? {} : { cursor: "pointer" }}
             onClick={handleCardClick}
         >
             <CardImage
                 ref={imgRef}
                 src={item.logoURI}
-                alt={isEmptyImage ? undefined : item.name}
+                alt={isPlaceholderImage ? undefined : item.name}
                 crossOrigin="anonymous"
             />
-            {!isEmptyImage && (
+            {!isPlaceholderImage && (
                 <CardTitle>{item.name.length > 12 ? item.name.substring(0, 12) + "..." : item.name}</CardTitle>
             )}
         </Card>
