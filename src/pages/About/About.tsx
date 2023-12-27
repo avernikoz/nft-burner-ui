@@ -341,7 +341,8 @@ export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => 
         <LPSectionExtendableCentered ref={refProp}>
             <LPShrinkContainer>
                 <Page2Title>
-                    A Call for Renewal: <br /> The Case for Burning NFTs
+                    A Call for Renewal: <br /> The Case for <span style={{ color: "#FF852D" }}>Burning </span>
+                    NFTs
                 </Page2Title>
                 <Page2DescText>
                     The NFT market, once vibrant and dynamic, now faces a critical juncture, and the question arises:

@@ -98,7 +98,7 @@ export function InitializeSceneStateDescsArr() {
     //Inventory
     GSceneStateDescsArray[ERenderingState.Inventory] = {
         CameraPosition: { x: -1.5, y: 0.0, z: -6.0 },
-        SpotlightPosition: { x: -1.43, y: -1.33, z: -1.0 },
+        SpotlightPosition: { x: -1.5, y: -1.5 + (Math.random() - 0.5), z: -1.0 - Math.random() },
         SpotlightFocusPosition: { x: 0, y: 1.0, z: 0.0 },
         FloorHeight: -2,
         CameraZoom: 4,
@@ -107,13 +107,19 @@ export function InitializeSceneStateDescsArr() {
     //Burn
     GSceneStateDescsArray[ERenderingState.BurningReady] = {
         CameraPosition: { x: 0, y: 0.0, z: -4.0 },
-        SpotlightPosition: { x: 0.0, y: 2.5, z: -1.0 },
+        SpotlightPosition: { x: 0.0, y: MathLerp(1.75, 3, Math.random()), z: -1.0 },
         SpotlightFocusPosition: { x: 0.0, y: 0.0, z: 1.5 },
         FloorHeight: -1.75,
         CameraZoom: 2,
     };
     GSceneStateDescsArray[ERenderingState.BurningReady + 1] = GSceneStateDescsArray[ERenderingState.BurningReady];
     GSceneStateDescsArray[ERenderingState.BurningReady + 2] = GSceneStateDescsArray[ERenderingState.BurningReady];
+
+    //For Mobile
+    if (GScreenDesc.ScreenRatio < 1) {
+        GSceneStateDescsArray[ERenderingState.Intro] = GSceneStateDescsArray[ERenderingState.BurningReady];
+        GSceneStateDescsArray[ERenderingState.Intro].FloorHeight = -1;
+    }
 }
 
 export function UpdateSceneStateDescsArr() {
@@ -125,16 +131,26 @@ export function UpdateSceneStateDescsArr() {
         cameraOffset.z = (1.0 / inDesiredScale) * GSceneStateDescsArray[inState].CameraZoom - 1;
         if (GScreenDesc.ViewRatioXY.x > 1) {
             cameraOffset.x = 0.5 / inDesiredScale;
-            GSceneStateDescsArray[inState].CameraPosition.x = -cameraOffset.x * GScreenDesc.ViewRatioXY.x;
+            const horOffsetMult = 0.85;
+            GSceneStateDescsArray[inState].CameraPosition.x =
+                -cameraOffset.x * GScreenDesc.ViewRatioXY.x * horOffsetMult;
             GSceneStateDescsArray[inState].CameraPosition.y = 0.0;
         } else {
-            cameraOffset.y = 0.5 / inDesiredScale;
-            GSceneStateDescsArray[inState].CameraPosition.y =
-                (inState === ERenderingState.Inventory ? -1.0 : 1.0) * cameraOffset.y * 1.0;
-            GSceneStateDescsArray[inState].CameraPosition.x = 0.0;
+            if (inState !== ERenderingState.Intro) {
+                cameraOffset.y = 0.5 / inDesiredScale;
+                const vertOffsetMult = 0.875;
+                GSceneStateDescsArray[inState].CameraPosition.y =
+                    (inState === ERenderingState.Inventory ? -vertOffsetMult : 1.0) * cameraOffset.y * 1.0;
+                GSceneStateDescsArray[inState].CameraPosition.x = 0.0;
+            }
         }
 
         GSceneStateDescsArray[inState].CameraPosition.z = -cameraOffset.z;
+    }
+
+    //Preloader
+    {
+        //ComputeCameraOffsetForCurState(0.5, ERenderingState.Preloading);
     }
 
     //Intro
@@ -144,7 +160,7 @@ export function UpdateSceneStateDescsArr() {
 
     //Inventory
     {
-        ComputeCameraOffsetForCurState(0.5, ERenderingState.Inventory);
+        ComputeCameraOffsetForCurState(0.6, ERenderingState.Inventory);
     }
 }
 
