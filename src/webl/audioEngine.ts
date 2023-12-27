@@ -1,88 +1,140 @@
-export class AudioEngineSingleton {
-    private static instance: AudioEngineSingleton;
+async function LoadAudioBufferAsync(context: AudioContext, url: string): Promise<AudioBuffer> {
+    try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch audio file: ${response.status} - ${response.statusText}`);
+        }
+
+        const audioData = await response.arrayBuffer();
+        return await context.decodeAudioData(audioData);
+    } catch (error) {
+        console.error(`Error loading audio file from ${url}:`, error);
+        throw error;
+    }
+}
+
+class SoundSample {
+    Buffer: AudioBuffer | null = null;
+
+    SourceNode: AudioBufferSourceNode | null = null;
+
+    Gain: GainNode | null = null;
+
+    bIsPlaying = false;
+
+    async Init(context: AudioContext, url: string, masterGain: GainNode, initialGain = 1.0) {
+        this.Buffer = await LoadAudioBufferAsync(context, url);
+
+        this.Gain = context.createGain();
+        this.SourceNode = context.createBufferSource();
+
+        this.SourceNode.buffer = this.Buffer;
+        this.SourceNode.connect(this.Gain);
+        this.Gain.connect(masterGain);
+        this.Gain.gain.value = initialGain;
+    }
+
+    InitSourceNode(context: AudioContext) {
+        this.SourceNode = context.createBufferSource();
+        this.SourceNode.buffer = this.Buffer;
+        this.SourceNode.connect(this.Gain!);
+    }
+
+    Play(context: AudioContext, bLooping = false) {
+        if (this.Buffer) {
+            if (bLooping) {
+                if (!this.bIsPlaying) {
+                    this.InitSourceNode(context);
+                    const offset = Math.random() * this.Buffer.duration;
+                    this.SourceNode!.start(0, offset);
+                    this.bIsPlaying = true;
+                    this.SourceNode!.onended = () => {
+                        this.bIsPlaying = false;
+                    };
+                }
+            } else {
+                this.InitSourceNode(context);
+                this.SourceNode!.start();
+            }
+        }
+    }
+
+    Stop() {
+        if (this.SourceNode && this.bIsPlaying) {
+            this.SourceNode.stop();
+            this.bIsPlaying = false;
+        }
+    }
+}
+
+export class GAudioEngine {
+    private static instance: GAudioEngine;
 
     public isSoundEnabled: boolean = true;
 
-    public audioContext;
+    public Context: AudioContext | null = null;
 
-    private clickAudioBuffer: AudioBuffer | null = null;
+    public MasterGain: GainNode | null = null;
 
-    private introAudioBuffer: AudioBuffer | null = null;
+    //Sounds
 
-    private stampAudioBuffer: AudioBuffer | null = null;
+    private SoundClick: AudioBuffer | null = null;
 
-    private lighterStartAudioBuffer: AudioBuffer | null = null;
+    private SoundIntro: AudioBuffer | null = null;
 
-    private lighterGasAudioBuffer: AudioBuffer | null = null;
+    private SoundStamp: AudioBuffer | null = null;
 
-    private burstAudioBuffer: AudioBuffer | null = null;
+    private SoundLighterStart: SoundSample = new SoundSample();
 
-    private flameLoopAudioBuffer: AudioBuffer | null = null;
+    private SoundLoopLighterGas: SoundSample = new SoundSample();
 
-    private burningLoopAudioBuffer: AudioBuffer | null = null;
+    private SoundFireBurst: AudioBuffer | null = null;
 
-    private currentSource: AudioBufferSourceNode | null = null;
+    private SoundLoopFlame: SoundSample = new SoundSample();
 
-    private gasSoundSource: AudioBufferSourceNode | null = null;
+    private SoundLoopBurning: SoundSample = new SoundSample();
 
-    private burningSoundSource: AudioBufferSourceNode | null = null;
+    GainBurningSound: GainNode | null = null;
 
-    private burningSoundSource2: AudioBufferSourceNode | null = null;
+    //Sources
 
-    private burningSoundSourceGain: GainNode | null = null;
+    private SourceCurrent: AudioBufferSourceNode | null = null;
 
-    private gasSoundSourceGain: GainNode | null = null;
+    //Gains
 
-    public static getInstance(): AudioEngineSingleton {
-        if (!AudioEngineSingleton.instance) {
-            AudioEngineSingleton.instance = new AudioEngineSingleton();
+    public static getInstance(): GAudioEngine {
+        if (!GAudioEngine.instance) {
+            GAudioEngine.instance = new GAudioEngine();
         }
-        return AudioEngineSingleton.instance;
+        return GAudioEngine.instance;
     }
 
     private constructor() {
         if (window.AudioContext) {
-            this.audioContext = new AudioContext();
-            this.initSources();
+            this.Context = new AudioContext();
+            this.MasterGain = this.Context.createGain();
+            this.MasterGain.connect(this.Context.destination);
         } else {
             //console.error("Web Audio API is not supported in this browser");
         }
     }
 
-    initSources() {
-        if (this.audioContext) {
-            this.burningSoundSourceGain = this.audioContext.createGain();
-            this.burningSoundSourceGain.connect(this.audioContext.destination);
-            this.gasSoundSourceGain = this.audioContext.createGain();
-            this.gasSoundSourceGain.connect(this.audioContext.destination);
-            this.gasSoundSourceGain.gain.value = 0.5;
-        }
-    }
+    async LoadSoundsAsync() {
+        if (this.Context && this.MasterGain) {
+            this.SoundClick = await LoadAudioBufferAsync(this.Context, "assets/audio/bassShot.mp3");
+            this.SoundIntro = await LoadAudioBufferAsync(this.Context, "assets/audio/intro.mp3");
+            this.SoundStamp = await LoadAudioBufferAsync(this.Context, "assets/audio/stamp.mp3");
+            this.SoundFireBurst = await LoadAudioBufferAsync(this.Context, "assets/audio/fireBurst2.mp3");
 
-    async loadSounds() {
-        this.clickAudioBuffer = await this.loadAudioBuffer("assets/audio/bassShot.mp3");
-        this.introAudioBuffer = await this.loadAudioBuffer("assets/audio/intro.mp3");
-        this.stampAudioBuffer = await this.loadAudioBuffer("assets/audio/stamp.mp3");
-        this.lighterStartAudioBuffer = await this.loadAudioBuffer("assets/audio/lighterStart.mp3");
-        this.lighterGasAudioBuffer = await this.loadAudioBuffer("assets/audio/lighterGasLoop.mp3");
-        this.burstAudioBuffer = await this.loadAudioBuffer("assets/audio/fireBurst2.mp3");
-        this.flameLoopAudioBuffer = await this.loadAudioBuffer("assets/audio/flameLoop2.mp3");
-        this.burningLoopAudioBuffer = await this.loadAudioBuffer("assets/audio/burningLoop2.mp3");
-    }
+            this.SoundLighterStart.Init(this.Context, "assets/audio/lighterStart.mp3", this.MasterGain);
 
-    async loadAudioBuffer(url: string): Promise<AudioBuffer> {
-        try {
-            const response = await fetch(url);
+            this.SoundLoopLighterGas.Init(this.Context, "assets/audio/lighterGasLoop.mp3", this.MasterGain, 0.5);
 
-            if (!response.ok) {
-                throw new Error(`Failed to fetch audio file: ${response.status} - ${response.statusText}`);
-            }
-
-            const audioData = await response.arrayBuffer();
-            return await this.audioContext!.decodeAudioData(audioData);
-        } catch (error) {
-            console.error(`Error loading audio file from ${url}:`, error);
-            throw error; // Propagate the error to the caller
+            this.GainBurningSound = this.Context.createGain();
+            this.GainBurningSound.connect(this.MasterGain);
+            this.SoundLoopFlame.Init(this.Context, "assets/audio/flameLoop2.mp3", this.GainBurningSound);
+            this.SoundLoopBurning.Init(this.Context, "assets/audio/burningLoop2.mp3", this.GainBurningSound, 0.75);
         }
     }
 
@@ -91,12 +143,12 @@ export class AudioEngineSingleton {
             return;
         }
 
-        if (this.audioContext != null) {
-            this.currentSource = this.audioContext.createBufferSource();
+        if (this.Context != null) {
+            this.SourceCurrent = this.Context.createBufferSource();
             if (inSoundBuffer) {
-                this.currentSource.buffer = inSoundBuffer;
-                this.currentSource.connect(this.audioContext.destination);
-                this.currentSource.start();
+                this.SourceCurrent.buffer = inSoundBuffer;
+                this.SourceCurrent.connect(this.Context.destination);
+                this.SourceCurrent.start();
             }
         }
     }
@@ -106,12 +158,12 @@ export class AudioEngineSingleton {
             return;
         }
 
-        if (this.audioContext != null) {
-            this.currentSource = this.audioContext.createBufferSource();
-            if (this.clickAudioBuffer) {
-                this.currentSource.buffer = this.clickAudioBuffer;
-                this.currentSource.connect(this.audioContext.destination);
-                this.currentSource.start();
+        if (this.Context != null) {
+            this.SourceCurrent = this.Context.createBufferSource();
+            if (this.SoundClick) {
+                this.SourceCurrent.buffer = this.SoundClick;
+                this.SourceCurrent.connect(this.Context.destination);
+                this.SourceCurrent.start();
             }
 
             /* const oscillator = this.audioContext.createOscillator();
@@ -123,99 +175,43 @@ export class AudioEngineSingleton {
     }
 
     PlayIntroSound() {
-        this.PlaySoundBuffer(this.introAudioBuffer);
+        this.PlaySoundBuffer(this.SoundIntro);
     }
 
     PlayStampSound() {
-        this.PlaySoundBuffer(this.stampAudioBuffer);
+        this.PlaySoundBuffer(this.SoundStamp);
     }
 
     PlayLighterStartSound() {
-        this.PlaySoundBuffer(this.lighterStartAudioBuffer);
+        this.SoundLighterStart.Play(this.Context!);
     }
 
-    bIsGasSoundPlaying = false;
-
     PlayLighterGasSound() {
-        if (!this.isSoundEnabled) {
-            return;
-        }
-
-        if (!this.bIsGasSoundPlaying) {
-            if (this.audioContext != null) {
-                this.gasSoundSource = this.audioContext.createBufferSource();
-                if (this.lighterGasAudioBuffer) {
-                    this.gasSoundSource.buffer = this.lighterGasAudioBuffer;
-                    this.gasSoundSource.connect(this.gasSoundSourceGain!);
-                    // Set a random start position
-                    const offset = Math.random() * this.lighterGasAudioBuffer.duration;
-                    this.gasSoundSource.start(0, offset);
-                    this.bIsGasSoundPlaying = true;
-                    // Listen for the end of the sound and reset the flag
-                    this.gasSoundSource.onended = () => {
-                        this.bIsGasSoundPlaying = false;
-                    };
-                }
-            }
-        }
+        this.SoundLoopLighterGas.Play(this.Context!, true);
     }
 
     ForceStopLighterGasSound() {
-        if (this.gasSoundSource) {
-            // Stop the currently playing gas sound
-            this.gasSoundSource.stop();
-            this.bIsGasSoundPlaying = false;
+        if (this.SoundLoopLighterGas.SourceNode) {
+            this.SoundLoopLighterGas.Stop();
         }
     }
 
-    bIsBurningSoundPlaying = false;
-
-    bIsBurningSoundPlaying2 = false;
-
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     PlayBurningSound(volume: number) {
-        if (!this.isSoundEnabled) {
-            return;
-        }
+        if (this.GainBurningSound) {
+            this.GainBurningSound!.gain.value = volume;
 
-        if (!this.bIsBurningSoundPlaying) {
-            if (this.audioContext != null) {
-                this.burningSoundSource = this.audioContext.createBufferSource();
-                if (this.flameLoopAudioBuffer) {
-                    this.burningSoundSource.buffer = this.flameLoopAudioBuffer;
-                    this.burningSoundSource.connect(this.burningSoundSourceGain!);
-                    // Set a random start position
-                    const offset = Math.random() * this.flameLoopAudioBuffer.duration;
-                    this.burningSoundSource.start(0, offset);
-                    this.bIsBurningSoundPlaying = true;
-                    // Listen for the end of the sound and reset the flag
-                    this.burningSoundSource.onended = () => {
-                        this.bIsBurningSoundPlaying = false;
-                    };
-                }
-            }
+            this.SoundLoopBurning.Play(this.Context!, true);
+            this.SoundLoopFlame.Play(this.Context!, true);
         }
-        if (!this.bIsBurningSoundPlaying2) {
-            if (this.audioContext != null) {
-                this.burningSoundSource2 = this.audioContext.createBufferSource();
-                if (this.burningLoopAudioBuffer) {
-                    this.burningSoundSource2.buffer = this.burningLoopAudioBuffer;
-                    this.burningSoundSource2.connect(this.burningSoundSourceGain!);
-                    // Set a random start position
-                    const offset = Math.random() * this.burningLoopAudioBuffer.duration;
-                    this.burningSoundSource2.start(0, offset);
-                    this.bIsBurningSoundPlaying2 = true;
-                    // Listen for the end of the sound and reset the flag
-                    this.burningSoundSource2.onended = () => {
-                        this.bIsBurningSoundPlaying2 = false;
-                    };
-                }
-            }
-        }
-        this.burningSoundSourceGain!.gain.value = volume;
     }
 
     toggleSound() {
         this.isSoundEnabled = !this.isSoundEnabled;
+        if (this.isSoundEnabled) {
+            this.MasterGain!.gain.value = 1.0;
+        } else {
+            this.MasterGain!.gain.value = 0.0;
+        }
     }
 }
