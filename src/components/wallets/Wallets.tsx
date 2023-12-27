@@ -9,7 +9,6 @@ import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adap
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
 import { ConnectorData, disconnect as wagmiDisconnect, fetchBalance } from "@wagmi/core";
 
-// import IconTemplate from "../IconTemplate/IconTemplate";
 import { IAccount, IMenuConnectionItem } from "./types";
 import { ethers } from "ethers";
 import { createMenuItems } from "./variables";
@@ -20,7 +19,6 @@ import { ENftBurnStatus } from "../../utils/types";
 import { NftSelectorDialog } from "./components/NetworkSelectorDialog/NetworkSelectorDialog";
 
 function Wallets(props: { hideUI: () => void }) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [visible, setVisible] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
     const [activeRainbowConnector, setActiveRainbowConnector] = useState<Connector | null>(null);

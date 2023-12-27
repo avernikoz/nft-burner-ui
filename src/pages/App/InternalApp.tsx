@@ -14,6 +14,7 @@ import { BodyContainer } from "./app.styled";
 import { Footer } from "../../components/Footer/Footer";
 import { BurningComplete } from "../../components/BurningComplete/BurningComplete";
 import { useEthersSigner } from "../../components/NftList/variables";
+import { ConnectWalletButton } from "../../components/ConnectWalletButton/ConnectWalletButton";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
     setAboutPageActive,
@@ -27,6 +28,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
 
     const [showUI, setShowUI] = useState<boolean>(false);
     const [showBurnedScreen, setShowBurnedScreen] = useState<boolean>(false);
+    const [showConnectWalletScreen, setShowConnectWalletScreen] = useState<boolean>(false);
 
     const NftController = useContext(NftContext);
 
@@ -38,7 +40,9 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
 
         if (wagmiChangeOrConnected || solanaChangeOrConnected || suiChangeOrConnected) {
             setShowUI(true);
+            setShowConnectWalletScreen(false);
         } else {
+            setShowConnectWalletScreen(true);
             setShowUI(false);
         }
     }, [
@@ -118,7 +122,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                     }}
                 />
             </div>
-            {showUI && !showBurnedScreen && (
+            {showUI && !showBurnedScreen && !showConnectWalletScreen && (
                 <BodyContainer>
                     <div className="half">
                         <NftList />
@@ -126,7 +130,14 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                     </div>
                 </BodyContainer>
             )}
-            {showBurnedScreen && <BurningComplete />}
+            {showConnectWalletScreen && (
+                <BodyContainer>
+                    <div className="half" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                        <ConnectWalletButton>Connect wallet</ConnectWalletButton>
+                    </div>
+                </BodyContainer>
+            )}
+            {showBurnedScreen && !showConnectWalletScreen && <BurningComplete />}
 
             <Footer setAboutPageActive={setAboutPageActive} />
         </div>
