@@ -7,7 +7,7 @@ export const BurningCompleteContainer = styled.div`
     align-items: center;
 
     z-index: 9;
-    bottom: 50px;
+    bottom: 12.5vh;
     position: absolute;
     width: 50%;
 
