@@ -40,6 +40,7 @@ import {
 import { ProgressSpinner } from "primereact/progressspinner";
 import { ConfirmBurningButton } from "../../../ConfirmBurningButton/ConfirmBurningButton";
 import { useNftFloorPrice } from "../../../../hooks/useNftFloorPrice";
+import { sleep } from "../../../../utils/sleep";
 
 export const NftBurnDialog = ({
     nft,
@@ -52,19 +53,27 @@ export const NftBurnDialog = ({
 }) => {
     const NftController = useContext(NftContext);
 
-    const [loadingFirstTransaction, setLoadingFirstTransaction] = useState<boolean>(false);
-    const [loadingSecondTransaction, setLoadingSecondTransaction] = useState<boolean>(false);
+    const [loadingFirstTransaction, setLoadingFirstTransaction] = useState<boolean>(true);
+    const [loadingSecondTransaction, setLoadingSecondTransaction] = useState<boolean>(true);
     const [errorTransaction, setErrorTransaction] = useState<boolean>(false);
+    const [onChainBurningSuccess, setOnchainBurningSuccess] = useState<boolean>(false);
+    const [onChainFeeSuccess, setOnchainFeeSuccess] = useState<boolean>(false);
+
+    const cleanUpState = () => {
+        setErrorTransaction(false);
+        setOnchainBurningSuccess(false);
+        setOnchainFeeSuccess(false);
+        setLoadingFirstTransaction(false);
+        setLoadingSecondTransaction(false);
+    };
 
     useEffect(() => {
         if (visible) {
             document.body.classList.add("blur-background");
-        } else {
-            setErrorTransaction(false);
-            document.body.classList.remove("blur-background");
         }
 
         return () => {
+            cleanUpState();
             document.body.classList.remove("blur-background");
         };
     }, [visible]);
@@ -105,6 +114,7 @@ export const NftBurnDialog = ({
                 await handleEvmPayTransaction({ nft: nft as EvmNft, signer, burnerFee });
                 setLoadingFirstTransaction(false);
                 setLoadingSecondTransaction(true);
+                setOnchainFeeSuccess(true);
                 await handleEvmBurnTransaction({ nft: nft as EvmNft, signer });
             } else if (isSui) {
                 await handleSuiTransaction({ nft: nft as SuiNft, signAndExecuteTransactionBlock, burnerFee });
@@ -117,6 +127,13 @@ export const NftBurnDialog = ({
                 });
             }
 
+            setOnchainFeeSuccess(true);
+            setOnchainBurningSuccess(true);
+
+            setLoadingFirstTransaction(false);
+            setLoadingSecondTransaction(false);
+
+            await sleep(3500);
             NftController.setNftStatus(ENftBurnStatus.BURNED_ONCHAIN);
             setVisible();
         } catch (error) {
@@ -174,7 +191,6 @@ export const NftBurnDialog = ({
                             <NftBurnDialogInfoTitle className="burn-fuel-fee">
                                 Burner Fuel Fee <InfoIcon />:
                             </NftBurnDialogInfoTitle>
-                            {/* </Tooltip> */}
                             <NftBurnDialogInfoValue>
                                 {burnerFee} {burnerFeeToken}
                             </NftBurnDialogInfoValue>
@@ -193,29 +209,29 @@ export const NftBurnDialog = ({
                         </WarningText>
                     </WarningContainer>
                     <StatusTransactionContainer>
-                        {loadingFirstTransaction ? (
-                            <ProgressSpinner style={{ width: "25px", height: "25px", margin: 0 }} />
-                        ) : errorTransaction ? (
-                            <FailedIcon />
-                        ) : !loadingFirstTransaction ? (
-                            <BurnIcon />
-                        ) : (
+                        {onChainFeeSuccess ? (
                             <SuccessCheckmark />
-                        )}
+                        ) : loadingFirstTransaction ? (
+                            <ProgressSpinner style={{ width: "25px", height: "25px", margin: 0 }} />
+                        ) : errorTransaction && !onChainFeeSuccess ? (
+                            <FailedIcon />
+                        ) : !loadingFirstTransaction && !onChainFeeSuccess ? (
+                            <BurnIcon />
+                        ) : null}
                         <StatusTransactionText $isActive={loadingFirstTransaction}>
                             Confirming your burn fee transaction
                         </StatusTransactionText>
                     </StatusTransactionContainer>
                     <StatusTransactionContainer>
-                        {loadingSecondTransaction ? (
-                            <ProgressSpinner style={{ width: "25px", height: "25px", margin: 0 }} />
-                        ) : errorTransaction ? (
-                            <FailedIcon />
-                        ) : !loadingSecondTransaction ? (
-                            <BurnIcon />
-                        ) : (
+                        {onChainBurningSuccess ? (
                             <SuccessCheckmark />
-                        )}
+                        ) : loadingSecondTransaction ? (
+                            <ProgressSpinner style={{ width: "25px", height: "25px", margin: 0 }} />
+                        ) : errorTransaction && !onChainBurningSuccess ? (
+                            <FailedIcon />
+                        ) : !loadingSecondTransaction && !onChainBurningSuccess ? (
+                            <BurnIcon />
+                        ) : null}
                         <StatusTransactionText $isActive={loadingSecondTransaction}>
                             Confirming your burn nft transaction
                         </StatusTransactionText>
@@ -223,8 +239,21 @@ export const NftBurnDialog = ({
                 </div>
             </NftBurnDialogContainer>
             <div>
-                <ConfirmBurningButton style={{ width: "100%" }} onClick={handleBurn}>
-                    Commence burning ritual
+                <ConfirmBurningButton
+                    style={{ width: "100%", display: "flex", height: "58.5px" }}
+                    disabled={loadingFirstTransaction || loadingSecondTransaction}
+                    onClick={handleBurn}
+                >
+                    {onChainBurningSuccess && onChainFeeSuccess ? (
+                        <>
+                            <ProgressSpinner style={{ width: "25px", height: "25px", margin: 0 }} />
+                            Filling the Burner with Fuel...
+                        </>
+                    ) : loadingFirstTransaction || loadingSecondTransaction ? (
+                        <ProgressSpinner style={{ width: "25px", height: "25px", margin: 0 }} />
+                    ) : (
+                        `Commence burning ritual`
+                    )}
                 </ConfirmBurningButton>
             </div>
         </StyledDialog>
