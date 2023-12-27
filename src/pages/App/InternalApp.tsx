@@ -6,7 +6,7 @@ import { useAccount as useWagmiAccount } from "wagmi";
 import { Control } from "../../components/Control/Control";
 import { NftList } from "../../components/NftList/NftList";
 import { NftContext } from "../../components/NftProvider/NftProvider";
-import Wallets from "../../components/wallets/Wallets";
+import { WalletSelector } from "../../components/WalletSelector/WalletSelector";
 import { ENftBurnStatus } from "../../utils/types";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import "./App.css";
@@ -29,6 +29,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
     const [showUI, setShowUI] = useState<boolean>(false);
     const [showBurnedScreen, setShowBurnedScreen] = useState<boolean>(false);
     const [showConnectWalletScreen, setShowConnectWalletScreen] = useState<boolean>(false);
+    const [walletSelectPopupVisible, setWalletSelectPopupVisible] = useState<boolean>(false);
 
     const NftController = useContext(NftContext);
 
@@ -116,7 +117,9 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
     return (
         <div className="App">
             <div className="WalletConnectionHeader">
-                <Wallets
+                <WalletSelector
+                    walletSelectPopupVisible={walletSelectPopupVisible}
+                    setWalletSelectPopupVisible={setWalletSelectPopupVisible}
                     hideUI={() => {
                         setShowUI(false);
                     }}
@@ -133,7 +136,9 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
             {showConnectWalletScreen && (
                 <BodyContainer>
                     <div className="half" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                        <ConnectWalletButton>Connect wallet</ConnectWalletButton>
+                        <ConnectWalletButton onClick={() => setWalletSelectPopupVisible(true)}>
+                            Connect wallet
+                        </ConnectWalletButton>
                     </div>
                 </BodyContainer>
             )}

@@ -3,7 +3,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 // eslint-disable-next-line import/no-unresolved
 import { MenuItem } from "primereact/menuitem";
 import { Menu } from "primereact/menu";
-import { ButtonContainer, ProfileLabel, StyledMenu, StyledPanelMenu, WalletButton } from "./Wallets.styled";
+import { ButtonContainer, ProfileLabel, StyledMenu, StyledPanelMenu, WalletButton } from "./WalletSelector.styled";
 import { useWallet as suietUseWallet, useAccountBalance } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
@@ -18,8 +18,15 @@ import { NftContext } from "../NftProvider/NftProvider";
 import { ENftBurnStatus } from "../../utils/types";
 import { NftSelectorDialog } from "./components/NetworkSelectorDialog/NetworkSelectorDialog";
 
-function Wallets(props: { hideUI: () => void }) {
-    const [visible, setVisible] = useState(false);
+export const WalletSelector = ({
+    hideUI,
+    walletSelectPopupVisible,
+    setWalletSelectPopupVisible,
+}: {
+    hideUI: () => void;
+    walletSelectPopupVisible: boolean;
+    setWalletSelectPopupVisible: (visible: boolean) => void;
+}) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const [activeRainbowConnector, setActiveRainbowConnector] = useState<Connector | null>(null);
     const [account, setAccount] = useState<IAccount | null>(null);
@@ -38,10 +45,10 @@ function Wallets(props: { hideUI: () => void }) {
             localStorage.setItem("activeIndex", JSON.stringify(activeIndex));
             // TODO: On wallet connect method from react bridge
             GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory);
-            setVisible(false);
+            setWalletSelectPopupVisible(false);
             setAccount(acc);
         },
-        [activeIndex],
+        [activeIndex, setWalletSelectPopupVisible],
     );
 
     useEffect(() => {
@@ -75,7 +82,7 @@ function Wallets(props: { hideUI: () => void }) {
                 .then(() => {
                     solanaWallet.connected = false;
                     solanaWallet.publicKey = null;
-                    props.hideUI();
+                    hideUI();
                 })
                 .catch((error) => {
                     Sentry.captureException(error, {
@@ -91,7 +98,7 @@ function Wallets(props: { hideUI: () => void }) {
         NftController.setActiveNft(null);
         setActiveRainbowConnector(null);
         setAccount(null);
-    }, [wagmiAccount.isConnected, suietWallet, solanaWallet, NftController, props]);
+    }, [wagmiAccount.isConnected, suietWallet, solanaWallet, NftController, hideUI]);
 
     useEffect(() => {
         // Handle disconnect wallet in case wallet `A` was connected and then user
@@ -291,7 +298,7 @@ function Wallets(props: { hideUI: () => void }) {
                     <WalletButton
                         aria-label="Choose your wallet"
                         icon="pi pi-wallet"
-                        onClick={() => setVisible(true)}
+                        onClick={() => setWalletSelectPopupVisible(true)}
                     />
                 )}
                 {account && (
@@ -320,13 +327,11 @@ function Wallets(props: { hideUI: () => void }) {
                 )}
             </ButtonContainer>
             <NftSelectorDialog
-                visible={visible}
-                setVisible={() => setVisible(false)}
+                visible={walletSelectPopupVisible}
+                setVisible={() => setWalletSelectPopupVisible(false)}
                 activeIndex={activeIndex}
                 tabItems={tabItems}
             />
         </div>
     );
-}
-
-export default Wallets;
+};
