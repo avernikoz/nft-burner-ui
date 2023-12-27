@@ -195,6 +195,12 @@ export class RFirePlanePass {
         gl.clearBufferfv(gl.COLOR, 0, clearColor0);
         gl.clearBufferfv(gl.COLOR, 1, clearColor1);
         gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[1]);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+        gl.clearBufferfv(gl.COLOR, 0, clearColor0);
+        gl.clearBufferfv(gl.COLOR, 1, clearColor1);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
     }
 
     SetToBurned(gl: WebGL2RenderingContext) {
@@ -339,6 +345,7 @@ export class RFirePlanePass {
         this.VisualizerFlameColorLUT = GTexturePool.CreateTexture(gl, false, "flameColorLUT5");
         //this.CurrentImageTextureSrc = "assets/example.jpg";
         this.CurrentImageTextureSrc = "apeBlue";
+        //this.CurrentImageTextureSrc = "punkBlue";
         //this.CurrentImageTextureSrc = "assets/example2.png";
         this.VisualizerImageTexture = GTexturePool.CreateTexture(gl, false, this.CurrentImageTextureSrc, true, true);
         this.FirePlaneImagePreProcess(gl);
