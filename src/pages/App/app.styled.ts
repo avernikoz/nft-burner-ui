@@ -1,6 +1,6 @@
-import { styled } from "styled-components";
+import { css, styled } from "styled-components";
 
-export const BodyContainer = styled.div`
+export const BodyContainer = styled.div<{ showBackground?: boolean }>`
     /* display: grid;
     grid-template-columns: 1fr 1fr; */
     width: 50vw;
@@ -20,8 +20,12 @@ export const BodyContainer = styled.div`
     }
 
     .half {
-        /* grid-column: span 1; */
-        background-color: rgba(0, 0, 0, 0.1);
+        ${({ showBackground }) =>
+            showBackground &&
+            css`
+                background-color: rgba(0, 0, 0, 0.1);
+                border-radius: 15px;
+            `}
         padding: 0.5rem;
         border-radius: 15px;
         height: 100%;
