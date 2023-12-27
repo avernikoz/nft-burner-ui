@@ -23,6 +23,7 @@ import { getNetworkTokenSymbol } from "../../utils/getNetworkTokenSymbol";
 import { NftScheduleDialog } from "./components/NftScheduleDialog/NftScheduleDialog";
 import { Tooltip } from "primereact/tooltip";
 import { ReactComponent as InfoIcon } from "../../assets/svg/infoIcon.svg";
+import { useNetworkFee } from "../../hooks/useNetworkFee";
 
 export const Control = () => {
     const [burnPopupVisible, setBurnPopupVisible] = useState<boolean>(false);
@@ -31,7 +32,9 @@ export const Control = () => {
     const [nft, setNft] = useState<INft | null>(null);
     const { data: floorPrice } = useNftFloorPrice(nft);
     const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    const { networkFee } = useNetworkFee({ network: nft?.network });
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
+    const networkFeeToken = getNetworkTokenSymbol(nft?.network);
 
     const NftController = useContext(NftContext);
 
@@ -77,7 +80,9 @@ export const Control = () => {
                     <NftInfoDivider />
                     <NetworkFeeInfoContainer>
                         <NetworkFeeInfoText>Network Fee</NetworkFeeInfoText>
-                        <NetworkFeeInfoTextNumbers>2.8mtc</NetworkFeeInfoTextNumbers>
+                        <NetworkFeeInfoTextNumbers>
+                            {networkFee !== null && networkFee !== undefined ? `${networkFee} ${networkFeeToken}` : `-`}
+                        </NetworkFeeInfoTextNumbers>
                     </NetworkFeeInfoContainer>
                 </NftInfoContainer>
             </BurnAndInfoContainer>
