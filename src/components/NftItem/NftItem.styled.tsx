@@ -1,4 +1,4 @@
-import { keyframes, styled } from "styled-components";
+import { css, keyframes, styled } from "styled-components";
 
 export const BurnEffect = styled.div`
     transform: scale(0.5);
@@ -21,12 +21,43 @@ const burnAnimation = keyframes`
     }
 `;
 
-export const Card = styled.div`
+export interface CardProps {
+    isActive: boolean;
+    isPlaceholderImage: boolean;
+}
+
+export const Card = styled.div<CardProps>`
     position: relative;
     border-radius: 2px;
     overflow: hidden;
     width: 100%;
     height: 100%;
+
+    ${({ isPlaceholderImage }) =>
+        !isPlaceholderImage &&
+        css`
+            cursor: pointer;
+        `}
+
+    ${({ isActive }) =>
+        isActive &&
+        css`
+            border-radius: 2px;
+            border-top: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            background: rgba(255, 74, 0, 0.9);
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+
+            img {
+                filter: none;
+                animation: ${burnAnimation} 1s infinite;
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+        `}
 
     & {
         img {
