@@ -9,6 +9,17 @@
     word-wrap: break-word;
 
     @media (max-width: 600px) {
+        font-size: 14px;
+    }
+}
+
+.completeButton {
+    padding: 0 2.5rem;
+}
+
+.mainButtonLarge {
+    @media (max-width: 1024px) {
+        font-size: 24px;
         padding: 0px 1.5rem;
     }
 }

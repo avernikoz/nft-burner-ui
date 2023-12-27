@@ -26,20 +26,17 @@ export const BurningComplete = () => {
 
             <BurningCompleteContainer>
                 <BurnButton
-                    style={{ padding: "0 2.5rem" }}
-                    className="burnButton mainButton"
+                    className="burnButton mainButton mainButtonLarge completeButton"
                     onClick={() => {
                         NftController.setNftStatus(ENftBurnStatus.EMPTY);
                         GReactGLBridgeFunctions.OnBurnMore();
-                        console.debug("burn more");
                     }}
                 >
                     BURN MORE
                 </BurnButton>
 
                 <ShareButton
-                    style={{ padding: "0 2.5rem" }}
-                    className="shareButton mainButton"
+                    className="shareButton mainButton mainButtonLarge completeButton"
                     onClick={() => setSharePopupVisible(true)}
                 >
                     SHARE
