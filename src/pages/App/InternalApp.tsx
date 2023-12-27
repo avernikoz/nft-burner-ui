@@ -97,8 +97,6 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                 }>
             ).detail;
 
-            console.debug("nftBurned: ", nftBurned);
-
             if (nftBurned) {
                 NftController.setNftStatus(ENftBurnStatus.BURNED_IN_SIMULATION);
             }
