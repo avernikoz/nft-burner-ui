@@ -65,7 +65,16 @@ html {
 
 @font-face {
     font-family: "Khand";
-    font-weight: bold;
+    font-weight: 600;
+    font-style: normal;
+    src:
+        local("Khand-SemiBold"),
+        local("Khand-SemiBold"),
+        url(./fonts/Khand-SemiBold.woff2) format("woff2");
+}
+@font-face {
+    font-family: "Khand";
+    font-weight: 700;
     font-style: normal;
     src:
         local("Khand-Bold"),
