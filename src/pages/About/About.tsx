@@ -156,7 +156,7 @@ const titleArray = [
     //
     () => (
         <MainQuoteText>
-            INCINERATE <br /> THE FAUX <br /> TREASURES
+            INCINERATE <br /> YOUR FAUX <br /> TREASURES
         </MainQuoteText>
     ),
     //
@@ -168,19 +168,19 @@ const titleArray = [
     //
     () => (
         <MainQuoteText>
-            PURGE AWAY <br /> THE RESENTMENT
+            PURGE AWAY <br /> THE <br /> RESENTMENT
         </MainQuoteText>
     ),
     //
     () => (
         <MainQuoteText>
-            THE DEMISE OF <br /> THE INFAMY
+            THE DEMISE <br /> OF ETERNAL <br /> INFAMY
         </MainQuoteText>
     ),
     //
     () => (
         <MainQuoteText>
-            VINDICATION FOR <br /> THE DECEIVED
+            VINDICATION <br /> FOR <br /> THE DECEIVED
         </MainQuoteText>
     ),
     //
@@ -474,7 +474,8 @@ export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => 
         <LPSectionExtendableCentered ref={refProp}>
             <LPShrinkContainer>
                 <Page2Title>
-                    A Call for Renewal: <br /> The Case for Burning NFTs
+                    A Call for Renewal: <br /> The Case for <span style={{ color: "#FF852D" }}>Burning </span>
+                    NFTs
                 </Page2Title>
                 <Page2DescText>
                     The NFT market, once vibrant and dynamic, now faces a critical juncture, and the question arises:

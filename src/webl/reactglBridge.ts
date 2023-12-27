@@ -29,4 +29,12 @@ export class GReactGLBridgeFunctions {
     static GetIsSoundEnabled() {
         return GAudioEngine.getInstance().isSoundEnabled;
     }
+
+    static OnBurningFinished() {
+        document.dispatchEvent(new CustomEvent("webglEvent", { detail: { nftBurned: true } }));
+    }
+
+    static OnBurnMore() {
+        GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory);
+    }
 }

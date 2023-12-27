@@ -2,6 +2,7 @@ import { ALLOWED_EVM_CHAINS, ALLOWED_NETWORKS, NFTContractStandard } from "@aver
 import { PublicKey } from "@solana/web3.js";
 
 export enum ENftBurnStatus {
+    BURNED_IN_SIMULATION = "burned_in_simulation",
     BURNED_ONCHAIN = "burned",
     SELECTED = "selected",
     EMPTY = "empty",

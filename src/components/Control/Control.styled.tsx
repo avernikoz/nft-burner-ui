@@ -37,7 +37,7 @@ export const NftInfoDivider = styled.div`
 `;
 export const BurnerFuelInfoContainer = styled.div`
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 16px;
 `;
 export const NetworkFeeInfoContainer = styled.div`
@@ -53,6 +53,9 @@ export const BurnerFuelInfoText = styled.span`
     font-weight: 400;
     font-size: 12px;
     letter-spacing: 0.5px;
+
+    display: flex;
+    gap: 5px;
 `;
 
 export const BurnerFuelInfoTextNumbers = styled.span`

@@ -1,4 +1,4 @@
-import { keyframes, styled } from "styled-components";
+import { css, keyframes, styled } from "styled-components";
 
 export const BurnEffect = styled.div`
     transform: scale(0.5);
@@ -21,12 +21,81 @@ const burnAnimation = keyframes`
     }
 `;
 
-export const Card = styled.div`
+const pulseColorAnimation = keyframes`
+  0%, 100% {
+    background-color: #080808;  // Darker color
+  }
+  50% {
+    background-color: #444444;  // Dark gray
+  }
+`;
+
+export interface CardProps {
+    $isActive: boolean;
+    $isImageClickable: boolean;
+    $loaded: boolean;
+}
+
+export const ImageLoaderPlaceholder = styled.div<{ $loaded: boolean }>`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Set a higher z-index to ensure it's on top of the image */
+
+    ${({ $loaded }) =>
+        !$loaded &&
+        css`
+            animation: ${pulseColorAnimation} 1s infinite; // Adjust the animation duration as needed
+            cursor: progress;
+        `}
+
+    ${({ $loaded }) =>
+        $loaded &&
+        css`
+            display: none;
+        `}
+`;
+
+export const Card = styled.div<CardProps>`
     position: relative;
     border-radius: 2px;
     overflow: hidden;
     width: 100%;
     height: 100%;
+
+    ${({ $loaded }) =>
+        !$loaded &&
+        css`
+            cursor: progress;
+        `}
+
+    ${({ $isImageClickable }) =>
+        $isImageClickable &&
+        css`
+            cursor: pointer;
+        `}
+
+    ${({ $isActive }) =>
+        $isActive &&
+        css`
+            border-radius: 2px;
+            border-top: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            background: rgba(255, 74, 0, 0.9);
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+
+            img {
+                filter: none;
+                animation: ${burnAnimation} 1s infinite;
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+        `}
 
     & {
         img {
@@ -45,30 +114,6 @@ export const Card = styled.div`
         opacity: 1;
         z-index: 100;
     }
-
-    &.active {
-        border-radius: 2px;
-        border-top: 2px solid #fff;
-        border-bottom: 2px solid #fff;
-        background: rgba(255, 74, 0, 0.9);
-        z-index: 1;
-        width: 100%;
-        height: 100%;
-
-        img {
-            filter: none;
-            animation: ${burnAnimation} 1s infinite;
-
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-    }
-
-    /* &:hover {
-        opacity: 0.7;
-        transition: 1s ease;
-    } */
 `;
 
 export const CardImage = styled.img`

@@ -69,6 +69,7 @@ import { AnimationController } from "./animationController";
 import { GAudioEngine } from "./audioEngine";
 import { LighterTool } from "./tools";
 import { GTexturePool } from "./texturePool";
+import { GReactGLBridgeFunctions } from "./reactglBridge";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -450,20 +451,32 @@ export function RenderMain() {
         //BackGroundRenderPass.FloorTransform.Translation = -0.35;
     }
 
+    const DynamicParticlesArr: ParticlesEmitter[] = [];
+    function ResetParticleEmitters(glContext: WebGL2RenderingContext) {
+        DynamicParticlesArr.forEach((particleEmitter) => {
+            particleEmitter.Reset(glContext);
+        });
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FlameParticles = new ParticlesEmitter(gl, FlameParticlesDesc);
+    DynamicParticlesArr.push(FlameParticles);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
+    DynamicParticlesArr.push(EmberParticles);
     //
     SmokeParticlesDesc.inAlphaScale = 0.2 + Math.random() * 0.8;
     SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
+    DynamicParticlesArr.push(SmokeParticles);
     AfterBurnSmokeParticlesDesc.inAlphaScale = 0.25 + Math.random() * 0.5;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const AfterBurnSmokeParticles = new ParticlesEmitter(gl, AfterBurnSmokeParticlesDesc);
+    DynamicParticlesArr.push(AfterBurnSmokeParticles);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const AshesParticles = new ParticlesEmitter(gl, AfterBurnAshesParticlesDesc);
+    DynamicParticlesArr.push(AshesParticles);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     /* DustParticlesDesc.inBuoyancyForceScale = 5.0 * Math.random();
     DustParticlesDesc.inDownwardForceScale = DustParticlesDesc.inBuoyancyForceScale * 2.0; */
@@ -598,7 +611,7 @@ export function RenderMain() {
             }
 
             const RenderStateMachine = GRenderingStateMachine.GetInstance();
-            const bNewRenderStateThisFrame = RenderStateMachine.bWasNewStateProcessed();
+            const bNewRenderStateThisFrame = !RenderStateMachine.bWasNewStateProcessed();
             const bPreloaderState = RenderStateMachine.currentState == ERenderingState.Preloading;
 
             //=========================
@@ -641,8 +654,7 @@ export function RenderMain() {
                 }
 
                 RenderStateMachine.AdvanceTransitionParameter();
-
-                if (RenderStateMachine.currentState == ERenderingState.Intro) {
+                if (RenderStateMachine.currentState === ERenderingState.Intro) {
                     if (ConnectWalletButtonController.bEnabled) {
                         //Connect wallet button position alignment
                         {
@@ -670,12 +682,24 @@ export function RenderMain() {
                 }
             }
 
+            //Reset Resources when entering Inventory state
+            if (bNewRenderStateThisFrame && newState === ERenderingState.Inventory) {
+                BurningSurface.Reset(gl);
+                //ResetParticleEmitters(gl);
+                const particleResetDelay = 10 * 1000;
+                setTimeout(() => {
+                    ResetParticleEmitters(gl);
+                }, particleResetDelay);
+                console.log("PARTICLES RESET");
+            }
+
             //============================
             // 		AFTER PRELOADER
             //============================
 
             if (GTexturePool.AreAllTexturesLoaded() && !bInitialImagePreProcessed) {
                 BurningSurface.FirePlaneImagePreProcess(gl);
+                BurningSurface.SetToBurned(gl);
                 bInitialImagePreProcessed = true;
             }
 
@@ -724,7 +748,6 @@ export function RenderMain() {
                     }
                 } else {
                     if (bNewRenderStateThisFrame) {
-                        //BurningSurface.Reset(gl);
                     }
                 }
 
@@ -732,7 +755,7 @@ export function RenderMain() {
                 // BURNING SURFACE UPDATE
                 //=========================
                 //Animation during Viewer state
-                if (RenderStateMachine.currentState == ERenderingState.Inventory) {
+                if (RenderStateMachine.currentState === ERenderingState.Inventory) {
                     //Animate Burning Surface
                     FirePlaneAnimationController.UpdateSelf();
                     GSceneDesc.FirePlane.PositionOffset = FirePlaneAnimationController.UpdateObjectPosition(
@@ -752,7 +775,8 @@ export function RenderMain() {
                     if (GScreenDesc.ScreenRatio < 1.0) {
                         pitchRange.min = 0.0;
                     }
-                    GSceneDesc.FirePlane.OrientationEuler.pitch = MathLerp(pitchRange.min, pitchRange.max, t);
+                    //GSceneDesc.FirePlane.OrientationEuler.pitch = MathLerp(pitchRange.min, pitchRange.max, t);
+                    GSceneDesc.FirePlane.OrientationEuler.pitch = 0.0;
                 } else {
                     GSceneDesc.FirePlane.PositionOffset.z = 0.0;
                     GSceneDesc.FirePlane.OrientationEuler.pitch = 0.0;
@@ -782,6 +806,7 @@ export function RenderMain() {
                 } else if (RenderStateMachine.currentState === ERenderingState.BurningNow) {
                     if (GGpuReadData.CurFireValueCPU < 0.05) {
                         GRenderingStateMachine.SetRenderingState(ERenderingState.BurningFinished);
+                        GReactGLBridgeFunctions.OnBurningFinished();
                         //all callback calls here...
                     }
                 }
@@ -873,7 +898,7 @@ export function RenderMain() {
                     }
 
                     if (ConnectWalletButtonController.bEnabled) {
-                        if (RenderStateMachine.currentState == ERenderingState.Intro) {
+                        if (RenderStateMachine.currentState === ERenderingState.Intro) {
                             SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
                         }
                     }

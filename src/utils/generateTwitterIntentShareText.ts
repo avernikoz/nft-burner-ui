@@ -1,13 +1,11 @@
-import { INft } from "./types";
-
-export function generateTwitterIntentScheduleText(nft: INft): string {
+export function generateTwitterIntentShare(): string {
     const baseUrl = "https://twitter.com/intent/tweet";
     const text = encodeURIComponent(
-        `🔥 Burning my NFT ${nft.name}, on NFTBurner.io today! ✨ Join the transformation! 🚀`,
+        `Just experienced the power of renewal by burning my NFT on nftburner.io 🔥 Letting go of the past to make room for the future. Ready for a new chapter!`,
     );
 
     // Tags
-    const hashtags = ["BurnNFT", "CryptoArt"];
+    const hashtags = ["NFTCommunity", "BurnerApp", "CryptoLife"];
 
     // New line encoded symbol
     const newLineCharacter = encodeURIComponent("\n");

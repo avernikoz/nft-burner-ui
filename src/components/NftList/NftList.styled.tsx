@@ -60,7 +60,7 @@ export const List = styled.div<{ $isListEmpty: boolean }>`
         overflow-x: hidden !important;
 
         scrollbar-width: none;
-        scrollbar-color: transparent;
+        scrollbar-color: transparent transparent;
 
         &::-webkit-scrollbar {
             display: none;
