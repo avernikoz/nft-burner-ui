@@ -672,6 +672,7 @@ export const SubPageDescText = styled(LPDescText)`
 
 export const SubPage1Image = styled.div`
     width: 75%;
+    height: 75%;
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%),
         url("../assets/lpAssets/DistNarrative.webp");
     background-size: cover;
