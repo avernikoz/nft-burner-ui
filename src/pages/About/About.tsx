@@ -529,7 +529,11 @@ export const Page3MainTitle = styled(LPTitleText)`
 
 export const Page3DescText = styled(LPDescText)`
     margin: 2vh;
+    padding: 2vh;
     width: 35%;
+
+    background: radial-gradient(103.55% 95.36% at 50.09% 45.72%, rgba(0, 0, 0, 0.74) 0%, rgba(0, 0, 0, 0) 100%);
+
     @media screen and (max-width: 1024px) {
         width: 55%;
     }
