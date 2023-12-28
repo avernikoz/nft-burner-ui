@@ -449,24 +449,36 @@ export const Page2Title2Background = styled.div`
     justify-content: center;
 `;
 
+export const SectionDividerSpecific = styled(SectionDivider)`
+    position: absolute;
+    bottom: 5%;
+    margin-left: 0vw;
+`;
+
+export const SectionDividerSpecific2 = styled(SectionDivider)`
+    position: absolute;
+    bottom: 40%;
+    margin-left: 0vw;
+`;
+
 export const Page2AdditionalImage = styled.div`
     /* --sizeVar: clamp(256px, 30vw, 1024px);
     width: var(--sizeVar);
     height: var(--sizeVar); */
 
     background: url("../assets/lpAssets/Page2.webp") center/cover no-repeat;
-    height: 60vh;
+    height: clamp(450px, 35vw, 1170px);
     width: 100vw;
     position: absolute;
     //left: 50%;
     //top: 12.5%;
-    bottom: 12%;
+    bottom: 5%;
     z-index: -1;
 `;
 
 export const Page2AddWrapper = styled(LPSectionExtendable)`
     align-items: center;
-    margin-top: 10vh;
+    margin-top: 20vh;
     margin-bottom: clamp(64px, 15vw, 1024px);
     width: 100%;
 
@@ -517,7 +529,9 @@ export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => 
                     </Page2Title2>
                 </Page2Title2Background>
                 <LPPage2Additional />
+                <SectionDividerSpecific2 />
                 <Page2AdditionalImage />
+                <SectionDividerSpecific />
             </LPShrinkContainer>
         </LPSectionExtendableCentered>
     );
