@@ -429,3 +429,6 @@ yarn-error.log*
 .env
 # Local Netlify folder
 .netlify
+
+cwebp.exe
+jpgToWebpConvertWin64.bat
