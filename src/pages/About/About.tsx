@@ -426,7 +426,7 @@ export const Page2AdditionalImage = styled.div`
     --sizeVar: clamp(256px, 30vw, 1024px);
     width: var(--sizeVar);
     height: var(--sizeVar);
-    background-color: #0051ff;
+    background: url("../assets/lpAssets/Page2.webp") center/cover no-repeat;
     position: absolute;
     left: 50%;
     //top: 12.5%;
