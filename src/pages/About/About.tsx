@@ -1,4 +1,4 @@
-import { styled } from "styled-components";
+import { styled, css } from "styled-components";
 import React, { RefObject, useEffect, useRef, useState } from "react";
 import "./About.css";
 import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
@@ -11,6 +11,23 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { ReactComponent as DiscordIcon } from "../../assets/svg/social/discord.svg";
 import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
+
+//=========================
+// 	  MEDIA QUERIES
+//=========================
+
+const TABLET_RESOLUTION_BREAKPOINT = "1024px";
+const MOBILE_RESOLUTION_BREAKPOINT = "600px";
+
+export const commonLayoutWidth = css`
+    @media (max-width: ${TABLET_RESOLUTION_BREAKPOINT}) {
+        width: 85vw;
+    }
+
+    @media (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        width: 95vw;
+    }
+`;
 
 //=========================
 // 	  PAGE 1 : START
@@ -328,13 +345,7 @@ export const LPShrinkContainer = styled(LPSectionExtendableCentered)`
     width: 75vw;
     max-width: 2000px;
 
-    @media screen and (max-width: 1000px) {
-        width: 85vw; /* Adjusted width for screen widths up to 2000px */
-    }
-
-    @media screen and (max-width: 500px) {
-        width: 95vw; /* Adjusted width for screen widths up to 1000px */
-    }
+    ${commonLayoutWidth}
 `;
 
 export const LPShrinkContainerMid = styled(LPSectionExtendableCentered)`
@@ -755,7 +766,7 @@ export const SubPage2Image = styled.div`
     --sizeVar: clamp(256px, 25vw, 1024px);
     width: var(--sizeVar);
     height: var(--sizeVar);
-    background-color: #0051ff;
+    background: url("../assets/lpAssets/ShareYourPerformance.svg") center/cover no-repeat;
     position: absolute;
     left: -10%;
     bottom: 15%;
