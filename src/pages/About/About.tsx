@@ -304,6 +304,10 @@ export const LPSectionExtendable = styled.div`
 export const LPSectionExtendableCentered = styled(LPSectionExtendable)`
     justify-content: space-around;
     align-items: center;
+
+    &.page3 {
+        background: url("../assets/lpAssets/Page3.webp") center/cover no-repeat;
+    }
 `;
 
 const LPSectionFullscreenCentered = styled(LPSectionExtendableCentered)`
@@ -357,7 +361,7 @@ export const DescTextContainerAlignRight = styled.div`
 `;
 
 export const SectionDivider = styled.div`
-    width: 80vw;
+    width: 60vw;
     height: 1px;
     margin-left: 10vw;
     background-color: #515158;
@@ -530,7 +534,6 @@ export const Page3DescContainer = styled.div`
 export const Page3BackgroundImage = styled.div`
     width: 75vw;
     height: 75vh;
-    background-color: #0051ff;
     position: absolute;
     z-index: -1;
     left: 5%;
@@ -545,7 +548,7 @@ export const Page3OffsetSpace = styled(LPSectionExtendable)`
 
 export const LPPage3 = () => {
     return (
-        <LPSectionExtendableCentered>
+        <LPSectionExtendableCentered className="page3">
             <LPShrinkContainer>
                 <Page3StartTitle>Elevate the Burn:</Page3StartTitle>
                 <LPShrinkContainerMid>
