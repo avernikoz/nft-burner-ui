@@ -8,6 +8,10 @@ import { ReactComponent as RightArrowIcon } from "../../assets/svg/rightArrow.sv
 import { Header } from "../../components/Header/Header";
 import { ProgressSpinner } from "primereact/progressspinner";
 
+import { ReactComponent as DiscordIcon } from "../../assets/svg/social/discord.svg";
+import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
+import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
+
 //=========================
 // 	  PAGE 1 : START
 //=========================
@@ -365,12 +369,24 @@ export const DescTextContainerAlignRight = styled.div`
     justify-content: flex-end;
 `;
 
-export const SectionDivider = styled.div`
-    width: 60vw;
+export const SectionDividerLine = styled.div`
+    width: 75vw;
     height: 1px;
-    margin-left: 10vw;
     background-color: #515158;
 `;
+
+export const SectionDividerContainer = styled.div`
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;
+
+export const SectionDivider = () => (
+    <SectionDividerContainer>
+        <SectionDividerLine />
+    </SectionDividerContainer>
+);
 
 export const LPTitleText = styled.span`
     color: #fff;
@@ -908,7 +924,7 @@ export const CallToActionTitle = styled(LPTitleText)`
 `;
 
 export const CallToActionBackground = styled.div`
-    height: 40vh;
+    height: 70vh;
     background:
         linear-gradient(0deg, rgba(11, 11, 12, 0.2) 0%, rgba(11, 11, 12, 0.2) 100%),
         url("../assets/lpAssets/EcoPage.webp"),
@@ -920,6 +936,8 @@ export const CallToActionBackground = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
+
+    margin-bottom: 5vw;
 `;
 
 export const LPPageFinal = () => {
@@ -929,13 +947,15 @@ export const LPPageFinal = () => {
                 <EcoTitle>
                     Digital Responsibility: <br /> Embracing Eco-Friendly NFT Practices
                 </EcoTitle>
-                <EcoDescText>
+                <SubPage4DescText
+                    style={{ alignSelf: "baseline", marginTop: "clamp(56px, 5vh, 160px)", marginBottom: "5vw" }}
+                >
                     Letting go of your digital tokens isn't just saying goodbye to a virtual possession – it's a big
                     step toward a more eco-friendly digital world! In a space where the value and legitimacy of many
                     NFTs are uncertain, our approach promotes responsible ownership. Across different blockchains, we
                     strive for eco-friendly practices! Potentially reducing{" "}
                     <span style={{ color: "#D90000" }}>CO2</span> emissions!
-                </EcoDescText>
+                </SubPage4DescText>
                 <CallToActionBackground>
                     <CallToActionTitle>
                         Join us in creating a story where digital ownership aligns with taking care of the environment,
@@ -946,6 +966,50 @@ export const LPPageFinal = () => {
         </LPSectionExtendableCentered>
     );
 };
+
+export const SocialContainer = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    height: 50vh;
+    width: 90%;
+
+    @media screen and (max-width: 576px) {
+        width: 100%;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+`;
+
+export const SocialIconsContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 30px;
+`;
+
+export const SocialLink = styled.a``;
+
+export const LPPageSocial = () => (
+    <LPSectionExtendableCentered style={{ paddingBottom: "5vw" }}>
+        <LPShrinkContainer>
+            <SocialContainer>
+                <Page2Title2 style={{ width: "auto" }}>Our social media</Page2Title2>
+                <SocialIconsContainer>
+                    <SocialLink href="https://twitter.com" target="_blank" rel="noopener noreferrer">
+                        <TwitterIcon />
+                    </SocialLink>
+                    <SocialLink href="https://discord.com" target="_blank" rel="noopener noreferrer">
+                        <DiscordIcon />
+                    </SocialLink>
+                    <SocialLink href="https://instagram.com" target="_blank" rel="noopener noreferrer">
+                        <InstagramIcon />
+                    </SocialLink>
+                </SocialIconsContainer>
+            </SocialContainer>
+        </LPShrinkContainer>
+    </LPSectionExtendableCentered>
+);
 
 //=========================
 // 	  	   ENTRY
@@ -971,6 +1035,8 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
                 <SubPage4 />
                 <SectionDivider />
                 <LPPageFinal />
+                <SectionDivider />
+                <LPPageSocial />
             </LPContainerMain>
         </>
     );
