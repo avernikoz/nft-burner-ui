@@ -416,21 +416,26 @@ export const Page2Title2 = styled(LPTitleText)`
 
 export const Page2Title2Background = styled.div`
     height: 40vh;
-    background: url("../assets/lpAssets/Page1.webp") center/cover no-repeat;
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.5) 100%),
+        url("../assets/lpAssets/Page1.webp") center/cover no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
 `;
 
 export const Page2AdditionalImage = styled.div`
-    --sizeVar: clamp(256px, 30vw, 1024px);
+    /* --sizeVar: clamp(256px, 30vw, 1024px);
     width: var(--sizeVar);
-    height: var(--sizeVar);
+    height: var(--sizeVar); */
+
     background: url("../assets/lpAssets/Page2.webp") center/cover no-repeat;
+    height: 60vh;
+    width: 100vw;
     position: absolute;
-    left: 50%;
+    //left: 50%;
     //top: 12.5%;
-    bottom: 5%;
+    bottom: 12%;
     z-index: -1;
 `;
 
