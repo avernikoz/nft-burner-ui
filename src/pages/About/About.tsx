@@ -416,7 +416,7 @@ export const Page2Title2 = styled(LPTitleText)`
 
 export const Page2Title2Background = styled.div`
     height: 40vh;
-    background-color: orangered;
+    background: url("../assets/lpAssets/Page1.webp") center/cover no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
