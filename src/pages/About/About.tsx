@@ -686,6 +686,7 @@ export const SubPageDescText = styled(LPDescText)`
 
 export const SubPage1Image = styled.div`
     width: 75%;
+    height: 75%;
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%),
         url("../assets/lpAssets/DistNarrative.webp");
     background-size: cover;
@@ -809,12 +810,14 @@ export const SubPage3Canvas = styled.div`
     height: 60vh;
     position: absolute;
     bottom: 20%;
-    background-color: orangered;
     display: flex;
     flex-direction: column;
     padding-left: 5vw;
-    //justify-content: space-evenly;
-    //align-items: flex-start;
+    background: url("../assets/lpAssets/Authenticity.webp") center/cover no-repeat;
+    background-blend-mode: hard-light;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 `;
 
 export const SubPage3 = () => {
@@ -920,7 +923,14 @@ export const CallToActionTitle = styled(LPTitleText)`
 
 export const CallToActionBackground = styled.div`
     height: 40vh;
-    background-color: #e00000;
+    background:
+        linear-gradient(0deg, rgba(11, 11, 12, 0.2) 0%, rgba(11, 11, 12, 0.2) 100%),
+        url("../assets/lpAssets/EcoPage.webp"),
+        lightgray -91.461px -119.922px / 114.291% 194.021% no-repeat;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
     display: flex;
     align-items: center;
     justify-content: center;
