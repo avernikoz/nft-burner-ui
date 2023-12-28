@@ -674,12 +674,15 @@ export const SubPageDescText = styled(LPDescText)`
 //=========================
 
 export const SubPage1Image = styled.div`
-    --sizeVar: clamp(256px, 30vw, 1024px);
-    width: var(--sizeVar);
-    height: var(--sizeVar);
-    background-color: #0051ff;
+    width: 75%;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%),
+        url("../assets/lpAssets/DistNarrative.webp");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
     position: absolute;
-    left: 50%;
+    left: 25%;
     //top: 12.5%;
     bottom: 10%;
     z-index: -1;
