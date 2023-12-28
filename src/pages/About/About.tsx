@@ -909,7 +909,10 @@ export const CallToActionTitle = styled(LPTitleText)`
 
 export const CallToActionBackground = styled.div`
     height: 40vh;
-    background-color: #e00000;
+    background:
+        linear-gradient(0deg, rgba(11, 11, 12, 0.2) 0%, rgba(11, 11, 12, 0.2) 100%),
+        url("../assets/lpAssets/EcoPage.webp"),
+        lightgray -91.461px -119.922px / 114.291% 194.021% no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
