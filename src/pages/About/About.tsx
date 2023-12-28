@@ -304,6 +304,15 @@ export const LPSectionExtendable = styled.div`
 export const LPSectionExtendableCentered = styled(LPSectionExtendable)`
     justify-content: space-around;
     align-items: center;
+
+    &.page3 {
+        background-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 100%),
+            url("../assets/lpAssets/Page3.webp");
+        background-color: lightgray;
+        background-position: 50%;
+        background-size: cover;
+        background-repeat: no-repeat;
+    }
 `;
 
 const LPSectionFullscreenCentered = styled(LPSectionExtendableCentered)`
@@ -357,7 +366,7 @@ export const DescTextContainerAlignRight = styled.div`
 `;
 
 export const SectionDivider = styled.div`
-    width: 80vw;
+    width: 60vw;
     height: 1px;
     margin-left: 10vw;
     background-color: #515158;
@@ -517,7 +526,11 @@ export const Page3MainTitle = styled(LPTitleText)`
 
 export const Page3DescText = styled(LPDescText)`
     margin: 2vh;
+    padding: 2vh;
     width: 35%;
+
+    background: radial-gradient(103.55% 95.36% at 50.09% 45.72%, rgba(0, 0, 0, 0.74) 0%, rgba(0, 0, 0, 0) 100%);
+
     @media screen and (max-width: 1024px) {
         width: 55%;
     }
@@ -535,7 +548,6 @@ export const Page3DescContainer = styled.div`
 export const Page3BackgroundImage = styled.div`
     width: 75vw;
     height: 75vh;
-    background-color: #0051ff;
     position: absolute;
     z-index: -1;
     left: 5%;
@@ -550,7 +562,7 @@ export const Page3OffsetSpace = styled(LPSectionExtendable)`
 
 export const LPPage3 = () => {
     return (
-        <LPSectionExtendableCentered>
+        <LPSectionExtendableCentered className="page3">
             <LPShrinkContainer>
                 <Page3StartTitle>Elevate the Burn:</Page3StartTitle>
                 <LPShrinkContainerMid>
@@ -659,12 +671,15 @@ export const SubPageDescText = styled(LPDescText)`
 //=========================
 
 export const SubPage1Image = styled.div`
-    --sizeVar: clamp(256px, 30vw, 1024px);
-    width: var(--sizeVar);
-    height: var(--sizeVar);
-    background-color: #0051ff;
+    width: 75%;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%),
+        url("../assets/lpAssets/DistNarrative.webp");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
     position: absolute;
-    left: 50%;
+    left: 25%;
     //top: 12.5%;
     bottom: 10%;
     z-index: -1;
@@ -937,9 +952,7 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
                 <LPPage2 refProp={myRef} />
-                <SectionDivider />
                 <LPPage3 />
-                <SectionDivider />
                 <LPPage4 />
                 <SectionDivider />
                 <SubPage1 />
