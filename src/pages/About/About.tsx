@@ -795,12 +795,14 @@ export const SubPage3Canvas = styled.div`
     height: 60vh;
     position: absolute;
     bottom: 20%;
-    background-color: orangered;
     display: flex;
     flex-direction: column;
     padding-left: 5vw;
-    //justify-content: space-evenly;
-    //align-items: flex-start;
+    background: url("../assets/lpAssets/Authenticity.webp") center/cover no-repeat;
+    background-blend-mode: hard-light;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 `;
 
 export const SubPage3 = () => {
