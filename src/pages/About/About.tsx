@@ -834,7 +834,7 @@ export const SubPageFullHeightWrapContainerIndent = styled(SubPageFullHeightWrap
 
     @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
         padding-left: 0;
-        height: 80vh;
+        height: auto;
     }
 `;
 
@@ -884,6 +884,10 @@ export const SubPage3DescText = styled(LPDescText)`
     margin-bottom: 20vh;
 
     ${paddingMobileLayout}
+
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        margin-bottom: 8vh;
+    }
 `;
 
 export const SubPage3Canvas = styled.div`
