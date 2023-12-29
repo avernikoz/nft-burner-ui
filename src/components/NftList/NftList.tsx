@@ -93,6 +93,7 @@ export const NftList = () => {
                     toastController?.showError("Error fetching nft: " + error);
                 }
 
+                setShowSpinner(false);
                 // TODO: Improve that log
                 Sentry.captureException(error, {
                     tags: { scenario: "fetch_nfts" },

@@ -126,7 +126,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                 />
             </div>
             {showUI && !showBurnedScreen && !showConnectWalletScreen && (
-                <BodyContainer showBackground={true}>
+                <BodyContainer $showBackground={true}>
                     <div className="half">
                         <NftList />
                         <Control />
