@@ -150,6 +150,7 @@ export const Footer = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPag
                     if (GRenderingStateMachine.GetInstance().currentState > ERenderingState.Inventory) {
                         return;
                     }
+                    GReactGLBridgeFunctions.OnAboutButtonPressed();
 
                     setAboutPageActive(true);
                 }}
