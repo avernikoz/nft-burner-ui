@@ -12,7 +12,7 @@ import { handleEvmPayTransaction, handleEvmBurnTransaction } from "../../../../t
 import { handleSolanaTransaction } from "../../../../transactions/handleSolanaTransaction";
 import { handleSuiTransaction } from "../../../../transactions/handleSuiTransaction";
 import { getNetworkTokenSymbol } from "../../../../utils/getNetworkTokenSymbol";
-import { ENftBurnStatus, EvmNft, INft, SolanaNft, SuiNft } from "../../../../utils/types";
+import { ENftBurnStatus, EvmNft, INft, SolanaCNft, SolanaNft, SuiNft } from "../../../../utils/types";
 import { useEthersSigner } from "../../../NftList/variables";
 import { NftContext } from "../../../NftProvider/NftProvider";
 import { ReactComponent as SuccessCheckmark } from "../../../../assets/svg/successCheckmark.svg";
@@ -120,7 +120,7 @@ export const NftBurnDialog = ({
                 await handleSuiTransaction({ nft: nft as SuiNft, signAndExecuteTransactionBlock, burnerFee });
             } else if (isSolana) {
                 await handleSolanaTransaction({
-                    nft: nft as SolanaNft,
+                    nft: nft as SolanaNft | SolanaCNft,
                     solanaConnection: solanaConnection.connection,
                     solanaWallet,
                     burnerFee,
