@@ -5,13 +5,18 @@ import { ReactComponent as LogoIcon } from "../../assets/svg/burnerLogoH.svg";
 export const HeaderContainer = styled.div`
     //background-color: #500fe9cf;
     width: 100%;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     position: fixed;
     top: 0;
     z-index: 99;
     padding: 1.25vw 4vw;
     height: 102px;
+
+    @media and (max-width: 600px) {
+        flex-direction: column;
+        justify-content: space-around;
+    }
 `;
 
 export const HeaderLine = styled.div`

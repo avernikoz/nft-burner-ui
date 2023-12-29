@@ -795,9 +795,8 @@ export const SubPage2Image = styled.div`
 
         bottom: 58%;
     }
-    @media screen and (max-width: 512px) {
-        left: 40%;
-        bottom: 58%;
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        display: none;
     }
 `;
 
@@ -807,7 +806,11 @@ export const SubPageFullHeightWrapContainerIndent = styled(SubPageFullHeightWrap
     display: flex;
     flex-direction: column;
     padding-left: 20vw;
-    //justify-content: space-evenly;
+
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        padding-left: 0;
+        height: 80vh;
+    }
 `;
 
 export const SubPage2 = () => {
@@ -871,6 +874,11 @@ export const SubPage3Canvas = styled.div`
     @media screen and (max-width: 1024px) {
         margin-top: 0;
     }
+
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        padding-left: 0;
+        height: 80vh;
+    }
 `;
 
 export const SubPage3 = () => {
@@ -905,8 +913,9 @@ export const SubPage4DescText = styled(LPDescText)`
     @media screen and (max-width: 1024px) {
         width: 85%;
     }
-    @media screen and (max-width: 512px) {
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
         width: 90%;
+        margin-left: 0;
     }
 `;
 
@@ -919,8 +928,10 @@ export const SubPage4DescTextColored = styled(LPTitleText)`
     @media screen and (max-width: 1024px) {
         width: 85%;
     }
-    @media screen and (max-width: 512px) {
+
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
         width: 90%;
+        margin-left: 0;
     }
 
     margin-bottom: 15vh;
