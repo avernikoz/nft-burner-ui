@@ -95,6 +95,11 @@ export const StyledPanelMenu = styled(PanelMenu)`
     display: flex;
     align-items: center;
 
+    @media screen and (max-width: 600px) {
+        min-width: auto;
+        max-width: 210px;
+    }
+
     .p-panelmenu-panel {
         margin-bottom: 0;
         width: 100%;
@@ -118,6 +123,11 @@ export const StyledPanelMenu = styled(PanelMenu)`
         &:hover {
             color: #fff;
         }
+    }
+
+    /* disable icon selector */
+    .p-panelmenu-header-link [data-pc-section="headersubmenuicon"] {
+        display: none;
     }
 
     .p-panelmenu-header.p-highlight::after {
@@ -149,6 +159,11 @@ export const StyledPanelMenu = styled(PanelMenu)`
     .p-toggleable-content {
         position: absolute;
         min-width: 210px;
+
+        @media screen and (max-width: 600px) {
+            min-width: auto;
+            max-width: 210px;
+        }
     }
 
     .p-toggleable-content .p-panelmenu-content {
