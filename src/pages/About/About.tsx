@@ -340,7 +340,7 @@ export const LPSectionExtendableCentered = styled(LPSectionExtendable)`
 
     &.page3 {
         background-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 100%),
-            url("../assets/lpAssets/Page3.webp");
+            linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.25) 100%), url("../assets/lpAssets/Page3.webp");
         background-color: lightgray;
         background-position: 50%;
         background-size: cover;
@@ -451,9 +451,9 @@ export const Page2Title = styled(LPTitleText)`
 `;
 
 export const Page2AdditionalTitle = styled(Page2Title)`
-    margin-top: clamp(56px, 15vh, 160px);
-    margin-bottom: clamp(56px, 5vh, 160px);
-    font-size: clamp(24px, 5vw, 160px);
+    margin-top: clamp(72px, 10vw, 360px);
+    margin-bottom: clamp(72px, 10vw, 360px);
+    font-size: clamp(48px, 5vw, 160px);
     width: 100%;
 `;
 
@@ -470,7 +470,7 @@ export const Page2Title2 = styled(LPTitleText)`
 export const Page2Title2Background = styled.div`
     height: 50vh;
     background:
-        linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 1.3) 100%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.5) 100%),
         url("../assets/lpAssets/Page1_2.webp") center/cover no-repeat;
     display: flex;
     align-items: center;
@@ -481,30 +481,19 @@ export const Page2Title2Background = styled.div`
     }
 `;
 
-export const SectionDividerSpecific = styled(SectionDivider)`
-    position: absolute;
-    bottom: 0%;
-    margin-left: 0vw;
-`;
-
-export const SectionDividerSpecific2 = styled(SectionDivider)`
-    position: absolute;
-    bottom: 40%;
-    margin-left: 0vw;
-`;
-
 export const Page2AdditionalImage = styled.div`
     /* --sizeVar: clamp(256px, 30vw, 1024px);
     width: var(--sizeVar);
     height: var(--sizeVar); */
 
     background: url("../assets/lpAssets/Page2.webp") center/cover no-repeat;
-    height: clamp(450px, 35vw, 1170px);
+    height: clamp(450px, 50vw, 2170px);
     width: 100vw;
+    height: 100%;
     position: absolute;
     //left: 50%;
     //top: 12.5%;
-    bottom: 5%;
+    bottom: 0%;
     z-index: -1;
 `;
 
@@ -512,7 +501,10 @@ export const Page2AddWrapper = styled(LPSectionExtendable)`
     align-items: center;
     margin-top: 20vh;
     margin-bottom: clamp(64px, 15vw, 1024px);
+    padding: 5vw 0vw;
     width: 100%;
+
+    //background: url("../assets/lpAssets/Page2.webp") center/cover no-repeat;
 
     @media screen and (max-width: 576px) {
         margin-bottom: clamp(64px, 45vw, 1024px);
@@ -528,6 +520,16 @@ export const Page2DescText = styled(LPDescText)`
     }
 `;
 
+export const SectionDividerSpecific = styled(SectionDividerContainer)`
+    position: absolute;
+    bottom: 0%;
+`;
+
+export const SectionDividerSpecific2 = styled(SectionDividerContainer)`
+    position: absolute;
+    top: 0%;
+`;
+
 export const LPPage2Additional = () => (
     <Page2AddWrapper>
         <TextContainerAlignLeftIndent25>
@@ -540,6 +542,13 @@ export const LPPage2Additional = () => (
                 the deliberate act <br /> of burning NFTs
             </Page2AdditionalTitle>
         </LPShrinkContainerMid>
+        <Page2AdditionalImage />
+        <SectionDividerSpecific>
+            <SectionDividerLine />
+        </SectionDividerSpecific>
+        <SectionDividerSpecific2>
+            <SectionDividerLine />
+        </SectionDividerSpecific2>
     </Page2AddWrapper>
 );
 
@@ -560,10 +569,8 @@ export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => 
                         expression?
                     </Page2Title2>
                 </Page2Title2Background>
-                {/* <SectionDivider /> */}
                 <LPPage2Additional />
-                {/* <SectionDivider /> */}
-                <Page2AdditionalImage />
+                <SectionDivider />
             </LPShrinkContainer>
         </LPSectionExtendableCentered>
     );
@@ -591,7 +598,7 @@ export const Page3DescText = styled(LPDescText)`
     padding: 2vh;
     width: 35%;
 
-    background: radial-gradient(103.55% 95.36% at 50.09% 45.72%, rgba(0, 0, 0, 0.74) 0%, rgba(0, 0, 0, 0) 100%);
+    background: radial-gradient(103.55% 95.36% at 50.09% 45.72%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 100%);
 
     @media screen and (max-width: 1024px) {
         width: 55%;
@@ -602,7 +609,6 @@ export const Page3DescText = styled(LPDescText)`
 `;
 
 export const Page3DescContainer = styled.div`
-    background-color: #0051ff;
     display: flex;
     flex-direction: column;
 `;
@@ -645,6 +651,7 @@ export const LPPage3 = () => {
                 <Page3OffsetSpace />
                 <Page3BackgroundImage />
             </LPShrinkContainer>
+            <SectionDivider />
         </LPSectionExtendableCentered>
     );
 };
@@ -745,10 +752,8 @@ export const SubPageDescText = styled(LPDescText)`
 //=========================
 
 export const SubPage1Image = styled.div`
-    /* width: 90vw;
-    height: 85vw; */
-    height: clamp(550px, 50vw, 1170px);
     width: 100vw;
+    height: 100%;
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%),
         url("../assets/lpAssets/DistNarrativeFullScreen.webp");
     background-size: cover;
@@ -789,8 +794,8 @@ export const SubPage1 = () => {
                         approach, allowing for personal expression within the evolving dynamics of the digital space,
                         where visibility is earned through meaningful performances.
                     </SubPageDescText>
+                    <SubPage1Image />
                 </SubPageFullHeightWrapContainer>
-                <SubPage1Image />
             </LPShrinkContainerLarge>
             <SectionDivider />
         </LPSectionExtendableCentered>
