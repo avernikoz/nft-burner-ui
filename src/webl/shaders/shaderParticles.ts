@@ -94,6 +94,8 @@ function scGetVectorFieldForce(scale: number) {
         return (
             //sample vector field based on cur pos
             /* glsl */ `vec2 uv = (inPosition + 1.f) * 0.5f;
+			uv.x += float(gl_VertexID) * 0.025;
+			uv.y += float(gl_VertexID) * 0.01;
 			//uv *= 0.5f;
 			uv.y -= CurTime * 0.1f;
 			//uv *= mix(0.1f, 0.5f, fract(mod(CurTime, 10.f) * 0.1f));
