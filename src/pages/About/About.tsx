@@ -470,7 +470,7 @@ export const Page2Title2 = styled(LPTitleText)`
 export const Page2Title2Background = styled.div`
     height: 50vh;
     background:
-        linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.5) 100%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 1.3) 100%),
         url("../assets/lpAssets/Page1_2.webp") center/cover no-repeat;
     display: flex;
     align-items: center;
