@@ -8,7 +8,9 @@ export class GReactGLBridgeFunctions {
         // GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady, false);
     }
 
-    static OnAboutButtonPressed() {}
+    static OnAboutButtonPressed() {
+        GRenderingStateMachine.SetRenderingState(ERenderingState.Preloading, false);
+    }
 
     static GetLoadingProgressParameterNormalised() {
         if (GTexturePool.NumPendingTextures > 0 && GTexturePool.NumTexturesInPool > 0) {

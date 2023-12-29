@@ -296,7 +296,9 @@ export function RenderMain() {
     //=========================
     InitUserInputEvents(canvas);
 
-    SetupCameraControlThroughInput();
+    if (DEBUG_ENV) {
+        SetupCameraControlThroughInput();
+    }
 
     //=========================
     // 	  WINDOW RESIZE INIT
@@ -703,6 +705,10 @@ export function RenderMain() {
                 bInitialImagePreProcessed = true;
             }
 
+            if (bPreloaderState && bNewRenderStateThisFrame) {
+                BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
+            }
+
             if (
                 /* GTexturePool.AreAllTexturesLoaded() && */
                 1
@@ -714,11 +720,13 @@ export function RenderMain() {
                     ApplySpotlightControlFromGUI();
                 }
 
+                const srcImage = IMAGE_STORE_SINGLETON_INSTANCE.getImage();
+                const srcImageUrl = IMAGE_STORE_SINGLETON_INSTANCE.getImageUrl();
+                const bUserImagePresent = srcImage && srcImageUrl;
+
                 //Update Iamge Surface with one selected from Inventory
                 if (RenderStateMachine.currentState === ERenderingState.Inventory) {
-                    const srcImage = IMAGE_STORE_SINGLETON_INSTANCE.getImage();
-                    const srcImageUrl = IMAGE_STORE_SINGLETON_INSTANCE.getImageUrl();
-                    if (srcImage && srcImageUrl) {
+                    if (bUserImagePresent) {
                         BurningSurface.UpdatePlaneSurfaceImage(gl, srcImage, srcImageUrl);
                     }
                 }
@@ -860,7 +868,7 @@ export function RenderMain() {
                 //=================================
                 // 		BURNING SURFACE RENDER
                 //=================================
-                if (!bPreloaderState) {
+                if (!bPreloaderState /* && bUserImagePresent */) {
                     BurningSurface.VisualizeFirePlane(
                         gl,
                         BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
