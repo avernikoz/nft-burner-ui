@@ -641,7 +641,6 @@ export function RenderMain() {
             //============================
             // 		SCENE STATE UPDATE
             //============================
-            let newState = RenderStateMachine.currentState;
             {
                 if (RenderStateMachine.bCurStateHasSceneDesc) {
                     if (RenderStateMachine.transitionParameter <= 1.0) {
@@ -671,7 +670,7 @@ export function RenderMain() {
                         ConnectWalletButtonController.OnUpdate();
                         if (ConnectWalletButtonController.bSelectedThisFrame) {
                             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                            newState = ERenderingState.Inventory;
+                            GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory);
                         }
                         if (
                             ConnectWalletButtonController.bIntersectionThisFrame &&
@@ -685,7 +684,7 @@ export function RenderMain() {
             }
 
             //Reset Resources when entering Inventory state
-            if (bNewRenderStateThisFrame && newState === ERenderingState.Inventory) {
+            if (bNewRenderStateThisFrame && RenderStateMachine.currentState === ERenderingState.Inventory) {
                 BurningSurface.Reset(gl);
                 //ResetParticleEmitters(gl);
                 const particleResetDelay = 10 * 1000;
@@ -693,6 +692,8 @@ export function RenderMain() {
                     ResetParticleEmitters(gl);
                 }, particleResetDelay);
                 console.log("PARTICLES RESET");
+
+                //BurningSurface.CurrentImageTextureSrc = "";
             }
 
             //============================
@@ -868,7 +869,10 @@ export function RenderMain() {
                 //=================================
                 // 		BURNING SURFACE RENDER
                 //=================================
-                if (!bPreloaderState /* && bUserImagePresent */) {
+                if (
+                    !bPreloaderState &&
+                    (bUserImagePresent || RenderStateMachine.currentState !== ERenderingState.Inventory)
+                ) {
                     BurningSurface.VisualizeFirePlane(
                         gl,
                         BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,

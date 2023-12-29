@@ -18,7 +18,7 @@ export const ConnectWalletButton = styled.button`
     text-transform: uppercase;
 
     border-radius: 4px;
-    border: 2px solid #fff;
+    border: 4px solid #fff;
 
     background: radial-gradient(
             965.55% 55.58% at 50% 50%,
