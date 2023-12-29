@@ -475,6 +475,10 @@ export const Page2Title2Background = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
+
+    @media (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        width: 100vw;
+    }
 `;
 
 export const SectionDividerSpecific = styled(SectionDivider)`
@@ -661,6 +665,7 @@ export const Page4TitleText = styled(LPTitleText)`
     width: 100%;
     line-height: 100%;
     margin-top: 10vh;
+    margin-bottom: 10vh;
 `;
 
 export const Page4DescText = styled(LPTitleText)`
