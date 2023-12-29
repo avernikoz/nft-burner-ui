@@ -29,6 +29,18 @@ export const commonLayoutWidth = css`
     }
 `;
 
+export const commonLargeLayoutWidth = css`
+    @media (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        width: 100vw;
+    }
+`;
+
+export const paddingMobileLayout = css`
+    @media (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        padding: 0 5vw;
+    }
+`;
+
 //=========================
 // 	  PAGE 1 : START
 //=========================
@@ -346,6 +358,10 @@ export const LPShrinkContainer = styled(LPSectionExtendableCentered)`
     max-width: 2000px;
 
     ${commonLayoutWidth}
+`;
+
+export const LPShrinkContainerLarge = styled(LPShrinkContainer)`
+    ${commonLargeLayoutWidth}
 `;
 
 export const LPShrinkContainerMid = styled(LPSectionExtendableCentered)`
@@ -681,14 +697,14 @@ export const SubPageNumber = styled(LPTitleText)`
     font-size: clamp(24px, 2vw, 128px);
     width: 100%;
     margin-top: 10vw;
+
+    ${paddingMobileLayout}
 `;
 
 export const SubPageFullHeightWrapContainer = styled.div`
     width: 100%;
-    //height: 75vh;
     display: flex;
     flex-direction: column;
-    //justify-content: space-evenly;
 `;
 
 export const SubPageTitle = styled(LPTitleText)`
@@ -702,6 +718,8 @@ export const SubPageTitle = styled(LPTitleText)`
     @media screen and (max-width: 512px) {
         width: 95%;
     }
+
+    ${paddingMobileLayout}
 `;
 
 export const SubPageDescText = styled(LPDescText)`
@@ -713,6 +731,8 @@ export const SubPageDescText = styled(LPDescText)`
     @media screen and (max-width: 512px) {
         width: 95%;
     }
+
+    ${paddingMobileLayout}
 `;
 
 //=========================
@@ -752,7 +772,7 @@ export const SubPage1Image = styled.div`
 export const SubPage1 = () => {
     return (
         <LPSectionExtendableCentered>
-            <LPShrinkContainer>
+            <LPShrinkContainerLarge>
                 <SubPageFullHeightWrapContainer>
                     <SubPageNumber>01</SubPageNumber>
                     <SubPageTitle>
@@ -766,7 +786,7 @@ export const SubPage1 = () => {
                     </SubPageDescText>
                 </SubPageFullHeightWrapContainer>
                 <SubPage1Image />
-            </LPShrinkContainer>
+            </LPShrinkContainerLarge>
             <SectionDivider />
         </LPSectionExtendableCentered>
     );
@@ -816,7 +836,7 @@ export const SubPageFullHeightWrapContainerIndent = styled(SubPageFullHeightWrap
 export const SubPage2 = () => {
     return (
         <LPSectionExtendableCentered>
-            <LPShrinkContainer>
+            <LPShrinkContainerLarge>
                 <SubPageFullHeightWrapContainerIndent>
                     <SubPageNumber>02</SubPageNumber>
                     <SubPage2Title>Sharing Your Performance</SubPage2Title>
@@ -828,7 +848,7 @@ export const SubPage2 = () => {
                     </SubPageDescText>
                 </SubPageFullHeightWrapContainerIndent>
                 <SubPage2Image />
-            </LPShrinkContainer>
+            </LPShrinkContainerLarge>
         </LPSectionExtendableCentered>
     );
 };
@@ -842,6 +862,7 @@ export const SubPageNumberWhite = styled(LPTitleText)`
     font-size: clamp(24px, 2vw, 128px);
     width: 100%;
     margin-top: 7%;
+    ${paddingMobileLayout}
 `;
 
 export const SubPage3Title = styled(LPTitleText)`
@@ -849,19 +870,21 @@ export const SubPage3Title = styled(LPTitleText)`
     margin-bottom: clamp(56px, 5vh, 160px);
     width: 100%;
     font-size: clamp(24px, 4vw, 160px);
+
+    ${paddingMobileLayout}
 `;
 
 export const SubPage3DescText = styled(LPDescText)`
     width: 80%;
     margin-bottom: 20vh;
+
+    ${paddingMobileLayout}
 `;
 
 export const SubPage3Canvas = styled.div`
     margin-top: 20vh;
     width: 100%;
     height: 60vh;
-    //position: absolute;
-    //bottom: 10%;
     display: flex;
     flex-direction: column;
     padding-left: 5vw;
@@ -876,15 +899,15 @@ export const SubPage3Canvas = styled.div`
     }
 
     @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        height: auto;
         padding-left: 0;
-        height: 80vh;
     }
 `;
 
 export const SubPage3 = () => {
     return (
         <LPSectionExtendableCentered>
-            <LPShrinkContainer>
+            <LPShrinkContainerLarge>
                 <SubPageFullHeightWrapContainer>
                     <SubPage3Canvas>
                         <SubPageNumberWhite>03</SubPageNumberWhite>
@@ -897,7 +920,7 @@ export const SubPage3 = () => {
                         </SubPage3DescText>
                     </SubPage3Canvas>
                 </SubPageFullHeightWrapContainer>
-            </LPShrinkContainer>
+            </LPShrinkContainerLarge>
         </LPSectionExtendableCentered>
     );
 };
@@ -915,7 +938,6 @@ export const SubPage4DescText = styled(LPDescText)`
     }
     @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
         width: 90%;
-        margin-left: 0;
     }
 `;
 
@@ -931,7 +953,6 @@ export const SubPage4DescTextColored = styled(LPTitleText)`
 
     @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
         width: 90%;
-        margin-left: 0;
     }
 
     margin-bottom: 15vh;
@@ -940,7 +961,7 @@ export const SubPage4DescTextColored = styled(LPTitleText)`
 export const SubPage4 = () => {
     return (
         <LPSectionExtendableCentered>
-            <LPShrinkContainer>
+            <LPShrinkContainerLarge>
                 <SubPageFullHeightWrapContainer>
                     <SubPageNumber>04</SubPageNumber>
                     <SubPage3Title>Regaining hope</SubPage3Title>
@@ -953,7 +974,7 @@ export const SubPage4 = () => {
                         space thrives on merit and purpose.
                     </SubPage4DescTextColored>
                 </SubPageFullHeightWrapContainer>
-            </LPShrinkContainer>
+            </LPShrinkContainerLarge>
         </LPSectionExtendableCentered>
     );
 };
@@ -975,6 +996,8 @@ export const EcoDescText = styled(Page2DescText)`
 
 export const EcoTitle = styled(Page2Title)`
     font-size: clamp(24px, 3vw, 160px);
+
+    ${paddingMobileLayout}
 `;
 
 export const CallToActionTitle = styled(LPTitleText)`
@@ -1007,7 +1030,7 @@ export const CallToActionBackground = styled.div`
 export const LPPageFinal = () => {
     return (
         <LPSectionExtendableCentered>
-            <LPShrinkContainer>
+            <LPShrinkContainerLarge>
                 <EcoTitle>
                     Digital Responsibility: <br /> Embracing <span style={{ color: "#00d986" }}>Eco-Friendly</span> NFT
                     Practices
@@ -1027,7 +1050,7 @@ export const LPPageFinal = () => {
                         subtly lessening the impact of your digital presence!
                     </CallToActionTitle>
                 </CallToActionBackground>
-            </LPShrinkContainer>
+            </LPShrinkContainerLarge>
         </LPSectionExtendableCentered>
     );
 };
