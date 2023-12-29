@@ -1,6 +1,6 @@
 import { styled } from "styled-components";
 
-import { ReactComponent as LogoIcon } from "../../assets/svg/burnerLogoH.svg";
+import { ReactComponent as BurnerLogoIcon } from "../../assets/svg/burnerLogoDesktop.svg";
 
 export const HeaderContainer = styled.div`
     //background-color: #500fe9cf;
@@ -28,7 +28,7 @@ export const HeaderLine = styled.div`
 
 export const Header = () => (
     <HeaderContainer>
-        <LogoIcon />
+        <BurnerLogoIcon />
         <HeaderLine />
     </HeaderContainer>
 );
