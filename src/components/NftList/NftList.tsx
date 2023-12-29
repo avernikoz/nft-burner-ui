@@ -130,7 +130,6 @@ export const NftList = () => {
                     <NftListAutosizerContainer className="nftListAutosizerContainer">
                         <AutoSizer>
                             {({ height, width }) => {
-                                // TODO: Change when responsive design
                                 const columnCount = 4;
                                 const rowCount = getRowCount(nftList);
 
