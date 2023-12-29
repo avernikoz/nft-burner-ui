@@ -11,7 +11,6 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { ReactComponent as DiscordIcon } from "../../assets/svg/social/discord.svg";
 import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
-import { Divider } from "../../components/Footer/Footer";
 
 //=========================
 // 	  MEDIA QUERIES
