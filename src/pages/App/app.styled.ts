@@ -67,3 +67,64 @@ export const BodyContainer = styled.div<{ $showBackground?: boolean }>`
         }
     }
 `;
+
+export const HeaderAppContainer = styled.div`
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    top: 0;
+    align-items: center;
+    padding: 20px;
+    position: absolute;
+    z-index: 10;
+`;
+
+export const DesktopLogoIcon = styled.img`
+    width: 100%;
+    height: 100%;
+`;
+
+export const MobileLogoIcon = styled.img`
+    width: 100%;
+    height: 100%;
+`;
+
+export const LogoContainer = styled.div`
+    height: 50px;
+    width: 200px;
+    padding: 0px;
+    z-index: 99;
+    padding-right: 1.25rem;
+    padding-bottom: 6px;
+
+    @media (max-width: 600px) {
+        // Styles for screens 600px and below (mobile)
+        ${DesktopLogoIcon} {
+            display: none;
+        }
+        ${MobileLogoIcon} {
+            display: block;
+        }
+    }
+
+    @media (min-width: 600px) {
+        // Styles for screens 600px and below (mobile)
+        ${DesktopLogoIcon} {
+            display: block;
+        }
+        ${MobileLogoIcon} {
+            display: none;
+        }
+    }
+`;
+
+export const LogoDivider = styled.div`
+    width: 85%;
+    height: 1px;
+    margin: 0 1vw;
+    background-color: #515158;
+
+    @media screen and (max-width: 1024px) {
+        display: none;
+    }
+`;
