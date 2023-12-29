@@ -1,9 +1,9 @@
-import { ALLOWED_EVM_CHAINS, ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
+import { ALLOWED_EVM_CHAINS, ALLOWED_NETWORKS, solana } from "@avernikoz/nft-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { OwnedNft } from "alchemy-sdk";
 import { JsonRpcSigner } from "ethers";
 import { NFT_IMAGES_CORS_PROXY_URL } from "../../config/proxy.config";
-import { EvmNft, SolanaNft, SuiNft } from "../../utils/types";
+import { EvmNft, SolanaCNft, SolanaNft, SuiNft } from "../../utils/types";
 import { mapNftTokenTypeToContractStandard } from "./utils";
 
 export function suiMapper(
@@ -69,7 +69,7 @@ export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner, chainName: AL
     return filteredNfts;
 }
 
-export function solanaMapper(
+export function solanaNFTMapper(
     nfts: {
         name: string;
         logoURI: string;
@@ -96,6 +96,30 @@ export function solanaMapper(
         name: item.name,
         id: i,
         solanaAccount: item.accounts,
+        cNFT: false,
         network: ALLOWED_NETWORKS.Solana,
     }));
+}
+
+export function solanaCNFTMapper(nfts: solana.DasApiAsset[]): SolanaCNft[] {
+    const cNFTsTransformed = nfts
+        .map((item, i) => {
+            const links = item.content.links;
+
+            if (!(links && "image" in links && links.image && typeof links.image === "string")) {
+                return null;
+            }
+
+            return {
+                logoURI: links.image as string,
+                name: item.content.metadata.name,
+                nftId: item.id.toString(),
+                id: i,
+                network: ALLOWED_NETWORKS.Solana,
+                cNFT: true,
+            };
+        })
+        .filter((el): el is Exclude<typeof el, null> => el !== null);
+
+    return cNFTsTransformed;
 }
