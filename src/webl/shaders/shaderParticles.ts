@@ -892,6 +892,10 @@ function scAshesSpecificShading() {
 
 		
 		colorFinal.rgb = color;
+		if(noise < 0.5)
+		{
+			noise = 0.0;
+		}
 		colorFinal.a = noise;
 		
 		const float thres = 0.8f;
@@ -899,6 +903,7 @@ function scAshesSpecificShading() {
 		{
 			float s = MapToRange(interpolatorAge, thres, 1.0, 1.0, 0.0);
 			colorFinal.rgba *= s;
+			
 		}
 
 		`
