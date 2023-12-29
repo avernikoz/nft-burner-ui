@@ -18,6 +18,7 @@ export interface BaseNft {
 
 // Interface for Solana network
 export interface SolanaNft extends BaseNft {
+    cNFT: boolean;
     solanaAccount: {
         metadataAccount: PublicKey;
         mint: PublicKey;
@@ -26,6 +27,11 @@ export interface SolanaNft extends BaseNft {
         collectionMetadata: PublicKey | undefined;
         isMasterEdition: boolean;
     };
+}
+
+export interface SolanaCNft extends BaseNft {
+    nftId: string;
+    cNFT: boolean;
 }
 
 // Interface for Sui network
@@ -44,4 +50,4 @@ export interface EvmNft extends BaseNft {
 }
 
 // Combined interface for NFT, including properties from all networks
-export type INft = SolanaNft | SuiNft | EvmNft;
+export type INft = SolanaNft | SolanaCNft | SuiNft | EvmNft;
