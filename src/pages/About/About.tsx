@@ -11,6 +11,7 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { ReactComponent as DiscordIcon } from "../../assets/svg/social/discord.svg";
 import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
+import { Divider } from "../../components/Footer/Footer";
 
 //=========================
 // 	  MEDIA QUERIES
@@ -436,6 +437,7 @@ export const Page2Title = styled(LPTitleText)`
 
 export const Page2AdditionalTitle = styled(Page2Title)`
     margin-top: clamp(56px, 15vh, 160px);
+    margin-bottom: clamp(56px, 5vh, 160px);
     font-size: clamp(24px, 5vw, 160px);
     width: 100%;
 `;
@@ -451,10 +453,10 @@ export const Page2Title2 = styled(LPTitleText)`
 `;
 
 export const Page2Title2Background = styled.div`
-    height: 40vh;
+    height: 50vh;
     background:
         linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.5) 100%),
-        url("../assets/lpAssets/Page1.webp") center/cover no-repeat;
+        url("../assets/lpAssets/Page1_2.webp") center/cover no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -462,7 +464,7 @@ export const Page2Title2Background = styled.div`
 
 export const SectionDividerSpecific = styled(SectionDivider)`
     position: absolute;
-    bottom: 5%;
+    bottom: 0%;
     margin-left: 0vw;
 `;
 
@@ -633,7 +635,7 @@ export const LPPage3 = () => {
 //=========================
 
 export const LPShrinkContainerSpaceAround = styled(LPShrinkContainer)`
-    height: 100vh;
+    height: 150vw;
     justify-content: space-around;
     padding: 15vh 0;
 `;
@@ -653,14 +655,21 @@ export const Page4DescText = styled(LPTitleText)`
     width: 100%;
 `;
 
+const LPSectionFlexibleMedia = styled(LPSectionFullscreenCentered)`
+    @media screen and (max-width: 1024px) {
+        height: 50vh;
+    }
+    margin-bottom: 5vh;
+`;
+
 export const LPPage4 = () => {
     return (
-        <LPSectionFullscreenCentered>
+        <LPSectionFlexibleMedia>
             <LPShrinkContainerSpaceAround>
                 <Page4TitleText>It's not just about burning</Page4TitleText>
                 <Page4DescText>it's a combination of more profound meanings:</Page4DescText>
             </LPShrinkContainerSpaceAround>
-        </LPSectionFullscreenCentered>
+        </LPSectionFlexibleMedia>
     );
 };
 
@@ -672,12 +681,12 @@ export const SubPageNumber = styled(LPTitleText)`
     color: #ff852d;
     font-size: clamp(24px, 2vw, 128px);
     width: 100%;
-    margin-top: 20vh;
+    margin-top: 10vw;
 `;
 
 export const SubPageFullHeightWrapContainer = styled.div`
     width: 100%;
-    height: 100vh;
+    //height: 75vh;
     display: flex;
     flex-direction: column;
     //justify-content: space-evenly;
@@ -686,7 +695,7 @@ export const SubPageFullHeightWrapContainer = styled.div`
 export const SubPageTitle = styled(LPTitleText)`
     margin-top: clamp(56px, 5vh, 160px);
     margin-bottom: clamp(56px, 10vh, 160px);
-    width: 70%;
+    width: 90%;
 
     @media screen and (max-width: 1024px) {
         width: 85%;
@@ -712,25 +721,32 @@ export const SubPageDescText = styled(LPDescText)`
 //=========================
 
 export const SubPage1Image = styled.div`
-    width: 75%;
-    height: 75%;
+    /* width: 90vw;
+    height: 85vw; */
+    height: clamp(550px, 50vw, 1170px);
+    width: 100vw;
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%),
-        url("../assets/lpAssets/DistNarrative.webp");
+        url("../assets/lpAssets/DistNarrativeFullScreen.webp");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
 
     position: absolute;
-    left: 25%;
+    left: -10vw;
     //top: 12.5%;
-    bottom: 10%;
+    bottom: 0%;
     z-index: -1;
 
-    @media screen and (max-width: 1024px) {
+    /* @media screen and (max-width: 1024px) {
         left: 35%;
     }
     @media screen and (max-width: 512px) {
         left: 15%;
+    } */
+
+    @media screen and (max-width: 1024px) {
+        left: -5vw;
+        width: 105vw;
     }
 `;
 
@@ -740,7 +756,9 @@ export const SubPage1 = () => {
             <LPShrinkContainer>
                 <SubPageFullHeightWrapContainer>
                     <SubPageNumber>01</SubPageNumber>
-                    <SubPageTitle>Crafting a Distinct Narrative</SubPageTitle>
+                    <SubPageTitle>
+                        Crafting a <br /> Distinct Narrative
+                    </SubPageTitle>
                     <SubPageDescText>
                         In subtle dance between destruction and creation, NFT burners are not seeking mere attention;
                         rather, they are embracing a role as contributors to a larger narrative. It's a nuanced
@@ -750,6 +768,7 @@ export const SubPage1 = () => {
                 </SubPageFullHeightWrapContainer>
                 <SubPage1Image />
             </LPShrinkContainer>
+            <SectionDivider />
         </LPSectionExtendableCentered>
     );
 };
@@ -774,9 +793,12 @@ export const SubPage2Image = styled.div`
 
     @media screen and (max-width: 1024px) {
         left: 35%;
+
+        bottom: 58%;
     }
     @media screen and (max-width: 512px) {
-        left: 20%;
+        left: 40%;
+        bottom: 58%;
     }
 `;
 
@@ -833,10 +855,11 @@ export const SubPage3DescText = styled(LPDescText)`
 `;
 
 export const SubPage3Canvas = styled.div`
+    margin-top: 20vh;
     width: 100%;
     height: 60vh;
-    position: absolute;
-    bottom: 20%;
+    //position: absolute;
+    //bottom: 10%;
     display: flex;
     flex-direction: column;
     padding-left: 5vw;
@@ -845,6 +868,10 @@ export const SubPage3Canvas = styled.div`
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+
+    @media screen and (max-width: 1024px) {
+        margin-top: 0;
+    }
 `;
 
 export const SubPage3 = () => {
@@ -896,6 +923,8 @@ export const SubPage4DescTextColored = styled(LPTitleText)`
     @media screen and (max-width: 512px) {
         width: 90%;
     }
+
+    margin-bottom: 15vh;
 `;
 
 export const SubPage4 = () => {
@@ -939,17 +968,17 @@ export const EcoTitle = styled(Page2Title)`
 `;
 
 export const CallToActionTitle = styled(LPTitleText)`
-    font-size: clamp(24px, 2vw, 296px);
+    font-size: clamp(24px, 3vw, 296px);
     font-weight: 700;
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 80%;
+    width: 70%;
 `;
 
 export const CallToActionBackground = styled.div`
-    height: 70vh;
+    height: 80vh;
     background:
         linear-gradient(0deg, rgba(11, 11, 12, 0.2) 0%, rgba(11, 11, 12, 0.2) 100%),
         url("../assets/lpAssets/EcoPage.webp"),
@@ -970,7 +999,8 @@ export const LPPageFinal = () => {
         <LPSectionExtendableCentered>
             <LPShrinkContainer>
                 <EcoTitle>
-                    Digital Responsibility: <br /> Embracing Eco-Friendly NFT Practices
+                    Digital Responsibility: <br /> Embracing <span style={{ color: "#00d986" }}>Eco-Friendly</span> NFT
+                    Practices
                 </EcoTitle>
                 <SubPage4DescText
                     style={{ alignSelf: "baseline", marginTop: "clamp(56px, 5vh, 160px)", marginBottom: "5vw" }}
