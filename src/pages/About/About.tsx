@@ -560,10 +560,10 @@ export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => 
                         expression?
                     </Page2Title2>
                 </Page2Title2Background>
+                <SectionDivider />
                 <LPPage2Additional />
-                <SectionDividerSpecific2 />
+                <SectionDivider />
                 <Page2AdditionalImage />
-                <SectionDividerSpecific />
             </LPShrinkContainer>
         </LPSectionExtendableCentered>
     );
@@ -1123,7 +1123,7 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
                 <LPPage2 refProp={myRef} />
-                <LPPage3 />
+                {/* <LPPage3 /> */}
                 <LPPage4 />
                 <SectionDivider />
                 <SubPage1 />
