@@ -212,6 +212,12 @@ export class RFirePlanePass {
         gl.clearBufferfv(gl.COLOR, 0, clearColor0);
         gl.clearBufferfv(gl.COLOR, 1, clearColor1);
         gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[1]);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+        gl.clearBufferfv(gl.COLOR, 0, clearColor0);
+        gl.clearBufferfv(gl.COLOR, 1, clearColor1);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
     }
 
     constructor(gl: WebGL2RenderingContext, inRenderTargetSize = { x: 512, y: 512 }) {
