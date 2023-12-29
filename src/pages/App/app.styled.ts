@@ -91,7 +91,7 @@ export const MobileLogoIcon = styled.img`
 
 export const LogoContainer = styled.div`
     height: 50px;
-    width: 200px;
+    width: auto;
     padding: 0px;
     z-index: 99;
     padding-right: 1.25rem;
