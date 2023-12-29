@@ -150,6 +150,14 @@ export const StyledPanelMenu = styled(PanelMenu)`
         position: absolute;
         min-width: 210px;
     }
+
+    .p-toggleable-content .p-panelmenu-content {
+        background: var(
+            --Liner-bg-popup,
+            linear-gradient(180deg, rgba(24, 24, 26, 0.8) 0%, rgba(11, 11, 12, 0.8) 100%)
+        );
+        border: none;
+    }
 `;
 
 export const StyledMenu = styled(Menu)`
