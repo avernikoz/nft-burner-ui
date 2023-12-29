@@ -52,6 +52,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         DiffuseIntensity: gl.getUniformLocation(shaderProgram, "DiffuseIntensity"),
         RoughnessScaleAddContrastMin: gl.getUniformLocation(shaderProgram, "RoughnessScaleAddContrastMin"),
         SurfaceMaterialColorTexture: gl.getUniformLocation(shaderProgram, "SurfaceMaterialColorTexture"),
+        AfterBurnEmbersParam: gl.getUniformLocation(shaderProgram, "AfterBurnEmbersParam"),
     };
     return params;
 }
@@ -177,6 +178,8 @@ export class RFirePlanePass {
     ProcessedImageTextureFBO: WebGLFramebuffer;
 
     ProcessedImageTextureSize: number;
+
+    AfterBurnEmbersParam = 0;
 
     //Paper
 
@@ -599,6 +602,7 @@ export class RFirePlanePass {
             this.VisualizerUniformParametersLocationList.NoiseTextureInterpolator,
             this.NoiseTextureInterpolator,
         );
+        gl.uniform1f(this.VisualizerUniformParametersLocationList.AfterBurnEmbersParam, this.AfterBurnEmbersParam);
 
         gl.uniform1f(this.VisualizerUniformParametersLocationList.Time, GTime.Cur);
 

@@ -37,6 +37,6 @@ export class GReactGLBridgeFunctions {
     }
 
     static OnBurnMore() {
-        GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory);
+        GRenderingStateMachine.OnBurnMoreButtonPress();
     }
 }

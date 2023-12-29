@@ -307,7 +307,7 @@ export class RBurntStampVisualizer {
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
 
-        this.ColorTexture = GTexturePool.CreateTexture(gl, false, "burntStamp");
+        this.ColorTexture = GTexturePool.CreateTexture(gl, false, "burntSign2");
 
         const offsetMax = 0.05;
         this.Position.x = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);

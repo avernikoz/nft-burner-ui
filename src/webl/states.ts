@@ -16,6 +16,10 @@ export class GRenderingStateMachine {
         this.GetInstance().SetRenderingStateInner(newState, bImmeadiateTransition);
     }
 
+    public static OnBurnMoreButtonPress() {
+        this.GetInstance().bBurnMoreButtonPressedThisFrame = true;
+    }
+
     public static GetInstance(): GRenderingStateMachine {
         if (!GRenderingStateMachine.instance) {
             GRenderingStateMachine.instance = new GRenderingStateMachine();
@@ -30,8 +34,13 @@ export class GRenderingStateMachine {
         }
     }
 
-    MarkNewStateProcessed() {
+    private MarkNewStateProcessed() {
         this.bNewStateWasProcessed = true;
+    }
+
+    OnFrameEnd() {
+        this.MarkNewStateProcessed();
+        this.bBurnMoreButtonPressedThisFrame = false;
     }
 
     public bWasNewStateProcessed(): boolean {
@@ -52,6 +61,10 @@ export class GRenderingStateMachine {
 
     public get transitionSpeed(): number {
         return this.TransitionSpeed;
+    }
+
+    public get bBurnMoreActivatedThisFrame(): boolean {
+        return this.bBurnMoreButtonPressedThisFrame;
     }
 
     public get bCanBurn(): boolean {
@@ -101,4 +114,6 @@ export class GRenderingStateMachine {
     private TransitionSpeed: number; //[0,1]
 
     public bNewStateWasProcessed = false; //when state change event should be processed  once
+
+    private bBurnMoreButtonPressedThisFrame = false;
 }
