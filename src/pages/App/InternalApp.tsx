@@ -10,11 +10,20 @@ import { WalletSelector } from "../../components/WalletSelector/WalletSelector";
 import { ENftBurnStatus } from "../../utils/types";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import "./App.css";
-import { BodyContainer } from "./app.styled";
+import {
+    BodyContainer,
+    DesktopLogoIcon,
+    HeaderAppContainer,
+    LogoContainer,
+    LogoDivider,
+    MobileLogoIcon,
+} from "./app.styled";
 import { Footer } from "../../components/Footer/Footer";
 import { BurningComplete } from "../../components/BurningComplete/BurningComplete";
 import { useEthersSigner } from "../../components/NftList/variables";
 import { ConnectWalletButton } from "../../components/ConnectWalletButton/ConnectWalletButton";
+import BurnerLogoDesktopIcon from "../../assets/svg/burnerLogoDesktop.svg";
+import BurnerLogoMobileIcon from "../../assets/svg/burnerLogoMobile.svg";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
     setAboutPageActive,
@@ -116,7 +125,12 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
 
     return (
         <div className="App">
-            <div className="WalletConnectionHeader">
+            <HeaderAppContainer>
+                <LogoContainer>
+                    <DesktopLogoIcon src={BurnerLogoDesktopIcon} />
+                    <MobileLogoIcon src={BurnerLogoMobileIcon} />
+                </LogoContainer>
+                <LogoDivider />
                 <WalletSelector
                     walletSelectPopupVisible={walletSelectPopupVisible}
                     setWalletSelectPopupVisible={setWalletSelectPopupVisible}
@@ -124,7 +138,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                         setShowUI(false);
                     }}
                 />
-            </div>
+            </HeaderAppContainer>
             {showUI && !showBurnedScreen && !showConnectWalletScreen && (
                 <BodyContainer $showBackground={true}>
                     <div className="half">
