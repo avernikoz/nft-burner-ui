@@ -1004,7 +1004,7 @@ export const EcoDescText = styled(Page2DescText)`
 `;
 
 export const EcoTitle = styled(Page2Title)`
-    font-size: clamp(24px, 3vw, 160px);
+    font-size: clamp(24px, 4vw, 160px);
 
     ${paddingMobileLayout}
 `;
