@@ -13,7 +13,7 @@ export const HeaderContainer = styled.div`
     padding: 1.25vw 4vw;
     height: 102px;
 
-    @media and (max-width: 600px) {
+    @media (max-width: 600px) {
         flex-direction: column;
         justify-content: space-around;
     }
