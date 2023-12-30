@@ -581,6 +581,15 @@ export function RenderMain() {
                 stateController.onChange((value: string) => {
                     GRenderingStateMachine.SetRenderingState(+value);
                 });
+
+                const burnMoreParam = {
+                    buttonText: "BurnMore",
+                    handleClick: () => {
+                        GRenderingStateMachine.OnBurnMoreButtonPress();
+                    },
+                };
+
+                stateFolder.add(burnMoreParam, "handleClick").name(burnMoreParam.buttonText);
             }
 
             GSceneDescSubmitDebugUI(GDatGUI);
@@ -715,7 +724,9 @@ export function RenderMain() {
             }
 
             if (GbBurnMoreProcessActive) {
-                GBurnMoreProcessParameter += GTime.Delta;
+                if (GBurnMoreProcessParameter < 3) {
+                    GBurnMoreProcessParameter += GTime.Delta;
+                }
             }
             BurningSurface.AfterBurnEmbersParam = GBurnMoreProcessParameter;
 
