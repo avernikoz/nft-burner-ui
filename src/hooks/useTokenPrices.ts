@@ -2,13 +2,14 @@ import * as Sentry from "@sentry/react";
 import useSWR, { SWRConfiguration } from "swr";
 import { SWR_CONFIG } from "../config/swr.config";
 import { getNetworkPrices, ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
+import { NFT_IMAGES_CORS_PROXY_URL } from "../config/proxy.config";
 
 export type TokenPricesMap = { [key in ALLOWED_NETWORKS]: number };
 
 export const useTokenPrices = (options?: SWRConfiguration) => {
     const fetcher = async (): Promise<TokenPricesMap> => {
         try {
-            const prices = await getNetworkPrices();
+            const prices = await getNetworkPrices({ proxyURL: NFT_IMAGES_CORS_PROXY_URL });
             const pricesMap = {
                 [ALLOWED_NETWORKS.Arbitrum]: prices.ethereum.usd,
                 [ALLOWED_NETWORKS.Ethereum]: prices.ethereum.usd,
