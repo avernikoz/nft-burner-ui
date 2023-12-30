@@ -1,4 +1,4 @@
-import { ALLOWED_EVM_CHAINS, ALLOWED_NETWORKS, solana } from "@avernikoz/nft-sdk";
+import { ALLOWED_EVM_CHAINS, ALLOWED_NETWORKS, DasApiAsset } from "@avernikoz/nft-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { OwnedNft } from "alchemy-sdk";
 import { JsonRpcSigner } from "ethers";
@@ -101,7 +101,7 @@ export function solanaNFTMapper(
     }));
 }
 
-export function solanaCNFTMapper(nfts: solana.DasApiAsset[]): SolanaCNft[] {
+export function solanaCNFTMapper(nfts: DasApiAsset[]): SolanaCNft[] {
     const cNFTsTransformed = nfts
         .map((item, i) => {
             const links = item.content.links;
