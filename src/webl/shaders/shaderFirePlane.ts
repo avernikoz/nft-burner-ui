@@ -483,6 +483,8 @@ export function GetShaderSourceFireVisualizerPS() {
 	uniform float ToolRadius;
 	uniform vec3 ToolColor;
 
+	uniform float AfterBurnEmbersParam;
+
 	uniform float NoiseTextureInterpolator;
 	uniform float Time;
 
@@ -947,7 +949,14 @@ export function GetShaderSourceFireVisualizerPS() {
 			#endif
 		#endif
 
-			ashesColor.rgb += embersColor * 15.f * emberScale;
+			embersColor = embersColor * 15.f * emberScale;
+
+			//if(AfterBurnEmbersParam > 0.0)
+			{
+				embersColor = mix(embersColor, vec3(0.2, 0.2, 0.2), AfterBurnEmbersParam * 0.5);
+			}
+
+			ashesColor.rgb += embersColor;
 			#if !(PAPER)
 			ashesColor.b += (1.f - emberScale) * 0.05f;
 			#endif
@@ -989,8 +998,9 @@ export function GetShaderSourceFireVisualizerPS() {
 		#else
 			//ashesColor.rgb += min(1.0, luminance * 5.0) * 0.25;
 			//ashesColor += burnedImageTexture;
-			float curFireLOD = texture(FireTexture, vsOutTexCoords.xy).r;
-			ashesColor.rgb = max(ashesColor.rgb, burnedImageTexture * 2.0f * emberScale);
+			//float curFireLOD = texture(FireTexture, vsOutTexCoords.xy).r;
+			vec3 finalAfterBurnColor = max(ashesColor.rgb, burnedImageTexture * 2.0f * emberScale);
+			ashesColor.rgb = mix(finalAfterBurnColor, ashesColor.rgb + min(1.0, luminance) * 0.5, AfterBurnEmbersParam);
 		#endif
 		#endif////BURNED IMAGE
 

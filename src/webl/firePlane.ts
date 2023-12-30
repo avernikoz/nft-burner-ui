@@ -52,6 +52,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         DiffuseIntensity: gl.getUniformLocation(shaderProgram, "DiffuseIntensity"),
         RoughnessScaleAddContrastMin: gl.getUniformLocation(shaderProgram, "RoughnessScaleAddContrastMin"),
         SurfaceMaterialColorTexture: gl.getUniformLocation(shaderProgram, "SurfaceMaterialColorTexture"),
+        AfterBurnEmbersParam: gl.getUniformLocation(shaderProgram, "AfterBurnEmbersParam"),
     };
     return params;
 }
@@ -178,6 +179,8 @@ export class RFirePlanePass {
 
     ProcessedImageTextureSize: number;
 
+    AfterBurnEmbersParam = 0;
+
     //Paper
 
     RoughnessParams = { Scale: 1.0, Add: 0.0, Contrast: 1.0, Min: 0.0 }; //Use variadic contrast [from 1 to 2]
@@ -209,6 +212,12 @@ export class RFirePlanePass {
         //Fill Fuel texture with 1.f
         const clearColor0 = new Float32Array([0.01, 0.01, 0.01, 0.01]);
         const clearColor1 = new Float32Array([0.01, 0.01, 0.01, 0.01]);
+        gl.clearBufferfv(gl.COLOR, 0, clearColor0);
+        gl.clearBufferfv(gl.COLOR, 1, clearColor1);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[1]);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
         gl.clearBufferfv(gl.COLOR, 0, clearColor0);
         gl.clearBufferfv(gl.COLOR, 1, clearColor1);
         gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
@@ -593,6 +602,7 @@ export class RFirePlanePass {
             this.VisualizerUniformParametersLocationList.NoiseTextureInterpolator,
             this.NoiseTextureInterpolator,
         );
+        gl.uniform1f(this.VisualizerUniformParametersLocationList.AfterBurnEmbersParam, this.AfterBurnEmbersParam);
 
         gl.uniform1f(this.VisualizerUniformParametersLocationList.Time, GTime.Cur);
 

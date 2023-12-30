@@ -42,10 +42,3 @@
         transform: rotate(360deg);
     }
 }
-
-.WalletConnectionHeader {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 10;
-}

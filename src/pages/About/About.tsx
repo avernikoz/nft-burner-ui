@@ -1,4 +1,4 @@
-import { styled } from "styled-components";
+import { styled, css } from "styled-components";
 import React, { RefObject, useEffect, useRef, useState } from "react";
 import "./About.css";
 import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
@@ -7,6 +7,39 @@ import { ReactComponent as DownArrowIcon } from "../../assets/svg/downArrow.svg"
 import { ReactComponent as RightArrowIcon } from "../../assets/svg/rightArrow.svg";
 import { Header } from "../../components/Header/Header";
 import { ProgressSpinner } from "primereact/progressspinner";
+
+import { ReactComponent as DiscordIcon } from "../../assets/svg/social/discord.svg";
+import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
+import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
+
+//=========================
+// 	  MEDIA QUERIES
+//=========================
+
+const TABLET_RESOLUTION_BREAKPOINT = "1024px";
+const MOBILE_RESOLUTION_BREAKPOINT = "600px";
+
+export const commonLayoutWidth = css`
+    @media (max-width: ${TABLET_RESOLUTION_BREAKPOINT}) {
+        width: 85vw;
+    }
+
+    @media (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        width: 95vw;
+    }
+`;
+
+export const commonLargeLayoutWidth = css`
+    @media (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        width: 100vw;
+    }
+`;
+
+export const paddingMobileLayout = css`
+    @media (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        padding: 0 5vw;
+    }
+`;
 
 //=========================
 // 	  PAGE 1 : START
@@ -304,6 +337,15 @@ export const LPSectionExtendable = styled.div`
 export const LPSectionExtendableCentered = styled(LPSectionExtendable)`
     justify-content: space-around;
     align-items: center;
+
+    &.page3 {
+        background-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 100%),
+            linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.25) 100%), url("../assets/lpAssets/Page3.webp");
+        background-color: lightgray;
+        background-position: 50%;
+        background-size: cover;
+        background-repeat: no-repeat;
+    }
 `;
 
 const LPSectionFullscreenCentered = styled(LPSectionExtendableCentered)`
@@ -315,13 +357,11 @@ export const LPShrinkContainer = styled(LPSectionExtendableCentered)`
     width: 75vw;
     max-width: 2000px;
 
-    @media screen and (max-width: 1000px) {
-        width: 85vw; /* Adjusted width for screen widths up to 2000px */
-    }
+    ${commonLayoutWidth}
+`;
 
-    @media screen and (max-width: 500px) {
-        width: 95vw; /* Adjusted width for screen widths up to 1000px */
-    }
+export const LPShrinkContainerLarge = styled(LPShrinkContainer)`
+    ${commonLargeLayoutWidth}
 `;
 
 export const LPShrinkContainerMid = styled(LPSectionExtendableCentered)`
@@ -356,12 +396,24 @@ export const DescTextContainerAlignRight = styled.div`
     justify-content: flex-end;
 `;
 
-export const SectionDivider = styled.div`
-    width: 80vw;
+export const SectionDividerLine = styled.div`
+    width: 75vw;
     height: 1px;
-    margin-left: 10vw;
     background-color: #515158;
 `;
+
+export const SectionDividerContainer = styled.div`
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;
+
+export const SectionDivider = () => (
+    <SectionDividerContainer>
+        <SectionDividerLine />
+    </SectionDividerContainer>
+);
 
 export const LPTitleText = styled.span`
     color: #fff;
@@ -399,8 +451,9 @@ export const Page2Title = styled(LPTitleText)`
 `;
 
 export const Page2AdditionalTitle = styled(Page2Title)`
-    margin-top: clamp(56px, 15vh, 160px);
-    font-size: clamp(24px, 5vw, 160px);
+    margin-top: clamp(72px, 10vw, 360px);
+    margin-bottom: clamp(72px, 10vw, 360px);
+    font-size: clamp(48px, 5vw, 160px);
     width: 100%;
 `;
 
@@ -415,30 +468,43 @@ export const Page2Title2 = styled(LPTitleText)`
 `;
 
 export const Page2Title2Background = styled.div`
-    height: 40vh;
-    background-color: orangered;
+    height: 50vh;
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.5) 100%),
+        url("../assets/lpAssets/Page1_2.webp") center/cover no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
+
+    @media (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        width: 100vw;
+    }
 `;
 
 export const Page2AdditionalImage = styled.div`
-    --sizeVar: clamp(256px, 30vw, 1024px);
+    /* --sizeVar: clamp(256px, 30vw, 1024px);
     width: var(--sizeVar);
-    height: var(--sizeVar);
-    background-color: #0051ff;
+    height: var(--sizeVar); */
+
+    background: url("../assets/lpAssets/Page2.webp") center/cover no-repeat;
+    height: clamp(450px, 50vw, 2170px);
+    width: 100vw;
+    height: 100%;
     position: absolute;
-    left: 50%;
+    //left: 50%;
     //top: 12.5%;
-    bottom: 5%;
+    bottom: 0%;
     z-index: -1;
 `;
 
 export const Page2AddWrapper = styled(LPSectionExtendable)`
     align-items: center;
-    margin-top: 10vh;
+    margin-top: 20vh;
     margin-bottom: clamp(64px, 15vw, 1024px);
+    padding: 5vw 0vw;
     width: 100%;
+
+    //background: url("../assets/lpAssets/Page2.webp") center/cover no-repeat;
 
     @media screen and (max-width: 576px) {
         margin-bottom: clamp(64px, 45vw, 1024px);
@@ -454,6 +520,16 @@ export const Page2DescText = styled(LPDescText)`
     }
 `;
 
+export const SectionDividerSpecific = styled(SectionDividerContainer)`
+    position: absolute;
+    bottom: 0%;
+`;
+
+export const SectionDividerSpecific2 = styled(SectionDividerContainer)`
+    position: absolute;
+    top: 0%;
+`;
+
 export const LPPage2Additional = () => (
     <Page2AddWrapper>
         <TextContainerAlignLeftIndent25>
@@ -466,6 +542,13 @@ export const LPPage2Additional = () => (
                 the deliberate act <br /> of burning NFTs
             </Page2AdditionalTitle>
         </LPShrinkContainerMid>
+        <Page2AdditionalImage />
+        <SectionDividerSpecific>
+            <SectionDividerLine />
+        </SectionDividerSpecific>
+        <SectionDividerSpecific2>
+            <SectionDividerLine />
+        </SectionDividerSpecific2>
     </Page2AddWrapper>
 );
 
@@ -487,7 +570,7 @@ export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => 
                     </Page2Title2>
                 </Page2Title2Background>
                 <LPPage2Additional />
-                <Page2AdditionalImage />
+                <SectionDivider />
             </LPShrinkContainer>
         </LPSectionExtendableCentered>
     );
@@ -512,7 +595,11 @@ export const Page3MainTitle = styled(LPTitleText)`
 
 export const Page3DescText = styled(LPDescText)`
     margin: 2vh;
+    padding: 2vh;
     width: 35%;
+
+    background: radial-gradient(103.55% 95.36% at 50.09% 45.72%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 100%);
+
     @media screen and (max-width: 1024px) {
         width: 55%;
     }
@@ -522,7 +609,6 @@ export const Page3DescText = styled(LPDescText)`
 `;
 
 export const Page3DescContainer = styled.div`
-    background-color: #0051ff;
     display: flex;
     flex-direction: column;
 `;
@@ -530,7 +616,6 @@ export const Page3DescContainer = styled.div`
 export const Page3BackgroundImage = styled.div`
     width: 75vw;
     height: 75vh;
-    background-color: #0051ff;
     position: absolute;
     z-index: -1;
     left: 5%;
@@ -545,7 +630,7 @@ export const Page3OffsetSpace = styled(LPSectionExtendable)`
 
 export const LPPage3 = () => {
     return (
-        <LPSectionExtendableCentered>
+        <LPSectionExtendableCentered className="page3">
             <LPShrinkContainer>
                 <Page3StartTitle>Elevate the Burn:</Page3StartTitle>
                 <LPShrinkContainerMid>
@@ -566,6 +651,7 @@ export const LPPage3 = () => {
                 <Page3OffsetSpace />
                 <Page3BackgroundImage />
             </LPShrinkContainer>
+            <SectionDivider />
         </LPSectionExtendableCentered>
     );
 };
@@ -575,7 +661,7 @@ export const LPPage3 = () => {
 //=========================
 
 export const LPShrinkContainerSpaceAround = styled(LPShrinkContainer)`
-    height: 100vh;
+    height: 150vw;
     justify-content: space-around;
     padding: 15vh 0;
 `;
@@ -586,6 +672,7 @@ export const Page4TitleText = styled(LPTitleText)`
     width: 100%;
     line-height: 100%;
     margin-top: 10vh;
+    margin-bottom: 10vh;
 `;
 
 export const Page4DescText = styled(LPTitleText)`
@@ -595,14 +682,21 @@ export const Page4DescText = styled(LPTitleText)`
     width: 100%;
 `;
 
+const LPSectionFlexibleMedia = styled(LPSectionFullscreenCentered)`
+    @media screen and (max-width: 1024px) {
+        height: 50vh;
+    }
+    margin-bottom: 5vh;
+`;
+
 export const LPPage4 = () => {
     return (
-        <LPSectionFullscreenCentered>
+        <LPSectionFlexibleMedia>
             <LPShrinkContainerSpaceAround>
                 <Page4TitleText>It's not just about burning</Page4TitleText>
                 <Page4DescText>it's a combination of more profound meanings:</Page4DescText>
             </LPShrinkContainerSpaceAround>
-        </LPSectionFullscreenCentered>
+        </LPSectionFlexibleMedia>
     );
 };
 
@@ -614,21 +708,21 @@ export const SubPageNumber = styled(LPTitleText)`
     color: #ff852d;
     font-size: clamp(24px, 2vw, 128px);
     width: 100%;
-    margin-top: 20vh;
+    margin-top: 10vw;
+
+    ${paddingMobileLayout}
 `;
 
 export const SubPageFullHeightWrapContainer = styled.div`
     width: 100%;
-    height: 100vh;
     display: flex;
     flex-direction: column;
-    //justify-content: space-evenly;
 `;
 
 export const SubPageTitle = styled(LPTitleText)`
     margin-top: clamp(56px, 5vh, 160px);
     margin-bottom: clamp(56px, 10vh, 160px);
-    width: 70%;
+    width: 90%;
 
     @media screen and (max-width: 1024px) {
         width: 85%;
@@ -636,6 +730,8 @@ export const SubPageTitle = styled(LPTitleText)`
     @media screen and (max-width: 512px) {
         width: 95%;
     }
+
+    ${paddingMobileLayout}
 `;
 
 export const SubPageDescText = styled(LPDescText)`
@@ -647,6 +743,8 @@ export const SubPageDescText = styled(LPDescText)`
     @media screen and (max-width: 512px) {
         width: 95%;
     }
+
+    ${paddingMobileLayout}
 `;
 
 //=========================
@@ -654,40 +752,52 @@ export const SubPageDescText = styled(LPDescText)`
 //=========================
 
 export const SubPage1Image = styled.div`
-    --sizeVar: clamp(256px, 30vw, 1024px);
-    width: var(--sizeVar);
-    height: var(--sizeVar);
-    background-color: #0051ff;
+    width: 100vw;
+    height: 100%;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%),
+        url("../assets/lpAssets/DistNarrativeFullScreen.webp");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
     position: absolute;
-    left: 50%;
+    left: -10vw;
     //top: 12.5%;
-    bottom: 10%;
+    bottom: 0%;
     z-index: -1;
 
-    @media screen and (max-width: 1024px) {
+    /* @media screen and (max-width: 1024px) {
         left: 35%;
     }
     @media screen and (max-width: 512px) {
         left: 15%;
+    } */
+
+    @media screen and (max-width: 1024px) {
+        left: -5vw;
+        width: 105vw;
     }
 `;
 
 export const SubPage1 = () => {
     return (
         <LPSectionExtendableCentered>
-            <LPShrinkContainer>
+            <LPShrinkContainerLarge>
                 <SubPageFullHeightWrapContainer>
                     <SubPageNumber>01</SubPageNumber>
-                    <SubPageTitle>Crafting a Distinct Narrative</SubPageTitle>
+                    <SubPageTitle>
+                        Crafting a <br /> Distinct Narrative
+                    </SubPageTitle>
                     <SubPageDescText>
                         In subtle dance between destruction and creation, NFT burners are not seeking mere attention;
                         rather, they are embracing a role as contributors to a larger narrative. It's a nuanced
                         approach, allowing for personal expression within the evolving dynamics of the digital space,
                         where visibility is earned through meaningful performances.
                     </SubPageDescText>
+                    <SubPage1Image />
                 </SubPageFullHeightWrapContainer>
-                <SubPage1Image />
-            </LPShrinkContainer>
+            </LPShrinkContainerLarge>
+            <SectionDivider />
         </LPSectionExtendableCentered>
     );
 };
@@ -704,7 +814,7 @@ export const SubPage2Image = styled.div`
     --sizeVar: clamp(256px, 25vw, 1024px);
     width: var(--sizeVar);
     height: var(--sizeVar);
-    background-color: #0051ff;
+    background: url("../assets/lpAssets/ShareYourPerformance.svg") center/cover no-repeat;
     position: absolute;
     left: -10%;
     bottom: 15%;
@@ -712,9 +822,11 @@ export const SubPage2Image = styled.div`
 
     @media screen and (max-width: 1024px) {
         left: 35%;
+
+        bottom: 58%;
     }
-    @media screen and (max-width: 512px) {
-        left: 20%;
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        display: none;
     }
 `;
 
@@ -724,13 +836,17 @@ export const SubPageFullHeightWrapContainerIndent = styled(SubPageFullHeightWrap
     display: flex;
     flex-direction: column;
     padding-left: 20vw;
-    //justify-content: space-evenly;
+
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        padding-left: 0;
+        height: auto;
+    }
 `;
 
 export const SubPage2 = () => {
     return (
         <LPSectionExtendableCentered>
-            <LPShrinkContainer>
+            <LPShrinkContainerLarge>
                 <SubPageFullHeightWrapContainerIndent>
                     <SubPageNumber>02</SubPageNumber>
                     <SubPage2Title>Sharing Your Performance</SubPage2Title>
@@ -742,7 +858,7 @@ export const SubPage2 = () => {
                     </SubPageDescText>
                 </SubPageFullHeightWrapContainerIndent>
                 <SubPage2Image />
-            </LPShrinkContainer>
+            </LPShrinkContainerLarge>
         </LPSectionExtendableCentered>
     );
 };
@@ -756,6 +872,7 @@ export const SubPageNumberWhite = styled(LPTitleText)`
     font-size: clamp(24px, 2vw, 128px);
     width: 100%;
     margin-top: 7%;
+    ${paddingMobileLayout}
 `;
 
 export const SubPage3Title = styled(LPTitleText)`
@@ -763,30 +880,48 @@ export const SubPage3Title = styled(LPTitleText)`
     margin-bottom: clamp(56px, 5vh, 160px);
     width: 100%;
     font-size: clamp(24px, 4vw, 160px);
+
+    ${paddingMobileLayout}
 `;
 
 export const SubPage3DescText = styled(LPDescText)`
     width: 80%;
     margin-bottom: 20vh;
+
+    ${paddingMobileLayout}
+
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        margin-bottom: 8vh;
+    }
 `;
 
 export const SubPage3Canvas = styled.div`
+    margin-top: 20vh;
     width: 100%;
     height: 60vh;
-    position: absolute;
-    bottom: 20%;
-    background-color: orangered;
     display: flex;
     flex-direction: column;
     padding-left: 5vw;
-    //justify-content: space-evenly;
-    //align-items: flex-start;
+    background: url("../assets/lpAssets/Authenticity.webp") center/cover no-repeat;
+    background-blend-mode: hard-light;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    @media screen and (max-width: 1024px) {
+        margin-top: 0;
+    }
+
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        height: auto;
+        padding-left: 0;
+    }
 `;
 
 export const SubPage3 = () => {
     return (
         <LPSectionExtendableCentered>
-            <LPShrinkContainer>
+            <LPShrinkContainerLarge>
                 <SubPageFullHeightWrapContainer>
                     <SubPage3Canvas>
                         <SubPageNumberWhite>03</SubPageNumberWhite>
@@ -799,7 +934,7 @@ export const SubPage3 = () => {
                         </SubPage3DescText>
                     </SubPage3Canvas>
                 </SubPageFullHeightWrapContainer>
-            </LPShrinkContainer>
+            </LPShrinkContainerLarge>
         </LPSectionExtendableCentered>
     );
 };
@@ -815,7 +950,7 @@ export const SubPage4DescText = styled(LPDescText)`
     @media screen and (max-width: 1024px) {
         width: 85%;
     }
-    @media screen and (max-width: 512px) {
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
         width: 90%;
     }
 `;
@@ -829,15 +964,18 @@ export const SubPage4DescTextColored = styled(LPTitleText)`
     @media screen and (max-width: 1024px) {
         width: 85%;
     }
-    @media screen and (max-width: 512px) {
+
+    @media screen and (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
         width: 90%;
     }
+
+    margin-bottom: 15vh;
 `;
 
 export const SubPage4 = () => {
     return (
         <LPSectionExtendableCentered>
-            <LPShrinkContainer>
+            <LPShrinkContainerLarge>
                 <SubPageFullHeightWrapContainer>
                     <SubPageNumber>04</SubPageNumber>
                     <SubPage3Title>Regaining hope</SubPage3Title>
@@ -850,7 +988,7 @@ export const SubPage4 = () => {
                         space thrives on merit and purpose.
                     </SubPage4DescTextColored>
                 </SubPageFullHeightWrapContainer>
-            </LPShrinkContainer>
+            </LPShrinkContainerLarge>
         </LPSectionExtendableCentered>
     );
 };
@@ -871,51 +1009,109 @@ export const EcoDescText = styled(Page2DescText)`
 `;
 
 export const EcoTitle = styled(Page2Title)`
-    font-size: clamp(24px, 3vw, 160px);
+    font-size: clamp(24px, 4vw, 160px);
+
+    ${paddingMobileLayout}
 `;
 
 export const CallToActionTitle = styled(LPTitleText)`
-    font-size: clamp(24px, 2vw, 296px);
+    font-size: clamp(24px, 3vw, 296px);
     font-weight: 700;
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 80%;
+    width: 70%;
 `;
 
 export const CallToActionBackground = styled.div`
-    height: 40vh;
-    background-color: #e00000;
+    height: 80vh;
+    background:
+        linear-gradient(0deg, rgba(11, 11, 12, 0.2) 0%, rgba(11, 11, 12, 0.2) 100%),
+        url("../assets/lpAssets/EcoPage.webp"),
+        lightgray -91.461px -119.922px / 114.291% 194.021% no-repeat;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
+    margin-bottom: 5vw;
 `;
 
 export const LPPageFinal = () => {
     return (
         <LPSectionExtendableCentered>
-            <LPShrinkContainer>
+            <LPShrinkContainerLarge>
                 <EcoTitle>
-                    Digital Responsibility: <br /> Embracing Eco-Friendly NFT Practices
+                    Digital Responsibility: <br /> Embracing <span style={{ color: "#00d986" }}>Eco-Friendly</span> NFT
+                    Practices
                 </EcoTitle>
-                <EcoDescText>
+                <SubPage4DescText
+                    style={{ alignSelf: "baseline", marginTop: "clamp(56px, 5vh, 160px)", marginBottom: "5vw" }}
+                >
                     Letting go of your digital tokens isn't just saying goodbye to a virtual possession – it's a big
                     step toward a more eco-friendly digital world! In a space where the value and legitimacy of many
                     NFTs are uncertain, our approach promotes responsible ownership. Across different blockchains, we
                     strive for eco-friendly practices! Potentially reducing{" "}
                     <span style={{ color: "#D90000" }}>CO2</span> emissions!
-                </EcoDescText>
+                </SubPage4DescText>
                 <CallToActionBackground>
                     <CallToActionTitle>
                         Join us in creating a story where digital ownership aligns with taking care of the environment,
                         subtly lessening the impact of your digital presence!
                     </CallToActionTitle>
                 </CallToActionBackground>
-            </LPShrinkContainer>
+            </LPShrinkContainerLarge>
         </LPSectionExtendableCentered>
     );
 };
+
+export const SocialContainer = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    height: 50vh;
+    width: 90%;
+
+    @media screen and (max-width: 576px) {
+        width: 100%;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+`;
+
+export const SocialIconsContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 30px;
+`;
+
+export const SocialLink = styled.a``;
+
+export const LPPageSocial = () => (
+    <LPSectionExtendableCentered style={{ paddingBottom: "5vw" }}>
+        <LPShrinkContainer>
+            <SocialContainer>
+                <Page2Title2 style={{ width: "auto" }}>Our social media</Page2Title2>
+                <SocialIconsContainer>
+                    <SocialLink href="https://twitter.com" target="_blank" rel="noopener noreferrer">
+                        <TwitterIcon />
+                    </SocialLink>
+                    <SocialLink href="https://discord.com" target="_blank" rel="noopener noreferrer">
+                        <DiscordIcon />
+                    </SocialLink>
+                    <SocialLink href="https://instagram.com" target="_blank" rel="noopener noreferrer">
+                        <InstagramIcon />
+                    </SocialLink>
+                </SocialIconsContainer>
+            </SocialContainer>
+        </LPShrinkContainer>
+    </LPSectionExtendableCentered>
+);
 
 //=========================
 // 	  	   ENTRY
@@ -932,9 +1128,7 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
                 <LPPage2 refProp={myRef} />
-                <SectionDivider />
                 <LPPage3 />
-                <SectionDivider />
                 <LPPage4 />
                 <SectionDivider />
                 <SubPage1 />
@@ -943,6 +1137,8 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
                 <SubPage4 />
                 <SectionDivider />
                 <LPPageFinal />
+                <SectionDivider />
+                <LPPageSocial />
             </LPContainerMain>
         </>
     );

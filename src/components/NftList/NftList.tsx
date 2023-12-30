@@ -20,7 +20,7 @@ import { NftItem } from "../NftItem/NftItem";
 import { NftContext } from "../NftProvider/NftProvider";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { List, NftListAutosizerContainer, NftListTitle, SpinnerContainer } from "./NftList.styled";
-import { evmMapper, solanaMapper, suiMapper } from "./mappers";
+import { evmMapper, solanaCNFTMapper, solanaNFTMapper, suiMapper } from "./mappers";
 import { useEthersSigner } from "./variables";
 import { getChainName, getItemSize, getRowCount } from "./utils";
 import EmptySVG from "../../assets/svg/emptyNFT.svg";
@@ -73,8 +73,13 @@ export const NftList = () => {
                         setNFTList(filtredNfts);
                     } else if (solanaChangeOrConnected) {
                         const rawNfts = await SOLANA_NFT_CLIENT_INSTANCE.getNFTs(solanaWallet.publicKey as PublicKey);
-                        const mappedNFts: INft[] = solanaMapper(rawNfts);
-                        setNFTList(mappedNFts);
+                        const mappedNFts: INft[] = solanaNFTMapper(rawNfts);
+
+                        const rawCNfts = await SOLANA_NFT_CLIENT_INSTANCE.getCNFTs(solanaWallet.publicKey as PublicKey);
+                        const mappedCNFTs: INft[] = solanaCNFTMapper(rawCNfts);
+
+                        const allSolanaNFTs = mappedNFts.concat(mappedCNFTs);
+                        setNFTList(allSolanaNFTs);
                     } else if (suiChangeOrConnected) {
                         const rawNfts = await SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address as string });
                         const convertedNfts = suiMapper(rawNfts);
@@ -93,6 +98,7 @@ export const NftList = () => {
                     toastController?.showError("Error fetching nft: " + error);
                 }
 
+                setShowSpinner(false);
                 // TODO: Improve that log
                 Sentry.captureException(error, {
                     tags: { scenario: "fetch_nfts" },
@@ -130,7 +136,6 @@ export const NftList = () => {
                     <NftListAutosizerContainer className="nftListAutosizerContainer">
                         <AutoSizer>
                             {({ height, width }) => {
-                                // TODO: Change when responsive design
                                 const columnCount = 4;
                                 const rowCount = getRowCount(nftList);
 

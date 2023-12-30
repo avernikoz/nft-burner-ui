@@ -6,6 +6,7 @@ import { ShareButton } from "../ShareButton/ShareButton";
 import { BurningCompleteContainer } from "./BurningComplete.styled";
 import { ENftBurnStatus } from "../../utils/types";
 import { NftShareDialog } from "../Control/components/NftShareDialog/NftShareDialog";
+import { IMAGE_STORE_SINGLETON_INSTANCE } from "../../config/config";
 
 export const BurningComplete = () => {
     const NftController = useContext(NftContext);
@@ -29,6 +30,8 @@ export const BurningComplete = () => {
                     className="burnButton mainButton mainButtonLarge completeButton"
                     onClick={() => {
                         NftController.setNftStatus(ENftBurnStatus.EMPTY);
+                        IMAGE_STORE_SINGLETON_INSTANCE.setImageUrl(null);
+                        IMAGE_STORE_SINGLETON_INSTANCE.setImage(null);
                         GReactGLBridgeFunctions.OnBurnMore();
                     }}
                 >

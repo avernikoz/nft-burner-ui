@@ -296,7 +296,9 @@ export function RenderMain() {
     //=========================
     InitUserInputEvents(canvas);
 
-    SetupCameraControlThroughInput();
+    if (DEBUG_ENV) {
+        SetupCameraControlThroughInput();
+    }
 
     //=========================
     // 	  WINDOW RESIZE INIT
@@ -579,6 +581,15 @@ export function RenderMain() {
                 stateController.onChange((value: string) => {
                     GRenderingStateMachine.SetRenderingState(+value);
                 });
+
+                const burnMoreParam = {
+                    buttonText: "BurnMore",
+                    handleClick: () => {
+                        GRenderingStateMachine.OnBurnMoreButtonPress();
+                    },
+                };
+
+                stateFolder.add(burnMoreParam, "handleClick").name(burnMoreParam.buttonText);
             }
 
             GSceneDescSubmitDebugUI(GDatGUI);
@@ -592,6 +603,9 @@ export function RenderMain() {
         //deprecated fpsElem = document.querySelector("#fps");
         //enableFPSContainer();
     }
+
+    let GbBurnMoreProcessActive = false;
+    let GBurnMoreProcessParameter = 0.0;
 
     //=============================================================================================================================
     //
@@ -623,6 +637,7 @@ export function RenderMain() {
                 OnWindowResize();
                 AllocateMainRenderTargets(gl);
                 SetupBloomPostProcessPass(gl);
+                InitializeSceneStateDescsArr();
                 UpdateSceneStateDescsArr();
                 if (RenderStateMachine.transitionParameter > 1.0) {
                     AssignSceneDescription(GSceneStateDescsArray[RenderStateMachine.currentState]);
@@ -639,7 +654,6 @@ export function RenderMain() {
             //============================
             // 		SCENE STATE UPDATE
             //============================
-            let newState = RenderStateMachine.currentState;
             {
                 if (RenderStateMachine.bCurStateHasSceneDesc) {
                     if (RenderStateMachine.transitionParameter <= 1.0) {
@@ -669,7 +683,7 @@ export function RenderMain() {
                         ConnectWalletButtonController.OnUpdate();
                         if (ConnectWalletButtonController.bSelectedThisFrame) {
                             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                            newState = ERenderingState.Inventory;
+                            GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory);
                         }
                         if (
                             ConnectWalletButtonController.bIntersectionThisFrame &&
@@ -683,7 +697,7 @@ export function RenderMain() {
             }
 
             //Reset Resources when entering Inventory state
-            if (bNewRenderStateThisFrame && newState === ERenderingState.Inventory) {
+            if (bNewRenderStateThisFrame && RenderStateMachine.currentState === ERenderingState.Inventory) {
                 BurningSurface.Reset(gl);
                 //ResetParticleEmitters(gl);
                 const particleResetDelay = 10 * 1000;
@@ -691,7 +705,30 @@ export function RenderMain() {
                     ResetParticleEmitters(gl);
                 }, particleResetDelay);
                 console.log("PARTICLES RESET");
+
+                //BurningSurface.CurrentImageTextureSrc = "";
             }
+
+            if (
+                RenderStateMachine.bBurnMoreActivatedThisFrame &&
+                RenderStateMachine.currentState === ERenderingState.BurningFinished
+            ) {
+                GbBurnMoreProcessActive = true;
+                GBurnMoreProcessParameter = 0.0;
+                //Schedule state change
+                const stateUpdateDelay = 3 * 1000;
+                setTimeout(() => {
+                    GbBurnMoreProcessActive = false;
+                    GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory);
+                }, stateUpdateDelay);
+            }
+
+            if (GbBurnMoreProcessActive) {
+                if (GBurnMoreProcessParameter < 3) {
+                    GBurnMoreProcessParameter += GTime.Delta;
+                }
+            }
+            BurningSurface.AfterBurnEmbersParam = GBurnMoreProcessParameter;
 
             //============================
             // 		AFTER PRELOADER
@@ -701,6 +738,10 @@ export function RenderMain() {
                 BurningSurface.FirePlaneImagePreProcess(gl);
                 BurningSurface.SetToBurned(gl);
                 bInitialImagePreProcessed = true;
+            }
+
+            if (bPreloaderState && bNewRenderStateThisFrame) {
+                BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
             }
 
             if (
@@ -714,11 +755,13 @@ export function RenderMain() {
                     ApplySpotlightControlFromGUI();
                 }
 
+                const srcImage = IMAGE_STORE_SINGLETON_INSTANCE.getImage();
+                const srcImageUrl = IMAGE_STORE_SINGLETON_INSTANCE.getImageUrl();
+                const bUserImagePresent = srcImage && srcImageUrl;
+
                 //Update Iamge Surface with one selected from Inventory
                 if (RenderStateMachine.currentState === ERenderingState.Inventory) {
-                    const srcImage = IMAGE_STORE_SINGLETON_INSTANCE.getImage();
-                    const srcImageUrl = IMAGE_STORE_SINGLETON_INSTANCE.getImageUrl();
-                    if (srcImage && srcImageUrl) {
+                    if (bUserImagePresent) {
                         BurningSurface.UpdatePlaneSurfaceImage(gl, srcImage, srcImageUrl);
                     }
                 }
@@ -860,14 +903,20 @@ export function RenderMain() {
                 //=================================
                 // 		BURNING SURFACE RENDER
                 //=================================
-                if (!bPreloaderState) {
+                if (
+                    !bPreloaderState &&
+                    (bUserImagePresent || RenderStateMachine.currentState !== ERenderingState.Inventory)
+                ) {
                     BurningSurface.VisualizeFirePlane(
                         gl,
                         BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
                         GRenderTargets.SpotlightTexture!,
                     );
 
-                    if (0 && RenderStateMachine.currentState === ERenderingState.BurningFinished) {
+                    if (
+                        GbBurnMoreProcessActive &&
+                        RenderStateMachine.currentState === ERenderingState.BurningFinished
+                    ) {
                         //Render BURNT Stamp
                         BurntStampSprite.RunAnimation();
                         if (BurntStampSprite.AnimationT >= 0.95 && !BurntStampSprite.AnimationFinishedEventProcessed) {
@@ -1017,15 +1066,6 @@ export function RenderMain() {
                     },
                 );
 
-                //Render BURNT Stamp
-                /* {
-                    gl.enable(gl.BLEND);
-                    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-                    gl.blendEquation(gl.FUNC_ADD);
-                    BurntStampSprite.Render(gl);
-                    gl.disable(gl.BLEND);
-                } */
-
                 //read cur fire value
                 {
                     const curFireTextureFramebuffer = BurningSurface.GetCurFireTextureHighestMipFramebuffer();
@@ -1057,7 +1097,7 @@ export function RenderMain() {
                 }); */
             }
 
-            RenderStateMachine.MarkNewStateProcessed();
+            RenderStateMachine.OnFrameEnd();
 
             if (DEBUG_STOP_SIMULATION && GTexturePool.AreAllTexturesLoaded()) {
                 GSettings.bRunSimulation = false;
