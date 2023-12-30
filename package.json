@@ -12,7 +12,7 @@
         "audit": "yarn audit --groups dependencies",
         "start": "craco start",
         "start:prod": "REACT_APP_ENVIRONMENT=production craco start",
-        "build": "REACT_APP_ENVIRONMENT=production craco build",
+        "build": "NODE_OPTIONS=--max_old_space_size=4096 REACT_APP_ENVIRONMENT=production craco build",
         "test": "craco test",
         "format": "prettier --write src/**/*.ts{,x}",
         "lint": "tsc --noEmit && eslint src/**/*.ts{,x}",
