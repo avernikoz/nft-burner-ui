@@ -18,11 +18,11 @@ export class ImageStoreSingleton {
         return this.cache.img.url;
     }
 
-    public setImageUrl(url: string) {
+    public setImageUrl(url: string | null) {
         this.cache.img.url = url;
     }
 
-    public setImage(img: TexImageSource) {
+    public setImage(img: TexImageSource | null) {
         this.cache.img.raw = img;
     }
 
