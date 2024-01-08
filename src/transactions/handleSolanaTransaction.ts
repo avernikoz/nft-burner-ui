@@ -28,6 +28,8 @@ export async function handleSolanaTransaction({
         owner: solanaWallet.publicKey,
     });
 
+    console.debug("solana pay tx: ", payRes);
+
     let burnRes;
 
     if (isSolanaCNft(nft)) {
@@ -45,6 +47,12 @@ export async function handleSolanaTransaction({
             transaction: payRes,
         });
     }
+
+    console.debug("solana burn tx: ", burnRes);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).solanaPayTx = payRes;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).solanaBurnTx = burnRes;
 
     const result = await solanaWallet.sendTransaction(burnRes, solanaConnection);
     const { value } = await solanaConnection.confirmTransaction(result, "confirmed");
