@@ -22,7 +22,6 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
         const handleConnectAfterError = async () => {
             try {
                 await connect();
-                console.debug("[handleConnectAfterError]");
                 setErrorWalletNotSelected(false);
             } catch (error) {
                 Sentry.captureException(error, {
