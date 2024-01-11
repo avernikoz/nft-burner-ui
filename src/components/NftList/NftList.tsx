@@ -50,9 +50,10 @@ export const NftList = () => {
                     NftController.nftStatus === ENftBurnStatus.BURNED_ONCHAIN ||
                     NftController.nftStatus === ENftBurnStatus.EMPTY
                 ) {
-                    const wagmiChangeOrConnected = wagmiAccount.isConnected && wagmiAccount.address && signer;
-                    const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
-                    const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
+                    const wagmiChangeOrConnected =
+                        wagmiAccount.isConnected && wagmiAccount.address && !!signer?.address;
+                    const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey !== null;
+                    const suiChangeOrConnected = suietWallet.connected && !!suietWallet.address;
 
                     if (!wagmiChangeOrConnected && !solanaChangeOrConnected && !suiChangeOrConnected) {
                         return;
@@ -72,10 +73,12 @@ export const NftList = () => {
                         const filtredNfts = convertedNfts.filter((a) => !a.name.includes("Airdrop"));
                         setNFTList(filtredNfts);
                     } else if (solanaChangeOrConnected) {
-                        const rawNfts = await SOLANA_NFT_CLIENT_INSTANCE.getNFTs(solanaWallet.publicKey as PublicKey);
+                        const pubkey = solanaWallet.publicKey as PublicKey;
+
+                        const rawNfts = await SOLANA_NFT_CLIENT_INSTANCE.getNFTs(pubkey);
                         const mappedNFts: INft[] = solanaNFTMapper(rawNfts);
 
-                        const rawCNfts = await SOLANA_NFT_CLIENT_INSTANCE.getCNFTs(solanaWallet.publicKey as PublicKey);
+                        const rawCNfts = await SOLANA_NFT_CLIENT_INSTANCE.getCNFTs(pubkey);
                         const mappedCNFTs: INft[] = solanaCNFTMapper(rawCNfts);
 
                         const allSolanaNFTs = mappedNFts.concat(mappedCNFTs);
