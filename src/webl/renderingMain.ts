@@ -70,6 +70,7 @@ import { GAudioEngine } from "./audioEngine";
 import { LighterTool } from "./tools";
 import { GTexturePool } from "./texturePool";
 import { GReactGLBridgeFunctions } from "./reactglBridge";
+import { GTransitionAnimationsConstants } from "./transitionAnimations";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -590,6 +591,15 @@ export function RenderMain() {
                 };
 
                 stateFolder.add(burnMoreParam, "handleClick").name(burnMoreParam.buttonText);
+
+                const burnSurfaceParam = {
+                    buttonText: "SetToAllBurned",
+                    handleClick: () => {
+                        BurningSurface.SetToBurned(gl);
+                    },
+                };
+
+                stateFolder.add(burnSurfaceParam, "handleClick").name(burnSurfaceParam.buttonText);
             }
 
             GSceneDescSubmitDebugUI(GDatGUI);
@@ -603,9 +613,6 @@ export function RenderMain() {
         //deprecated fpsElem = document.querySelector("#fps");
         //enableFPSContainer();
     }
-
-    let GbBurnMoreProcessActive = false;
-    let GBurnMoreProcessParameter = 0.0;
 
     //=============================================================================================================================
     //
@@ -690,7 +697,7 @@ export function RenderMain() {
                             ConnectWalletButtonController.bIntersectionThisFrame !==
                                 ConnectWalletButtonController.bIntersectionPrevFrame
                         ) {
-                            audioEngine.PlayClickSound();
+                            //audioEngine.PlayClickSound();
                         }
                     }
                 }
@@ -713,22 +720,50 @@ export function RenderMain() {
                 RenderStateMachine.bBurnMoreActivatedThisFrame &&
                 RenderStateMachine.currentState === ERenderingState.BurningFinished
             ) {
-                GbBurnMoreProcessActive = true;
-                GBurnMoreProcessParameter = 0.0;
+                audioEngine.PlayFireExtingSound();
+                GTransitionAnimationsConstants.bBurnMoreTransitionActive = true;
+                GTransitionAnimationsConstants.BurnMoreTransitionParameter = 0.0;
                 //Schedule state change
-                const stateUpdateDelay = 3 * 1000;
                 setTimeout(() => {
-                    GbBurnMoreProcessActive = false;
+                    GTransitionAnimationsConstants.bBurnMoreTransitionActive = false;
                     GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory);
-                }, stateUpdateDelay);
+                }, GTransitionAnimationsConstants.BurnMoreTransitionDuration * 1000);
+                //Schedule swipe animation
+                setTimeout(
+                    () => {
+                        GTransitionAnimationsConstants.bBurnedImageSwipeActive = true;
+                        GTransitionAnimationsConstants.BurnedImageSwipeParameter = 0.0;
+                        GTransitionAnimationsConstants.BurnedImagePosCached = GSceneDesc.FirePlane.PositionOffset.x;
+                        GTransitionAnimationsConstants.StampPosCached = BurntStampSprite.Position.x;
+                    },
+                    GTransitionAnimationsConstants.BurnMoreTransitionDuration * 0.75 * 1000,
+                );
             }
 
-            if (GbBurnMoreProcessActive) {
-                if (GBurnMoreProcessParameter < 3) {
-                    GBurnMoreProcessParameter += GTime.Delta;
+            if (GTransitionAnimationsConstants.bBurnMoreTransitionActive) {
+                if (GTransitionAnimationsConstants.BurnMoreTransitionParameter < 3) {
+                    GTransitionAnimationsConstants.BurnMoreTransitionParameter += GTime.Delta;
                 }
             }
-            BurningSurface.AfterBurnEmbersParam = GBurnMoreProcessParameter;
+
+            if (GTransitionAnimationsConstants.bBurnedImageSwipeActive) {
+                GTransitionAnimationsConstants.BurnedImageSwipeParameter += 2.0 * GTime.Delta;
+                const offset =
+                    MathSmoothstep(0.0, 1.0, GTransitionAnimationsConstants.BurnedImageSwipeParameter) * 10.0;
+                GSceneDesc.FirePlane.PositionOffset.x = GTransitionAnimationsConstants.BurnedImagePosCached + offset;
+                BurntStampSprite.Position.x = GTransitionAnimationsConstants.StampPosCached + offset;
+                if (GTransitionAnimationsConstants.BurnedImageSwipeParameter > 10.0) {
+                    GTransitionAnimationsConstants.bBurnedImageSwipeActive = false;
+                    GSceneDesc.FirePlane.PositionOffset.x = GTransitionAnimationsConstants.BurnedImagePosCached;
+                    BurntStampSprite.Position.x = GTransitionAnimationsConstants.StampPosCached;
+                }
+            }
+
+            BurningSurface.AfterBurnEmbersParam = Math.min(
+                1.0,
+                GTransitionAnimationsConstants.BurnMoreTransitionParameter * 0.75,
+            );
+            //BurningSurface.AfterBurnEmbersParam = 0.9;
 
             //============================
             // 		AFTER PRELOADER
@@ -763,6 +798,7 @@ export function RenderMain() {
                 if (RenderStateMachine.currentState === ERenderingState.Inventory) {
                     if (bUserImagePresent) {
                         BurningSurface.UpdatePlaneSurfaceImage(gl, srcImage, srcImageUrl);
+                        GTransitionAnimationsConstants.BurnMoreTransitionParameter = 0.0;
                     }
                 }
 
@@ -850,7 +886,7 @@ export function RenderMain() {
                     if (GGpuReadData.CurFireValueCPU < 0.05) {
                         GRenderingStateMachine.SetRenderingState(ERenderingState.BurningFinished);
                         GReactGLBridgeFunctions.OnBurningFinished();
-                        //all callback calls here...
+                        audioEngine.PlayIntroSound();
                     }
                 }
 
@@ -914,20 +950,31 @@ export function RenderMain() {
                     );
 
                     if (
-                        GbBurnMoreProcessActive &&
+                        GTransitionAnimationsConstants.bBurnMoreTransitionActive &&
                         RenderStateMachine.currentState === ERenderingState.BurningFinished
                     ) {
-                        //Render BURNT Stamp
-                        BurntStampSprite.RunAnimation();
-                        if (BurntStampSprite.AnimationT >= 0.95 && !BurntStampSprite.AnimationFinishedEventProcessed) {
+                        if (
+                            GTransitionAnimationsConstants.BurnMoreTransitionParameter > 0.5 &&
+                            !BurntStampSprite.AnimationFinishedEventProcessed
+                        ) {
                             audioEngine.PlayStampSound();
                             BurntStampSprite.AnimationFinishedEventProcessed = true;
                         }
-                        gl.enable(gl.BLEND);
-                        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-                        gl.blendEquation(gl.FUNC_ADD);
-                        BurntStampSprite.Render(gl);
-                        gl.disable(gl.BLEND);
+
+                        if (GTransitionAnimationsConstants.BurnMoreTransitionParameter > 1.0) {
+                            //Render BURNT Stamp
+                            BurntStampSprite.RunAnimation();
+
+                            gl.enable(gl.BLEND);
+                            //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                            //gl.blendEquation(gl.FUNC_ADD);
+                            gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+                            gl.blendEquation(gl.MAX);
+                            BurntStampSprite.Render(gl);
+                            gl.disable(gl.BLEND);
+                        }
+                    } else {
+                        BurntStampSprite.ResetAnimation();
                     }
                 }
                 gl.enable(gl.BLEND);

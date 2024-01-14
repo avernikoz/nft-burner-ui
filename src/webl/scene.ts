@@ -211,9 +211,9 @@ export function GSceneDescSubmitDebugUI(datGui: dat.GUI) {
     {
         const folder = datGui.addFolder("SceneDesc");
         //folder.open();
-        /* folder.add(GSceneDesc.FirePlane.PositionOffset, "x", -2, 5).name("PlanePosX").step(0.01);
+        folder.add(GSceneDesc.FirePlane.PositionOffset, "x", -2, 5).name("PlanePosX").step(0.01);
         folder.add(GSceneDesc.FirePlane.PositionOffset, "y", -3, 10).name("PlanePosY").step(0.01);
-        folder.add(GSceneDesc.FirePlane.PositionOffset, "z", -10, 2).name("PlanePosZ").step(0.01); */
+        folder.add(GSceneDesc.FirePlane.PositionOffset, "z", -10, 2).name("PlanePosZ").step(0.01);
         folder.add(GSceneDesc.FirePlane.OrientationEuler, "pitch", -Math.PI, Math.PI).name("pitch").step(0.01);
         folder.add(GSceneDesc.FirePlane.OrientationEuler, "yaw", -Math.PI, Math.PI).name("yaw").step(0.01);
         folder.add(GSceneDesc.FirePlane.OrientationEuler, "roll", -Math.PI, Math.PI).name("roll").step(0.01);

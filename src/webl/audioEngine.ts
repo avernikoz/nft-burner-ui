@@ -79,17 +79,19 @@ export class GAudioEngine {
 
     //Sounds
 
-    private SoundClick: AudioBuffer | null = null;
-
     private SoundIntro: AudioBuffer | null = null;
 
-    private SoundStamp: AudioBuffer | null = null;
+    private SoundStamp: SoundSample = new SoundSample();
+
+    private SoundUIHover: SoundSample = new SoundSample();
+
+    private SoundFireExting: SoundSample = new SoundSample();
+
+    private SoundUIClick: SoundSample = new SoundSample();
 
     private SoundLighterStart: SoundSample = new SoundSample();
 
     private SoundLoopLighterGas: SoundSample = new SoundSample();
-
-    private SoundFireBurst: AudioBuffer | null = null;
 
     private SoundLoopFlame: SoundSample = new SoundSample();
 
@@ -122,10 +124,15 @@ export class GAudioEngine {
 
     async LoadSoundsAsync() {
         if (this.Context && this.MasterGain) {
-            this.SoundClick = await LoadAudioBufferAsync(this.Context, "assets/audio/bassShot.mp3");
-            this.SoundIntro = await LoadAudioBufferAsync(this.Context, "assets/audio/intro.mp3");
-            this.SoundStamp = await LoadAudioBufferAsync(this.Context, "assets/audio/stamp.mp3");
-            this.SoundFireBurst = await LoadAudioBufferAsync(this.Context, "assets/audio/fireBurst2.mp3");
+            this.SoundUIHover.Init(this.Context, "assets/audio/bassShotFade.mp3", this.MasterGain, 0.5);
+            this.SoundUIClick.Init(this.Context, "assets/audio/mhFesel.mp3", this.MasterGain, 0.5);
+            //this.SoundUIClick.Init(this.Context, "assets/audio/tunedOneShot.mp3", this.MasterGain, 0.5);
+
+            this.SoundFireExting.Init(this.Context, "assets/audio/afterBurnExting.mp3", this.MasterGain, 0.5);
+
+            this.SoundStamp.Init(this.Context, "assets/audio/magStamp.mp3", this.MasterGain, 1.1);
+
+            this.SoundIntro = await LoadAudioBufferAsync(this.Context, "assets/audio/mhIntro1.mp3");
 
             this.SoundLighterStart.Init(this.Context, "assets/audio/lighterStart.mp3", this.MasterGain);
 
@@ -153,24 +160,24 @@ export class GAudioEngine {
         }
     }
 
-    PlayClickSound() {
-        if (!this.isSoundEnabled) {
-            return;
+    PlayUIHoverSound() {
+        //if (!!localStorage.getItem("isBurnedNFTAtLeastOnce"))
+        {
+            this.SoundUIHover.Play(this.Context!);
         }
+    }
 
-        if (this.Context != null) {
-            this.SourceCurrent = this.Context.createBufferSource();
-            if (this.SoundClick) {
-                this.SourceCurrent.buffer = this.SoundClick;
-                this.SourceCurrent.connect(this.Context.destination);
-                this.SourceCurrent.start();
-            }
+    PlayUIClickSound() {
+        //if (!!localStorage.getItem("isBurnedNFTAtLeastOnce"))
+        {
+            this.SoundUIClick.Play(this.Context!);
+        }
+    }
 
-            /* const oscillator = this.audioContext.createOscillator();
-            oscillator.frequency.value = 140;
-            oscillator.connect(this.audioContext.destination);
-            oscillator.start();
-            oscillator.stop(this.audioContext.currentTime + 0.1); */
+    PlayFireExtingSound() {
+        //if (!!localStorage.getItem("isBurnedNFTAtLeastOnce"))
+        {
+            this.SoundFireExting.Play(this.Context!);
         }
     }
 
@@ -179,7 +186,7 @@ export class GAudioEngine {
     }
 
     PlayStampSound() {
-        this.PlaySoundBuffer(this.SoundStamp);
+        this.SoundStamp.Play(this.Context!);
     }
 
     PlayLighterStartSound() {

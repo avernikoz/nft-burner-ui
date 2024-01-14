@@ -651,7 +651,7 @@ export function GetParticleRenderInstancedVS(
   
 				//translate
 				vec2 translation = inPosition;
-				translation += FirePlanePositionOffset.xy;
+				//translation += FirePlanePositionOffset.xy;
 				translation -= CameraDesc.xy;
 				translation.xy *= CameraDesc.w;
 				translation /= kSizeScale;

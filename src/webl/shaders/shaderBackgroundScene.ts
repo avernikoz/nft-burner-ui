@@ -1212,6 +1212,10 @@ export function GetShaderSourceGenericSpriteRenderPS() {
 	layout(location = 0) out vec4 outColor;
 
 	uniform sampler2D ColorTexture;
+	uniform sampler2D ColorTextureMasked;
+
+	uniform vec3 ColorScale;
+	uniform float MaskLerpParam;
 
 	in vec2 vsOutTexCoords;
 
@@ -1219,7 +1223,10 @@ export function GetShaderSourceGenericSpriteRenderPS() {
 	{
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
 		vec4 color = texture(ColorTexture, flippedUVs.xy);
-		color.rgb *= 3.f;
+		//color.rgb = color.rgb * vec3(0.0, 1.0, 0.2);
+		vec4 colorMasked = texture(ColorTextureMasked, flippedUVs.xy);
+		color.rgba = mix(color.rgba, colorMasked.rgba, MaskLerpParam);
+		color.rgb *= ColorScale;
 		outColor = color;
 	}`;
 }

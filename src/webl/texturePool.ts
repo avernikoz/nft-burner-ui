@@ -429,7 +429,7 @@ export class GTexturePool {
 
     static SubmitDebugUI(datGui: dat.GUI) {
         const folder = datGui.addFolder("Texture Pool");
-        folder.open();
+        //folder.open();
 
         folder.add(GTexturePool, "SizeMegaBytes").name("SizeMb").step(0.01).listen();
         folder.add(GTexturePool, "SizeMegaBytesGPU").name("SizeMbGPU").step(0.01).listen();

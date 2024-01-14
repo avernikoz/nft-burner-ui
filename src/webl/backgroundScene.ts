@@ -22,7 +22,7 @@ import {
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { GetShaderSourceUISpriteRenderVS } from "./shaders/shaderUI";
 import { GTexturePool } from "./texturePool";
-import { GTime, MathLerp, MathMapToRange } from "./utils";
+import { GTime, MathClamp, MathLerp, MathMapToRange } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -35,6 +35,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
         ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
         ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
+        ColorTextureMasked: gl.getUniformLocation(shaderProgram, "ColorTextureMasked"),
         NormalTexture: gl.getUniformLocation(shaderProgram, "NormalTexture"),
         RoughnessTexture: gl.getUniformLocation(shaderProgram, "RoughnessTexture"),
         SpotlightTexture: gl.getUniformLocation(shaderProgram, "SpotlightTexture"),
@@ -47,6 +48,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         Time: gl.getUniformLocation(shaderProgram, "Time"),
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
         BloomTexture: gl.getUniformLocation(shaderProgram, "BloomTexture"),
+        MaskLerpParam: gl.getUniformLocation(shaderProgram, "MaskLerpParam"),
         //Lights
         FireTextureDownsampled: gl.getUniformLocation(shaderProgram, "FireTextureDownsampled"),
         PointLightsTexture: gl.getUniformLocation(shaderProgram, "PointLightsTexture"),
@@ -56,6 +58,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         Position: gl.getUniformLocation(shaderProgram, "Position"),
         Orientation: gl.getUniformLocation(shaderProgram, "Orientation"),
         Scale: gl.getUniformLocation(shaderProgram, "Scale"),
+        ColorScale: gl.getUniformLocation(shaderProgram, "ColorScale"),
 
         ToolPosition: gl.getUniformLocation(shaderProgram, "ToolPosition"),
         ToolRadius: gl.getUniformLocation(shaderProgram, "ToolRadius"),
@@ -288,6 +291,8 @@ export class RBurntStampVisualizer {
 
     ColorTexture;
 
+    ColorTextureMasked;
+
     Position = { x: 0.0, y: 0.0, z: 0.0 };
 
     Orientation = { pitch: 0.0, yaw: 0.0, roll: 0.0 };
@@ -307,14 +312,14 @@ export class RBurntStampVisualizer {
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
 
+        this.ColorTextureMasked = GTexturePool.CreateTexture(gl, false, "burntSignMasked2");
         this.ColorTexture = GTexturePool.CreateTexture(gl, false, "burntSign2");
 
         const offsetMax = 0.05;
         this.Position.x = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);
         this.Position.y = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);
 
-        const rollOffsetMax = Math.PI / 4;
-        this.FinalOrientation = MathMapToRange(Math.random(), 0.0, 1.0, -rollOffsetMax, rollOffsetMax);
+        this.FinalOrientation = MathMapToRange(Math.random(), 0.0, 1.0, -this.RollOffsetMax, this.RollOffsetMax);
     }
 
     Render(gl: WebGL2RenderingContext) {
@@ -339,16 +344,32 @@ export class RBurntStampVisualizer {
             this.Orientation.yaw,
             this.Orientation.roll,
         );
+        const colorScale = { r: 1.0, g: 1.0, b: 1.0 };
+        if (this.AnimationT >= 1.0) {
+            colorScale.r = 2.0 * 1 + this.ColorGlowT * 0.5;
+            colorScale.g = 1.25;
+        }
+        gl.uniform3f(this.UniformParametersLocationList.ColorScale, colorScale.r, colorScale.g, colorScale.b);
+        gl.uniform1f(
+            this.UniformParametersLocationList.MaskLerpParam,
+            MathClamp(this.ColorGlowT * 0.4 - 1.0, 0.0, 0.99),
+        );
 
         //Textures
         gl.activeTexture(gl.TEXTURE0 + 1);
         gl.bindTexture(gl.TEXTURE_2D, this.ColorTexture);
         gl.uniform1i(this.UniformParametersLocationList.ColorTexture, 1);
 
+        gl.activeTexture(gl.TEXTURE0 + 2);
+        gl.bindTexture(gl.TEXTURE_2D, this.ColorTextureMasked);
+        gl.uniform1i(this.UniformParametersLocationList.ColorTextureMasked, 2);
+
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
     AnimationT = 0.0;
+
+    ColorGlowT = 0.0;
 
     AnimationSpeed = 5.0;
 
@@ -356,19 +377,27 @@ export class RBurntStampVisualizer {
 
     FinalOrientation = 0.0;
 
+    RollOffsetMax = Math.PI / 16;
+
     AnimationFinishedEventProcessed = false;
 
     RunAnimation() {
         if (this.AnimationT <= 1.0) {
             this.Position.z = MathLerp(this.PositionStart, 0.0, this.AnimationT);
-            this.Orientation.roll = MathLerp(
-                this.FinalOrientation - Math.PI / 2,
-                this.FinalOrientation,
-                this.AnimationT,
-            );
+            this.Orientation.roll = MathLerp(this.FinalOrientation - Math.PI, this.FinalOrientation, this.AnimationT);
 
             this.AnimationT += GTime.Delta * this.AnimationSpeed;
+        } else if (this.ColorGlowT <= 5.0) {
+            this.ColorGlowT += GTime.Delta * 7.0;
         }
+    }
+
+    ResetAnimation() {
+        this.AnimationT = 0.0;
+        this.ColorGlowT = 0.0;
+        this.AnimationFinishedEventProcessed = false;
+        this.FinalOrientation = MathMapToRange(Math.random(), 0.0, 1.0, -this.RollOffsetMax, this.RollOffsetMax);
+        this.PositionStart = MathLerp(-5, -10, Math.random());
     }
 }
 
