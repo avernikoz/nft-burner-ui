@@ -511,7 +511,7 @@ export function GetParticleRenderInstancedVS(
 	
 		void main()
 		{
-			float kSizeScale = 1.f + FirePlanePositionOffset.z - CameraDesc.z;
+			float kSizeScale = 1.f + 0.0 - CameraDesc.z;
 
 			const vec2 kInitTranslate = vec2(float(` +
         initialTranslation.x +

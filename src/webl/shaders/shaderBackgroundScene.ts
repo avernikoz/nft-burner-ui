@@ -1087,7 +1087,8 @@ export function GetShaderSourceLightSourceSpriteRenderVS() {
 			}`;
 }
 export function GetShaderSourceLightSourceSpriteRenderPS() {
-    return /* glsl */ `#version 300 es
+    return (
+        /* glsl */ `#version 300 es
 	
 	precision highp float;
 	precision highp sampler2D;
@@ -1153,9 +1154,12 @@ export function GetShaderSourceLightSourceSpriteRenderPS() {
 			light *= m * m;
 		} */
 
-		outSpotlightColor = vec3(min(vec3(1.0), light * 2.0f));
+		outSpotlightColor = vec3(min(vec3(1.0+float(` +
+        Math.random() +
+        /* glsl */ `)), light * 2.0f));
 
-	}`;
+	}`
+    );
 }
 
 export function GetShaderSourceGenericSpriteRenderVS() {
@@ -1203,13 +1207,13 @@ export function GetShaderSourceGenericSpriteRenderVS() {
 	}`;
 }
 
-export function GetShaderSourceGenericSpriteRenderPS() {
+export function GetShaderSourceStampRenderPS() {
     return /* glsl */ `#version 300 es
 	
 	precision highp float;
 	precision highp sampler2D;
 
-	layout(location = 0) out vec4 outColor;
+	layout(location = 0) out vec3 outColor;
 
 	uniform sampler2D ColorTexture;
 	uniform sampler2D ColorTextureMasked;
@@ -1222,11 +1226,35 @@ export function GetShaderSourceGenericSpriteRenderPS() {
 	void main()
 	{
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
-		vec4 color = texture(ColorTexture, flippedUVs.xy);
-		//color.rgb = color.rgb * vec3(0.0, 1.0, 0.2);
-		vec4 colorMasked = texture(ColorTextureMasked, flippedUVs.xy);
-		color.rgba = mix(color.rgba, colorMasked.rgba, MaskLerpParam);
-		color.rgb *= ColorScale;
+		float stampMask = texture(ColorTexture, flippedUVs.xy).r;
+		float stampMaskDirty = texture(ColorTextureMasked, flippedUVs.xy).r;
+		stampMask = mix(stampMask, stampMaskDirty, MaskLerpParam * 0.85);
+		//vec3 color = vec3(1.0, 0.41, 0.0);
+		//vec3 color = vec3(0.0, 1.0, 0.2);
+		vec3 color = ColorScale;
+		color *= stampMask;
+		//color.rgb *= ColorScale;
+		outColor = color;
+	}`;
+}
+
+export function GetShaderSourceGenericSpriteRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec4 outColor;
+
+	uniform sampler2D ColorTexture;
+
+	in vec2 vsOutTexCoords;
+
+	void main()
+	{
+		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+		vec4 color = texture(ColorTexture, flippedUVs.xy).rrrr;
+		color.a *= 0.6;
 		outColor = color;
 	}`;
 }

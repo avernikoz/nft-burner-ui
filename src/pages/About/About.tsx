@@ -11,6 +11,7 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { ReactComponent as DiscordIcon } from "../../assets/svg/social/discord.svg";
 import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
+import { GAudioEngine } from "../../webl/audioEngine";
 
 //=========================
 // 	  MEDIA QUERIES
@@ -286,6 +287,10 @@ export const AboutFirstSection = ({
                         onClick={() => {
                             setAboutPageActive(false);
                             GReactGLBridgeFunctions.OnStartButtonPressed();
+                            GAudioEngine.getInstance().PlayUIClickStartSound();
+                        }}
+                        onMouseEnter={() => {
+                            GAudioEngine.getInstance().PlayUIHoverSound();
                         }}
                     >
                         <StartText

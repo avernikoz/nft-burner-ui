@@ -565,7 +565,6 @@ export function GetShaderSourceCombinerPassPS() {
 		uniform sampler2D SpotlightTexture;
 		uniform sampler2D SmokeNoiseTexture;
 		uniform sampler2D PointLightsTexture;
-		uniform sampler2D LogoImageTexture;
 		uniform sampler2D LensTexture;
 	
 		in vec2 vsOutTexCoords;

@@ -24,6 +24,7 @@ import { useEthersSigner } from "../../components/NftList/variables";
 import { ConnectWalletButton } from "../../components/ConnectWalletButton/ConnectWalletButton";
 import BurnerLogoDesktopIcon from "../../assets/svg/burnerLogoDesktop.svg";
 import BurnerLogoMobileIcon from "../../assets/svg/burnerLogoMobile.svg";
+import { GAudioEngine } from "../../webl/audioEngine";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
     setAboutPageActive,
@@ -150,7 +151,15 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
             {showConnectWalletScreen && (
                 <BodyContainer>
                     <div className="half" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                        <ConnectWalletButton onClick={() => setWalletSelectPopupVisible(true)}>
+                        <ConnectWalletButton
+                            onClick={() => {
+                                GAudioEngine.getInstance().PlayUIClickSound();
+                                setWalletSelectPopupVisible(true);
+                            }}
+                            onMouseEnter={() => {
+                                GAudioEngine.getInstance().PlayUIHoverSound();
+                            }}
+                        >
                             Connect wallet
                         </ConnectWalletButton>
                     </div>

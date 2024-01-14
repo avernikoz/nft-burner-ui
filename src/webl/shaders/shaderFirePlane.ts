@@ -891,6 +891,22 @@ export function GetShaderSourceFireVisualizerPS() {
 			float afterBurnEmbers = 0.0;
 		#else
 			vec3 ashesColor = vec3(texture(AshTexture, vsOutTexCoords.xy).r) * 1.5;
+			{
+				vec2 ashesTintUV = vsOutTexCoords.xy * (0.1 + float(` +
+        Math.random() * 0.6 +
+        /* glsl */ `));
+				ashesTintUV.x += float(` +
+        Math.random() +
+        /* glsl */ `);
+				ashesTintUV.y += float(` +
+        Math.random() +
+        /* glsl */ `);
+				const float ashesTintScale = float(` +
+        Math.random() * 0.4 +
+        /* glsl */ `);
+				ashesColor += ashesTintScale * vec3(0., 0.725,  1.0) * MapToRange(textureLod(NoiseTextureLQ, ashesTintUV, 0.f).r, 0.4, 0.6, 0.0, 1.0);
+			}
+			//OutFirePlane = vec4(ashesColor.rgb, 1); return;
 			const float kRandomOffset = float(` +
         MathLerp(0.01, 0.5, Math.random()) +
         /* glsl */ `);
@@ -999,7 +1015,7 @@ export function GetShaderSourceFireVisualizerPS() {
 			//ashesColor.rgb += min(1.0, luminance * 5.0) * 0.25;
 			//ashesColor += burnedImageTexture;
 			//float curFireLOD = texture(FireTexture, vsOutTexCoords.xy).r;
-			vec3 finalAfterBurnColor = max(ashesColor.rgb, burnedImageTexture * 2.0f * emberScale);
+			vec3 finalAfterBurnColor = max(ashesColor.rgb, burnedImageTexture * 2.0f *emberScale);
 			ashesColor.rgb = mix(finalAfterBurnColor * (1.0 - AfterBurnEmbersParam) * (1.0 - AfterBurnEmbersParam), max(0.75, (1.0 - AfterBurnEmbersParam * 0.75)) * max(ashesColor.rgb, vec3(min(0.9, luminance * 10.0) * 1.0)), AfterBurnEmbersParam);
 		#endif
 		#endif////BURNED IMAGE
@@ -1185,6 +1201,240 @@ export function GetShaderSourceFireVisualizerPS() {
 		#endif
 
 		OutFirePlane = vec4(finalColor.rgb, 1);
+
+	}`
+    );
+}
+
+export function GetShaderSourceFireVisualizerExportPS() {
+    return (
+        /* glsl */ `#version 300 es
+	
+	precision mediump float;
+	precision mediump sampler2D;
+
+	layout(location = 0) out vec4 OutFirePlane;
+
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	uniform vec3 FirePlanePositionOffset;
+	uniform vec3 OrientationEuler;
+	uniform vec3 SpotlightPos;
+
+	uniform vec3 ToolPosition;
+	uniform float ToolRadius;
+	uniform vec3 ToolColor;
+
+	uniform float AfterBurnEmbersParam;
+
+	uniform float NoiseTextureInterpolator;
+	uniform float Time;
+
+	//Shading Constants
+	uniform vec4 RoughnessScaleAddContrastMin;
+	uniform vec2 SpecularIntensityAndPower;
+	uniform float DiffuseIntensity;
+	uniform vec2 MaterialUVOffset;//negative value means flip
+
+	uniform sampler2D FireTexture;
+	uniform sampler2D FuelTexture;
+	uniform sampler2D FlameColorLUT;
+	uniform sampler2D ImageTexture;
+	uniform sampler2D AshTexture;
+	uniform sampler2D AfterBurnTexture;
+	uniform sampler2D NoiseTexture;
+	uniform sampler2D NoiseTextureLQ;
+	uniform sampler2D PointLightsTexture;
+	uniform sampler2D RoughnessTexture;
+	uniform sampler2D SurfaceMaterialColorTexture;
+	uniform sampler2D NormalsTexture;
+	uniform sampler2D SpotlightTexture;
+
+	in vec2 vsOutTexCoords;
+	in vec3 interpolatorWorldSpacePos;
+
+	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	{
+		///Translate to origin, scale by ranges ratio, translate to new position
+		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
+	vec2 MapToRange(vec2 uv, float t0, float t1, float newt0, float newt1)
+	{
+		uv.x = MapToRange(uv.x, t0, t1, newt0, newt1);
+		uv.y = MapToRange(uv.y, t0, t1, newt0, newt1);
+		return uv;
+	}
+
+	float Contrast(float color, float contrast)
+	{
+		return max(float(0.f), contrast * (color - 0.5f) + 0.5f);
+	}
+
+	vec3 DecodeNormalTexture(vec3 normTex, float angleScale)
+	{
+		normTex.y = 1.0f - normTex.y;//Flip Y coord to align with DirectX UV Basis
+		normTex.x = normTex.x * 2.0f - 1.0f;
+	    normTex.y = normTex.y * 2.0f - 1.0f;
+	    normTex.z = normTex.z * 2.0f - 1.0f;
+		normTex.z *= angleScale;
+		normTex.z *= -1.f;
+	    return normalize(normTex);
+	}
+
+	#define PI 3.141592654f
+
+	#define PAPER 0
+	#define WOOD 0
+
+	void main()
+	{
+		const float ImageMixRoughnessScale = 0.75f;
+		const bool bInverseRoughness = false;
+		const float TopSpecFadeScale = 2.0;
+		const float NormalHarshness = float(` +
+        MathLerp(0.5, 1.0, Math.random()) +
+        /* glsl */ `);
+
+		
+		ivec2 SampleCoord = ivec2(gl_FragCoord.xy);
+		
+		vec3 surfaceColor = vec3(0.0);
+
+		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+		highp vec2 ndcSpace = vec2(vsOutTexCoords.x * 2.f - 1.f, vsOutTexCoords.y * 2.f - 1.f);
+		vec4 firePlaneImageTexture = textureLod(ImageTexture, vsOutTexCoords.xy, 0.0).rgba;
+
+			//======================
+			//		AFTER BURN
+			//======================
+
+			vec3 ashesColor = vec3(texture(AshTexture, vsOutTexCoords.xy).r) * 1.5;
+			{
+				vec2 ashesTintUV = vsOutTexCoords.xy * (0.1 + float(` +
+        Math.random() * 0.6 +
+        /* glsl */ `));
+				ashesTintUV.x += float(` +
+        Math.random() +
+        /* glsl */ `);
+				ashesTintUV.y += float(` +
+        Math.random() +
+        /* glsl */ `);
+				const float ashesTintScale = float(` +
+        Math.random() * 0.4 +
+        /* glsl */ `);
+				ashesColor += ashesTintScale * vec3(0., 0.725,  1.0) * MapToRange(textureLod(NoiseTextureLQ, ashesTintUV, 0.f).r, 0.4, 0.6, 0.0, 1.0);
+			}
+			//OutFirePlane = vec4(ashesColor.rgb, 1); return;
+			const float kRandomOffset = float(` +
+        MathLerp(0.01, 0.5, Math.random()) +
+        /* glsl */ `);
+			float afterBurnEmbers = texture(AfterBurnTexture, vsOutTexCoords.xy + vec2(kRandomOffset, 0.0)).r;
+			afterBurnEmbers = afterBurnEmbers * clamp(pow(length(vsOutTexCoords.xy - vec2(0.5) * 1.0f), 1.f), 0.0, 1.0);
+			
+			vec3 embersColor = vec3(afterBurnEmbers, afterBurnEmbers * 0.2, afterBurnEmbers * 0.1);
+			float emberScale = 1.f;
+		#if 1 //NOISE EMBERS SCALE
+			float noiseConst = 0.5;
+		
+			vec3 noiseVec = textureLod(NoiseTextureLQ, vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0093), 0.f).rgb;
+			float t = NoiseTextureInterpolator;
+			if(t < 1.f)
+			{
+				emberScale = mix(noiseVec.x, noiseVec.y, t);
+			}
+			else if(t < 2.f)
+			{
+				emberScale = mix(noiseVec.y, noiseVec.z, t - 1.f);
+			}
+			else
+			{
+				emberScale = mix(noiseVec.z, noiseVec.x, t - 2.f);
+			}
+			emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.25f, 2.f);
+			emberScale *= 1.5;
+			emberScale *= clamp(noiseConst * 1.25, 0.5, 1.25);
+		#endif
+
+			embersColor = embersColor * 15.f * emberScale;
+
+			ashesColor.rgb += embersColor;
+			#if !(PAPER)
+			ashesColor.b += (1.f - emberScale) * 0.05f;
+			#endif
+
+			ashesColor *= 0.75;
+
+			vec3 burnedImageTexture = vec3(0.f);
+		
+			float luminance = firePlaneImageTexture.a;
+			
+			burnedImageTexture = luminance * 10.0 * vec3(1, 0.2, 0.1);
+			vec3 finalAfterBurnColor = max(ashesColor.rgb, burnedImageTexture * 4.0f * max(0.5, emberScale));
+			ashesColor.rgb = mix(finalAfterBurnColor * (1.0 - AfterBurnEmbersParam) * (1.0 - AfterBurnEmbersParam), max(0.75, (1.0 - AfterBurnEmbersParam * 0.75)) * max(ashesColor.rgb, vec3(min(0.9, luminance * 10.0) * 1.0)), clamp(emberScale * 0.5, 0.0, 1.0));
+
+			//Vignette
+			float vignette = 1.f - min(1.f, 0.5 * length(vec2((ndcSpace.x * 1.5), ndcSpace.y * 0.75)));
+			vignette = min(1.f, 0.1 + vignette * 2.0f);
+			vignette *= max(0.75, vsOutTexCoords.y);
+			surfaceColor = ashesColor * vignette;
+
+			const float shadowFadeThres = 0.01;
+			if(vsOutTexCoords.y < shadowFadeThres)
+			{
+				surfaceColor *= MapToRange(vsOutTexCoords.y, shadowFadeThres, 0.0, 1.0, 0.75);
+			}
+
+		#if 1//RECT FADE BUMPY
+			const highp float rectPow = 32.f;
+			highp float rectCircleLength = pow(abs(ndcSpace.x), rectPow) + pow(abs(ndcSpace.y), rectPow);
+			//float rectCircleLength = abs(vsOutTexCoords.x * 2.f - 1.f) + abs(vsOutTexCoords.y * 2.f - 1.f);
+			const float rectCircleFadeStart = 0.8;
+			const float edgeBumpScale = 1.0f;
+			if(rectCircleLength > rectCircleFadeStart)
+			{
+				float f = clamp(1.f - MapToRange(rectCircleLength, rectCircleFadeStart, edgeBumpScale, 0.0, 1.0), 0.0, 1.0);
+				float s = f;
+
+				//surfaceColor *= clamp(s, min(1.0, 0.5 + vsOutTexCoords.y * 0.5), 1.0);
+
+				vec2 bumpsSamplingUV = vsOutTexCoords.xy;
+				bumpsSamplingUV *= 0.23f;
+
+				bumpsSamplingUV += vec2(0.13, 0.15); //===================================================================!!!TODO: Randomise on boot=====!!!
+
+				float bumpNoise = texture(NoiseTextureLQ, bumpsSamplingUV.xy).r;
+				bumpNoise = min(1.f, Contrast(bumpNoise * 1.0, 2.5f));
+				s = min(1.0, mix(bumpNoise, 1.0, s));
+				surfaceColor *= s * s;
+				//urfaceColor.r = s * s;
+
+				s = f;
+				bumpsSamplingUV = vsOutTexCoords.xy;
+				bumpsSamplingUV *= 2.73f;
+				bumpsSamplingUV += vec2(0.2, 0.3); //===================================================================!!!TODO: Randomise on boot=====!!!
+				bumpNoise = texture(NoiseTextureLQ, bumpsSamplingUV.xy).r;
+				bumpNoise = min(1.f, Contrast(bumpNoise * (1.25 + vsOutTexCoords.y * 0.25 + (1.0 - abs(ndcSpace.x)) * 0.5), 5.0f));
+				s = clamp(mix(bumpNoise, 1.0, s), 0.0, 1.0);
+				surfaceColor *= s * s;
+				//surfaceColor.r = s;
+			}
+			if(rectCircleLength > 1.25)
+			{
+				surfaceColor *= 0.25f;
+			}
+		#elif 1 //RECT FADE SIMPLE
+			const highp float rectPow = 4.f;
+			highp float rectCircleLength = pow((ndcSpace.x), rectPow) + pow((ndcSpace.y), rectPow);
+			const float rectCircleFadeStart = 1.8;
+			if(rectCircleLength > rectCircleFadeStart)
+			{
+				float f = /* clamp */(1.f - MapToRange(rectCircleLength, rectCircleFadeStart, 2.0, 0.0, 1.0)/* , -1.0, 1.0 */);
+				surfaceColor *= (f * f);
+				//surfaceColor.r = f * f;
+			}
+		#endif//RECT FADE
+
+		OutFirePlane = vec4(surfaceColor.rgb * 0.5, 1);
 
 	}`
     );

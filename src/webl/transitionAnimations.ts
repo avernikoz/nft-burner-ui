@@ -10,6 +10,4 @@ export class GTransitionAnimationsConstants {
     static BurnedImageSwipeParameter = 0.0;
 
     static BurnedImagePosCached = 0.0;
-
-    static StampPosCached = 0.0;
 }

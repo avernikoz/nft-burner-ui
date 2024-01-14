@@ -1,3 +1,4 @@
+import { GAudioEngine } from "./audioEngine";
 import { GTime } from "./utils";
 
 export enum ERenderingState {
@@ -102,6 +103,10 @@ export class GRenderingStateMachine {
             this.TransitionParameter = bImmeadiateTransition ? 1.0 : 0.0;
 
             this.bNewStateWasProcessed = false;
+
+            if (this.bCurStateHasSceneDesc) {
+                GAudioEngine.getInstance().PlayTransitionSound();
+            }
         }
     }
 

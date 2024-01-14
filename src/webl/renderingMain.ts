@@ -600,6 +600,15 @@ export function RenderMain() {
                 };
 
                 stateFolder.add(burnSurfaceParam, "handleClick").name(burnSurfaceParam.buttonText);
+
+                const exportParam = {
+                    buttonText: "Export",
+                    handleClick: () => {
+                        BurningSurface.ExportFirePlane(gl, BurntStampSprite);
+                    },
+                };
+
+                stateFolder.add(exportParam, "handleClick").name(exportParam.buttonText);
             }
 
             GSceneDescSubmitDebugUI(GDatGUI);
@@ -608,6 +617,7 @@ export function RenderMain() {
             BackGroundRenderPass.SubmitDebugUI(GDatGUI);
             CurTool.SubmitDebugUI(GDatGUI);
             GTexturePool.SubmitDebugUI(GDatGUI);
+            BurntStampSprite.SubmitDebugUI(GDatGUI);
         }
 
         //deprecated fpsElem = document.querySelector("#fps");
@@ -734,7 +744,6 @@ export function RenderMain() {
                         GTransitionAnimationsConstants.bBurnedImageSwipeActive = true;
                         GTransitionAnimationsConstants.BurnedImageSwipeParameter = 0.0;
                         GTransitionAnimationsConstants.BurnedImagePosCached = GSceneDesc.FirePlane.PositionOffset.x;
-                        GTransitionAnimationsConstants.StampPosCached = BurntStampSprite.Position.x;
                     },
                     GTransitionAnimationsConstants.BurnMoreTransitionDuration * 0.75 * 1000,
                 );
@@ -751,11 +760,9 @@ export function RenderMain() {
                 const offset =
                     MathSmoothstep(0.0, 1.0, GTransitionAnimationsConstants.BurnedImageSwipeParameter) * 10.0;
                 GSceneDesc.FirePlane.PositionOffset.x = GTransitionAnimationsConstants.BurnedImagePosCached + offset;
-                BurntStampSprite.Position.x = GTransitionAnimationsConstants.StampPosCached + offset;
                 if (GTransitionAnimationsConstants.BurnedImageSwipeParameter > 10.0) {
                     GTransitionAnimationsConstants.bBurnedImageSwipeActive = false;
                     GSceneDesc.FirePlane.PositionOffset.x = GTransitionAnimationsConstants.BurnedImagePosCached;
-                    BurntStampSprite.Position.x = GTransitionAnimationsConstants.StampPosCached;
                 }
             }
 
@@ -763,7 +770,7 @@ export function RenderMain() {
                 1.0,
                 GTransitionAnimationsConstants.BurnMoreTransitionParameter * 0.75,
             );
-            //BurningSurface.AfterBurnEmbersParam = 0.9;
+            //BurningSurface.AfterBurnEmbersParam = 1.0;
 
             //============================
             // 		AFTER PRELOADER
@@ -837,10 +844,13 @@ export function RenderMain() {
                 if (RenderStateMachine.currentState === ERenderingState.Inventory) {
                     //Animate Burning Surface
                     FirePlaneAnimationController.UpdateSelf();
-                    GSceneDesc.FirePlane.PositionOffset = FirePlaneAnimationController.UpdateObjectPosition(
+                    const updatedPos = FirePlaneAnimationController.UpdateObjectPosition(
                         GSceneDesc.FirePlane.PositionOffset,
                         0.25,
                     );
+                    GSceneDesc.FirePlane.PositionOffset.x = updatedPos.x;
+                    GSceneDesc.FirePlane.PositionOffset.y = updatedPos.y;
+                    GSceneDesc.FirePlane.PositionOffset.z = updatedPos.z;
 
                     let t = FirePlaneAnimationController.YawInterpolationParameter;
                     const yawRange = { min: -Math.PI / 4, max: 0.0 };
@@ -857,7 +867,9 @@ export function RenderMain() {
                     //GSceneDesc.FirePlane.OrientationEuler.pitch = MathLerp(pitchRange.min, pitchRange.max, t);
                     GSceneDesc.FirePlane.OrientationEuler.pitch = 0.0;
                 } else {
-                    GSceneDesc.FirePlane.PositionOffset.z = 0.0;
+                    //GSceneDesc.FirePlane.PositionOffset.x = 0.0;
+                    GSceneDesc.FirePlane.PositionOffset.y = 0.0;
+                    //GSceneDesc.FirePlane.PositionOffset.z = 0.0;
                     GSceneDesc.FirePlane.OrientationEuler.pitch = 0.0;
                     GSceneDesc.FirePlane.OrientationEuler.yaw = 0.0;
                     GSceneDesc.FirePlane.OrientationEuler.roll = 0.0;
@@ -949,12 +961,19 @@ export function RenderMain() {
                         GRenderTargets.SpotlightTexture!,
                     );
 
+                    /* gl.enable(gl.BLEND);
+                    gl.blendFunc(gl.ONE, gl.ONE);
+                    gl.blendEquation(gl.MAX);
+                    BurntStampSprite.SetStateAnimationFinished();
+                    BurntStampSprite.Render(gl);
+                    gl.disable(gl.BLEND); */
+
                     if (
                         GTransitionAnimationsConstants.bBurnMoreTransitionActive &&
                         RenderStateMachine.currentState === ERenderingState.BurningFinished
                     ) {
                         if (
-                            GTransitionAnimationsConstants.BurnMoreTransitionParameter > 0.5 &&
+                            GTransitionAnimationsConstants.BurnMoreTransitionParameter > 0.65 &&
                             !BurntStampSprite.AnimationFinishedEventProcessed
                         ) {
                             audioEngine.PlayStampSound();
@@ -966,15 +985,15 @@ export function RenderMain() {
                             BurntStampSprite.RunAnimation();
 
                             gl.enable(gl.BLEND);
-                            //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-                            //gl.blendEquation(gl.FUNC_ADD);
-                            gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+                            gl.blendFunc(gl.ONE, gl.ONE);
                             gl.blendEquation(gl.MAX);
                             BurntStampSprite.Render(gl);
                             gl.disable(gl.BLEND);
                         }
                     } else {
-                        BurntStampSprite.ResetAnimation();
+                        if (BurntStampSprite.AnimationT > 0) {
+                            BurntStampSprite.ResetAnimation();
+                        }
                     }
                 }
                 gl.enable(gl.BLEND);
@@ -1138,10 +1157,6 @@ export function RenderMain() {
 
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 gl.clear(gl.COLOR_BUFFER_BIT);
-
-                /* StateControllers.forEach((controller) => {
-                    SpatialControlUIVisualizer.Render(gl, controller);
-                }); */
             }
 
             RenderStateMachine.OnFrameEnd();

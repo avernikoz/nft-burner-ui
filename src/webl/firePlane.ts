@@ -1,4 +1,4 @@
-import { CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
+import { BindRenderTarget, CreateFramebufferWithAttachment, CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
@@ -9,12 +9,14 @@ import {
     ShaderSourceFireUpdatePS,
     GetShaderSourceFireVisualizerPS,
     GetShaderSourceFirePlanePreProcess,
+    GetShaderSourceFireVisualizerExportPS,
 } from "./shaders/shaderFirePlane";
 import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
 import { GUserInputDesc } from "./input";
 import { Vector2 } from "./types";
 import { GTime, MathClamp, MathGetVectorLength, MathVector2Normalize } from "./utils";
 import { GTexturePool } from "./texturePool";
+import { RBurntStampVisualizer } from "./backgroundScene";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -151,9 +153,13 @@ export class RFirePlanePass {
 
     VisualizerShaderProgram: WebGLProgram;
 
+    VisualizerExportShaderProgram: WebGLProgram;
+
     ImagePreProcessShaderProgram: WebGLProgram;
 
     public VisualizerUniformParametersLocationList;
+
+    public VisualizerExportUniformParametersLocationList;
 
     VisualizerFlameColorLUT: WebGLTexture;
 
@@ -180,6 +186,11 @@ export class RFirePlanePass {
     ProcessedImageTextureSize: number;
 
     AfterBurnEmbersParam = 0;
+
+    //Export
+    BurntSurfaceExportTexture;
+
+    BurntSurfaceExportTextureFBO;
 
     //Paper
 
@@ -421,6 +432,30 @@ export class RFirePlanePass {
         }
         this.MaterialUVOffset.x = Math.random() * matOffsetSign.x;
         this.MaterialUVOffset.y = Math.random() * matOffsetSign.y;
+
+        //================================================ Export Shader
+
+        this.BurntSurfaceExportTexture = CreateTextureRT(
+            gl,
+            { x: this.ProcessedImageTextureSize, y: this.ProcessedImageTextureSize },
+            gl.RGBA8,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+        );
+        this.BurntSurfaceExportTextureFBO = CreateFramebufferWithAttachment(gl, this.BurntSurfaceExportTexture!);
+
+        //Create Shader Program
+        this.VisualizerExportShaderProgram = CreateShaderProgramVSPS(
+            gl,
+            ShaderSourceFullscreenPassVS,
+            GetShaderSourceFireVisualizerExportPS(),
+        );
+
+        //Shader Parameters
+        this.VisualizerExportUniformParametersLocationList = GetUniformParametersList(
+            gl,
+            this.VisualizerExportShaderProgram,
+        );
     }
 
     SubmitDebugUI(datGui: dat.GUI) {
@@ -707,6 +742,209 @@ export class RFirePlanePass {
         gl.uniform1i(this.VisualizerUniformParametersLocationList.SpotlightTexture, 14);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    ExportFirePlane(gl: WebGL2RenderingContext, BurntStampSprite: RBurntStampVisualizer) {
+        BindRenderTarget(
+            gl,
+            this.BurntSurfaceExportTextureFBO!,
+            { x: this.ProcessedImageTextureSize, y: this.ProcessedImageTextureSize },
+            true,
+        );
+
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.VisualizerExportShaderProgram);
+
+        //Constants
+        gl.uniform4f(
+            this.VisualizerExportUniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.VisualizerExportUniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform3f(
+            this.VisualizerExportUniformParametersLocationList.FirePlanePositionOffset,
+            GSceneDesc.FirePlane.PositionOffset.x,
+            GSceneDesc.FirePlane.PositionOffset.y,
+            GSceneDesc.FirePlane.PositionOffset.z,
+        );
+        gl.uniform3f(
+            this.VisualizerExportUniformParametersLocationList.OrientationEuler,
+            GSceneDesc.FirePlane.OrientationEuler.pitch,
+            GSceneDesc.FirePlane.OrientationEuler.yaw,
+            GSceneDesc.FirePlane.OrientationEuler.roll,
+        );
+
+        gl.uniform1f(
+            this.VisualizerExportUniformParametersLocationList.NoiseTextureInterpolator,
+            this.NoiseTextureInterpolator,
+        );
+        gl.uniform1f(
+            this.VisualizerExportUniformParametersLocationList.AfterBurnEmbersParam,
+            this.AfterBurnEmbersParam,
+        );
+
+        gl.uniform1f(this.VisualizerExportUniformParametersLocationList.Time, GTime.Cur);
+
+        gl.uniform3f(
+            this.VisualizerExportUniformParametersLocationList.SpotlightPos,
+            GSceneDesc.Spotlight.Position.x,
+            GSceneDesc.Spotlight.Position.y,
+            GSceneDesc.Spotlight.Position.z,
+        );
+        gl.uniform4f(
+            this.VisualizerExportUniformParametersLocationList.RoughnessScaleAddContrastMin,
+            this.RoughnessParams.Scale,
+            this.RoughnessParams.Add,
+            this.RoughnessParams.Contrast,
+            this.RoughnessParams.Min,
+        );
+
+        //Tool
+        gl.uniform3f(
+            this.VisualizerExportUniformParametersLocationList.ToolPosition,
+            GSceneDesc.Tool.Position.x,
+            GSceneDesc.Tool.Position.y,
+            GSceneDesc.Tool.Position.z,
+        );
+        gl.uniform1f(this.VisualizerExportUniformParametersLocationList.ToolRadius, GSceneDesc.Tool.Radius);
+        gl.uniform3f(
+            this.VisualizerExportUniformParametersLocationList.ToolColor,
+            GSceneDesc.Tool.Color.r,
+            GSceneDesc.Tool.Color.g,
+            GSceneDesc.Tool.Color.b,
+        );
+
+        gl.uniform2f(
+            this.VisualizerExportUniformParametersLocationList.SpecularIntensityAndPower,
+            this.ShadingParams.SpecularIntensity,
+            this.ShadingParams.SpecularPower,
+        );
+        gl.uniform2f(
+            this.VisualizerExportUniformParametersLocationList.MaterialUVOffset,
+            this.MaterialUVOffset.x,
+            this.MaterialUVOffset.y,
+        );
+
+        gl.uniform1f(
+            this.VisualizerExportUniformParametersLocationList.DiffuseIntensity,
+            this.ShadingParams.DiffuseIntensity,
+        );
+
+        //Textures
+        const curSourceIndex = this.CurrentFireTextureIndex;
+        gl.activeTexture(gl.TEXTURE0 + 2);
+        gl.bindTexture(gl.TEXTURE_2D, this.FireTexture[curSourceIndex]);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.FireTexture, 2);
+
+        gl.activeTexture(gl.TEXTURE0 + 3);
+        gl.bindTexture(gl.TEXTURE_2D, this.FuelTexture[this.CurrentFuelTextureIndex]);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.FuelTexture, 3);
+
+        gl.activeTexture(gl.TEXTURE0 + 4);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerFlameColorLUT);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.FlameColorLUT, 4);
+
+        gl.activeTexture(gl.TEXTURE0 + 5);
+        //gl.bindTexture(gl.TEXTURE_2D, this.VisualizerImageTexture);
+        gl.bindTexture(gl.TEXTURE_2D, this.ProcessedImageTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.ImageTexture, 5);
+
+        gl.activeTexture(gl.TEXTURE0 + 6);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerAshTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.AshTexture, 6);
+
+        gl.activeTexture(gl.TEXTURE0 + 7);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerAfterBurnNoiseTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.AfterBurnTexture, 7);
+
+        gl.activeTexture(gl.TEXTURE0 + 8);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerFirePlaneNoiseTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.NoiseTexture, 8);
+
+        gl.activeTexture(gl.TEXTURE0 + 9);
+        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTextureLQ);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.NoiseTextureLQ, 9);
+
+        gl.activeTexture(gl.TEXTURE0 + 11);
+        gl.bindTexture(gl.TEXTURE_2D, this.RoughnessTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.RoughnessTexture, 11);
+
+        gl.activeTexture(gl.TEXTURE0 + 12);
+        gl.bindTexture(gl.TEXTURE_2D, this.SurfaceMaterialColorTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.SurfaceMaterialColorTexture, 12);
+
+        gl.activeTexture(gl.TEXTURE0 + 13);
+        gl.bindTexture(gl.TEXTURE_2D, this.NormalsTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.NormalsTexture, 13);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.blendEquation(gl.FUNC_ADD);
+        BurntStampSprite.RenderExport(gl);
+        gl.disable(gl.BLEND);
+
+        //////////////////
+        //Read Results
+        //////////////////
+
+        const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)!;
+        gl.flush();
+        const res = gl.clientWaitSync(sync, 0, 0);
+        if (res === gl.WAIT_FAILED || res === gl.TIMEOUT_EXPIRED) {
+            console.error("FAILED TO EXPORT BURNT IMAGE");
+        }
+        gl.deleteSync(sync);
+
+        const pixels = new Uint8Array(this.ProcessedImageTextureSize * this.ProcessedImageTextureSize * 4);
+        gl.readPixels(
+            0,
+            0,
+            this.ProcessedImageTextureSize,
+            this.ProcessedImageTextureSize,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            pixels,
+        );
+
+        // Step 2: Create a data URL
+        const canvas = document.createElement("canvas");
+        canvas.width = this.ProcessedImageTextureSize;
+        canvas.height = this.ProcessedImageTextureSize;
+        const ctx = canvas.getContext("2d")!;
+
+        const imageData = ctx.createImageData(canvas.width, canvas.height);
+        //imageData.data.set(pixels);
+        // Flip the image vertically
+        for (let y = 0; y < canvas.height; y++) {
+            for (let x = 0; x < canvas.width; x++) {
+                const index = (y * canvas.width + x) * 4;
+                const flippedIndex = ((canvas.height - 1 - y) * canvas.width + x) * 4;
+                imageData.data.set(pixels.subarray(index, index + 4), flippedIndex);
+            }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        const dataUrl = canvas.toDataURL("image/jpeg");
+
+        // Step 3: Create a link and trigger download
+        const downloadLink = document.createElement("a");
+        downloadLink.href = dataUrl;
+        downloadLink.download = "texture.jpg";
+
+        // Append the link to the document (optional)
+        document.body.appendChild(downloadLink);
+
+        // Trigger a click on the link
+        downloadLink.click();
+
+        // Remove the link from the document (optional)
+        document.body.removeChild(downloadLink);
     }
 
     GetCurFireTexture() {
