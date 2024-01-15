@@ -7,9 +7,9 @@ import React, { JSX, useContext, useState } from "react";
 import { StyledListBox } from "./RainbowWalletList.styled";
 import { Connector, useConnect } from "wagmi";
 import { IAccount, IWallet } from "../../types";
-import { fetchBalance } from "@wagmi/core";
 import RainbowItemTemplate from "./RainbowItemTemplate";
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
+import { getEVMNetworkName } from "../../../../utils/getEVMNetworkName";
 
 function RainbowWalletList(props: {
     connect: (account: IAccount) => void;
@@ -55,13 +55,14 @@ function RainbowWalletList(props: {
                 await wallet.wallet.switchChain(props.chain);
             }
             const address = await wallet.wallet.getAccount();
-            const balance = await fetchBalance({
-                address,
-                chainId: activeChain,
-            });
+            const networkName = getEVMNetworkName(activeChain);
+            if (!networkName) {
+                throw new Error("Unsuported network type");
+            }
+
             props.connect({
                 id: address,
-                balance: balance.formatted.substring(0, 5) + " " + balance.symbol,
+                network: networkName,
                 walletIcon: selectedOption?.logo,
             });
             props.setActiveConnector(wallet.wallet);

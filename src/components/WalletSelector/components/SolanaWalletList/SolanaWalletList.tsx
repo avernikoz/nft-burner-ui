@@ -1,14 +1,13 @@
 import * as Sentry from "@sentry/react";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { Wallet, WalletNotSelectedError, useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
-import { ethers } from "ethers";
 import { ListBoxChangeEvent } from "primereact/listbox";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import { IAccount } from "../../types";
 import { StyledListBox } from "../RainbowWalletList/RainbowWalletList.styled";
 import SolanaItemTemplate from "./SolanaItemTemplate";
+import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 
 function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState<Wallet | null>(null);
@@ -47,21 +46,11 @@ function SolanaWalletList(props: { connect: (account: IAccount) => void }): JSX.
 
     useEffect(() => {
         if (connected && publicKey) {
-            connection.getBalance(new PublicKey(publicKey)).then(
-                (balance) => {
-                    const balanceInSOL = ethers.formatUnits(balance, 9).substring(0, 5);
-                    props.connect({
-                        id: publicKey?.toString(),
-                        balance: balanceInSOL + " SOL",
-                        walletIcon: wallet?.adapter.icon,
-                    });
-                },
-                (err) => {
-                    console.error(err);
-                    disconnect();
-                    toastController?.showError("Failed to fetch balances: " + err.message);
-                },
-            );
+            props.connect({
+                id: publicKey?.toString(),
+                network: ALLOWED_NETWORKS.Solana,
+                walletIcon: wallet?.adapter.icon,
+            });
         }
     }, [connected, connection, disconnect, props, publicKey, toastController, wallet?.adapter.icon]);
 

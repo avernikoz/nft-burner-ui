@@ -4,19 +4,20 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { MenuItem } from "primereact/menuitem";
 import { Menu } from "primereact/menu";
 import { ButtonContainer, ProfileLabel, StyledMenu, StyledPanelMenu, WalletButton } from "./WalletSelector.styled";
-import { useWallet as suietUseWallet, useAccountBalance } from "@suiet/wallet-kit";
-import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
+import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
-import { ConnectorData, disconnect as wagmiDisconnect, fetchBalance } from "@wagmi/core";
+import { ConnectorData, disconnect as wagmiDisconnect } from "@wagmi/core";
 
 import { IAccount, IMenuConnectionItem } from "./types";
-import { ethers } from "ethers";
 import { createMenuItems } from "./variables";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import { NftContext } from "../NftProvider/NftProvider";
 import { ENftBurnStatus } from "../../utils/types";
 import { NftSelectorDialog } from "./components/NetworkSelectorDialog/NetworkSelectorDialog";
+import { useWalletBalance } from "../../hooks/useWalletBalance";
+import { getEVMNetworkName } from "../../utils/getEVMNetworkName";
 
 export const WalletSelector = ({
     hideUI,
@@ -33,12 +34,11 @@ export const WalletSelector = ({
     const profileMenu = useRef<Menu>(null);
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();
-    const solanaConnection = useConnection();
     const wagmiAccount = useWagmiAccount();
     const toastController = useContext(ToastContext);
     const lastEvmIndex = 3;
-    const suiAccount = useAccountBalance();
     const NftController = useContext(NftContext);
+    const { data: walletBalanceData } = useWalletBalance({ address: account?.id, network: account?.network });
 
     const connect = useCallback(
         (acc: IAccount) => {
@@ -50,24 +50,6 @@ export const WalletSelector = ({
         },
         [activeIndex, setWalletSelectPopupVisible],
     );
-
-    useEffect(() => {
-        if (suiAccount.balance === undefined) {
-            return;
-        }
-        if (suietWallet.connected && !suiAccount.loading && suiAccount.error == null) {
-            const balanceInSUI = ethers.formatUnits(suiAccount.balance, 9).substring(0, 5);
-            connect({
-                id: suietWallet.account?.address,
-                balance: balanceInSUI + " SUI",
-            });
-        }
-        if (suiAccount.error) {
-            console.error(suiAccount.error);
-            toastController?.showError("Failed to fetch balances: " + suiAccount.error);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [suietWallet.connected, suiAccount.balance, suietWallet.account?.address, suiAccount.loading, suiAccount.error]);
 
     const disconnect = useCallback(async () => {
         if (wagmiAccount.isConnected) {
@@ -137,14 +119,15 @@ export const WalletSelector = ({
                         if (!address) {
                             return;
                         }
-                        const balance = await fetchBalance({
-                            address,
-                            chainId,
-                        });
+
+                        const networkName = getEVMNetworkName(chainId);
+                        if (!networkName) {
+                            throw new Error("Unsuported network type");
+                        }
 
                         connect({
                             id: address,
-                            balance: balance.formatted.substring(0, 5) + " " + balance.symbol,
+                            network: networkName,
                         });
                     } else {
                         disconnect();
@@ -223,40 +206,16 @@ export const WalletSelector = ({
         }
     }, [activeIndex, tabItems, items]);
 
-    useEffect(() => {
-        if (solanaWallet.publicKey && account !== null) {
-            solanaConnection.connection.getBalance(solanaWallet.publicKey).then(
-                (balance) => {
-                    const balanceInSOL = ethers.formatUnits(balance, 9).substring(0, 5);
-                    connect({
-                        id: solanaWallet.publicKey?.toString(),
-                        balance: balanceInSOL + " SOL",
-                        walletIcon: account?.walletIcon,
-                    });
-                },
-
-                (err) => {
-                    console.error(err);
-                    solanaWallet.disconnect();
-                    toastController?.showError("Failed to fetch balance: " + err.message);
-                },
-            );
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [solanaWallet.publicKey?.toString()]);
-
     const accountChainListener = useCallback(
         (data: ConnectorData) => {
             if (data.account) {
-                fetchBalance({
-                    address: data.account,
-                    formatUnits: "ether",
-                }).then((balance) => {
-                    connect({
-                        id: data.account,
-                        balance: balance.formatted.substring(0, 5) + " " + balance.symbol,
-                        walletIcon: account?.walletIcon,
-                    });
+                if (!account?.network) {
+                    throw new Error("Network is not choosen in the wallet");
+                }
+                connect({
+                    id: data.account,
+                    network: account?.network,
+                    walletIcon: account?.walletIcon,
                 });
             }
             if (data.chain) {
@@ -269,7 +228,7 @@ export const WalletSelector = ({
                 switchChain(index, data.chain.id);
             }
         },
-        [account?.walletIcon, connect, items, switchChain, toastController],
+        [account?.network, account?.walletIcon, connect, items, switchChain, toastController],
     );
 
     useEffect(() => {
@@ -319,7 +278,13 @@ export const WalletSelector = ({
                                 )} */}
                             {/* </div> */}
                             <div className="content">
-                                <span className="balance">{account.balance}</span>
+                                {walletBalanceData && walletBalanceData.balanceFormatted !== null ? (
+                                    <span className="balance">
+                                        {walletBalanceData.balanceFormatted} {walletBalanceData.balanceTokenSymbol}
+                                    </span>
+                                ) : (
+                                    <span className="balance">-</span>
+                                )}
                                 {/* <span className="chain-id">{account.id}</span> */}
                             </div>
                         </ProfileLabel>
