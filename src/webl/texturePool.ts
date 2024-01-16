@@ -1,3 +1,5 @@
+import { APP_ENVIRONMENT } from "../config/config";
+
 const KTX_HEADER_LEN = 12 + 13 * 4; // identifier + header elements (not including key value meta-data pairs)
 class KTXMetaData {
     bValid = false;
@@ -117,7 +119,9 @@ export class GTexturePool {
 
     static AreAllTexturesLoaded(): boolean {
         if (GTexturePool.NumPendingTextures > 0) {
-            console.log("Num Pending Textures" + GTexturePool.NumPendingTextures);
+            if (APP_ENVIRONMENT === "development") {
+                console.log("Num Pending Textures: " + GTexturePool.NumPendingTextures);
+            }
             return false;
         } else {
             return true;

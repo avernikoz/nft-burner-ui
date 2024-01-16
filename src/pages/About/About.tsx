@@ -11,6 +11,7 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { ReactComponent as DiscordIcon } from "../../assets/svg/social/discord.svg";
 import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
+import { APP_ENVIRONMENT } from "../../config/config";
 
 //=========================
 // 	  MEDIA QUERIES
@@ -252,7 +253,9 @@ export const AboutFirstSection = ({
             const loadProgressRes = GReactGLBridgeFunctions.GetLoadingProgressParameterNormalised();
             if (loadProgressRes !== null) {
                 const percentage = loadProgressRes * 100;
-                console.debug("loadingPercentage: ", percentage);
+                if (APP_ENVIRONMENT === "development") {
+                    console.debug("loadingPercentage: ", percentage);
+                }
 
                 setLoadingPercentage(percentage);
             } else {
