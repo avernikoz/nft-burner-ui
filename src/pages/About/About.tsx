@@ -11,6 +11,7 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { ReactComponent as DiscordIcon } from "../../assets/svg/social/discord.svg";
 import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
+import { APP_ENVIRONMENT } from "../../config/config";
 
 //=========================
 // 	  MEDIA QUERIES
@@ -232,13 +233,7 @@ const GetRandomTitle = () => {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const RandomTitle = GetRandomTitle();
 
-export const AboutFirstSection = ({
-    setAboutPageActive,
-    setShowMore,
-}: {
-    setAboutPageActive: (isAboutPageActive: boolean) => void;
-    setShowMore: () => void;
-}) => {
+export const StartButton = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: boolean) => void }) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [loadingPercentage, setLoadingPercentage] = useState(0);
     const [loadingFinished, setLoadingFinished] = useState(false);
@@ -252,7 +247,9 @@ export const AboutFirstSection = ({
             const loadProgressRes = GReactGLBridgeFunctions.GetLoadingProgressParameterNormalised();
             if (loadProgressRes !== null) {
                 const percentage = loadProgressRes * 100;
-                console.debug("loadingPercentage: ", percentage);
+                if (APP_ENVIRONMENT === "development") {
+                    console.debug("loadingPercentage: ", percentage);
+                }
 
                 setLoadingPercentage(percentage);
             } else {
@@ -268,6 +265,42 @@ export const AboutFirstSection = ({
     }, []);
 
     return (
+        <StartMenuButton
+            disabled={!loadingFinished}
+            onClick={() => {
+                setAboutPageActive(false);
+                GReactGLBridgeFunctions.OnStartButtonPressed();
+            }}
+        >
+            <StartText
+                style={{
+                    background: `text linear-gradient(90deg, #ce3e00 0, #ce3e00 ${loadingPercentage}%, #969696 ${loadingPercentage}%)`,
+                    // backgroundClip: "text",
+                }}
+            >
+                START
+            </StartText>
+            {loadingFinished ? (
+                <RightArrowIcon />
+            ) : (
+                <ProgressSpinner
+                    strokeWidth={"7"}
+                    //color={"white"}
+                    style={{ width: "25px", height: "25px", margin: 0 }}
+                />
+            )}
+        </StartMenuButton>
+    );
+};
+
+export const AboutFirstSection = ({
+    setAboutPageActive,
+    setShowMore,
+}: {
+    setAboutPageActive: (isAboutPageActive: boolean) => void;
+    setShowMore: () => void;
+}) => {
+    return (
         <StartScreenWrapMain>
             <StartTitleAndButtonContainer>
                 {RandomTitle}
@@ -281,31 +314,7 @@ export const AboutFirstSection = ({
                         <AboutText>ABOUT</AboutText>
                         <DownArrowIcon />
                     </StartMenuButton>
-                    <StartMenuButton
-                        disabled={!loadingFinished}
-                        onClick={() => {
-                            setAboutPageActive(false);
-                            GReactGLBridgeFunctions.OnStartButtonPressed();
-                        }}
-                    >
-                        <StartText
-                            style={{
-                                background: `text linear-gradient(90deg, #ce3e00 0, #ce3e00 ${loadingPercentage}%, #969696 ${loadingPercentage}%)`,
-                                // backgroundClip: "text",
-                            }}
-                        >
-                            START
-                        </StartText>
-                        {loadingFinished ? (
-                            <RightArrowIcon />
-                        ) : (
-                            <ProgressSpinner
-                                strokeWidth={"7"}
-                                //color={"white"}
-                                style={{ width: "25px", height: "25px", margin: 0 }}
-                            />
-                        )}
-                    </StartMenuButton>
+                    <StartButton setAboutPageActive={setAboutPageActive} />
                 </AboutStartContainer>
             </StartTitleAndButtonContainer>
         </StartScreenWrapMain>
@@ -543,12 +552,6 @@ export const LPPage2Additional = () => (
             </Page2AdditionalTitle>
         </LPShrinkContainerMid>
         <Page2AdditionalImage />
-        <SectionDividerSpecific>
-            <SectionDividerLine />
-        </SectionDividerSpecific>
-        <SectionDividerSpecific2>
-            <SectionDividerLine />
-        </SectionDividerSpecific2>
     </Page2AddWrapper>
 );
 
@@ -570,7 +573,6 @@ export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => 
                     </Page2Title2>
                 </Page2Title2Background>
                 <LPPage2Additional />
-                <SectionDivider />
             </LPShrinkContainer>
         </LPSectionExtendableCentered>
     );
@@ -651,7 +653,6 @@ export const LPPage3 = () => {
                 <Page3OffsetSpace />
                 <Page3BackgroundImage />
             </LPShrinkContainer>
-            <SectionDivider />
         </LPSectionExtendableCentered>
     );
 };
@@ -1113,6 +1114,32 @@ export const LPPageSocial = () => (
     </LPSectionExtendableCentered>
 );
 
+export const LPPageStartBlock = ({
+    setAboutPageActive,
+}: {
+    setAboutPageActive: (isAboutPageActive: boolean) => void;
+}) => {
+    return (
+        <LPSectionExtendableCentered>
+            <LPShrinkContainer>
+                <div style={{ height: "25vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <div
+                        style={{
+                            height: "80px",
+                            width: "clamp(300px, 80vw, 620px)",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                        }}
+                    >
+                        <StartButton setAboutPageActive={setAboutPageActive} />
+                    </div>
+                </div>
+            </LPShrinkContainer>
+        </LPSectionExtendableCentered>
+    );
+};
+
 //=========================
 // 	  	   ENTRY
 //=========================
@@ -1138,6 +1165,9 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
                 <SectionDivider />
                 <LPPageFinal />
                 <SectionDivider />
+                <LPPageStartBlock setAboutPageActive={setAboutPageActive} />
+                <SectionDivider />
+
                 <LPPageSocial />
             </LPContainerMain>
         </>
