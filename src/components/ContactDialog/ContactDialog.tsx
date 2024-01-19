@@ -162,6 +162,7 @@ export const ContactDialog = ({ visible, setVisible }: { visible: boolean; setVi
 
             setLoading(false);
             setIsSubmitted(true);
+            toastController?.showSuccess("Message sent successfully! Thanks for reaching out.");
 
             // Optional: Wait for 5 seconds before clearing the form
             await sleep(5000);
@@ -169,8 +170,6 @@ export const ContactDialog = ({ visible, setVisible }: { visible: boolean; setVi
             // Clear the form after submission (optional)
             setFormData({ name: "", email: "", message: "" });
             setIsSubmitted(false);
-
-            console.debug("Contact form sent");
         } catch (error) {
             setLoading(false);
             console.error(error);
