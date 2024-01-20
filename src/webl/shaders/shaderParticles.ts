@@ -223,7 +223,7 @@ export function GetParticleUpdateShaderVS(
 	  //check if particle was spawned at least once
 	  bool IsParticleAlive()
 	  {
-		  const vec2 BoundsStart = vec2(-5.f, -5.f);//Make it -5 just to be sure
+		  const vec2 BoundsStart = vec2(-10.f, -10.f);//Make it -5 just to be sure
 		  return ((inPosition.x >= BoundsStart.x) && (inPosition.y >= BoundsStart.y)); 
 	  }
   
@@ -261,7 +261,7 @@ export function GetParticleUpdateShaderVS(
 
 			  //Get Cur Fire based on Pos
 			  vec2 fireUV = (inDefaultPosition + 1.f) * 0.5f;
-			  float curFire = texture(FireTexture, fireUV.xy).r;
+			  float curFire = textureLod(FireTexture, fireUV.xy, 0.0).r;
 			
 			  vec2 kSpawnRange = vec2(float(` +
         spawnFireRange.x +
@@ -399,7 +399,7 @@ function scTransformBasedOnMotion(condition: boolean) {
 			{
 				velLength = min(1.0, velLength);
 				pos.y *= clamp(1.f - velLength * 0.8, 0.5f, 1.f);
-				pos.x *= (1.f + velLength * 2.0);
+				pos.x *= (1.f + velLength * 4.0);
 				
 				// Calculate the angle between the initial direction (1, 0) and the desired direction
 				float angle = atan(curVelocity.y, curVelocity.x);
@@ -715,7 +715,7 @@ function scFlameSpecificShading(bUsesTexture: boolean, artificialFlameAmount: nu
 
 		//const float ArtFlameAmount = 0.45f;//TODO:Randomise this
 		t *= float(` +
-        MathLerp(0.25, 0.75, Math.random()) +
+        MathLerp(0.2, 0.95, Math.random()) +
         /* glsl */ `);
 
 		colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 5.0f, t);
@@ -791,22 +791,13 @@ function scEmbersSpecificShading() {
 		
 		curFire = 1.0;
 
-		vec3 colorBright = vec3(curFire * (1.0 + (4.0 * (1. - t))), curFire * 0.75, curFire * 0.1);
+		vec3 colorBright = vec3(curFire * (1.0 + (14.0 * (1. - t))), curFire * 0.75, curFire * 0.1);
 		vec3 colorLow = vec3(curFire, curFire * 0.75, curFire * 0.5);
 
 		colorFinal.rgb = mix(colorBright, colorLow , t);
 
 		colorFinal.rgb *= 2.f * (1.0 - t);
 
-		/* if(t < 0.5f)
-		{
-			colorFinal.rgb = colorBright;
-		}
-		else
-		{
-			colorFinal.rgb = mix(colorBright, colorLow, (t - 0.5f) * 2.f);
-		} */
-		
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		s *= 2.f;
 		if(s > 0.5f)

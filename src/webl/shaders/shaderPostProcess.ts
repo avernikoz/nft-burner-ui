@@ -776,7 +776,9 @@ export function GetShaderSourceCombinerPassPS() {
 
 				smokeNoise.r = Contrast(smokeNoise.r, mix(0.05, 0.25, 1.f - lightInitial)) * 2.f;
 				smokeNoise.r *= min(1.f, texCoords.y + 0.3f);
-				//smokeNoise.r *= 5.f; //TODO:Depends on cur fire
+				smokeNoise.r *= float(` +
+        (1.0 + Math.random() * 0.25) +
+        /* glsl */ `);
 				smoke.rgba = smoke.rgba * 1.f + vec4(vec3(smokeNoise.r) * 0.15, smokeNoise.r * 0.15) * clamp(1.f - smoke.a, 0.0, 1.f);
 			}
 			smoke.rgb *= 0.75f;

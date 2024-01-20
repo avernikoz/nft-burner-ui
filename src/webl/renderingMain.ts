@@ -1,5 +1,5 @@
 import { RBackgroundRenderPass, RBurntStampVisualizer, RRenderGlow, RSpotlightRenderPass } from "./backgroundScene";
-import { RFirePlanePass } from "./firePlane";
+import { GBurningSurface, GBurningSurfaceExport } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUISingleton } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
@@ -7,8 +7,8 @@ import {
     AfterBurnAshesParticlesDesc,
     AfterBurnSmokeParticlesDesc,
     DustParticlesDesc,
-    EmberParticlesDesc,
     FlameParticlesDesc,
+    GetEmberParticlesDesc,
     SmokeParticlesDesc,
 } from "./particlesConfig";
 import { RBloomPass, RBlurPass, RCombinerPass, RFlamePostProcessPass, RPresentPass } from "./postprocess";
@@ -36,7 +36,7 @@ import {
 import { CheckGL } from "./shaderUtils";
 import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
 
-import { GUserInputDesc, InitUserInputEvents, UserInputUpdatePerFrame } from "./input";
+import { InitUserInputEvents, UserInputUpdatePerFrame } from "./input";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Vector2 } from "./types";
@@ -67,7 +67,7 @@ import { ERenderingState, GRenderingStateMachine } from "./states";
 import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController } from "./animationController";
 import { GAudioEngine } from "./audioEngine";
-import { LighterTool } from "./tools";
+import { LaserTool, LighterTool } from "./tools";
 import { GTexturePool } from "./texturePool";
 import { GReactGLBridgeFunctions } from "./reactglBridge";
 import { GTransitionAnimationsConstants } from "./transitionAnimations";
@@ -402,7 +402,8 @@ export function RenderMain() {
     // 		INIT TOOLS
     //======================
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const CurTool = new LighterTool(gl);
+    //const CurTool = new LighterTool(gl);
+    const CurTool = new LaserTool(gl);
 
     //==============================
     // 	   INIT BURNING SURFACE
@@ -410,7 +411,7 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FirePlaneSizePixels = { x: 512, y: 512 };
     //const FirePlaneSizePixels = { x: 1024, y: 1024 };
-    const BurningSurface = new RFirePlanePass(gl, FirePlaneSizePixels);
+    const BurningSurface = new GBurningSurface(gl, FirePlaneSizePixels);
     //BurningSurface.SetToBurned(gl);
 
     const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
@@ -419,6 +420,15 @@ export function RenderMain() {
         MathVector3Add(firePlanePos, { x: 0, y: -0.05, z: 0.0 }),
         MathVector3Add(firePlanePos, { x: 0, y: 0.05, z: 0.0 }),
     );
+
+    const EmberParticlesDesc = GetEmberParticlesDesc();
+    const AfterBurnEmberParticlesDesc = GetEmberParticlesDesc();
+    AfterBurnEmberParticlesDesc.inSpawnRange.x = 0.001;
+    AfterBurnEmberParticlesDesc.inSpawnRange.y = 1000.0;
+    AfterBurnEmberParticlesDesc.inNumSpawners2D = 4;
+    AfterBurnEmberParticlesDesc.inRandomSpawnThres = 0.5;
+    /* ;
+    AfterBurnEmberParticlesDesc.inNumSpawners2D = 64; */
 
     //==============================
     // 		INIT PARTICLES
@@ -467,6 +477,9 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const EmberParticles = new ParticlesEmitter(gl, EmberParticlesDesc);
     DynamicParticlesArr.push(EmberParticles);
+
+    const AfterBurnEmberParticles = new ParticlesEmitter(gl, AfterBurnEmberParticlesDesc);
+    DynamicParticlesArr.push(AfterBurnEmberParticles);
     //
     SmokeParticlesDesc.inAlphaScale = 0.2 + Math.random() * 0.8;
     SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
@@ -778,7 +791,7 @@ export function RenderMain() {
 
             if (GTexturePool.AreAllTexturesLoaded() && !bInitialImagePreProcessed) {
                 BurningSurface.FirePlaneImagePreProcess(gl);
-                BurningSurface.SetToBurned(gl);
+                //BurningSurface.SetToBurned(gl);
                 bInitialImagePreProcessed = true;
             }
 
@@ -813,29 +826,6 @@ export function RenderMain() {
                 // 		TOOL UPDATE
                 //=========================
                 CurTool.UpdateMain(gl, BurningSurface);
-
-                if (RenderStateMachine.bCanBurn) {
-                    if (RenderStateMachine.currentState === ERenderingState.Intro) {
-                        if (bNewRenderStateThisFrame) {
-                            //BurningSurface.ApplyFireAuto(gl, { x: 0.0, y: -0.5 }, 0.05);
-                        }
-                    } else {
-                        if (RenderStateMachine.currentState !== ERenderingState.BurningFinished) {
-                            if (GUserInputDesc.bPointerInputPressedCurFrame) {
-                                if (!GUserInputDesc.bPointerInputPressedPrevFrame) {
-                                    audioEngine.PlayLighterStartSound();
-                                } else {
-                                    audioEngine.PlayLighterGasSound();
-                                }
-                            } else {
-                                audioEngine.ForceStopLighterGasSound();
-                            }
-                        }
-                    }
-                } else {
-                    if (bNewRenderStateThisFrame) {
-                    }
-                }
 
                 //=========================
                 // BURNING SURFACE UPDATE
@@ -899,6 +889,15 @@ export function RenderMain() {
                         GRenderingStateMachine.SetRenderingState(ERenderingState.BurningFinished);
                         GReactGLBridgeFunctions.OnBurningFinished();
                         audioEngine.PlayIntroSound();
+
+                        //Export
+                        const url = BurningSurface.ExportFirePlane(gl, BurntStampSprite);
+                        GBurningSurfaceExport.SetExportUrl(url);
+                        /* const exportDelay = 1000;
+                        setTimeout(() => {
+                            const url = BurningSurface.ExportFirePlane(gl, BurntStampSprite);
+                            GBurningSurfaceExport.SetExportUrl(url);
+                        }, exportDelay); */
                     }
                 }
 
@@ -908,6 +907,9 @@ export function RenderMain() {
                 if (GGpuReadData.CurFireValueCPU > 0.01) {
                     const curBurnVolume = MathMapToRange(GGpuReadData.CurFireValueCPU, 0.0, 2.0, 0.3, 1.0);
                     audioEngine.PlayBurningSound(curBurnVolume);
+                } else if (GGpuReadData.CurFireValueCPU > 0.001) {
+                    const curBurnVolume = MathMapToRange(GGpuReadData.CurFireValueCPU, 0.0, 2.0, 0.3, 1.0);
+                    audioEngine.PlayBurningSound(curBurnVolume * 0.25);
                 }
 
                 //=========================
@@ -916,6 +918,7 @@ export function RenderMain() {
                 {
                     FlameParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                     EmberParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
+                    AfterBurnEmberParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                     AshesParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                     SmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                     AfterBurnSmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
@@ -1001,6 +1004,10 @@ export function RenderMain() {
                 gl.blendEquation(gl.MAX);
                 SpotlightRenderPass.RenderSourceSprite(gl);
 
+                if (CurTool.bActiveThisFrame) {
+                    CurTool.Render(gl);
+                }
+
                 //======================
                 // 		GUI RENDER
                 //======================
@@ -1026,8 +1033,11 @@ export function RenderMain() {
                 //======================
                 let flameSourceTextureRef = GRenderTargets.FlameTexture;
                 BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, GScreenDesc.RenderTargetSize, true);
-                if (CurTool.bActiveThisFrame) {
+                /* if (CurTool.bActiveThisFrame) {
                     CurTool.Render(gl);
+                    CurTool.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+                } */
+                if (CurTool.bActiveThisFrame) {
                     CurTool.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 }
 
@@ -1043,6 +1053,7 @@ export function RenderMain() {
                     flameSourceTextureRef = GRenderTargets.FlameTexture2;
 
                     EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+                    AfterBurnEmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                     if (bAshesInEmbersPass) {
                         AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                     }
@@ -1110,9 +1121,9 @@ export function RenderMain() {
                 if (!bAshesInEmbersPass) {
                     AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 }
-                if (CurTool.bActiveThisFrame) {
+                /* if (CurTool.bActiveThisFrame) {
                     CurTool.SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-                }
+                } */
 
                 //======================
                 // 		POST PROCESS

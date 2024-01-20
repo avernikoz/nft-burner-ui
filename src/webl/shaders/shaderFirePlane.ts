@@ -1,6 +1,52 @@
 import { MathLerp } from "../utils";
 
-export const ShaderSourceApplyFireVS = /* glsl */ `#version 300 es
+function scTransformBasedOnMotion(condition: boolean) {
+    if (condition) {
+        return /* glsl */ `/* pos.y *= 0.2;
+		// Calculate the angle between the initial direction (1, 0) and the desired direction
+		float angle = atan(VelocityDir.y, VelocityDir.x);
+		// Rotate the stretched position
+		float cosAngle = cos(angle);
+		float sinAngle = sin(angle);
+		vec2 rotatedPosition = vec2(
+			pos.x * cosAngle - pos.y * sinAngle,
+			pos.x * sinAngle + pos.y * cosAngle
+		);
+		pos = rotatedPosition; */
+		
+		
+		float velLength = length(VelocityDir) * 100.0 /* * 0.10 */;
+		if(velLength > 0.f)
+		{
+			velLength = min(1.0, velLength);
+			pos.y *= clamp(1.f - velLength * 0.5, 0.75f, 1.f);
+			pos.x *= (1.f + velLength * 2.0);
+
+			// Calculate the angle between the initial direction (1, 0) and the desired direction
+			float angle = atan(VelocityDir.y, VelocityDir.x);
+
+			// Rotate the stretched position
+			float cosAngle = cos(angle);
+			float sinAngle = sin(angle);
+			vec2 rotatedPosition = vec2(
+				pos.x * cosAngle - pos.y * sinAngle,
+				pos.x * sinAngle + pos.y * cosAngle
+			);
+			
+			pos = rotatedPosition;
+
+		}
+		
+		
+		`;
+    } else {
+        return ``;
+    }
+}
+
+export function GetShaderSourceApplyFireVS(bMotion: boolean) {
+    return (
+        /* glsl */ `#version 300 es
 
 	precision highp float;
 
@@ -23,19 +69,10 @@ export const ShaderSourceApplyFireVS = /* glsl */ `#version 300 es
 
 		vec2 pos = VertexBuffer.xy;
 
-	#if 1 //MOTION BASED TRANSFORM
-		pos.y *= 0.2;
-		// Calculate the angle between the initial direction (1, 0) and the desired direction
-		float angle = atan(VelocityDir.y, VelocityDir.x);
-		// Rotate the stretched position
-		float cosAngle = cos(angle);
-		float sinAngle = sin(angle);
-		vec2 rotatedPosition = vec2(
-			pos.x * cosAngle - pos.y * sinAngle,
-			pos.x * sinAngle + pos.y * cosAngle
-		);
-		pos = rotatedPosition;
-	#endif
+	//Rotate based on velocity
+	` +
+        scTransformBasedOnMotion(bMotion) +
+        /* glsl */ `
 
 		float scale = 1.0;
 		scale *= SizeScale;
@@ -55,7 +92,9 @@ export const ShaderSourceApplyFireVS = /* glsl */ `#version 300 es
 
 
 		
-	}`;
+	}`
+    );
+}
 export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 	
 	precision highp float;
@@ -68,6 +107,12 @@ export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 	uniform sampler2D ColorTexture;
 
 	in vec2 vsOutTexCoords;
+
+	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	{
+		///Translate to origin, scale by ranges ratio, translate to new position
+		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
 
 	void main()
 	{
@@ -84,6 +129,25 @@ export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 		float s = length(texCoords - center);	
 		s = min(1.0, s);
 		s = 1.f - s;
+		const float thres = 0.75;
+		if(s < thres)
+		{
+			const float sThres = 0.6;
+			if(s > sThres)
+			{
+
+				//s = MapToRange(s, sThres,thres, 0.75, 1.0);
+				s = 1.0;
+			}
+			else
+			{
+				s = 0.0;
+			}
+		}
+		else
+		{
+			s = 1.0;
+		}
 		Fire *= s * s;
 
 
@@ -121,7 +185,9 @@ export const ShaderSourceFireUpdatePS =
 		float curFuel = texelFetch(FuelTexture, SampleCoord, 0).r;
 		//curFuel = 0.001f;
 		
-		const float kMutualScale = 2.0;
+		const float kMutualScale = 1.0 + float(` +
+    Math.random() * 1.5 +
+    /* glsl */ `);
 		const float GFireSpreadSpeed = 3. * kMutualScale;
 		const float NoiseAdvectedSpreadStrength = 0.45f;
 		const float GFuelConsumeSpeed = 0.45f * kMutualScale;
@@ -443,7 +509,7 @@ export function GetShaderSourceFirePlanePreProcess() {
 			vec3 surfaceColor = textureLod(ImageTexture, flippedUVs.xy, 0.0).rgb;
 
 			const float kRandomValue = float(` +
-        MathLerp(0.005, 0.075, Math.random()) +
+        MathLerp(0.007, 0.07, Math.random()) +
         /* glsl */ `);
 			const float BurnedImageSharpness = kRandomValue;
 			float h = BurnedImageSharpness * 0.1;
@@ -1320,7 +1386,7 @@ export function GetShaderSourceFireVisualizerExportPS() {
         Math.random() +
         /* glsl */ `);
 				const float ashesTintScale = float(` +
-        Math.random() * 0.4 +
+        (0.1 + Math.random() * 0.4) +
         /* glsl */ `);
 				ashesColor += ashesTintScale * vec3(0., 0.725,  1.0) * MapToRange(textureLod(NoiseTextureLQ, ashesTintUV, 0.f).r, 0.4, 0.6, 0.0, 1.0);
 			}
@@ -1328,7 +1394,7 @@ export function GetShaderSourceFireVisualizerExportPS() {
 			const float kRandomOffset = float(` +
         MathLerp(0.01, 0.5, Math.random()) +
         /* glsl */ `);
-			float afterBurnEmbers = texture(AfterBurnTexture, vsOutTexCoords.xy + vec2(kRandomOffset, 0.0)).r;
+			float afterBurnEmbers = texture(AfterBurnTexture, vsOutTexCoords.xy + vec2(kRandomOffset, 0.0)).r * 1.5;
 			afterBurnEmbers = afterBurnEmbers * clamp(pow(length(vsOutTexCoords.xy - vec2(0.5) * 1.0f), 1.f), 0.0, 1.0);
 			
 			vec3 embersColor = vec3(afterBurnEmbers, afterBurnEmbers * 0.2, afterBurnEmbers * 0.1);

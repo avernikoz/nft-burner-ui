@@ -5,18 +5,18 @@ import { CommonRenderingResources } from "./shaders/shaderConfig";
 import {
     GetShaderSourceFireVisualizerVS,
     ShaderSourceApplyFirePS,
-    ShaderSourceApplyFireVS,
     ShaderSourceFireUpdatePS,
     GetShaderSourceFireVisualizerPS,
     GetShaderSourceFirePlanePreProcess,
     GetShaderSourceFireVisualizerExportPS,
+    GetShaderSourceApplyFireVS,
 } from "./shaders/shaderFirePlane";
 import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
 import { GUserInputDesc } from "./input";
 import { Vector2 } from "./types";
 import { GTime, MathClamp, MathGetVectorLength, MathVector2Normalize } from "./utils";
-import { GTexturePool } from "./texturePool";
 import { RBurntStampVisualizer } from "./backgroundScene";
+import { GTexturePool } from "./texturePool";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -62,9 +62,13 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
 export class RApplyFireRenderPass {
     public colorTexture;
 
-    public shaderProgram;
+    public ShaderProgramMotion;
+
+    public ShaderProgram;
 
     public UniformParametersLocationList;
+
+    public UniformParametersLocationListMotion;
 
     constructor(gl: WebGL2RenderingContext, imageSrc: string | null) {
         //Create Texture
@@ -75,10 +79,16 @@ export class RApplyFireRenderPass {
             this.colorTexture = GTexturePool.CreateTexture(gl, false, imageSrc);
         }
 
-        this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceApplyFireVS, ShaderSourceApplyFirePS);
+        this.ShaderProgramMotion = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceApplyFireVS(true),
+            ShaderSourceApplyFirePS,
+        );
+        this.ShaderProgram = CreateShaderProgramVSPS(gl, GetShaderSourceApplyFireVS(false), ShaderSourceApplyFirePS);
 
         //Shader Parameters
-        this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
+        this.UniformParametersLocationListMotion = GetUniformParametersList(gl, this.ShaderProgramMotion);
+        this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
     }
 
     Execute(
@@ -87,42 +97,61 @@ export class RApplyFireRenderPass {
         velDirection: Vector2,
         sizeScale: number,
         strength: number,
+        bMotionBasedTransform: boolean,
     ) {
-        gl.useProgram(this.shaderProgram);
+        let ParametersLocationListRef = this.UniformParametersLocationListMotion;
+        if (bMotionBasedTransform) {
+            gl.useProgram(this.ShaderProgramMotion);
+        } else {
+            gl.useProgram(this.ShaderProgram);
+            ParametersLocationListRef = this.UniformParametersLocationList;
+        }
 
         //VAO
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
         //Bind Constants
         gl.uniform4f(
-            this.UniformParametersLocationList.CameraDesc,
+            ParametersLocationListRef.CameraDesc,
             GSceneDesc.Camera.Position.x,
             GSceneDesc.Camera.Position.y,
             GSceneDesc.Camera.Position.z,
             GSceneDesc.Camera.ZoomScale,
         );
-        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform1f(ParametersLocationListRef.ScreenRatio, GScreenDesc.ScreenRatio);
         gl.uniform3f(
-            this.UniformParametersLocationList.FirePlanePositionOffset,
+            ParametersLocationListRef.FirePlanePositionOffset,
             GSceneDesc.FirePlane.PositionOffset.x,
             GSceneDesc.FirePlane.PositionOffset.y,
             GSceneDesc.FirePlane.PositionOffset.z,
         );
 
-        gl.uniform2f(this.UniformParametersLocationList.PointerPositionOffset, positionOffset.x, positionOffset.y);
-        gl.uniform1f(this.UniformParametersLocationList.SizeScale, sizeScale);
-        gl.uniform1f(this.UniformParametersLocationList.AppliedFireStrength, strength);
-        gl.uniform2f(this.UniformParametersLocationList.VelocityDir, velDirection.x, velDirection.y);
+        gl.uniform2f(ParametersLocationListRef.PointerPositionOffset, positionOffset.x, positionOffset.y);
+        gl.uniform1f(ParametersLocationListRef.SizeScale, sizeScale);
+        gl.uniform1f(ParametersLocationListRef.AppliedFireStrength, strength);
+        gl.uniform2f(ParametersLocationListRef.VelocityDir, velDirection.x, velDirection.y);
 
         //Textures
         gl.activeTexture(gl.TEXTURE0 + 0);
-        gl.uniform1i(this.UniformParametersLocationList.ColorTexture, 0);
+        gl.uniform1i(ParametersLocationListRef.ColorTexture, 0);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 }
 
-export class RFirePlanePass {
+export class GBurningSurfaceExport {
+    static SetExportUrl(url: string) {
+        GBurningSurfaceExport.ExportUrl = url;
+    }
+
+    static GetExportUrl() {
+        return GBurningSurfaceExport.ExportUrl;
+    }
+
+    private static ExportUrl: string;
+}
+
+export class GBurningSurface {
     public RenderTargetSize;
 
     public FrameBuffer;
@@ -474,13 +503,12 @@ export class RFirePlanePass {
         }
     }
 
-    ApplyFire(gl: WebGL2RenderingContext, pos: Vector2, direction: Vector2, size: number, strength: number) {
+    /* ApplyFire(gl: WebGL2RenderingContext, pos: Vector2, direction: Vector2, size: number, strength: number) {
         this.BindFireRT(gl);
 
-        /* Set up blending */
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.ONE, gl.ONE);
-        this.ApplyFirePass.Execute(gl, pos, direction, size, strength);
+        this.ApplyFirePass.Execute(gl, pos, direction, size, strength, false);
         gl.disable(gl.BLEND);
     }
 
@@ -507,11 +535,10 @@ export class RFirePlanePass {
         const curInputDir = { x: 1, y: 1 };
 
         const curSourceIndex = this.CurrentFireTextureIndex;
-        //Raster particle to current fire texture
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[curSourceIndex]);
         gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
-        this.ApplyFirePass.Execute(gl, curInputPos, MathVector2Normalize(curInputDir), size, 1.5);
-    }
+        this.ApplyFirePass.Execute(gl, curInputPos, MathVector2Normalize(curInputDir), size, 1.5, false);
+    } */
 
     UpdateFire(gl: WebGL2RenderingContext) {
         const curSourceIndex = this.CurrentFireTextureIndex;
@@ -932,8 +959,10 @@ export class RFirePlanePass {
         ctx.putImageData(imageData, 0, 0);
         const dataUrl = canvas.toDataURL("image/jpeg");
 
+        return dataUrl;
+
         // Step 3: Create a link and trigger download
-        const downloadLink = document.createElement("a");
+        /* const downloadLink = document.createElement("a");
         downloadLink.href = dataUrl;
         downloadLink.download = "texture.jpg";
 
@@ -944,7 +973,7 @@ export class RFirePlanePass {
         downloadLink.click();
 
         // Remove the link from the document (optional)
-        document.body.removeChild(downloadLink);
+        document.body.removeChild(downloadLink); */
     }
 
     GetCurFireTexture() {

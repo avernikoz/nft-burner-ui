@@ -706,7 +706,13 @@ export class RRenderGlow {
 
         //Constants
         gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
-        gl.uniform1f(this.UniformParametersLocationList.Size, 0.25);
+        gl.uniform1f(
+            this.UniformParametersLocationList.Size,
+            1.0 *
+                (0.75 +
+                    (Math.sin(GTime.Cur * 2) * 0.5 + 0.5) * 0.5 +
+                    (Math.sin(GTime.Cur * 2 * 2.7) * 0.5 + 0.5) * 0.1),
+        );
         gl.uniform2f(
             this.UniformParametersLocationList.Position,
             GUserInputDesc.InputPosPrevViewSpace.x,

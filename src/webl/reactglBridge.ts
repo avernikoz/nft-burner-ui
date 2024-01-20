@@ -1,11 +1,12 @@
 import { GAudioEngine } from "./audioEngine";
+import { GBurningSurfaceExport } from "./firePlane";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
 
 export class GReactGLBridgeFunctions {
     static OnStartButtonPressed() {
-        GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, false);
-        // GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady, false);
+        //GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, false);
+        GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady, false);
     }
 
     static OnAboutButtonPressed() {
@@ -38,5 +39,9 @@ export class GReactGLBridgeFunctions {
 
     static OnBurnMore() {
         GRenderingStateMachine.OnBurnMoreButtonPress();
+    }
+
+    static GetSharePopupBurnImg(): string {
+        return GBurningSurfaceExport.GetExportUrl();
     }
 }

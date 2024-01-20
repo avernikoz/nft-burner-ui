@@ -14,7 +14,7 @@ async function LoadAudioBufferAsync(context: AudioContext, url: string): Promise
     }
 }
 
-class SoundSample {
+export class SoundSample {
     Buffer: AudioBuffer | null = null;
 
     SourceNode: AudioBufferSourceNode | null = null;
@@ -54,8 +54,15 @@ class SoundSample {
                     };
                 }
             } else {
+                if (this.bIsPlaying && this.SourceNode) {
+                    this.SourceNode.stop();
+                }
                 this.InitSourceNode(context);
                 this.SourceNode!.start();
+                this.bIsPlaying = true;
+                this.SourceNode!.onended = () => {
+                    this.bIsPlaying = false;
+                };
             }
         }
     }
@@ -95,10 +102,6 @@ export class GAudioEngine {
 
     private SoundUIClickStart: SoundSample = new SoundSample();
 
-    private SoundLighterStart: SoundSample = new SoundSample();
-
-    private SoundLoopLighterGas: SoundSample = new SoundSample();
-
     private SoundLoopFlame: SoundSample = new SoundSample();
 
     private SoundLoopBurning: SoundSample = new SoundSample();
@@ -116,6 +119,14 @@ export class GAudioEngine {
             GAudioEngine.instance = new GAudioEngine();
         }
         return GAudioEngine.instance;
+    }
+
+    public static GetContext(): AudioContext {
+        return GAudioEngine.getInstance().Context!;
+    }
+
+    public static GetMasterGain(): GainNode {
+        return GAudioEngine.getInstance().MasterGain!;
     }
 
     private constructor() {
@@ -139,13 +150,9 @@ export class GAudioEngine {
 
             this.SoundFireExting.Init(this.Context, "assets/audio/afterBurnExting.mp3", this.MasterGain, 0.5);
 
-            this.SoundStamp.Init(this.Context, "assets/audio/magStamp.mp3", this.MasterGain, 1.3);
+            this.SoundStamp.Init(this.Context, "assets/audio/magStamp.mp3", this.MasterGain, 2.0);
 
             this.SoundIntro = await LoadAudioBufferAsync(this.Context, "assets/audio/introLow4.mp3");
-
-            this.SoundLighterStart.Init(this.Context, "assets/audio/lighterStart.mp3", this.MasterGain);
-
-            this.SoundLoopLighterGas.Init(this.Context, "assets/audio/lighterGasLoop.mp3", this.MasterGain, 0.5);
 
             this.GainBurningSound = this.Context.createGain();
             this.GainBurningSound.connect(this.MasterGain);
@@ -214,20 +221,6 @@ export class GAudioEngine {
 
     PlayStampSound() {
         this.SoundStamp.Play(this.Context!);
-    }
-
-    PlayLighterStartSound() {
-        this.SoundLighterStart.Play(this.Context!);
-    }
-
-    PlayLighterGasSound() {
-        this.SoundLoopLighterGas.Play(this.Context!, true);
-    }
-
-    ForceStopLighterGasSound() {
-        if (this.SoundLoopLighterGas.SourceNode) {
-            this.SoundLoopLighterGas.Stop();
-        }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

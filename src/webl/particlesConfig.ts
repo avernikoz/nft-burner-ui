@@ -5,7 +5,7 @@ export const FlameParticlesDesc = {
     inName: "Flame Particles",
     inNumSpawners2D: 64,
     inNumParticlesPerSpawner: 1,
-    inSpawnRange: { x: 10.0, y: 1000.0 }, //TODO:depends on temperature
+    inSpawnRange: { x: 10.0 + Math.random() * 40.0, y: 1000.0 }, //TODO:depends on temperature
     inParticleLife: 2.4,
     inNumLoops: 3.0,
     inTextureFileName: "Flame02_16x4",
@@ -26,28 +26,33 @@ export const FlameParticlesDesc = {
     inInitialTranslate: { x: 0.0, y: 0.9 },
 };
 
-export const EmberParticlesDesc = {
-    inName: "Ember Particles",
-    inNumSpawners2D: 48,
-    inNumParticlesPerSpawner: 1,
-    inSpawnRange: { x: 1.0, y: 1000.0 },
-    inParticleLife: 2.8,
-    inNumLoops: 1.0,
-    inTextureFileName: "",
-    inFlipbookSizeRC: { x: 16.0, y: 4.0 },
-    inDefaultSize: { x: 0.125 * 0.1, y: 0.125 * 0.1 },
-    inSizeRangeMinMax: { x: 0.5, y: 1.25 },
-    inRandomSizeChangeSpeed: 0.1,
-    inSizeClampMax: { x: 0.0, y: 0.0 },
-    inInitialVelocityScale: MathLerp(30.0, 70.0, Math.random()),
-    inVelocityFieldForceScale: MathLerp(70.0, 300.0, Math.random()),
-    inBuoyancyForceScale: 5.0,
-    inDownwardForceScale: 1.0,
-    inbOriginAtCenter: true,
-    inbMotionBasedTransform: true,
-    inEFadeInOutMode: 0,
-    inESpecificShadingMode: EParticleShadingMode.Embers,
-};
+export function GetEmberParticlesDesc() {
+    return {
+        inName: "Ember Particles",
+        inNumSpawners2D: 32,
+        inNumParticlesPerSpawner: 1,
+        inSpawnRange: { x: 1.0, y: 100000.0 },
+        inParticleLife: 2.8,
+        inNumLoops: 1.0,
+        inTextureFileName: "",
+        inFlipbookSizeRC: { x: 16.0, y: 4.0 },
+        inDefaultSize: { x: 0.125 * 0.1, y: 0.125 * 0.1 },
+        inSizeRangeMinMax: { x: 0.5, y: 1.25 },
+        inRandomSizeChangeSpeed: 0.1,
+        inSizeClampMax: { x: 0.0, y: 0.0 },
+        inInitialVelocityScale: MathLerp(30.0, 120.0, Math.random()),
+        inVelocityFieldForceScale: MathLerp(70.0, 300.0, Math.random()),
+        inBuoyancyForceScale: 5.0,
+        inDownwardForceScale: 1.0,
+        inbOriginAtCenter: true,
+        inbMotionBasedTransform: true,
+        inEFadeInOutMode: 0,
+        inbOneShotParticle: false,
+        inEInitialPositionMode: 0,
+        inRandomSpawnThres: 0.1,
+        inESpecificShadingMode: EParticleShadingMode.Embers,
+    };
+}
 
 export const SmokeParticlesDesc = {
     inName: "Smoke Particles",

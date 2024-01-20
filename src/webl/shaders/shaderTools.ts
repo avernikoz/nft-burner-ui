@@ -1,3 +1,5 @@
+import { MathLerp } from "../utils";
+
 export function GetShaderSourceSingleFlameRenderVS() {
     return /* glsl */ `#version 300 es
 	
@@ -217,5 +219,181 @@ export function GetShaderSourceAnimatedSpriteRenderPS() {
 		}
 
 		outColor = colorFinal;
+	}`;
+}
+
+export function GetShaderSourceLaserVS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	
+	layout(location = 0) in vec2 VertexBuffer;
+
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	uniform vec3 PositionStart;
+	uniform vec3 PositionEnd;
+
+	out vec2 vsOutTexCoords;
+
+	void main()
+	{
+
+		vec3 dirVec = PositionEnd - PositionStart;
+
+		vec3 camPos = CameraDesc.xyz;
+
+		vec3 dirToCamFromStart = normalize(PositionStart - camPos);
+		vec3 dirToCamFromEnd = normalize(PositionEnd - camPos);
+
+		vec3 lineNormalStart = cross(dirVec, dirToCamFromStart);
+		vec3 lineNormalEnd = cross(dirVec, dirToCamFromEnd);
+
+		const float lineThickness = 0.05;
+		//const float lineThickness = 0.15;
+		/* vec3 lineNormalStart = vec3(0.0, 1.0, 0.0) * lineThickness;
+		vec3 lineNormalEnd = vec3(0.0, 1.0, 0.0) * lineThickness * 0.25; */
+
+		lineNormalStart = lineNormalEnd;
+		lineNormalStart = (normalize(lineNormalStart) * lineThickness);
+		lineNormalEnd = (normalize(lineNormalEnd) * lineThickness /* * 0.25 */);
+
+		
+		vec3 verts0 = PositionStart - lineNormalStart;
+		vec3 verts1 = PositionEnd - lineNormalEnd;
+		vec3 verts2 = PositionEnd + lineNormalEnd;
+		vec3 verts3 = PositionStart + lineNormalStart;
+
+		////Clockwise, starting from left down
+		vec2 uv0 = vec2(0.0, 0.0);
+		vec2 uv1 = vec2(0.0, 1.0);
+		vec2 uv2 = vec2(1.0, 1.0);
+		vec2 uv3 = vec2(1.0, 0.0);
+
+		//AddTriangleToBuffer(vertsT[0], vertsT[1], vertsT[2]);
+		//AddTriangleToBuffer(vertsT[0], vertsT[2], vertsT[3]);
+		uint vertId = uint(gl_VertexID);
+		vec3 pos = verts3;
+		vsOutTexCoords = uv3;
+		if(vertId == 0u || vertId == 3u)
+		{
+			pos = verts0;
+			vsOutTexCoords = uv0;
+		}
+		else if(vertId == 1u)
+		{
+			pos = verts1;
+			vsOutTexCoords = uv1;
+		}
+		else if(vertId == 2u || vertId == 4u)
+		{
+			pos = verts2;
+			vsOutTexCoords = uv2;
+		}
+
+		pos.xyz -= CameraDesc.xyz;
+		pos.xy *= CameraDesc.w;
+		pos.x /= ScreenRatio;
+
+		gl_Position = vec4(pos.xy, 0.0, (1.f + pos.z));
+	}`;
+}
+
+export function GetShaderSourceLaserPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outColor;
+
+	uniform sampler2D LaserTexture;
+	uniform sampler2D NoiseTexture;
+
+	uniform vec3 ColorScale;
+	uniform float Time;
+
+	in vec2 vsOutTexCoords;
+
+	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	{
+		///Translate to origin, scale by ranges ratio, translate to new position
+		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
+
+	void main()
+	{
+		vec3 color = vec3(2.0, 0.41, 0.05) * 10.0;
+
+		
+
+		vec2 laserUV = vsOutTexCoords;
+		laserUV.x = vsOutTexCoords.y;
+		laserUV.y = vsOutTexCoords.x;
+
+		const float noiseSpeed = 5.0;
+		
+		vec2 distortionUV = vsOutTexCoords;
+		distortionUV.y -= Time * 0.25 * noiseSpeed;
+		distortionUV.x += Time * 0.005 * noiseSpeed;
+		distortionUV *= 0.1;
+		vec3 distortionNoise = textureLod(NoiseTexture, distortionUV.xy, 0.f).rgb;
+		//distortionNoise.x = clamp(MapToRange(distortionNoise.x, 0.4, 0.6, 0.0, 1.0), 0.0, 1.0);
+		distortionNoise.y = clamp(MapToRange(distortionNoise.y, 0.2, 0.8, 0.0, 1.0), 0.0, 1.0);
+		//distortionNoise.z = clamp(MapToRange(distortionNoise.z, 0.2, 0.8, 0.0, 1.0), 0.0, 1.0);
+		distortionNoise = (distortionNoise * 2.f) - 1.f;
+		float t = mod(Time + vsOutTexCoords.y, 1.f) * 3.0;
+		if(t < 1.f)
+		{
+			distortionNoise.x = mix(distortionNoise.x, distortionNoise.y, t);
+		}
+		else if(t < 2.f)
+		{
+			distortionNoise.x = mix(distortionNoise.y, distortionNoise.z, t - 1.f);
+		}
+		else
+		{
+			distortionNoise.x = mix(distortionNoise.z, distortionNoise.x, t - 2.f);
+		}
+
+		
+
+		laserUV.y += distortionNoise.x * 0.1;
+		laserUV.y = clamp(laserUV.y, 0.0, 1.0);
+
+		//laserUV.x *= 2.5;
+		const float beamSpeed = 3.0;
+		laserUV.x -= Time * 0.75 * beamSpeed;
+
+		float s = texture(LaserTexture, laserUV).r;
+		color *= s;
+
+		float s2 = abs(vsOutTexCoords.x - 0.5);
+		s2 = min(1.0, s2);
+		s2 = 1.f - s2;
+		color *= s2 * s2* s2* s2* s2* s2* s2;
+
+		
+		
+
+		if(vsOutTexCoords.y > 0.99)
+		{
+			vec2 ndcSpace = vec2(vsOutTexCoords.x * 2.f - 1.f, vsOutTexCoords.y * 2.f - 1.f);
+			const highp float rectPow = 8.f;
+			highp float rectCircleLength = pow(abs(ndcSpace.x), rectPow) + pow(abs(ndcSpace.y), rectPow);
+			const float rectCircleFadeStart = 0.9;
+			const float edgeBumpScale = 1.0f;
+			if(rectCircleLength > rectCircleFadeStart)
+			{
+				float f = clamp(1.f - MapToRange(rectCircleLength, rectCircleFadeStart, edgeBumpScale, 0.0, 1.0), 0.25, 1.0);
+				//color = vec3(0.0, 1.0, 0.2) * f;
+				color *= f;
+			}
+		}
+
+		//color *= 
+
+
+		outColor = color /* + 0.1 */;
 	}`;
 }

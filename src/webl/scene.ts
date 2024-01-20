@@ -92,7 +92,7 @@ export function InitializeSceneStateDescsArr() {
     //Intro
     GSceneStateDescsArray[ERenderingState.Intro] = {
         CameraPosition: { x: -1.6, y: 0.0, z: -3.61 },
-        SpotlightPosition: { x: -2.88, y: 1.57, z: -1.71 },
+        SpotlightPosition: { x: -2.88, y: MathLerp(0.3, 1.7, Math.random()), z: MathLerp(-1.5, -2.5, Math.random()) },
         SpotlightFocusPosition: { x: 0, y: 0.5, z: 1.5 },
         SpotlightSize: { x: GSceneDesc.Spotlight.SizeScale.x, y: GSceneDesc.Spotlight.SizeScale.y },
         FloorHeight: -1,
@@ -112,7 +112,7 @@ export function InitializeSceneStateDescsArr() {
     //Burn
     GSceneStateDescsArray[ERenderingState.BurningReady] = {
         CameraPosition: { x: 0, y: 0.0, z: -4.0 },
-        SpotlightPosition: { x: 0.0, y: MathLerp(1.75, 3, Math.random()), z: -1.0 },
+        SpotlightPosition: { x: 0.0, y: MathLerp(1.75, 3, Math.random()), z: MathLerp(-0.75, -1.75, Math.random()) },
         SpotlightFocusPosition: { x: 0.0, y: 0.0, z: 1.5 },
         SpotlightSize: { x: GSceneDesc.Spotlight.SizeScale.x, y: GSceneDesc.Spotlight.SizeScale.y },
         FloorHeight: -1.75,

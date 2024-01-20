@@ -1,14 +1,40 @@
-import { RFirePlanePass } from "./firePlane";
+import { GAudioEngine, SoundSample } from "./audioEngine";
+import { GBurningSurface } from "./firePlane";
 import { GMeshGenerator } from "./helpers/meshGenerator";
 import { GUserInputDesc } from "./input";
 import { EParticleShadingMode, ParticlesEmitter } from "./particles";
+import { GetEmberParticlesDesc } from "./particlesConfig";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
+import {
+    GetShaderSourceLaserFlareRenderPS,
+    GetShaderSourceLightFlareRenderPS,
+    GetShaderSourceLightFlareRenderVS,
+} from "./shaders/shaderBackgroundScene";
 import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
-import { GetShaderSourceAnimatedSpriteRenderPS, GetShaderSourceSingleFlameRenderVS } from "./shaders/shaderTools";
+import {
+    GetShaderSourceAnimatedSpriteRenderPS,
+    GetShaderSourceLaserPS,
+    GetShaderSourceLaserVS,
+    GetShaderSourceSingleFlameRenderVS,
+} from "./shaders/shaderTools";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
-import { GTime, MathClamp, MathGetVectorLength, MathLerp, MathLerpColor } from "./utils";
+import { Vector3 } from "./types";
+import {
+    GTime,
+    MathClamp,
+    MathGetVectorLength,
+    MathLerp,
+    MathLerpColor,
+    MathLerpVec3,
+    MathMapToRange,
+    MathSignedMax,
+    MathVector3Add,
+    MathVector3Multiply,
+    MathVector3Negate,
+    MathVector3Normalize,
+} from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -20,7 +46,14 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
         AnimationFrameIndex: gl.getUniformLocation(shaderProgram, "AnimationFrameIndex"),
         ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
+        LaserTexture: gl.getUniformLocation(shaderProgram, "LaserTexture"),
+        NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
         LUTTexture: gl.getUniformLocation(shaderProgram, "LUTTexture"),
+        PositionStart: gl.getUniformLocation(shaderProgram, "PositionStart"),
+        PositionEnd: gl.getUniformLocation(shaderProgram, "PositionEnd"),
+        SpotlightScale: gl.getUniformLocation(shaderProgram, "SpotlightScale"),
+        SpotlightPos: gl.getUniformLocation(shaderProgram, "SpotlightPos"),
+        SpotlightTexture: gl.getUniformLocation(shaderProgram, "SpotlightTexture"),
     };
     return params;
 }
@@ -30,11 +63,11 @@ class CAnimationComponent {
 
     AgeNormalized = 0.0;
 
-    FadeInParameter = 0.0;
+    FadeInParameter = 1.0;
 
     FadeInSpeed = 1.0;
 
-    FadeOutParameter = 1.0;
+    FadeOutParameter = 0.0;
 
     FadeOutSpeed = 1.0;
 
@@ -54,14 +87,16 @@ class CAnimationComponent {
     }
 
     FadeInUpdate() {
-        if (this.FadeInParameter <= 1.0) {
+        if (this.FadeInParameter < 1.0) {
             this.FadeInParameter += GTime.Delta * this.FadeInSpeed;
+            this.FadeInParameter = Math.min(1.0, this.FadeInParameter);
         }
     }
 
     FadeOutUpdate() {
-        if (this.FadeOutParameter >= 0) {
+        if (this.FadeOutParameter > 0) {
             this.FadeOutParameter -= GTime.Delta * this.FadeOutSpeed;
+            this.FadeOutParameter = Math.max(0.0, this.FadeOutParameter);
         }
     }
 
@@ -71,6 +106,14 @@ class CAnimationComponent {
         this.AgeNormalized = 0.0;
         this.FadeInParameter = 0.0;
         this.FadeOutParameter = 1.0;
+    }
+
+    IsFadeInFinished() {
+        return this.FadeInParameter >= 0.99;
+    }
+
+    IsFadeOutFinished() {
+        return this.FadeOutParameter <= 0.01;
     }
 }
 
@@ -106,6 +149,25 @@ export class LighterTool {
 
     //Base
     bActiveThisFrame = false;
+
+    //Audio
+    private SoundLighterStart: SoundSample = new SoundSample();
+
+    private SoundLoopLighterGas: SoundSample = new SoundSample();
+
+    PlayLighterStartSound() {
+        this.SoundLighterStart.Play(GAudioEngine.GetContext()!);
+    }
+
+    PlayLighterGasSound() {
+        this.SoundLoopLighterGas.Play(GAudioEngine.GetContext()!, true);
+    }
+
+    ForceStopLighterGasSound() {
+        if (this.SoundLoopLighterGas.SourceNode) {
+            this.SoundLoopLighterGas.Stop();
+        }
+    }
 
     constructor(gl: WebGL2RenderingContext) {
         //Create Shader Program
@@ -189,6 +251,21 @@ export class LighterTool {
         };
 
         this.SmokeParticles = new ParticlesEmitter(gl, LighterSmokeParticleDesc);
+
+        //Audio
+
+        this.SoundLighterStart.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/lighterStart.mp3",
+            GAudioEngine.GetMasterGain(),
+        );
+
+        this.SoundLoopLighterGas.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/lighterGasLoop.mp3",
+            GAudioEngine.GetMasterGain(),
+            0.5,
+        );
     }
 
     RandCur = 0.0;
@@ -196,7 +273,8 @@ export class LighterTool {
     ColorLerpParam = 0.0;
 
     //Executes regardless of state
-    UpdateMain(gl: WebGL2RenderingContext, BurningSurface: RFirePlanePass) {
+    UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
+        const RenderStateMachine = GRenderingStateMachine.GetInstance();
         //State independent update
         {
             //Position
@@ -216,8 +294,8 @@ export class LighterTool {
 
         //Interactivity check
         const bInteracted =
-            GRenderingStateMachine.GetInstance().currentState !== ERenderingState.BurningFinished &&
-            GRenderingStateMachine.GetInstance().bCanBurn &&
+            RenderStateMachine.currentState !== ERenderingState.BurningFinished &&
+            RenderStateMachine.bCanBurn &&
             GUserInputDesc.bPointerInputPressedCurFrame;
         if (bInteracted) {
             this.bActiveThisFrame = true;
@@ -233,7 +311,7 @@ export class LighterTool {
             if (GUserInputDesc.bPointerInputPressedPrevFrame) {
                 //start fade out logic
             }
-            if (this.AnimationComponent.FadeInParameter > 1) {
+            if (this.AnimationComponent.FadeInParameter >= 0.99) {
                 this.AnimationComponent.FadeOutUpdate();
             }
 
@@ -282,9 +360,23 @@ export class LighterTool {
         } else {
             GSceneDesc.Tool.Radius = 0.0;
         }
+
+        if (RenderStateMachine.bCanBurn) {
+            if (RenderStateMachine.currentState !== ERenderingState.BurningFinished) {
+                if (GUserInputDesc.bPointerInputPressedCurFrame) {
+                    if (!GUserInputDesc.bPointerInputPressedPrevFrame) {
+                        this.PlayLighterStartSound();
+                    } else {
+                        this.PlayLighterGasSound();
+                    }
+                } else {
+                    this.ForceStopLighterGasSound();
+                }
+            }
+        }
     }
 
-    RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: RFirePlanePass) {
+    RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
         const curInputPos = GUserInputDesc.InputPosCurNDC;
         const curInputDir = { x: 0, y: 0 };
         curInputDir.x = GUserInputDesc.InputPosCurNDC.x - GUserInputDesc.InputPosPrevNDC.x;
@@ -304,6 +396,7 @@ export class LighterTool {
 
         /* Set up blending */
         gl.enable(gl.BLEND);
+        gl.blendEquation(gl.FUNC_ADD);
         gl.blendFunc(gl.ONE, gl.ONE);
         BurningSurface.ApplyFirePass.Execute(
             gl,
@@ -311,6 +404,7 @@ export class LighterTool {
             { x: 0.0, y: 1.0 },
             0.05,
             2.0 * GTime.Delta,
+            true,
         );
         gl.disable(gl.BLEND);
     }
@@ -430,5 +524,416 @@ export class LighterTool {
             2 * Float32Array.BYTES_PER_ELEMENT,
             0,
         );
+    }
+}
+
+//=============================================================================================================================
+// 														LASER
+//=============================================================================================================================
+
+function rayAABBIntersection(rayOrigin: Vector3, rayDirection: Vector3, aabbCenter: Vector3, aabbExtent: Vector3) {
+    // Calculate the inverse direction of the ray
+    const invDirection: Vector3 = {
+        x: 1.0 / rayDirection.x,
+        y: 1.0 / rayDirection.y,
+        z: 1.0 / rayDirection.z,
+    };
+
+    // Calculate the minimum and maximum t values for each axis
+    const tmin = (aabbCenter.x - aabbExtent.x - rayOrigin.x) * invDirection.x;
+    const tmax = (aabbCenter.x + aabbExtent.x - rayOrigin.x) * invDirection.x;
+    const tymin = (aabbCenter.y - aabbExtent.y - rayOrigin.y) * invDirection.y;
+    const tymax = (aabbCenter.y + aabbExtent.y - rayOrigin.y) * invDirection.y;
+    const tzmin = (aabbCenter.z - aabbExtent.z - rayOrigin.z) * invDirection.z;
+    const tzmax = (aabbCenter.z + aabbExtent.z - rayOrigin.z) * invDirection.z;
+
+    // Find the maximum and minimum t values for intersection
+    const tEnter = Math.max(Math.max(Math.min(tmin, tmax), Math.min(tymin, tymax)), Math.min(tzmin, tzmax));
+    const tExit = Math.min(Math.min(Math.max(tmin, tmax), Math.max(tymin, tymax)), Math.max(tzmin, tzmax));
+
+    // Check if the intersection is outside the valid range
+    if (tExit < 0 || tEnter > tExit) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+export class LaserTool {
+    //Render Resources
+    ShaderProgram;
+
+    ShaderProgramFlare;
+
+    UniformParametersLocationList;
+
+    UniformParametersLocationListFlare;
+
+    LaserTexture;
+
+    NoiseTexture;
+
+    LightFlareTexture;
+
+    //Components
+    AnimationComponent = new CAnimationComponent();
+
+    //Base
+    bActiveThisFrame = false;
+
+    bFirstInteraction = true;
+
+    bIntersection = false;
+
+    //Audio
+    private SoundLaser: SoundSample = new SoundSample();
+
+    private SoundLaserStop: SoundSample = new SoundSample();
+
+    PlayLaserSound() {
+        this.SoundLaser.Play(GAudioEngine.GetContext()!);
+    }
+
+    ForceStopLaserSound() {
+        if (this.SoundLaser.bIsPlaying) {
+            this.SoundLaser.Stop();
+            this.SoundLaserStop.Play(GAudioEngine.GetContext()!, true);
+        }
+    }
+
+    //Particles
+    SparksParticles: ParticlesEmitter;
+
+    //Desc
+
+    LaserStrength = 5.0 + Math.random() * 5.0;
+
+    LaserBrightness = 4.0;
+
+    LaserColor = { r: 1.0 * this.LaserBrightness, g: 0.4 * this.LaserBrightness, b: 0.2 * this.LaserBrightness };
+
+    LaserGlowZPos = -0.3;
+
+    LaserStartPos = {
+        x: MathMapToRange(Math.random(), 0.0, 1.0, -1.0, 1.0) * -10.0,
+        y: MathMapToRange(Math.random(), 0.0, 1.0, -1.0, 1.0) * -10.0,
+        z: 0.0,
+    };
+
+    LaserDir = {
+        x: MathMapToRange(Math.random(), 0.0, 1.0, -1.0, 1.0) * -10.0,
+        y: MathMapToRange(Math.random(), 0.0, 1.0, -1.0, 1.0) * -10.0,
+        z: 0.0,
+    };
+
+    constructor(gl: WebGL2RenderingContext) {
+        //Create Shader Program
+        this.ShaderProgram = CreateShaderProgramVSPS(gl, GetShaderSourceLaserVS(), GetShaderSourceLaserPS());
+
+        //Shader Parameters
+        this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
+
+        this.ShaderProgramFlare = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceLightFlareRenderVS(),
+            GetShaderSourceLaserFlareRenderPS(),
+        );
+        this.UniformParametersLocationListFlare = GetUniformParametersList(gl, this.ShaderProgramFlare);
+
+        this.LaserTexture = GTexturePool.CreateTexture(gl, false, "laserBeam0", false);
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
+        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `laserGlare0`);
+
+        this.AnimationComponent.Speed = 1.0;
+        this.AnimationComponent.FadeInSpeed = 15.0;
+        this.AnimationComponent.FadeOutSpeed = 30.0;
+
+        //Audio
+
+        this.SoundLaser.Init(GAudioEngine.GetContext(), "assets/audio/laserMain4.mp3", GAudioEngine.GetMasterGain());
+
+        this.SoundLaserStop.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/laserStop.mp3",
+            GAudioEngine.GetMasterGain(),
+            0.25,
+        );
+
+        //Particles
+        const SparksParticlesDesc = GetEmberParticlesDesc();
+        SparksParticlesDesc.inNumSpawners2D = 32;
+        SparksParticlesDesc.inSpawnRange.x = 0.0;
+        SparksParticlesDesc.inParticleLife = 0.5;
+        //SparksParticlesDesc.inDefaultSize.x *= 2.0;
+        //SparksParticlesDesc.inDefaultSize.y *= 0.5;
+        SparksParticlesDesc.inInitialVelocityScale *= 0.5;
+        //SparksParticlesDesc.inVelocityFieldForceScale *= 10.0;
+        SparksParticlesDesc.inEInitialPositionMode = 2;
+        SparksParticlesDesc.inRandomSpawnThres = 0.5;
+        SparksParticlesDesc.inbOneShotParticle = true;
+
+        this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
+    }
+
+    //Executes regardless of state
+    UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
+        const RenderStateMachine = GRenderingStateMachine.GetInstance();
+        //State independent update
+        {
+            //Position
+            const posWS = { x: GUserInputDesc.InputPosCurNDC.x, y: GUserInputDesc.InputPosCurNDC.y };
+            posWS.x *= GScreenDesc.ScreenRatio;
+            posWS.x /= GSceneDesc.Camera.ZoomScale;
+            posWS.y /= GSceneDesc.Camera.ZoomScale;
+
+            posWS.x *= -GSceneDesc.Camera.Position.z + 1.0;
+            posWS.y *= -GSceneDesc.Camera.Position.z + 1.0;
+            //posWS.y += 0.25;
+
+            GSceneDesc.Tool.Position.x = posWS.x;
+            GSceneDesc.Tool.Position.y = posWS.y;
+            GSceneDesc.Tool.Position.z = this.LaserGlowZPos;
+        }
+
+        //Interactivity check
+
+        this.LaserDir = MathVector3Normalize(
+            MathVector3Negate(
+                { x: GUserInputDesc.InputPosCurViewSpace.x, y: GUserInputDesc.InputPosCurViewSpace.y, z: 0.0 },
+                this.LaserStartPos,
+            ),
+        );
+
+        this.bIntersection = rayAABBIntersection(
+            this.LaserStartPos,
+            this.LaserDir,
+            GSceneDesc.FirePlane.PositionOffset,
+            { x: 0.4, y: 0.4, z: 0.0 },
+        );
+
+        const bInteracted =
+            RenderStateMachine.currentState !== ERenderingState.BurningFinished &&
+            RenderStateMachine.bCanBurn &&
+            GUserInputDesc.bPointerInputPressedCurFrame &&
+            this.bIntersection;
+
+        if (bInteracted) {
+            this.bActiveThisFrame = true;
+            if (!GUserInputDesc.bPointerInputPressedPrevFrame) {
+                //start fade in logic
+
+                this.AnimationComponent.Reset();
+
+                this.SparksParticles.Reset(gl);
+
+                if (this.bFirstInteraction) {
+                    this.LaserStartPos = {
+                        x: MathSignedMax(GUserInputDesc.InputPosCurViewSpace.x, 0.5) * 4.0,
+                        y: GUserInputDesc.InputPosCurViewSpace.y * 5.0,
+                        z: -4.0,
+                    };
+
+                    this.bFirstInteraction = false;
+                }
+
+                this.PlayLaserSound();
+            }
+        } else {
+            if (GUserInputDesc.bPointerInputPressedPrevFrame) {
+                //start fade out logic
+                this.ForceStopLaserSound();
+            }
+            if (this.AnimationComponent.IsFadeInFinished()) {
+                this.AnimationComponent.FadeOutUpdate();
+            }
+
+            if (this.bActiveThisFrame) {
+                if (this.AnimationComponent.IsFadeOutFinished()) {
+                    this.bActiveThisFrame = false;
+                }
+            }
+        }
+
+        /* if (this.SoundLaser.bIsPlaying) {
+            this.SoundLaser.Stop();
+        } */
+
+        if (this.bActiveThisFrame) {
+            //Animation
+            this.AnimationComponent.Update();
+            this.AnimationComponent.FadeInUpdate();
+
+            //Color
+            GSceneDesc.Tool.Color = this.LaserColor;
+            GSceneDesc.Tool.Radius = 2.0 * this.AnimationComponent.FadeOutParameter;
+
+            this.SparksParticles.Update(gl, BurningSurface.GetCurFireTexture()!, {
+                x: GSceneDesc.Tool.Position.x,
+                y: GSceneDesc.Tool.Position.y,
+            });
+
+            //Apply Fire
+            if (this.AnimationComponent.IsFadeInFinished()) {
+                this.RenderToFireSurface(gl, BurningSurface);
+            }
+        } else {
+            GSceneDesc.Tool.Radius = 0.0;
+        }
+
+        if (RenderStateMachine.bCanBurn) {
+            if (RenderStateMachine.currentState !== ERenderingState.BurningFinished) {
+                if (GUserInputDesc.bPointerInputPressedCurFrame) {
+                    if (!GUserInputDesc.bPointerInputPressedPrevFrame) {
+                        //this.PlayLaserSound();
+                    } else {
+                        //this.PlayLighterGasSound();
+                    }
+                } else {
+                    //this.PlayLaserStopSound();
+                }
+            }
+        }
+    }
+
+    RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
+        const curInputPos = GUserInputDesc.InputPosCurNDC;
+        const curInputDir = { x: 0, y: 0 };
+        curInputDir.x = GUserInputDesc.InputPosCurNDC.x - GUserInputDesc.InputPosPrevNDC.x;
+        curInputDir.y = GUserInputDesc.InputPosCurNDC.y - GUserInputDesc.InputPosPrevNDC.y;
+        const inputDirLength = MathGetVectorLength(curInputDir);
+        let sizeScale;
+        if (GUserInputDesc.bPointerInputMoving == false) {
+            sizeScale = 0.005;
+            curInputDir.x = 0;
+            curInputDir.y = 1;
+        } else {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            sizeScale = MathClamp(inputDirLength * 0.5, 0.001, 0.05);
+        }
+
+        //BurningSurface.Reset(gl);
+
+        BurningSurface.BindFireRT(gl);
+
+        /* Set up blending */
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.MAX);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        BurningSurface.ApplyFirePass.Execute(
+            gl,
+            { x: curInputPos.x, y: curInputPos.y },
+            GUserInputDesc.InputVelocityCurViewSpace,
+            0.0035 /* 0.05 */,
+            this.LaserStrength,
+            true,
+        );
+        gl.disable(gl.BLEND);
+    }
+
+    Render(gl: WebGL2RenderingContext) {
+        if (!this.bIntersection) {
+            return;
+        }
+
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.ShaderProgram);
+
+        //Constants
+        gl.uniform4f(
+            this.UniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+
+        const posStart = this.LaserStartPos;
+        gl.uniform3f(this.UniformParametersLocationList.PositionStart, posStart.x, posStart.y, posStart.z);
+
+        let posEnd = { x: GSceneDesc.Tool.Position.x, y: GSceneDesc.Tool.Position.y, z: 0.0 };
+        if (!this.bIntersection) {
+            posEnd = MathVector3Add(posStart, MathVector3Multiply(this.LaserDir, 10));
+        }
+
+        let posEndFinal = MathLerpVec3(posStart, posEnd, this.AnimationComponent.FadeInParameter);
+        if (this.AnimationComponent.FadeOutParameter < 1.0) {
+            posEndFinal = MathLerpVec3(posStart, posEnd, this.AnimationComponent.FadeOutParameter);
+        }
+        gl.uniform3f(this.UniformParametersLocationList.PositionEnd, posEndFinal.x, posEndFinal.y, posEndFinal.z);
+
+        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.CurClamped);
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this.LaserTexture);
+        gl.uniform1i(this.UniformParametersLocationList.LaserTexture, 1);
+
+        gl.activeTexture(gl.TEXTURE0 + 2);
+        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
+        gl.uniform1i(this.UniformParametersLocationList.NoiseTexture, 2);
+
+        //Textures
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        if (
+            this.AnimationComponent.IsFadeInFinished() &&
+            this.AnimationComponent.FadeOutParameter >= 0.99 &&
+            this.bIntersection
+        ) {
+            this.RenderFlare(gl);
+        }
+    }
+
+    LaserGlareSizeDefault = 0.5;
+
+    RenderFlare(gl: WebGL2RenderingContext) {
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.ShaderProgramFlare);
+
+        //Constants
+        gl.uniform4f(
+            this.UniformParametersLocationListFlare.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationListFlare.ScreenRatio, GScreenDesc.ScreenRatio);
+
+        const finalGlareSize =
+            this.LaserGlareSizeDefault *
+            (0.75 + (Math.sin(GTime.Cur * 2) * 0.5 + 0.5) * 0.5 + (Math.sin(GTime.Cur * 2 * 2.7) * 0.5 + 0.5) * 0.1);
+
+        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, finalGlareSize, finalGlareSize);
+
+        gl.uniform1f(this.UniformParametersLocationListFlare.Time, GTime.CurClamped);
+
+        gl.uniform3f(
+            this.UniformParametersLocationListFlare.SpotlightPos,
+            GSceneDesc.Tool.Position.x,
+            GSceneDesc.Tool.Position.y,
+            -0.1,
+        );
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this.LightFlareTexture);
+        gl.uniform1i(this.UniformParametersLocationListFlare.SpotlightTexture, 1);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    SubmitDebugUI(datGui: dat.GUI) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const folder = datGui.addFolder("Tool Params");
+        //folder.open();
+
+        folder.add(this.AnimationComponent, "FadeInParameter", 0, 1).step(0.01).listen();
+        folder.add(this.AnimationComponent, "FadeOutParameter", 0, 1).step(0.01).listen();
+        folder.add(this, "bActiveThisFrame", 0, 1).listen();
+        folder.add(this, "bIntersection", 0, 1).listen();
     }
 }

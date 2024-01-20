@@ -14,6 +14,14 @@ export function MathGetVectorLength(vec2: Vector2) {
 export function MathClamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max);
 }
+
+export function MathSignedMax(value: number, max: number) {
+    if (value < 0.0) {
+        return Math.min(value, -max);
+    } else {
+        return Math.max(value, max);
+    }
+}
 export function MathVector2Normalize(vec: Vector2) {
     const length = Math.sqrt(vec.x * vec.x + vec.y * vec.y);
     if (length === 0) {
