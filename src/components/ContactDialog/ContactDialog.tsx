@@ -167,6 +167,7 @@ export const ContactDialog = ({ visible, setVisible }: { visible: boolean; setVi
             // Optional: Wait for 5 seconds before clearing the form
             await sleep(5000);
 
+            setVisible();
             // Clear the form after submission (optional)
             setFormData({ name: "", email: "", message: "" });
             setIsSubmitted(false);
