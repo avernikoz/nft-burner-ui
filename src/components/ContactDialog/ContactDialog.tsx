@@ -191,7 +191,7 @@ export const ContactDialog = ({ visible, setVisible }: { visible: boolean; setVi
             draggable={false}
             resizable={false}
         >
-            <NftBurnDialogContainer style={{ minWidth: "350px" }}>
+            <NftBurnDialogContainer style={{ minWidth: "350px", marginBottom: 0 }}>
                 <StyledForm
                     onSubmit={handleSubmit}
                     name="contact"
