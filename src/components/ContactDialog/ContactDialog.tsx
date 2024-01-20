@@ -61,7 +61,7 @@ export const GlowingInput = styled.input`
     -ms-user-select: text;
     user-select: text;
 
-    background: linear-gradient(180deg, rgba(24, 24, 26, 0.8) 0%, rgba(11, 11, 12, 0.8) 100%);
+    background: rgba(11, 11, 12, 0.8) 100%;
 
     font-family: Rubik;
     font-style: normal;
@@ -90,7 +90,7 @@ const GlowingTextarea = styled.textarea`
         color: #b5b5c2;
     }
 
-    background: linear-gradient(180deg, rgba(24, 24, 26, 0.8) 0%, rgba(11, 11, 12, 0.8) 100%);
+    background: rgba(11, 11, 12, 0.8);
 
     font-family: Rubik;
     font-style: normal;
@@ -167,6 +167,7 @@ export const ContactDialog = ({ visible, setVisible }: { visible: boolean; setVi
             // Optional: Wait for 5 seconds before clearing the form
             await sleep(5000);
 
+            setVisible();
             // Clear the form after submission (optional)
             setFormData({ name: "", email: "", message: "" });
             setIsSubmitted(false);
@@ -190,7 +191,7 @@ export const ContactDialog = ({ visible, setVisible }: { visible: boolean; setVi
             draggable={false}
             resizable={false}
         >
-            <NftBurnDialogContainer style={{ minWidth: "350px" }}>
+            <NftBurnDialogContainer style={{ minWidth: "350px", marginBottom: 0 }}>
                 <StyledForm
                     onSubmit={handleSubmit}
                     name="contact"
