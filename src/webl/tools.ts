@@ -6,11 +6,7 @@ import { EParticleShadingMode, ParticlesEmitter } from "./particles";
 import { GetEmberParticlesDesc } from "./particlesConfig";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
-import {
-    GetShaderSourceLaserFlareRenderPS,
-    GetShaderSourceLightFlareRenderPS,
-    GetShaderSourceLightFlareRenderVS,
-} from "./shaders/shaderBackgroundScene";
+import { GetShaderSourceLaserFlareRenderPS, GetShaderSourceLightFlareRenderVS } from "./shaders/shaderBackgroundScene";
 import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
 import {
     GetShaderSourceAnimatedSpriteRenderPS,
@@ -640,7 +636,7 @@ export class LaserTool {
         );
         this.UniformParametersLocationListFlare = GetUniformParametersList(gl, this.ShaderProgramFlare);
 
-        this.LaserTexture = GTexturePool.CreateTexture(gl, false, "laserBeam0", false);
+        this.LaserTexture = GTexturePool.CreateTexture(gl, false, "laserBeam1", false);
         this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
         this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `laserGlare0`);
 
@@ -650,7 +646,7 @@ export class LaserTool {
 
         //Audio
 
-        this.SoundLaser.Init(GAudioEngine.GetContext(), "assets/audio/laserMain4.mp3", GAudioEngine.GetMasterGain());
+        this.SoundLaser.Init(GAudioEngine.GetContext(), "assets/audio/laserMain5.mp3", GAudioEngine.GetMasterGain());
 
         this.SoundLaserStop.Init(
             GAudioEngine.GetContext(),

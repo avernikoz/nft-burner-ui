@@ -67,7 +67,7 @@ import { ERenderingState, GRenderingStateMachine } from "./states";
 import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController } from "./animationController";
 import { GAudioEngine } from "./audioEngine";
-import { LaserTool, LighterTool } from "./tools";
+import { LaserTool } from "./tools";
 import { GTexturePool } from "./texturePool";
 import { GReactGLBridgeFunctions } from "./reactglBridge";
 import { GTransitionAnimationsConstants } from "./transitionAnimations";
@@ -1053,6 +1053,7 @@ export function RenderMain() {
                     flameSourceTextureRef = GRenderTargets.FlameTexture2;
 
                     EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+                    DustParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                     AfterBurnEmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                     if (bAshesInEmbersPass) {
                         AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -1115,7 +1116,7 @@ export function RenderMain() {
                 // 		SMOKE RENDER
                 //======================
                 BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, GScreenDesc.HalfResRenderTargetSize, true);
-                DustParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+                //DustParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 if (!bAshesInEmbersPass) {

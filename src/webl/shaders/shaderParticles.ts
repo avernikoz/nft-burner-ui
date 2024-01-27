@@ -30,7 +30,7 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
 		{
 			outVelocity.y *= 0.25f;
 		} */
-		outVelocity.y += InitialVelocityScale * 0.25f;
+		outVelocity.y += InitialVelocityScale * 0.15f;
 		//outVelocity.y += abs(outVelocity.y) * 0.75f;
 		`
         );
@@ -96,7 +96,7 @@ function scGetVectorFieldForce(scale: number) {
             /* glsl */ `vec2 uv = (inPosition + 1.f) * 0.5f;
 			uv.x += float(gl_VertexID) * 0.025;
 			uv.y += float(gl_VertexID) * 0.01;
-			//uv *= 0.5f;
+			uv *= 0.5f;
 			uv.y -= CurTime * 0.1f;
 			//uv *= mix(0.1f, 0.5f, fract(mod(CurTime, 10.f) * 0.1f));
 			vec3 randVelNoise = texture(NoiseTexture, uv.xy).rgb;
@@ -128,6 +128,7 @@ function scGetVectorFieldForce(scale: number) {
 			const float clampValue = 50.f;
 			randVel = clamp(randVel, vec2(-clampValue), vec2(clampValue));
 
+			randVel += normalize(vec2(-1, 0.2)) * 10.5f * 0.5;
 
 			//randVel = normalize(vec2(-1, 0.0)) * 35.f * 0.5;
 
@@ -398,8 +399,10 @@ function scTransformBasedOnMotion(condition: boolean) {
 			if(velLength > 0.f)
 			{
 				velLength = min(1.0, velLength);
-				pos.y *= clamp(1.f - velLength * 0.8, 0.5f, 1.f);
-				pos.x *= (1.f + velLength * 4.0);
+				//pos.y *= clamp(1.f - velLength * 0.8, 0.5f, 1.f);
+				//pos.x *= (1.f + velLength * 4.0);
+				pos.x *= 2.0;
+				//pos.y *= 0.5;
 				
 				// Calculate the angle between the initial direction (1, 0) and the desired direction
 				float angle = atan(curVelocity.y, curVelocity.x);
@@ -558,11 +561,9 @@ export function GetParticleRenderInstancedVS(
 				vec2 pos = VertexBuffer.xy;
 
 				//offset
-				pos += kInitTranslate;
+				//pos += kInitTranslate;
 				
-				pos.xy *= CameraDesc.w;
-				pos.x /= ScreenRatio;
-				pos.xy /= kSizeScale;
+				
   
 			#if 1 //NOISE-DRIVEN SIZE
 			const float kSizeChangeSpeed = float(` +
@@ -624,8 +625,8 @@ export function GetParticleRenderInstancedVS(
 				  return;
 				}
 
-				pos.x *= max(kSizeClampMax.x, scale);
-				pos.y *= max(kSizeClampMax.y, scale);
+				//pos.x *= max(kSizeClampMax.x, scale);
+				//pos.y *= max(kSizeClampMax.y, scale);
 
 			}
 			#endif//NOISE DRIVEN SIZE
@@ -643,6 +644,10 @@ export function GetParticleRenderInstancedVS(
 			` +
         scTransformBasedOnMotion(bMotionBasedTransform) +
         /* glsl */ `
+
+		pos.xy *= CameraDesc.w;
+				pos.x /= ScreenRatio;
+				pos.xy /= kSizeScale;
 
 			//fade in-out
 		` +
@@ -902,8 +907,7 @@ function scAshesSpecificShading() {
 }
 
 function scDustSpecificShading() {
-    return (
-        /* glsl */ `
+    return /* glsl */ `
 
 		//vec2 uv = interpolatorTexCoords * 0.005f;
 		vec2 uv = interpolatorTexCoords * 0.01f;
@@ -921,33 +925,106 @@ function scDustSpecificShading() {
 		float alphaNoise = texture(ColorTexture, uv).r;
 		alphaNoise = clamp(MapToRange(alphaNoise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
 
-		colorFinal.rgb = vec3(` +
-        Math.random() * 0.35 +
-        /* glsl */ ` * alphaNoise);
+		colorFinal.rgb = vec3(1.0, 0.4, 0.6);
+		colorFinal.rgb = mix(vec3(1.0, 0.5, 0.2), vec3(0.8, 0.75, 0.9), mod(instanceId * 0.00025, 0.2) + interpolatorAge) * clamp(interpolatorFrameIndex * 0.001 + mod(instanceId * 0.025, 2.0), 0.0, 2.5);
 		//colorFinal.a = 0.35 * (1.f - noise);
 		colorFinal.a = alphaNoise * (1.f - noise);
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		float c = noise * 0.5;
 		//float c = 0.1;
-		s *= 2.f;
-		if(s > 0.5f)
+		//c = 0.0;
+		//s *= 2.f;
+		
+		float thresRandParam = clamp(interpolatorFrameIndex * 0.00053f + mod(instanceId * 0.077f, 1.0), 0.0, 0.5);
+		float blurParam = clamp(interpolatorFrameIndex * 0.000053f + mod(instanceId * 0.00077f, 1.0), 0.05, 0.15);
+		blurParam = min(thresRandParam - 0.05, blurParam);
+
+		float cutThres = thresRandParam;
+		float thres = cutThres - blurParam; // < 0.5 !
+
+		/* cutThres = 0.5;
+		thres = cutThres - 0.15;  */
+
+		if(s > cutThres)
 		{
-			s += c;
-			//s = 1.f;
+			s = 1.f;
+			
+		}
+		else if(s > thres)
+		{
+			s = MapToRange(s, thres, cutThres, 0.0, 1.0);
+		}	
+		else
+		{
+			s = 0.f;
+		}
+		s = (1.f - clamp(s, 0.f, 1.f));
+
+	#if 1//capsule
+
+		vec2 st = interpolatorTexCoords;
+
+		vec2 objectSize = vec2(2.0, 1.0);
+		vec2 objectSpacePos = st * objectSize;
+
+		float additionalCut = 0.0;
+
+    	float radius = 0.5 - additionalCut;
+
+		vec2 circle1Pos = vec2(objectSize.x - radius, 0.5);
+		vec2 circle2Pos = vec2(0.0 + radius, 0.5);
+		
+		s = 1.0;
+
+		if(objectSpacePos.x > circle1Pos.x)
+		{
+			float distToCircle1 = length(vec2(objectSpacePos - vec2(1.5, 0.5)));
+			if(distToCircle1 > radius)
+			{
+				s = 0.0;
+			}
+		}
+		else if(objectSpacePos.x < circle2Pos.x)
+		{
+			float distToCircle1 = length(objectSpacePos - circle2Pos);
+			if(distToCircle1 > radius)
+			{
+				s = 0.0;
+			}
+		}
+		/* else if(abs(objectSpacePos.y - 0.5) > radius)
+		{
+			s = 0.0;
+		} */
+
+#endif
+		
+
+		//s = (1.f - clamp(s, 0.f, 1.f));
+		
+
+
+
+
+
+
+		
+		/* if(s > thres)
+		{
+			//s += c;
 		}
 		else
 		{
-			s -= c;
-			//s = 0.f;
-		}
+			//s -= c;
+			
+		} */
 		//s += 0.15f;
-		s = (1.f - clamp(s, 0.f, 1.f));
-		colorFinal.rgb *= s;
-		colorFinal.a *= s * s;
-		colorFinal.rgb *= 1.0 + c * 0.5;
-		`
-    );
+		
+		colorFinal.rgb *= s ;
+		//colorFinal.a *= s * s;
+		//colorFinal.rgb *= 1.0 + c * 0.5;
+		`;
 }
 
 function scGetBasedOnShadingMode(
@@ -1000,6 +1077,12 @@ export function GetParticleRenderColorPS(
 		
 		uniform vec2 FlipbookSizeRC;
 		uniform float CurTime;
+
+		float roundedRectangle(vec2 st, vec2 size, float radius) {
+			vec2 halfSize = size * 0.5;
+			vec2 d = abs(st) - halfSize + vec2(radius);
+			return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - radius;
+		}
   
 		float CircularFadeIn(float x) 
 		{

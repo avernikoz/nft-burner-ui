@@ -1,5 +1,3 @@
-import { MathLerp } from "../utils";
-
 export function GetShaderSourceSingleFlameRenderVS() {
     return /* glsl */ `#version 300 es
 	
@@ -249,8 +247,8 @@ export function GetShaderSourceLaserVS() {
 		vec3 lineNormalStart = cross(dirVec, dirToCamFromStart);
 		vec3 lineNormalEnd = cross(dirVec, dirToCamFromEnd);
 
-		const float lineThickness = 0.05;
-		//const float lineThickness = 0.15;
+		//const float lineThickness = 0.05;
+		const float lineThickness = 0.3;
 		/* vec3 lineNormalStart = vec3(0.0, 1.0, 0.0) * lineThickness;
 		vec3 lineNormalEnd = vec3(0.0, 1.0, 0.0) * lineThickness * 0.25; */
 
