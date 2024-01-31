@@ -20,11 +20,18 @@ import { ReactComponent as FailedIcon } from "../../../../assets/svg/failedIcon.
 import { ReactComponent as BurnIcon } from "../../../../assets/svg/burnIcon.svg";
 import { ReactComponent as InfoIcon } from "../../../../assets/svg/infoIcon.svg";
 
+// instruments
+import { ReactComponent as LaserIcon } from "../../../../assets/svg/instruments/Laser.svg";
+import { ReactComponent as LighterIcon } from "../../../../assets/svg/instruments/Lighter.svg";
+import { ReactComponent as TunderIcon } from "../../../../assets/svg/instruments/Tunder.svg";
+
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import {
     BurningCeremonyHighlight,
     BurningCeremonyText,
     DialogImageContainer,
+    InstrumentsContainer,
+    InstrumentsDivider,
     NftBurnDialogContainer,
     NftBurnDialogImg,
     NftBurnDialogImgTitle,
@@ -41,6 +48,8 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { ConfirmBurningButton } from "../../../ConfirmBurningButton/ConfirmBurningButton";
 import { useNftFloorPrice } from "../../../../hooks/useNftFloorPrice";
 import { sleep } from "../../../../utils/sleep";
+import { useInstumentsPrice } from "../../../../hooks/useInstrumentsPrice";
+import { GReactGLBridgeFunctions } from "../../../../webl/reactglBridge";
 
 export const NftBurnDialog = ({
     nft,
@@ -83,8 +92,10 @@ export const NftBurnDialog = ({
     const solanaConnection = useConnection();
     const signer = useEthersSigner();
     const toastController = useContext(ToastContext);
+    const [instrument, setInstrument] = useState<"laser" | "lighter" | "tunder">("laser");
     const { data: floorPrice } = useNftFloorPrice(nft);
     const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    const { instrumentPriceInNetworkToken } = useInstumentsPrice({ instrument, network: nft?.network });
 
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
 
@@ -195,6 +206,20 @@ export const NftBurnDialog = ({
                                 {burnerFee} {burnerFeeToken}
                             </NftBurnDialogInfoValue>
                         </NftBurnDialogInfoContainer>
+                        <NftBurnDialogInfoContainer>
+                            <Tooltip
+                                className="tooltip-burner-fee"
+                                content="🎶 Elevate your burner vibes with personalized instruments – add a touch of harmony to your creativity!"
+                                target={".instruments"}
+                                position="top"
+                            />
+                            <NftBurnDialogInfoTitle className="instruments">
+                                Instruments <InfoIcon />:
+                            </NftBurnDialogInfoTitle>
+                            <NftBurnDialogInfoValue>
+                                {instrumentPriceInNetworkToken} {burnerFeeToken}
+                            </NftBurnDialogInfoValue>
+                        </NftBurnDialogInfoContainer>
                     </div>
                     <div>
                         <BurningCeremonyText>
@@ -238,6 +263,28 @@ export const NftBurnDialog = ({
                     </StatusTransactionContainer>
                 </div>
             </NftBurnDialogContainer>
+            <>
+                <InstrumentsContainer>
+                    <LaserIcon
+                        onClick={() => {
+                            GReactGLBridgeFunctions.OnInstrumentClick("laser");
+                            setInstrument("laser");
+                        }}
+                    />
+                    <TunderIcon
+                        onClick={() => {
+                            GReactGLBridgeFunctions.OnInstrumentClick("tunder");
+                            setInstrument("tunder");
+                        }}
+                    />
+                    <LighterIcon
+                        onClick={() => {
+                            GReactGLBridgeFunctions.OnInstrumentClick("lighter");
+                            setInstrument("lighter");
+                        }}
+                    />
+                </InstrumentsContainer>
+            </>
             <div>
                 <ConfirmBurningButton
                     style={{ width: "100%", display: "flex", height: "58.5px" }}
