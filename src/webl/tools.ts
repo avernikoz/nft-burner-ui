@@ -1,4 +1,5 @@
 import { GAudioEngine, SoundSample } from "./audioEngine";
+import { GCameraShakeController } from "./controller";
 import { GBurningSurface } from "./firePlane";
 import { GMeshGenerator } from "./helpers/meshGenerator";
 import { GUserInputDesc } from "./input";
@@ -10,6 +11,7 @@ import {
     GetShaderSourceLaserFlareRenderPS,
     GetShaderSourceLightFlareRenderPS,
     GetShaderSourceLightFlareRenderVS,
+    GetShaderSourceThunderFlareRenderPS,
 } from "./shaders/shaderBackgroundScene";
 import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
 import {
@@ -17,6 +19,7 @@ import {
     GetShaderSourceLaserPS,
     GetShaderSourceLaserVS,
     GetShaderSourceSingleFlameRenderVS,
+    GetShaderSourceThunderPS,
 } from "./shaders/shaderTools";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
@@ -25,6 +28,7 @@ import {
     GTime,
     MathClamp,
     MathGetVectorLength,
+    MathIntersectionRayAABB,
     MathLerp,
     MathLerpColor,
     MathLerpVec3,
@@ -54,6 +58,9 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         SpotlightScale: gl.getUniformLocation(shaderProgram, "SpotlightScale"),
         SpotlightPos: gl.getUniformLocation(shaderProgram, "SpotlightPos"),
         SpotlightTexture: gl.getUniformLocation(shaderProgram, "SpotlightTexture"),
+        ColorScale: gl.getUniformLocation(shaderProgram, "ColorScale"),
+        LineThickness: gl.getUniformLocation(shaderProgram, "LineThickness"),
+        LineColorCutThreshold: gl.getUniformLocation(shaderProgram, "LineColorCutThreshold"),
     };
     return params;
 }
@@ -121,7 +128,57 @@ class CAnimationComponent {
 
 } */
 
-export class LighterTool {
+export abstract class ToolBase {
+    // Render Resources
+
+    // Components
+    AnimationComponent;
+
+    // Base
+    bActiveThisFrame;
+
+    bFirstInteraction;
+
+    bIntersection;
+
+    bIntersectionPrevFrame;
+
+    // Methods
+    constructor() {
+        this.AnimationComponent = new CAnimationComponent();
+        this.bActiveThisFrame = false;
+        this.bFirstInteraction = true;
+        this.bIntersection = false;
+        this.bIntersectionPrevFrame = false;
+    }
+
+    abstract UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface): void;
+    abstract RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface): void;
+
+    UpdatePositionMain(offset = { x: 0.0, y: 0.0, z: 0.0 }) {
+        const posWS = { x: GUserInputDesc.InputPosCurNDC.x, y: GUserInputDesc.InputPosCurNDC.y };
+        posWS.x *= GScreenDesc.ScreenRatio;
+        posWS.x /= GSceneDesc.Camera.ZoomScale;
+        posWS.y /= GSceneDesc.Camera.ZoomScale;
+
+        posWS.x *= -GSceneDesc.Camera.Position.z + 1.0;
+        posWS.y *= -GSceneDesc.Camera.Position.z + 1.0;
+
+        GSceneDesc.Tool.Position.x = posWS.x + offset.x;
+        GSceneDesc.Tool.Position.y = posWS.y + offset.y;
+        GSceneDesc.Tool.Position.z = offset.z;
+    }
+
+    RenderToFirePlaneRT(gl: WebGL2RenderingContext): void {}
+
+    RenderToFlameRT(gl: WebGL2RenderingContext): void {}
+
+    RenderToSmokeRT(gl: WebGL2RenderingContext): void {}
+
+    SubmitDebugUI(datGui: dat.GUI): void {}
+}
+
+export class LighterTool extends ToolBase {
     //Render Resources
     ShaderProgram;
 
@@ -139,16 +196,10 @@ export class LighterTool {
 
     TexCoordsBufferGPU: WebGLBuffer | null = null;
 
-    //Components
-    AnimationComponent = new CAnimationComponent();
-
     //Particles
     SparksParticles: ParticlesEmitter;
 
     SmokeParticles: ParticlesEmitter;
-
-    //Base
-    bActiveThisFrame = false;
 
     //Audio
     private SoundLighterStart: SoundSample = new SoundSample();
@@ -170,6 +221,8 @@ export class LighterTool {
     }
 
     constructor(gl: WebGL2RenderingContext) {
+        super();
+
         //Create Shader Program
         this.ShaderProgram = CreateShaderProgramVSPS(
             gl,
@@ -275,22 +328,8 @@ export class LighterTool {
     //Executes regardless of state
     UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
         const RenderStateMachine = GRenderingStateMachine.GetInstance();
-        //State independent update
-        {
-            //Position
-            const posWS = { x: GUserInputDesc.InputPosCurNDC.x, y: GUserInputDesc.InputPosCurNDC.y };
-            posWS.x *= GScreenDesc.ScreenRatio;
-            posWS.x /= GSceneDesc.Camera.ZoomScale;
-            posWS.y /= GSceneDesc.Camera.ZoomScale;
 
-            posWS.x *= -GSceneDesc.Camera.Position.z + 1.0;
-            posWS.y *= -GSceneDesc.Camera.Position.z + 1.0;
-            posWS.y += 0.25;
-
-            GSceneDesc.Tool.Position.x = posWS.x;
-            GSceneDesc.Tool.Position.y = posWS.y;
-            GSceneDesc.Tool.Position.z = -0.3;
-        }
+        this.UpdatePositionMain({ x: 0.0, y: 0.25, z: -0.3 });
 
         //Interactivity check
         const bInteracted =
@@ -311,12 +350,12 @@ export class LighterTool {
             if (GUserInputDesc.bPointerInputPressedPrevFrame) {
                 //start fade out logic
             }
-            if (this.AnimationComponent.FadeInParameter >= 0.99) {
+            if (this.AnimationComponent.IsFadeInFinished()) {
                 this.AnimationComponent.FadeOutUpdate();
             }
 
             if (this.bActiveThisFrame) {
-                if (this.AnimationComponent.FadeOutParameter < 0) {
+                if (this.AnimationComponent.IsFadeOutFinished()) {
                     this.bActiveThisFrame = false;
                 }
             }
@@ -378,19 +417,7 @@ export class LighterTool {
 
     RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
         const curInputPos = GUserInputDesc.InputPosCurNDC;
-        const curInputDir = { x: 0, y: 0 };
-        curInputDir.x = GUserInputDesc.InputPosCurNDC.x - GUserInputDesc.InputPosPrevNDC.x;
-        curInputDir.y = GUserInputDesc.InputPosCurNDC.y - GUserInputDesc.InputPosPrevNDC.y;
-        const inputDirLength = MathGetVectorLength(curInputDir);
-        let sizeScale;
-        if (GUserInputDesc.bPointerInputMoving == false) {
-            sizeScale = 0.005;
-            curInputDir.x = 0;
-            curInputDir.y = 1;
-        } else {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            sizeScale = MathClamp(inputDirLength * 0.5, 0.001, 0.05);
-        }
+        const sizeScale = 0.03;
 
         BurningSurface.BindFireRT(gl);
 
@@ -400,75 +427,15 @@ export class LighterTool {
         gl.blendFunc(gl.ONE, gl.ONE);
         BurningSurface.ApplyFirePass.Execute(
             gl,
-            { x: curInputPos.x, y: curInputPos.y + 0.1 },
+            { x: curInputPos.x + Math.asin(Math.sin(GTime.Cur * 7.0)) * 0.005, y: curInputPos.y + 0.1 },
             { x: 0.0, y: 1.0 },
-            0.05,
-            2.0 * GTime.Delta,
+            { x: sizeScale * 0.3, y: sizeScale },
+            4.0 * GTime.Delta,
             true,
+            true,
+            false,
         );
         gl.disable(gl.BLEND);
-    }
-
-    Render(gl: WebGL2RenderingContext) {
-        gl.bindVertexArray(this.VAO);
-
-        gl.useProgram(this.ShaderProgram);
-
-        //Constants
-        gl.uniform4f(
-            this.UniformParametersLocationList.CameraDesc,
-            GSceneDesc.Camera.Position.x,
-            GSceneDesc.Camera.Position.y,
-            GSceneDesc.Camera.Position.z,
-            GSceneDesc.Camera.ZoomScale,
-        );
-        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
-        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.CurClamped);
-
-        const TotalFlipFrames = this.AnimationComponent.FlipbookSize.x * this.AnimationComponent.FlipbookSize.y;
-        gl.uniform1f(
-            this.UniformParametersLocationList.AnimationFrameIndex,
-            this.AnimationComponent.AgeNormalized * TotalFlipFrames,
-        );
-
-        gl.uniform3f(
-            this.UniformParametersLocationList.Position,
-            GUserInputDesc.InputPosCurViewSpace.x,
-            GUserInputDesc.InputPosCurViewSpace.y,
-            0.0,
-        );
-        const curInputDir = {
-            x: GUserInputDesc.InputVelocityCurViewSpace.x,
-            y: GUserInputDesc.InputVelocityCurViewSpace.y,
-        };
-        curInputDir.x = (curInputDir.x + GUserInputDesc.InputVelocityPrevViewSpace.x) * 0.5;
-        curInputDir.y = (curInputDir.y + GUserInputDesc.InputVelocityPrevViewSpace.y) * 0.5;
-        gl.uniform2f(this.UniformParametersLocationList.Velocity, curInputDir.x, curInputDir.y);
-
-        gl.uniform2f(
-            this.UniformParametersLocationList.FadeInOutParameters,
-            this.AnimationComponent.FadeInParameter,
-            this.AnimationComponent.FadeOutParameter,
-        );
-
-        //Textures
-        gl.activeTexture(gl.TEXTURE0 + 1);
-        gl.bindTexture(gl.TEXTURE_2D, this.ColorTexture);
-        gl.uniform1i(this.UniformParametersLocationList.ColorTexture, 1);
-
-        gl.activeTexture(gl.TEXTURE0 + 2);
-        gl.bindTexture(gl.TEXTURE_2D, this.LUTTexture);
-        gl.uniform1i(this.UniformParametersLocationList.LUTTexture, 2);
-
-        gl.drawArrays(gl.TRIANGLES, 0, this.NumVertices);
-    }
-
-    SubmitDebugUI(datGui: dat.GUI) {
-        const folder = datGui.addFolder("Tool Params");
-        //folder.open();
-
-        folder.add(this.AnimationComponent, "FadeInParameter", 0, 1).step(0.01).listen();
-        folder.add(this.AnimationComponent, "FadeOutParameter", 0, 1).step(0.01).listen();
     }
 
     InitRenderingResources(gl: WebGL2RenderingContext) {
@@ -525,41 +492,86 @@ export class LighterTool {
             0,
         );
     }
+
+    RenderToFlameRT(gl: WebGL2RenderingContext) {
+        if (!this.bActiveThisFrame) {
+            return;
+        }
+        gl.bindVertexArray(this.VAO);
+
+        gl.useProgram(this.ShaderProgram);
+
+        //Constants
+        gl.uniform4f(
+            this.UniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.CurClamped);
+
+        const TotalFlipFrames = this.AnimationComponent.FlipbookSize.x * this.AnimationComponent.FlipbookSize.y;
+        gl.uniform1f(
+            this.UniformParametersLocationList.AnimationFrameIndex,
+            this.AnimationComponent.AgeNormalized * TotalFlipFrames,
+        );
+
+        gl.uniform3f(
+            this.UniformParametersLocationList.Position,
+            GUserInputDesc.InputPosCurViewSpace.x,
+            GUserInputDesc.InputPosCurViewSpace.y,
+            0.0,
+        );
+        const curInputDir = {
+            x: GUserInputDesc.InputVelocityCurViewSpace.x,
+            y: GUserInputDesc.InputVelocityCurViewSpace.y,
+        };
+        curInputDir.x = (curInputDir.x + GUserInputDesc.InputVelocityPrevViewSpace.x) * 0.5;
+        curInputDir.y = (curInputDir.y + GUserInputDesc.InputVelocityPrevViewSpace.y) * 0.5;
+        gl.uniform2f(this.UniformParametersLocationList.Velocity, curInputDir.x, curInputDir.y);
+
+        gl.uniform2f(
+            this.UniformParametersLocationList.FadeInOutParameters,
+            this.AnimationComponent.FadeInParameter,
+            this.AnimationComponent.FadeOutParameter,
+        );
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this.ColorTexture);
+        gl.uniform1i(this.UniformParametersLocationList.ColorTexture, 1);
+
+        gl.activeTexture(gl.TEXTURE0 + 2);
+        gl.bindTexture(gl.TEXTURE_2D, this.LUTTexture);
+        gl.uniform1i(this.UniformParametersLocationList.LUTTexture, 2);
+
+        gl.drawArrays(gl.TRIANGLES, 0, this.NumVertices);
+
+        this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+    }
+
+    RenderToSmokeRT(gl: WebGL2RenderingContext): void {
+        if (this.bActiveThisFrame) {
+            this.SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+        }
+    }
+
+    SubmitDebugUI(datGui: dat.GUI) {
+        const folder = datGui.addFolder("Tool Params");
+        //folder.open();
+
+        folder.add(this.AnimationComponent, "FadeInParameter", 0, 1).step(0.01).listen();
+        folder.add(this.AnimationComponent, "FadeOutParameter", 0, 1).step(0.01).listen();
+    }
 }
 
 //=============================================================================================================================
 // 														LASER
 //=============================================================================================================================
 
-function rayAABBIntersection(rayOrigin: Vector3, rayDirection: Vector3, aabbCenter: Vector3, aabbExtent: Vector3) {
-    // Calculate the inverse direction of the ray
-    const invDirection: Vector3 = {
-        x: 1.0 / rayDirection.x,
-        y: 1.0 / rayDirection.y,
-        z: 1.0 / rayDirection.z,
-    };
-
-    // Calculate the minimum and maximum t values for each axis
-    const tmin = (aabbCenter.x - aabbExtent.x - rayOrigin.x) * invDirection.x;
-    const tmax = (aabbCenter.x + aabbExtent.x - rayOrigin.x) * invDirection.x;
-    const tymin = (aabbCenter.y - aabbExtent.y - rayOrigin.y) * invDirection.y;
-    const tymax = (aabbCenter.y + aabbExtent.y - rayOrigin.y) * invDirection.y;
-    const tzmin = (aabbCenter.z - aabbExtent.z - rayOrigin.z) * invDirection.z;
-    const tzmax = (aabbCenter.z + aabbExtent.z - rayOrigin.z) * invDirection.z;
-
-    // Find the maximum and minimum t values for intersection
-    const tEnter = Math.max(Math.max(Math.min(tmin, tmax), Math.min(tymin, tymax)), Math.min(tzmin, tzmax));
-    const tExit = Math.min(Math.min(Math.max(tmin, tmax), Math.max(tymin, tymax)), Math.max(tzmin, tzmax));
-
-    // Check if the intersection is outside the valid range
-    if (tExit < 0 || tEnter > tExit) {
-        return false;
-    } else {
-        return true;
-    }
-}
-
-export class LaserTool {
+export class LaserTool extends ToolBase {
     //Render Resources
     ShaderProgram;
 
@@ -574,16 +586,6 @@ export class LaserTool {
     NoiseTexture;
 
     LightFlareTexture;
-
-    //Components
-    AnimationComponent = new CAnimationComponent();
-
-    //Base
-    bActiveThisFrame = false;
-
-    bFirstInteraction = true;
-
-    bIntersection = false;
 
     //Audio
     private SoundLaser: SoundSample = new SoundSample();
@@ -627,6 +629,7 @@ export class LaserTool {
     };
 
     constructor(gl: WebGL2RenderingContext) {
+        super();
         //Create Shader Program
         this.ShaderProgram = CreateShaderProgramVSPS(gl, GetShaderSourceLaserVS(), GetShaderSourceLaserPS());
 
@@ -663,11 +666,11 @@ export class LaserTool {
         const SparksParticlesDesc = GetEmberParticlesDesc();
         SparksParticlesDesc.inNumSpawners2D = 32;
         SparksParticlesDesc.inSpawnRange.x = 0.0;
-        SparksParticlesDesc.inParticleLife = 0.5;
+        SparksParticlesDesc.inParticleLife = MathLerp(0.5, 1.0, Math.random());
         //SparksParticlesDesc.inDefaultSize.x *= 2.0;
         //SparksParticlesDesc.inDefaultSize.y *= 0.5;
-        SparksParticlesDesc.inInitialVelocityScale *= 0.5;
-        //SparksParticlesDesc.inVelocityFieldForceScale *= 10.0;
+        SparksParticlesDesc.inInitialVelocityScale *= 0.25;
+        SparksParticlesDesc.inVelocityFieldForceScale *= 5.0;
         SparksParticlesDesc.inEInitialPositionMode = 2;
         SparksParticlesDesc.inRandomSpawnThres = 0.5;
         SparksParticlesDesc.inbOneShotParticle = true;
@@ -678,25 +681,10 @@ export class LaserTool {
     //Executes regardless of state
     UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
         const RenderStateMachine = GRenderingStateMachine.GetInstance();
-        //State independent update
-        {
-            //Position
-            const posWS = { x: GUserInputDesc.InputPosCurNDC.x, y: GUserInputDesc.InputPosCurNDC.y };
-            posWS.x *= GScreenDesc.ScreenRatio;
-            posWS.x /= GSceneDesc.Camera.ZoomScale;
-            posWS.y /= GSceneDesc.Camera.ZoomScale;
 
-            posWS.x *= -GSceneDesc.Camera.Position.z + 1.0;
-            posWS.y *= -GSceneDesc.Camera.Position.z + 1.0;
-            //posWS.y += 0.25;
-
-            GSceneDesc.Tool.Position.x = posWS.x;
-            GSceneDesc.Tool.Position.y = posWS.y;
-            GSceneDesc.Tool.Position.z = this.LaserGlowZPos;
-        }
+        this.UpdatePositionMain({ x: 0.0, y: 0.0, z: this.LaserGlowZPos });
 
         //Interactivity check
-
         this.LaserDir = MathVector3Normalize(
             MathVector3Negate(
                 { x: GUserInputDesc.InputPosCurViewSpace.x, y: GUserInputDesc.InputPosCurViewSpace.y, z: 0.0 },
@@ -704,7 +692,7 @@ export class LaserTool {
             ),
         );
 
-        this.bIntersection = rayAABBIntersection(
+        this.bIntersection = MathIntersectionRayAABB(
             this.LaserStartPos,
             this.LaserDir,
             GSceneDesc.FirePlane.PositionOffset,
@@ -719,7 +707,7 @@ export class LaserTool {
 
         if (bInteracted) {
             this.bActiveThisFrame = true;
-            if (!GUserInputDesc.bPointerInputPressedPrevFrame) {
+            if (!GUserInputDesc.bPointerInputPressedPrevFrame || !this.bIntersectionPrevFrame) {
                 //start fade in logic
 
                 this.AnimationComponent.Reset();
@@ -737,9 +725,11 @@ export class LaserTool {
                 }
 
                 this.PlayLaserSound();
+
+                GCameraShakeController.ShakeCameraFast();
             }
         } else {
-            if (GUserInputDesc.bPointerInputPressedPrevFrame) {
+            if (GUserInputDesc.bPointerInputPressedPrevFrame || this.bIntersectionPrevFrame) {
                 //start fade out logic
                 this.ForceStopLaserSound();
             }
@@ -793,23 +783,13 @@ export class LaserTool {
                 }
             }
         }
+
+        this.bIntersectionPrevFrame = this.bIntersection;
     }
 
     RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
         const curInputPos = GUserInputDesc.InputPosCurNDC;
-        const curInputDir = { x: 0, y: 0 };
-        curInputDir.x = GUserInputDesc.InputPosCurNDC.x - GUserInputDesc.InputPosPrevNDC.x;
-        curInputDir.y = GUserInputDesc.InputPosCurNDC.y - GUserInputDesc.InputPosPrevNDC.y;
-        const inputDirLength = MathGetVectorLength(curInputDir);
-        let sizeScale;
-        if (GUserInputDesc.bPointerInputMoving == false) {
-            sizeScale = 0.005;
-            curInputDir.x = 0;
-            curInputDir.y = 1;
-        } else {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            sizeScale = MathClamp(inputDirLength * 0.5, 0.001, 0.05);
-        }
+        const sizeScale = 0.0035;
 
         //BurningSurface.Reset(gl);
 
@@ -823,14 +803,19 @@ export class LaserTool {
             gl,
             { x: curInputPos.x, y: curInputPos.y },
             GUserInputDesc.InputVelocityCurViewSpace,
-            0.0035 /* 0.05 */,
+            { x: sizeScale, y: sizeScale },
             this.LaserStrength,
             true,
+            false,
+            false,
         );
         gl.disable(gl.BLEND);
     }
 
-    Render(gl: WebGL2RenderingContext) {
+    RenderToFirePlaneRT(gl: WebGL2RenderingContext) {
+        if (!this.bActiveThisFrame) {
+            return;
+        }
         if (!this.bIntersection) {
             return;
         }
@@ -864,6 +849,8 @@ export class LaserTool {
         gl.uniform3f(this.UniformParametersLocationList.PositionEnd, posEndFinal.x, posEndFinal.y, posEndFinal.z);
 
         gl.uniform1f(this.UniformParametersLocationList.Time, GTime.CurClamped);
+
+        gl.uniform1f(this.UniformParametersLocationList.LineThickness, 0.05);
 
         //Textures
         gl.activeTexture(gl.TEXTURE0 + 1);
@@ -935,5 +922,464 @@ export class LaserTool {
         folder.add(this.AnimationComponent, "FadeOutParameter", 0, 1).step(0.01).listen();
         folder.add(this, "bActiveThisFrame", 0, 1).listen();
         folder.add(this, "bIntersection", 0, 1).listen();
+    }
+
+    RenderToFlameRT(gl: WebGL2RenderingContext): void {
+        if (this.bActiveThisFrame) {
+            this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+        }
+    }
+}
+
+//=============================================================================================================================
+// 														THUNDER
+//=============================================================================================================================
+
+export class ThunderTool extends ToolBase {
+    //Render Resources
+    ShaderProgram;
+
+    ShaderProgramFlare;
+
+    UniformParametersLocationList;
+
+    UniformParametersLocationListFlare;
+
+    ThunderTexture;
+
+    ThunderTexture2;
+
+    NoiseTexture;
+
+    LightFlareTexture;
+
+    //Audio
+    SoundThunder: SoundSample = new SoundSample();
+
+    SoundThunder2: SoundSample = new SoundSample();
+
+    SoundThunder3: SoundSample = new SoundSample();
+
+    //Particles
+    SparksParticles: ParticlesEmitter;
+
+    //Desc
+
+    AppliedFireStrength = 25.0;
+
+    Brightness = 10.0;
+
+    Thickness = 1.5;
+
+    Color = { r: 0.2, g: 0.2, b: 1.0 };
+
+    GlowZPos = -0.3;
+
+    StartPos = {
+        x: MathMapToRange(Math.random(), 0.0, 1.0, -1.0, 1.0) * -10.0,
+        y: MathMapToRange(Math.random(), 0.0, 1.0, -1.0, 1.0) * -10.0,
+        z: 0.0,
+    };
+
+    Dir = {
+        x: MathMapToRange(Math.random(), 0.0, 1.0, -1.0, 1.0) * -10.0,
+        y: MathMapToRange(Math.random(), 0.0, 1.0, -1.0, 1.0) * -10.0,
+        z: 0.0,
+    };
+
+    constructor(gl: WebGL2RenderingContext) {
+        super();
+        //Create Shader Program
+        this.ShaderProgram = CreateShaderProgramVSPS(gl, GetShaderSourceLaserVS(), GetShaderSourceThunderPS());
+
+        //Shader Parameters
+        this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
+
+        this.ShaderProgramFlare = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceLightFlareRenderVS(),
+            GetShaderSourceThunderFlareRenderPS(),
+        );
+        this.UniformParametersLocationListFlare = GetUniformParametersList(gl, this.ShaderProgramFlare);
+
+        this.ThunderTexture = GTexturePool.CreateTexture(gl, false, "thunder3", false);
+        this.ThunderTexture2 = GTexturePool.CreateTexture(gl, false, "thunder", false);
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
+        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `lightGlare2`);
+
+        this.AnimationComponent.Speed = 1.0;
+        this.AnimationComponent.FadeInSpeed = 10.0;
+        this.AnimationComponent.FadeOutSpeed = 1.0;
+
+        //Audio
+
+        this.SoundThunder.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/thunder1.mp3",
+            GAudioEngine.GetMasterGain(),
+            2.25,
+        );
+        this.SoundThunder2.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/thunder2.mp3",
+            GAudioEngine.GetMasterGain(),
+            2.25,
+        );
+        this.SoundThunder3.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/thunder3.mp3",
+            GAudioEngine.GetMasterGain(),
+            2.25,
+        );
+
+        //Particles
+        const SparksParticlesDesc = GetEmberParticlesDesc();
+        SparksParticlesDesc.inNumSpawners2D = 32;
+        SparksParticlesDesc.inSpawnRange.x = 0.0;
+        SparksParticlesDesc.inParticleLife = MathLerp(0.5, 1.0, Math.random());
+        SparksParticlesDesc.inDefaultSize.x *= 1.2;
+        SparksParticlesDesc.inDefaultSize.y *= 1.2;
+        //SparksParticlesDesc.inDefaultSize.x *= 2.0;
+        SparksParticlesDesc.inDefaultSize.y *= 0.5;
+        SparksParticlesDesc.inInitialVelocityScale *= 0.25;
+        SparksParticlesDesc.inVelocityFieldForceScale *= 10.0;
+        SparksParticlesDesc.inEInitialPositionMode = 2;
+        SparksParticlesDesc.inRandomSpawnThres = 0.5;
+        SparksParticlesDesc.inbOneShotParticle = true;
+        SparksParticlesDesc.inESpecificShadingMode = EParticleShadingMode.EmbersImpact;
+
+        this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
+    }
+
+    //Executes regardless of state
+    UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
+        const RenderStateMachine = GRenderingStateMachine.GetInstance();
+
+        if (!this.bActiveThisFrame) {
+            this.UpdatePositionMain({ x: 0.0, y: 0.0, z: this.GlowZPos });
+        }
+
+        //Interactivity check
+        this.Dir = MathVector3Normalize(
+            MathVector3Negate(
+                { x: GUserInputDesc.InputPosCurViewSpace.x, y: GUserInputDesc.InputPosCurViewSpace.y, z: 0.0 },
+                this.StartPos,
+            ),
+        );
+
+        this.bIntersection = MathIntersectionRayAABB(this.StartPos, this.Dir, GSceneDesc.FirePlane.PositionOffset, {
+            x: 0.4,
+            y: 0.4,
+            z: 0.0,
+        });
+
+        const bInteracted =
+            RenderStateMachine.currentState !== ERenderingState.BurningFinished &&
+            RenderStateMachine.bCanBurn &&
+            GUserInputDesc.bPointerInputPressedCurFrame &&
+            !GUserInputDesc.bPointerInputPressedPrevFrame &&
+            this.bIntersection &&
+            this.AnimationComponent.IsFadeOutFinished();
+
+        if (bInteracted) {
+            //if (this.AnimationComponent.IsFadeInFinished())
+            {
+                this.bActiveThisFrame = true;
+            }
+            //if (!this.bIntersectionPrevFrame)
+            {
+                //start fade in logic
+
+                this.AnimationComponent.Reset();
+
+                this.SparksParticles.Reset(gl);
+
+                this.StartPos = {
+                    x: MathSignedMax(GUserInputDesc.InputPosCurViewSpace.x, 0.5) * 6.0,
+                    y: 3 + Math.max(0, GUserInputDesc.InputPosCurViewSpace.y),
+                    z: 0.1,
+                };
+
+                this.Thickness = 1.5;
+                this.Brightness = 30.0;
+
+                this.bFirstInteraction = true;
+
+                const randInt = Math.random() * 3;
+                if (randInt < 1) {
+                    this.SoundThunder.Play(GAudioEngine.GetContext()!);
+                } else if (randInt < 2) {
+                    this.SoundThunder2.Play(GAudioEngine.GetContext()!);
+                } else {
+                    this.SoundThunder3.Play(GAudioEngine.GetContext()!);
+                }
+
+                GCameraShakeController.ShakeCameraFast();
+            }
+        } else {
+            if (this.AnimationComponent.IsFadeInFinished()) {
+                this.AnimationComponent.FadeOutUpdate();
+            }
+
+            if (this.bActiveThisFrame) {
+                if (this.AnimationComponent.IsFadeOutFinished()) {
+                    this.bActiveThisFrame = false;
+                }
+            }
+        }
+
+        /* if (this.SoundLaser.bIsPlaying) {
+            this.SoundLaser.Stop();
+        } */
+
+        if (this.bActiveThisFrame) {
+            //Animation
+            this.AnimationComponent.Update();
+            this.AnimationComponent.FadeInUpdate();
+
+            this.Thickness = Math.max(0.8, this.Thickness - 5.0 * GTime.Delta);
+
+            this.Brightness = Math.max(1.0, this.Brightness - 50.0 * GTime.Delta);
+
+            //Color
+            GSceneDesc.Tool.Color.r = this.Color.r * this.Brightness;
+            GSceneDesc.Tool.Color.g = this.Color.g * this.Brightness;
+            GSceneDesc.Tool.Color.b = this.Color.b * this.Brightness;
+            GSceneDesc.Tool.Radius = 2.5 * this.AnimationComponent.FadeOutParameter;
+
+            this.SparksParticles.Update(gl, BurningSurface.GetCurFireTexture()!, {
+                x: GSceneDesc.Tool.Position.x,
+                y: GSceneDesc.Tool.Position.y,
+            });
+
+            //Apply Fire
+            if (this.AnimationComponent.IsFadeInFinished() && this.bFirstInteraction) {
+                this.RenderToFireSurface(gl, BurningSurface);
+                this.bFirstInteraction = false;
+            }
+        } else {
+            GSceneDesc.Tool.Radius = 0.0;
+        }
+
+        if (RenderStateMachine.bCanBurn) {
+            if (RenderStateMachine.currentState !== ERenderingState.BurningFinished) {
+                if (GUserInputDesc.bPointerInputPressedCurFrame) {
+                    if (!GUserInputDesc.bPointerInputPressedPrevFrame) {
+                        //this.PlayLaserSound();
+                    } else {
+                        //this.PlayLighterGasSound();
+                    }
+                } else {
+                    //this.PlayLaserStopSound();
+                }
+            }
+        }
+
+        this.bIntersectionPrevFrame = this.bIntersection;
+    }
+
+    RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
+        if (!this.bActiveThisFrame) {
+            return;
+        }
+        if (!this.bIntersection) {
+            return;
+        }
+        const curInputPos = GUserInputDesc.InputPosCurNDC;
+        const sizeScale = 0.05;
+
+        BurningSurface.BindFireRT(gl);
+
+        /* Set up blending */
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.MAX);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        BurningSurface.ApplyFirePass.Execute(
+            gl,
+            { x: curInputPos.x, y: curInputPos.y },
+            GUserInputDesc.InputVelocityCurViewSpace,
+            { x: sizeScale, y: sizeScale },
+            this.AppliedFireStrength * 10.0,
+            true,
+            true,
+            true,
+        );
+        gl.disable(gl.BLEND);
+    }
+
+    RenderToFirePlaneRT(gl: WebGL2RenderingContext) {
+        if (!this.bActiveThisFrame) {
+            return;
+        }
+        if (!this.bIntersection) {
+            return;
+        }
+
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.ShaderProgram);
+
+        //Constants
+        gl.uniform4f(
+            this.UniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+
+        const posStart = this.StartPos;
+        gl.uniform3f(this.UniformParametersLocationList.PositionStart, posStart.x, posStart.y, posStart.z);
+
+        {
+            const colorParam = MathClamp(Math.max(0.0, this.AnimationComponent.AgeGlobal - 0.4) / 1.0, 0.0, 1.0);
+
+            const colorScaleAdd = 1.0;
+
+            const colorBright = {
+                r: this.Color.r * Math.max(1.0, this.Brightness),
+                g: this.Color.g * Math.max(this.Brightness),
+                b: this.Color.b * Math.max(this.Brightness),
+            };
+
+            const colorNew = MathLerpColor(
+                colorBright,
+                { r: 0.05 * colorScaleAdd, g: 0.05 * colorScaleAdd, b: 0.1 * colorScaleAdd },
+                colorParam + (1 - this.AnimationComponent.FadeOutParameter),
+            );
+
+            gl.uniform3f(this.UniformParametersLocationList.ColorScale, colorNew.r, colorNew.g, colorNew.b);
+        }
+
+        let posEnd = { x: GSceneDesc.Tool.Position.x, y: GSceneDesc.Tool.Position.y, z: 0.0 };
+        if (!this.bIntersection) {
+            posEnd = MathVector3Add(posStart, MathVector3Multiply(this.Dir, 10));
+        }
+
+        gl.uniform1f(this.UniformParametersLocationList.LineThickness, this.Thickness);
+
+        gl.uniform1f(this.UniformParametersLocationList.LineColorCutThreshold, this.AnimationComponent.FadeInParameter);
+
+        gl.uniform3f(this.UniformParametersLocationList.PositionEnd, posEnd.x, posEnd.y, posEnd.z);
+
+        gl.uniform1f(this.UniformParametersLocationList.Time, GTime.CurClamped);
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this.ThunderTexture);
+        gl.uniform1i(this.UniformParametersLocationList.LaserTexture, 1);
+
+        gl.activeTexture(gl.TEXTURE0 + 2);
+        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
+        gl.uniform1i(this.UniformParametersLocationList.NoiseTexture, 2);
+
+        // gl.enable(gl.BLEND);
+        // gl.blendEquation(gl.MAX);
+        //gl.blendFunc(gl.ONE, gl.ONE);
+
+        //Textures
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        //Render Second Thunder
+        //if (this.AnimationComponent.AgeGlobal < 0.1)
+        {
+            //Textures
+            gl.activeTexture(gl.TEXTURE0 + 1);
+            gl.bindTexture(gl.TEXTURE_2D, this.ThunderTexture2);
+            gl.uniform1i(this.UniformParametersLocationList.LaserTexture, 1);
+
+            const colorParam = MathClamp(this.AnimationComponent.AgeGlobal / 0.5, 0.0, 1.0);
+
+            const colorScaleAdd =
+                0.5 * (1 - this.AnimationComponent.FadeOutParameter) * (1 - this.AnimationComponent.FadeOutParameter);
+
+            const colorBright = {
+                r: this.Color.r * Math.max(1.0, this.Brightness * 0.1),
+                g: this.Color.g * Math.max(this.Brightness * 0.1),
+                b: this.Color.b * Math.max(this.Brightness * 0.1),
+            };
+
+            const colorNew = MathLerpColor(
+                colorBright,
+                { r: 0.05 * colorScaleAdd, g: 0.05 * colorScaleAdd, b: 0.1 * colorScaleAdd },
+                colorParam + (1 - this.AnimationComponent.FadeOutParameter),
+            );
+
+            gl.uniform3f(this.UniformParametersLocationList.ColorScale, colorNew.r, colorNew.g, colorNew.b);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
+
+        if (
+            this.AnimationComponent.IsFadeInFinished() &&
+            this.bIntersection &&
+            this.AnimationComponent.AgeGlobal < 0.4
+        ) {
+            this.RenderFlare(gl);
+        }
+
+        //gl.disable(gl.BLEND);
+    }
+
+    GlareSizeDefault = 2.0;
+
+    RenderFlare(gl: WebGL2RenderingContext) {
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.ShaderProgramFlare);
+
+        //Constants
+        gl.uniform4f(
+            this.UniformParametersLocationListFlare.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.UniformParametersLocationListFlare.ScreenRatio, GScreenDesc.ScreenRatio);
+
+        let sizeScale = 1.0;
+
+        if (this.AnimationComponent.AgeGlobal > 0.2) {
+            sizeScale = 1.0 - (this.AnimationComponent.AgeGlobal - 0.2) * 10.0;
+        }
+
+        const finalGlareSize = this.GlareSizeDefault * sizeScale;
+
+        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, finalGlareSize, finalGlareSize);
+
+        gl.uniform1f(this.UniformParametersLocationListFlare.Time, GTime.CurClamped);
+
+        gl.uniform3f(
+            this.UniformParametersLocationListFlare.SpotlightPos,
+            GSceneDesc.Tool.Position.x,
+            GSceneDesc.Tool.Position.y,
+            -0.1,
+        );
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this.LightFlareTexture);
+        gl.uniform1i(this.UniformParametersLocationListFlare.SpotlightTexture, 1);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    SubmitDebugUI(datGui: dat.GUI) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const folder = datGui.addFolder("Tool Params");
+        //folder.open();
+
+        folder.add(this.AnimationComponent, "FadeInParameter", 0, 1).step(0.01).listen();
+        folder.add(this.AnimationComponent, "FadeOutParameter", 0, 1).step(0.01).listen();
+        folder.add(this, "bActiveThisFrame", 0, 1).listen();
+        folder.add(this, "bIntersection", 0, 1).listen();
+    }
+
+    RenderToFlameRT(gl: WebGL2RenderingContext): void {
+        if (this.bActiveThisFrame) {
+            this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+        }
     }
 }

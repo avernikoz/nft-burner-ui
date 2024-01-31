@@ -1057,6 +1057,43 @@ export function GetShaderSourceLaserFlareRenderPS() {
 	}`;
 }
 
+export function GetShaderSourceThunderFlareRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outSpotlightColor;
+
+	uniform sampler2D SpotlightTexture;
+
+	uniform float Time;
+
+	in vec2 vsOutTexCoords;
+
+	void main()
+	{
+		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+
+		float s = length(vsOutTexCoords - vec2(0.5, 0.5));
+		
+
+		vec3 light = texture(SpotlightTexture, flippedUVs.xy).rgb;
+
+		//float brightness = sin(Time) * 0.5 + 0.5;
+		//float brightness = 1.0;
+		
+		
+		light *= max(0.25, s);
+
+		light *= 5.0;
+
+
+		outSpotlightColor = light;
+
+	}`;
+}
+
 export function GetShaderSourceLightSourceSpriteRenderVS() {
     return /* glsl */ `#version 300 es
 	

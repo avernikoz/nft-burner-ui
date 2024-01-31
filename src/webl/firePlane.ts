@@ -28,6 +28,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         SpotlightScale: gl.getUniformLocation(shaderProgram, "SpotlightScale"),
         CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
         ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
+
         FirePlanePositionOffset: gl.getUniformLocation(shaderProgram, "FirePlanePositionOffset"),
         PointerPositionOffset: gl.getUniformLocation(shaderProgram, "PointerPositionOffset"),
         SizeScale: gl.getUniformLocation(shaderProgram, "SizeScale"),
@@ -55,6 +56,8 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         RoughnessScaleAddContrastMin: gl.getUniformLocation(shaderProgram, "RoughnessScaleAddContrastMin"),
         SurfaceMaterialColorTexture: gl.getUniformLocation(shaderProgram, "SurfaceMaterialColorTexture"),
         AfterBurnEmbersParam: gl.getUniformLocation(shaderProgram, "AfterBurnEmbersParam"),
+        bSmoothOutEdges: gl.getUniformLocation(shaderProgram, "bSmoothOutEdges"),
+        bApplyFireUseNoise: gl.getUniformLocation(shaderProgram, "bApplyFireUseNoise"),
     };
     return params;
 }
@@ -69,6 +72,8 @@ export class RApplyFireRenderPass {
     public UniformParametersLocationList;
 
     public UniformParametersLocationListMotion;
+
+    public NoiseTexture;
 
     constructor(gl: WebGL2RenderingContext, imageSrc: string | null) {
         //Create Texture
@@ -89,15 +94,19 @@ export class RApplyFireRenderPass {
         //Shader Parameters
         this.UniformParametersLocationListMotion = GetUniformParametersList(gl, this.ShaderProgramMotion);
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
+
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
     }
 
     Execute(
         gl: WebGL2RenderingContext,
         positionOffset: Vector2,
         velDirection: Vector2,
-        sizeScale: number,
+        sizeScale: Vector2,
         strength: number,
         bMotionBasedTransform: boolean,
+        bSmoothOutEdges: boolean,
+        bApplyFireUseNoise: boolean,
     ) {
         let ParametersLocationListRef = this.UniformParametersLocationListMotion;
         if (bMotionBasedTransform) {
@@ -127,13 +136,17 @@ export class RApplyFireRenderPass {
         );
 
         gl.uniform2f(ParametersLocationListRef.PointerPositionOffset, positionOffset.x, positionOffset.y);
-        gl.uniform1f(ParametersLocationListRef.SizeScale, sizeScale);
+        gl.uniform2f(ParametersLocationListRef.SizeScale, sizeScale.x, sizeScale.y);
         gl.uniform1f(ParametersLocationListRef.AppliedFireStrength, strength);
+        gl.uniform1f(ParametersLocationListRef.Time, GTime.Cur);
+        gl.uniform1i(ParametersLocationListRef.bSmoothOutEdges, bSmoothOutEdges ? 1 : 0);
+        gl.uniform1i(ParametersLocationListRef.bApplyFireUseNoise, bApplyFireUseNoise ? 1 : 0);
         gl.uniform2f(ParametersLocationListRef.VelocityDir, velDirection.x, velDirection.y);
 
         //Textures
-        gl.activeTexture(gl.TEXTURE0 + 0);
-        gl.uniform1i(ParametersLocationListRef.ColorTexture, 0);
+        gl.activeTexture(gl.TEXTURE0 + 4);
+        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
+        gl.uniform1i(ParametersLocationListRef.ColorTexture, 4);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }

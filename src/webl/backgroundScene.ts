@@ -1,3 +1,4 @@
+import { GCameraShakeController } from "./controller";
 import { GUserInputDesc } from "./input";
 import { CreateTextureRT } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
@@ -420,6 +421,8 @@ export class RBurntStampVisualizer {
 
     AnimationFinishedEventProcessed = false;
 
+    CameraShakeFinishedEventProcessed = false;
+
     StampPower = Math.random() * 0.25;
 
     RunAnimation() {
@@ -436,6 +439,12 @@ export class RBurntStampVisualizer {
             this.ColorGlowT = 1 + Math.sqrt(x);
             GSceneDesc.FirePlane.PositionOffset.z =
                 (0.5 * Math.sin(2 * Math.PI * x * 2 - 1.5) + 0.5) * (0.1 + this.StampPower);
+
+            if (!this.CameraShakeFinishedEventProcessed) {
+                GCameraShakeController.ShakeCameraFast();
+                this.CameraShakeFinishedEventProcessed = true;
+            }
+            //...
         } else if (this.ColorGlowT <= 5.0) {
             this.ColorGlowT += GTime.Delta * 7.0;
             GSceneDesc.FirePlane.PositionOffset.z = 0.0;
@@ -456,6 +465,7 @@ export class RBurntStampVisualizer {
         this.FinalOrientation = MathMapToRange(Math.random(), 0.0, 1.0, -this.RollOffsetMax, this.RollOffsetMax);
         this.PositionStart = MathLerp(-5, -10, Math.random());
         this.ColorScale = { r: 0.0, g: Math.max(0.5, Math.random()), b: Math.max(0.5, Math.random()) };
+        this.CameraShakeFinishedEventProcessed = false;
     }
 
     ExportStampHeightOffset = Math.random() * 0.05;

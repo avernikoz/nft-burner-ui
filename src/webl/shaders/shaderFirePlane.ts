@@ -58,7 +58,7 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
 	uniform vec3 FirePlanePositionOffset;
 
 	uniform vec2 PointerPositionOffset;
-	uniform float SizeScale;
+	uniform vec2 SizeScale;
 	uniform vec2 VelocityDir;
 
 	out vec2 vsOutTexCoords;
@@ -74,7 +74,7 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
         scTransformBasedOnMotion(bMotion) +
         /* glsl */ `
 
-		float scale = 1.0;
+		vec2 scale = vec2(1.0);
 		scale *= SizeScale;
 		//scale *= 0.01;
 		scale *= 2.5f;
@@ -87,7 +87,7 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
 
 		posOffset.xy *= (FirePlanePositionOffset.z - CameraDesc.z + 1.f);
 		
-		pos = (scale * pos.xy) + posOffset.xy;
+		pos = (scale.xy * pos.xy) + posOffset.xy;
 		gl_Position = vec4(pos.xy, 0.0, 1.0);
 
 
@@ -95,7 +95,8 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
 	}`
     );
 }
-export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
+export const ShaderSourceApplyFirePS =
+    /* glsl */ `#version 300 es
 	
 	precision highp float;
 	precision highp sampler2D;
@@ -103,6 +104,10 @@ export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 	out float OutColor;
 
 	uniform float AppliedFireStrength;
+	uniform float Time;
+	uniform int bSmoothOutEdges;
+	uniform int bApplyFireUseNoise;
+
 
 	uniform sampler2D ColorTexture;
 
@@ -118,7 +123,7 @@ export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 	{
 		vec2 texCoords = vsOutTexCoords;
 		texCoords.y = 1.f - texCoords.y;
-		//vec4 Color = texture(ColorTexture, texCoords.xy).r;
+		//
 
 		//Color.r = clamp((Color.r - 0.4) * 100.f, 0.5f, 1.f);
 		//const float AppliedFireStrength = 1.5f;
@@ -129,25 +134,51 @@ export const ShaderSourceApplyFirePS = /* glsl */ `#version 300 es
 		float s = length(texCoords - center);	
 		s = min(1.0, s);
 		s = 1.f - s;
-		const float thres = 0.75;
-		if(s < thres)
-		{
-			const float sThres = 0.6;
-			if(s > sThres)
-			{
 
-				//s = MapToRange(s, sThres,thres, 0.75, 1.0);
-				s = 1.0;
+
+		if(bSmoothOutEdges == 0)
+		{
+			const float thres = 0.75;
+			if(s < thres)
+			{
+				const float sThres = 0.6;
+				if(s > sThres)
+				{
+					//s = MapToRange(s, sThres,thres, 0.75, 1.0);
+					s = 1.0;
+				}
+				else
+				{
+					s = 0.0;
+				}
 			}
 			else
 			{
-				s = 0.0;
+				s = 1.0;
 			}
 		}
 		else
 		{
-			s = 1.0;
+			if(s < 0.5)
+			{
+				s = 0.0;
+			}
 		}
+
+		if(bApplyFireUseNoise > 0)
+		{
+			vec3 noise = texture(ColorTexture, (texCoords.xy + Time) * float(` +
+    MathLerp(0.05, 0.4, Math.random()) +
+    /* glsl */ `)).rgb;
+			noise.r = MapToRange(noise.r, 0.4, 0.6, 0.0, 1.0);
+			noise.g = MapToRange(noise.g, 0.4, 0.6, 0.0, 1.0);
+			noise.b = MapToRange(noise.b, 0.4, 0.6, 0.0, 1.0);
+			noise.r = noise.r * noise.g * noise.b;
+			Fire *= (noise.r * noise.r * noise.r);
+		}
+		
+
+		
 		Fire *= s * s;
 
 

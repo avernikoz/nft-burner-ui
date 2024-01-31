@@ -31,7 +31,7 @@ export function GetEmberParticlesDesc() {
         inName: "Ember Particles",
         inNumSpawners2D: 32,
         inNumParticlesPerSpawner: 1,
-        inSpawnRange: { x: 1.0, y: 100000.0 },
+        inSpawnRange: { x: 0.1, y: 100000.0 },
         inParticleLife: 2.8,
         inNumLoops: 1.0,
         inTextureFileName: "",

@@ -42,6 +42,7 @@ export const EParticleShadingMode = {
     Ashes: 4,
     Dust: 5,
     AfterBurnSmoke: 6,
+    EmbersImpact: 7,
 };
 
 export class ParticlesEmitter {

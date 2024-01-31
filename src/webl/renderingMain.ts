@@ -61,13 +61,13 @@ import {
     showError,
     uint16ToFloat16,
 } from "./utils";
-import { ApplyCameraControl, SetupCameraControlThroughInput } from "./controller";
+import { ApplyCameraControl, GCameraShakeController, SetupCameraControlThroughInput } from "./controller";
 import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./spatialController";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController } from "./animationController";
 import { GAudioEngine } from "./audioEngine";
-import { LaserTool, LighterTool } from "./tools";
+import { LaserTool, LighterTool, ThunderTool, ToolBase } from "./tools";
 import { GTexturePool } from "./texturePool";
 import { GReactGLBridgeFunctions } from "./reactglBridge";
 import { GTransitionAnimationsConstants } from "./transitionAnimations";
@@ -402,8 +402,10 @@ export function RenderMain() {
     // 		INIT TOOLS
     //======================
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    let CurTool: ToolBase;
     //const CurTool = new LighterTool(gl);
-    const CurTool = new LaserTool(gl);
+    //const CurTool = new LaserTool(gl);
+    CurTool = new ThunderTool(gl);
 
     //==============================
     // 	   INIT BURNING SURFACE
@@ -622,6 +624,40 @@ export function RenderMain() {
                 };
 
                 stateFolder.add(exportParam, "handleClick").name(exportParam.buttonText);
+
+                //Tool Debug UI
+                {
+                    const toolsFolder = GDatGUI.addFolder("Tools");
+                    const lighterParam = {
+                        buttonText: "Lighter",
+                        handleClick: () => {
+                            CurTool = new LighterTool(gl);
+                        },
+                    };
+                    toolsFolder.add(lighterParam, "handleClick").name(lighterParam.buttonText);
+                    const laserParam = {
+                        buttonText: "Laser",
+                        handleClick: () => {
+                            CurTool = new LaserTool(gl);
+                        },
+                    };
+                    toolsFolder.add(laserParam, "handleClick").name(laserParam.buttonText);
+                    const thunderParam = {
+                        buttonText: "Thunder",
+                        handleClick: () => {
+                            CurTool = new ThunderTool(gl);
+                        },
+                    };
+                    toolsFolder.add(thunderParam, "handleClick").name(thunderParam.buttonText);
+                }
+
+                const shakeParam = {
+                    buttonText: "Camera Shake",
+                    handleClick: () => {
+                        GCameraShakeController.ShakeCameraFast();
+                    },
+                };
+                folder.add(shakeParam, "handleClick").name(shakeParam.buttonText);
             }
 
             GSceneDescSubmitDebugUI(GDatGUI);
@@ -726,6 +762,9 @@ export function RenderMain() {
                 }
             }
 
+            //DEBUG SURFACE RESET
+            //BurningSurface.Reset(gl);
+
             //Reset Resources when entering Inventory state
             if (bNewRenderStateThisFrame && RenderStateMachine.currentState === ERenderingState.Inventory) {
                 BurningSurface.Reset(gl);
@@ -798,6 +837,8 @@ export function RenderMain() {
             if (bPreloaderState && bNewRenderStateThisFrame) {
                 BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
             }
+
+            GCameraShakeController.OnUpdate();
 
             if (
                 /* GTexturePool.AreAllTexturesLoaded() && */
@@ -1004,9 +1045,7 @@ export function RenderMain() {
                 gl.blendEquation(gl.MAX);
                 SpotlightRenderPass.RenderSourceSprite(gl);
 
-                if (CurTool.bActiveThisFrame) {
-                    CurTool.Render(gl);
-                }
+                CurTool.RenderToFirePlaneRT(gl);
 
                 //======================
                 // 		GUI RENDER
@@ -1033,13 +1072,8 @@ export function RenderMain() {
                 //======================
                 let flameSourceTextureRef = GRenderTargets.FlameTexture;
                 BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, GScreenDesc.RenderTargetSize, true);
-                /* if (CurTool.bActiveThisFrame) {
-                    CurTool.Render(gl);
-                    CurTool.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
-                } */
-                if (CurTool.bActiveThisFrame) {
-                    CurTool.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
-                }
+
+                CurTool.RenderToFlameRT(gl);
 
                 if (1 || RenderStateMachine.bCanBurn) {
                     FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
@@ -1121,9 +1155,7 @@ export function RenderMain() {
                 if (!bAshesInEmbersPass) {
                     AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 }
-                /* if (CurTool.bActiveThisFrame) {
-                    CurTool.SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-                } */
+                CurTool.RenderToSmokeRT(gl);
 
                 //======================
                 // 		POST PROCESS

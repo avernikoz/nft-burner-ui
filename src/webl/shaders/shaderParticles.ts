@@ -109,7 +109,7 @@ function scGetVectorFieldForce(scale: number) {
             scale +
             /* glsl */ `);
 			//randVel = normalize(randVel);
-			randVel = (randVel) * RandVelocityScale /* * 0.5 */;
+			randVel = (randVel) * RandVelocityScale * 2.0 /* * 0.5 */;
 
 
 			//LQ Noise
@@ -818,6 +818,46 @@ function scEmbersSpecificShading() {
 		`;
 }
 
+function scEmbersImpactSpecificShading() {
+    return /* glsl */ `
+		/* vec3 colorBright = vec3(1.f, 0.5f, 0.1f) * 1.5f;
+		vec3 colorLow = vec3(0.5f, 0.5f, 0.5f); */
+
+		float t = interpolatorAge;
+		t = CircularFadeOut(clamp(t, 0.f, 1.f));
+		float curFire = (1.f - t) * 10.f;
+		
+		curFire = 1.0;
+
+		vec3 colorBright = vec3(0.8, 0.7, 1.0) * curFire;
+		vec3 colorLow = vec3(0.7, 0.4, 1.0) * curFire;
+
+		colorFinal.rgb = mix(colorBright, colorLow , interpolatorTexCoords.x);
+
+		colorFinal.rgb *= 2.f * (1.0 - t);
+		
+		colorFinal.rgb *= 10.0;
+
+		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		s *= 2.f;
+		if(s > 0.5f)
+		{
+			s += 0.25f;
+			//s = 1.f;
+		}
+		else
+		{
+			s -= 0.25f;
+			//s = 0.f;
+		}
+		//s += 0.15f;
+		s = (1.f - clamp(s, 0.f, 1.f));
+		colorFinal.rgb *= s;
+		colorFinal.rgb *= 2.25f;
+		//colorFinal.rgb *= 50.f;
+		`;
+}
+
 function scAshesSpecificShading() {
     return (
         //scParticleSampleFlipbook(true) +
@@ -963,6 +1003,8 @@ function scGetBasedOnShadingMode(
             return scFlameSpecificShading(bUsesTexture, artificialFlameAmount);
         case EParticleShadingMode.Embers:
             return scEmbersSpecificShading();
+        case EParticleShadingMode.EmbersImpact:
+            return scEmbersImpactSpecificShading();
         case EParticleShadingMode.Smoke:
             return scSmokeSpecificShading(alphaScale);
         case EParticleShadingMode.AfterBurnSmoke:

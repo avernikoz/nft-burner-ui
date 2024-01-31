@@ -233,6 +233,7 @@ export function GetShaderSourceLaserVS() {
 	uniform float ScreenRatio;
 	uniform vec3 PositionStart;
 	uniform vec3 PositionEnd;
+	uniform float LineThickness;
 
 	out vec2 vsOutTexCoords;
 
@@ -249,14 +250,14 @@ export function GetShaderSourceLaserVS() {
 		vec3 lineNormalStart = cross(dirVec, dirToCamFromStart);
 		vec3 lineNormalEnd = cross(dirVec, dirToCamFromEnd);
 
-		const float lineThickness = 0.05;
+		//const float lineThickness = 0.05;
 		//const float lineThickness = 0.15;
 		/* vec3 lineNormalStart = vec3(0.0, 1.0, 0.0) * lineThickness;
 		vec3 lineNormalEnd = vec3(0.0, 1.0, 0.0) * lineThickness * 0.25; */
 
 		lineNormalStart = lineNormalEnd;
-		lineNormalStart = (normalize(lineNormalStart) * lineThickness);
-		lineNormalEnd = (normalize(lineNormalEnd) * lineThickness /* * 0.25 */);
+		lineNormalStart = (normalize(lineNormalStart) * LineThickness);
+		lineNormalEnd = (normalize(lineNormalEnd) * LineThickness /* * 0.25 */);
 
 		
 		vec3 verts0 = PositionStart - lineNormalStart;
@@ -373,9 +374,6 @@ export function GetShaderSourceLaserPS() {
 		s2 = 1.f - s2;
 		color *= s2 * s2* s2* s2* s2* s2* s2;
 
-		
-		
-
 		if(vsOutTexCoords.y > 0.99)
 		{
 			vec2 ndcSpace = vec2(vsOutTexCoords.x * 2.f - 1.f, vsOutTexCoords.y * 2.f - 1.f);
@@ -395,5 +393,87 @@ export function GetShaderSourceLaserPS() {
 
 
 		outColor = color /* + 0.1 */;
+	}`;
+}
+
+export function GetShaderSourceThunderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outColor;
+
+	uniform sampler2D LaserTexture;
+	uniform sampler2D NoiseTexture;
+
+	uniform vec3 ColorScale;
+	uniform float LineColorCutThreshold;
+	uniform float Time;
+
+	in vec2 vsOutTexCoords;
+
+	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	{
+		///Translate to origin, scale by ranges ratio, translate to new position
+		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
+
+	void main()
+	{
+		vec3 color = ColorScale;
+
+
+		vec2 laserUV = vsOutTexCoords;
+		//laserUV.x = vsOutTexCoords.y;
+		//laserUV.y = vsOutTexCoords.x;
+
+		const float noiseSpeed = 7.0;
+		
+		vec2 distortionUV = vsOutTexCoords;
+		distortionUV.y -= Time * 0.25 * noiseSpeed;
+		distortionUV.x += Time * 0.005 * noiseSpeed;
+		distortionUV *= 0.1;
+		vec3 distortionNoise = textureLod(NoiseTexture, distortionUV.xy, 0.f).rgb;
+		//distortionNoise.x = clamp(MapToRange(distortionNoise.x, 0.4, 0.6, 0.0, 1.0), 0.0, 1.0);
+		distortionNoise.y = clamp(MapToRange(distortionNoise.y, 0.2, 0.8, 0.0, 1.0), 0.0, 1.0);
+		//distortionNoise.z = clamp(MapToRange(distortionNoise.z, 0.2, 0.8, 0.0, 1.0), 0.0, 1.0);
+		distortionNoise = (distortionNoise * 2.f) - 1.f;
+		float t = mod(Time + vsOutTexCoords.y, 1.f) * 3.0;
+		if(t < 1.f)
+		{
+			distortionNoise.x = mix(distortionNoise.x, distortionNoise.y, t);
+		}
+		else if(t < 2.f)
+		{
+			distortionNoise.x = mix(distortionNoise.y, distortionNoise.z, t - 1.f);
+		}
+		else
+		{
+			distortionNoise.x = mix(distortionNoise.z, distortionNoise.x, t - 2.f);
+		}
+		laserUV.x += distortionNoise.x * 0.1 * 0.15;
+		laserUV.x = clamp(laserUV.x, 0.0, 1.0);
+
+		vec2 brightUV = vec2(0.5, 0.5);
+		brightUV.x += Time * 0.025;
+		brightUV.y += Time * 0.00025;
+
+		vec3 brightChaos = textureLod(NoiseTexture, brightUV.xy, 0.f).rgb;
+		//brightChaos.x = brightChaos.x * brightChaos.y * brightChaos.z;
+
+		color *= 1.0 + clamp(MapToRange(brightChaos.x, 0.4, 0.6, 0.0, 1.0), 0.0, 1.0) * 5.0;
+
+
+		vec3 s = texture(LaserTexture, laserUV).rgb;
+		color *= s;
+
+		if(vsOutTexCoords.y > LineColorCutThreshold)
+		{
+			color *= 0.0;
+		}
+
+		outColor = color /* + 0.1 */;
+		//outColor = ColorScale /* + 0.1 */;
 	}`;
 }

@@ -218,7 +218,11 @@ export const ShaderSourceBloomDownsampleFirstPassPS =
 			s = 0.0;
 		}
 
-		OutColor = max(flame.rgb * 1.0f, firePlane.rgb * s).rgb;
+		flame.rgb *= float(` +
+    (1.0 + Math.random()) +
+    /* glsl */ `);
+
+		OutColor = max(flame.rgb, firePlane.rgb * s).rgb;
 	}`;
 export const ShaderSourceBloomDownsamplePS = /* glsl */ `#version 300 es
 	
@@ -727,6 +731,9 @@ export function GetShaderSourceCombinerPassPS() {
 			#endif
 			
 			float pointLights = textureLod(PointLightsTexture, texCoords.xy, 0.f).r; 
+
+			pointLights *= 5.0;
+			pointLights *= (texCoords.y * (1.0 - 2.0 * abs(texCoords.x - 0.5)));
 
 			float light = textureLod(SpotlightTexture, texCoords, 0.f).r;
 			//float light = 1.f;

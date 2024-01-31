@@ -1,6 +1,7 @@
 /* Camera Control */
 
 import { GSceneDesc } from "./scene";
+import { Vector3 } from "./types";
 import { GTime } from "./utils";
 
 const GController = {
@@ -84,5 +85,53 @@ export function ApplyCameraControl() {
     }
     if (GController.bCameraMovesDownThisFrame) {
         GSceneDesc.Camera.Position.y -= adjustedSpeed * GTime.Delta;
+    }
+}
+
+export class GCameraShakeController {
+    static CachedCamPos = { x: 0.0, y: 0.0, z: 0.0 };
+
+    static ShakeEventParam = 0.0;
+
+    static bShakeEventRunning = false;
+
+    static ShakeDuration = 0.2;
+
+    static RandAmplitudeXYZ = { x: 0.0, y: 0.0, z: 0.0 };
+
+    static ShakeCameraFast() {
+        if (!this.bShakeEventRunning) {
+            this.bShakeEventRunning = true;
+            this.ShakeEventParam = 0.0;
+
+            const rand = Math.random();
+            this.RandAmplitudeXYZ.x = rand;
+            this.RandAmplitudeXYZ.y = 1.0 - rand;
+            this.RandAmplitudeXYZ.z = 0.25 + Math.random() * 0.75;
+
+            this.CachedCamPos.x = GSceneDesc.Camera.Position.x;
+            this.CachedCamPos.y = GSceneDesc.Camera.Position.y;
+            this.CachedCamPos.z = GSceneDesc.Camera.Position.z;
+        }
+    }
+
+    static OnUpdate() {
+        if (this.bShakeEventRunning) {
+            const shakeStrength = 0.05 * 0.5 * this.RandAmplitudeXYZ.z;
+
+            const xOffset = Math.sin(this.ShakeEventParam * 37.0) * shakeStrength * this.RandAmplitudeXYZ.x;
+            const yOffset = Math.sin(this.ShakeEventParam * 40.0) * shakeStrength * this.RandAmplitudeXYZ.y;
+
+            GSceneDesc.Camera.Position.x = this.CachedCamPos.x + xOffset;
+            GSceneDesc.Camera.Position.y = this.CachedCamPos.y + yOffset;
+
+            this.ShakeEventParam += GTime.Delta;
+
+            if (this.ShakeEventParam > this.ShakeDuration) {
+                this.bShakeEventRunning = false;
+                GSceneDesc.Camera.Position.x = this.CachedCamPos.x;
+                GSceneDesc.Camera.Position.y = this.CachedCamPos.y;
+            }
+        }
     }
 }

@@ -94,6 +94,39 @@ export function MathIntersectionSphereSphere(pos1: Vector2, radius1: number, pos
     return distance <= radius1 + radius2;
 }
 
+export function MathIntersectionRayAABB(
+    rayOrigin: Vector3,
+    rayDirection: Vector3,
+    aabbCenter: Vector3,
+    aabbExtent: Vector3,
+) {
+    // Calculate the inverse direction of the ray
+    const invDirection: Vector3 = {
+        x: 1.0 / rayDirection.x,
+        y: 1.0 / rayDirection.y,
+        z: 1.0 / rayDirection.z,
+    };
+
+    // Calculate the minimum and maximum t values for each axis
+    const tmin = (aabbCenter.x - aabbExtent.x - rayOrigin.x) * invDirection.x;
+    const tmax = (aabbCenter.x + aabbExtent.x - rayOrigin.x) * invDirection.x;
+    const tymin = (aabbCenter.y - aabbExtent.y - rayOrigin.y) * invDirection.y;
+    const tymax = (aabbCenter.y + aabbExtent.y - rayOrigin.y) * invDirection.y;
+    const tzmin = (aabbCenter.z - aabbExtent.z - rayOrigin.z) * invDirection.z;
+    const tzmax = (aabbCenter.z + aabbExtent.z - rayOrigin.z) * invDirection.z;
+
+    // Find the maximum and minimum t values for intersection
+    const tEnter = Math.max(Math.max(Math.min(tmin, tmax), Math.min(tymin, tymax)), Math.min(tzmin, tzmax));
+    const tExit = Math.min(Math.min(Math.max(tmin, tmax), Math.max(tymin, tymax)), Math.max(tzmin, tzmax));
+
+    // Check if the intersection is outside the valid range
+    if (tExit < 0 || tEnter > tExit) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 export function uint16ToFloat16(uint16Value: number): number {
     // Extracting components
     const sign = (uint16Value & 0x8000) >> 15;
