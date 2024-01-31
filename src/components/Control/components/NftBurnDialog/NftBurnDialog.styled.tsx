@@ -230,3 +230,41 @@ export const FillButton = styled(Button)`
         animation: none;
     }
 `;
+
+export const InstrumentsContainer = styled.div`
+    position: relative;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 10px;
+
+    &::before {
+        content: "";
+        background-color: #fff;
+        width: 100%;
+        height: 1px;
+        position: absolute;
+        top: 0;
+    }
+
+    &::before,
+    &::after {
+        content: "";
+        background-color: #fff;
+        width: 100%;
+        height: 1px;
+        position: absolute;
+        bottom: 0;
+    }
+`;
+
+export const InstrumentsDivider = styled.div`
+    stroke-width: 4px;
+    stroke: #fff;
+    background-color: #2d2d31;
+    width: 1px;
+    height: 100%;
+    flex-shrink: 0;
+`;
