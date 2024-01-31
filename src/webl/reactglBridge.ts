@@ -44,4 +44,6 @@ export class GReactGLBridgeFunctions {
     static GetSharePopupBurnImg(): string {
         return GBurningSurfaceExport.GetExportUrl();
     }
+
+    static OnInstrumentClick(instrument: "laser" | "tunder" | "lighter"): void {}
 }
