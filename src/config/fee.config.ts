@@ -12,3 +12,16 @@ export const BURNER_FEE_CONFIG =
               lowerLimitUSD: 5,
               upperLimitUSD: 100,
           };
+
+export const INSTRUMENTS_PRICE_CONFIG_USD =
+    APP_ENVIRONMENT === "development"
+        ? {
+              laser: 0,
+              lighter: 0.15,
+              tunder: 0.25,
+          }
+        : {
+              laser: 0,
+              lighter: 15,
+              tunder: 25,
+          };
