@@ -31,7 +31,11 @@ import {
     BurningCeremonyText,
     DialogImageContainer,
     InstrumentIconContainer,
+    InstrumentNameSection,
+    InstrumentNameText,
     InstrumentsContainer,
+    InstrumentsMainContainer,
+    InstrumentsSection,
     NftBurnDialogContainer,
     NftBurnDialogImg,
     NftBurnDialogImgTitle,
@@ -295,41 +299,50 @@ export const NftBurnDialog = ({
                     target={".lighter-container"}
                     position="top"
                 />
-                <InstrumentsContainer>
-                    <InstrumentIconContainer
-                        className="laser-container"
-                        $isActive={instrument === "laser"}
-                        $activeColor={INSTRUMENTS_COLOR_MAP.laser}
-                        onClick={() => {
-                            GReactGLBridgeFunctions.OnInstrumentClick("laser");
-                            setInstrument("laser");
-                        }}
-                    >
-                        <LaserIcon />
-                    </InstrumentIconContainer>
-                    <InstrumentIconContainer
-                        className="tunder-container"
-                        $isActive={instrument === "tunder"}
-                        $activeColor={INSTRUMENTS_COLOR_MAP.tunder}
-                        onClick={() => {
-                            GReactGLBridgeFunctions.OnInstrumentClick("tunder");
-                            setInstrument("tunder");
-                        }}
-                    >
-                        <TunderIcon />
-                    </InstrumentIconContainer>
-                    <InstrumentIconContainer
-                        className="lighter-container"
-                        $isActive={instrument === "lighter"}
-                        $activeColor={INSTRUMENTS_COLOR_MAP.lighter}
-                        onClick={() => {
-                            GReactGLBridgeFunctions.OnInstrumentClick("lighter");
-                            setInstrument("lighter");
-                        }}
-                    >
-                        <LighterIcon />
-                    </InstrumentIconContainer>
-                </InstrumentsContainer>
+                <InstrumentsMainContainer>
+                    <InstrumentsSection>
+                        <InstrumentsContainer>
+                            <InstrumentIconContainer
+                                className="laser-container"
+                                $isActive={instrument === "laser"}
+                                $activeColor={INSTRUMENTS_COLOR_MAP.laser}
+                                onClick={() => {
+                                    GReactGLBridgeFunctions.OnInstrumentClick("laser");
+                                    setInstrument("laser");
+                                }}
+                            >
+                                <LaserIcon />
+                            </InstrumentIconContainer>
+                            <InstrumentIconContainer
+                                className="tunder-container"
+                                $isActive={instrument === "tunder"}
+                                $activeColor={INSTRUMENTS_COLOR_MAP.tunder}
+                                onClick={() => {
+                                    GReactGLBridgeFunctions.OnInstrumentClick("tunder");
+                                    setInstrument("tunder");
+                                }}
+                            >
+                                <TunderIcon />
+                            </InstrumentIconContainer>
+                            <InstrumentIconContainer
+                                className="lighter-container"
+                                $isActive={instrument === "lighter"}
+                                $activeColor={INSTRUMENTS_COLOR_MAP.lighter}
+                                onClick={() => {
+                                    GReactGLBridgeFunctions.OnInstrumentClick("lighter");
+                                    setInstrument("lighter");
+                                }}
+                            >
+                                <LighterIcon />
+                            </InstrumentIconContainer>
+                        </InstrumentsContainer>
+                    </InstrumentsSection>
+                    <InstrumentNameSection>
+                        <InstrumentNameText $activeColor={INSTRUMENTS_COLOR_MAP[instrument]}>
+                            {instrument.toUpperCase()}
+                        </InstrumentNameText>
+                    </InstrumentNameSection>
+                </InstrumentsMainContainer>
             </>
             <div>
                 <ConfirmBurningButton

@@ -233,12 +233,25 @@ export const FillButton = styled(Button)`
 
 export const InstrumentsContainer = styled.div`
     position: relative;
-    margin-bottom: 1.5rem;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 20px;
+`;
 
+export const InstrumentsDivider = styled.div`
+    stroke-width: 4px;
+    stroke: #fff;
+    background-color: #2d2d31;
+    width: 1px;
+    height: 100%;
+    flex-shrink: 0;
+`;
+
+export const InstrumentsMainContainer = styled.div`
+    display: flex;
+    margin-bottom: 1.5rem;
+    position: relative;
     &::before {
         content: "";
         background-color: #2d2d31;
@@ -258,13 +271,26 @@ export const InstrumentsContainer = styled.div`
     }
 `;
 
-export const InstrumentsDivider = styled.div`
-    stroke-width: 4px;
-    stroke: #fff;
-    background-color: #2d2d31;
-    width: 1px;
-    height: 100%;
-    flex-shrink: 0;
+export const InstrumentsSection = styled.div`
+    width: 50%;
+`;
+
+export const InstrumentNameSection = styled.div`
+    width: 50%;
+`;
+
+export const InstrumentNameText = styled.p<{
+    $activeColor: string;
+}>`
+    color: ${({ $activeColor }) => $activeColor};
+    font-family: Khand;
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 32px;
+    letter-spacing: 2.88px;
+    text-transform: uppercase;
+    cursor: pointer;
 `;
 
 export const InstrumentIconContainer = styled.div<{
