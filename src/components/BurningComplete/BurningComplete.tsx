@@ -10,6 +10,7 @@ import { IMAGE_STORE_SINGLETON_INSTANCE } from "../../config/config";
 import { GTransitionAnimationsConstants } from "../../webl/transitionAnimations";
 import { sleep } from "../../utils/sleep";
 import { GAudioEngine } from "../../webl/audioEngine";
+import { POINTS_PER_BURN, setPoints } from "../../utils/gamification/level";
 
 // import useSound from "use-sound";
 
@@ -35,6 +36,7 @@ export const BurningComplete = () => {
 
     useEffect(() => {
         localStorage.setItem("isBurnedNFTAtLeastOnce", "true");
+        setPoints(POINTS_PER_BURN);
 
         const transitionFunc = async () => {
             setShowText(true);

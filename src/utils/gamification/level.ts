@@ -3,6 +3,7 @@
 const USER_LEVEL_KEY = "userLevel";
 const USER_POINTS_KEY = "userPoints";
 const POINTS_PER_LEVEL = 100;
+export const POINTS_PER_BURN = 101;
 
 // Get the user's level from local storage, default to 0 if not set
 export const getLevel = (): number => {
