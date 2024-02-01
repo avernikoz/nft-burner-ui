@@ -30,6 +30,7 @@ import {
     BurningCeremonyHighlight,
     BurningCeremonyText,
     DialogImageContainer,
+    InstrumentHeadingText,
     InstrumentIconContainer,
     InstrumentNameSection,
     InstrumentNameText,
@@ -280,6 +281,7 @@ export const NftBurnDialog = ({
                     </StatusTransactionContainer>
                 </div>
             </NftBurnDialogContainer>
+            <InstrumentHeadingText>Choose Your Tool</InstrumentHeadingText>
             <>
                 <Tooltip
                     className="tooltip-burner-fee"

@@ -231,6 +231,18 @@ export const FillButton = styled(Button)`
     }
 `;
 
+export const InstrumentHeadingText = styled.p`
+    color: #787885;
+    font-family: Khand;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 500;
+    /* line-height: 32px; */
+    letter-spacing: 1.88px;
+    margin: 0;
+    margin-bottom: 0.5rem;
+`;
+
 export const InstrumentsContainer = styled.div`
     position: relative;
     display: flex;
@@ -285,10 +297,11 @@ export const InstrumentsSection = styled.div`
 
 export const InstrumentNameSection = styled.div`
     width: 50%;
+    display: flex;
+    align-items: center;
 
     @media (max-width: 600px) {
         width: 100%;
-        display: flex;
         justify-content: center;
     }
 `;
@@ -305,12 +318,14 @@ export const InstrumentNameText = styled.p<{
     letter-spacing: 2.88px;
     text-transform: uppercase;
     cursor: pointer;
+    margin: 0;
 `;
 
 export const InstrumentIconContainer = styled.div<{
     $isActive?: boolean;
     $activeColor?: string;
 }>`
+    display: flex;
     padding: 10px 0;
     position: relative;
     color: #bebebe;
@@ -318,12 +333,14 @@ export const InstrumentIconContainer = styled.div<{
 
     &:hover {
         color: #fff;
+        background-color: rgb(186 177 177 / 9%);
     }
 
     ${({ $isActive, $activeColor }) =>
         $isActive &&
         $activeColor &&
         css`
+            background-color: rgb(186 177 177 / 9%);
             color: #fff;
 
             &::before {
