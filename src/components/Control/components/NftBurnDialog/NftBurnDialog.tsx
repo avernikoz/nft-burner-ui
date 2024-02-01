@@ -115,6 +115,10 @@ export const NftBurnDialog = ({
                 throw new Error("Empty burner fuel fee");
             }
 
+            if (instrumentPriceInNetworkToken === undefined) {
+                throw new Error("Empty instrument price");
+            }
+
             if (isEvm) {
                 setLoadingFirstTransaction(true);
             } else {
@@ -123,19 +127,27 @@ export const NftBurnDialog = ({
             }
 
             if (isEvm) {
-                await handleEvmPayTransaction({ nft: nft as EvmNft, signer, burnerFee });
+                await handleEvmPayTransaction({
+                    nft: nft as EvmNft,
+                    signer,
+                    burnerFee: burnerFee + instrumentPriceInNetworkToken,
+                });
                 setLoadingFirstTransaction(false);
                 setLoadingSecondTransaction(true);
                 setOnchainFeeSuccess(true);
                 await handleEvmBurnTransaction({ nft: nft as EvmNft, signer });
             } else if (isSui) {
-                await handleSuiTransaction({ nft: nft as SuiNft, signAndExecuteTransactionBlock, burnerFee });
+                await handleSuiTransaction({
+                    nft: nft as SuiNft,
+                    signAndExecuteTransactionBlock,
+                    burnerFee: burnerFee + instrumentPriceInNetworkToken,
+                });
             } else if (isSolana) {
                 await handleSolanaTransaction({
                     nft: nft as SolanaNft | SolanaCNft,
                     solanaConnection: solanaConnection.connection,
                     solanaWallet,
-                    burnerFee,
+                    burnerFee: burnerFee + instrumentPriceInNetworkToken,
                 });
             }
 
