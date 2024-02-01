@@ -29,3 +29,9 @@ export const STYLES_CONFIG = {
         borderColor: "#ffffff",
     },
 };
+
+export const INSTRUMENTS_COLOR_MAP = {
+    laser: "#EB2252",
+    tunder: "#228BEB",
+    lighter: "#FE6839",
+};
