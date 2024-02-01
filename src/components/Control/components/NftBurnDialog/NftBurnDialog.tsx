@@ -21,9 +21,9 @@ import { ReactComponent as BurnIcon } from "../../../../assets/svg/burnIcon.svg"
 import { ReactComponent as InfoIcon } from "../../../../assets/svg/infoIcon.svg";
 
 // instruments
-import { ReactComponent as LaserIcon } from "../../../../assets/svg/instruments/Laser.svg";
-import { ReactComponent as LighterIcon } from "../../../../assets/svg/instruments/Lighter.svg";
-import { ReactComponent as TunderIcon } from "../../../../assets/svg/instruments/Tunder.svg";
+import { ReactComponent as LaserIcon } from "../../../../assets/svg/instruments/updated/Laser.svg";
+import { ReactComponent as LighterIcon } from "../../../../assets/svg/instruments/updated/Lighter.svg";
+import { ReactComponent as TunderIcon } from "../../../../assets/svg/instruments/updated/Tunder.svg";
 
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import {

@@ -269,14 +269,28 @@ export const InstrumentsMainContainer = styled.div`
         position: absolute;
         bottom: 0;
     }
+
+    @media (max-width: 600px) {
+        flex-direction: column;
+    }
 `;
 
 export const InstrumentsSection = styled.div`
     width: 50%;
+
+    @media (max-width: 600px) {
+        width: 100%;
+    }
 `;
 
 export const InstrumentNameSection = styled.div`
     width: 50%;
+
+    @media (max-width: 600px) {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
 `;
 
 export const InstrumentNameText = styled.p<{
