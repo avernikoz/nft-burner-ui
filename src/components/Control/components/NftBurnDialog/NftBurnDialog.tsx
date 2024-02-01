@@ -30,8 +30,8 @@ import {
     BurningCeremonyHighlight,
     BurningCeremonyText,
     DialogImageContainer,
+    InstrumentIconContainer,
     InstrumentsContainer,
-    InstrumentsDivider,
     NftBurnDialogContainer,
     NftBurnDialogImg,
     NftBurnDialogImgTitle,
@@ -50,6 +50,7 @@ import { useNftFloorPrice } from "../../../../hooks/useNftFloorPrice";
 import { sleep } from "../../../../utils/sleep";
 import { useInstumentsPrice } from "../../../../hooks/useInstrumentsPrice";
 import { GReactGLBridgeFunctions } from "../../../../webl/reactglBridge";
+import { INSTRUMENTS_COLOR_MAP } from "../../../../config/styles.config";
 
 export const NftBurnDialog = ({
     nft,
@@ -264,25 +265,58 @@ export const NftBurnDialog = ({
                 </div>
             </NftBurnDialogContainer>
             <>
+                <Tooltip
+                    className="tooltip-burner-fee"
+                    content="🎶 Available on Level 0"
+                    target={".laser-container"}
+                    position="top"
+                />
+                <Tooltip
+                    className="tooltip-burner-fee"
+                    content="🎶 Available on Level 5 for free"
+                    target={".tunder-container"}
+                    position="top"
+                />
+                <Tooltip
+                    className="tooltip-burner-fee"
+                    content="🎶 Available on Level 3 for free"
+                    target={".lighter-container"}
+                    position="top"
+                />
                 <InstrumentsContainer>
-                    <LaserIcon
+                    <InstrumentIconContainer
+                        className="laser-container"
+                        $isActive={instrument === "laser"}
+                        $activeColor={INSTRUMENTS_COLOR_MAP.laser}
                         onClick={() => {
                             GReactGLBridgeFunctions.OnInstrumentClick("laser");
                             setInstrument("laser");
                         }}
-                    />
-                    <TunderIcon
+                    >
+                        <LaserIcon />
+                    </InstrumentIconContainer>
+                    <InstrumentIconContainer
+                        className="tunder-container"
+                        $isActive={instrument === "tunder"}
+                        $activeColor={INSTRUMENTS_COLOR_MAP.tunder}
                         onClick={() => {
                             GReactGLBridgeFunctions.OnInstrumentClick("tunder");
                             setInstrument("tunder");
                         }}
-                    />
-                    <LighterIcon
+                    >
+                        <TunderIcon />
+                    </InstrumentIconContainer>
+                    <InstrumentIconContainer
+                        className="lighter-container"
+                        $isActive={instrument === "lighter"}
+                        $activeColor={INSTRUMENTS_COLOR_MAP.lighter}
                         onClick={() => {
                             GReactGLBridgeFunctions.OnInstrumentClick("lighter");
                             setInstrument("lighter");
                         }}
-                    />
+                    >
+                        <LighterIcon />
+                    </InstrumentIconContainer>
                 </InstrumentsContainer>
             </>
             <div>
