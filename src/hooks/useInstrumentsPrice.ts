@@ -8,7 +8,7 @@ export const useInstumentsPrice = ({
     instrument,
     network,
 }: {
-    instrument: "laser" | "lighter" | "tunder";
+    instrument: "laser" | "lighter" | "thunder";
     network: ALLOWED_NETWORKS | null | undefined;
 }) => {
     const { data: prices } = useTokenPrices();

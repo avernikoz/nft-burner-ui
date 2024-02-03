@@ -32,6 +32,6 @@ export const STYLES_CONFIG = {
 
 export const INSTRUMENTS_COLOR_MAP = {
     laser: "#EB2252",
-    tunder: "#228BEB",
+    thunder: "#228BEB",
     lighter: "#FE6839",
 };

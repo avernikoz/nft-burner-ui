@@ -232,7 +232,7 @@ export const FillButton = styled(Button)`
 `;
 
 export const InstrumentHeadingText = styled.p`
-    color: #787885;
+    color: #a6a6a6;
     font-family: Khand;
     font-size: 12px;
     font-style: normal;
@@ -240,7 +240,7 @@ export const InstrumentHeadingText = styled.p`
     /* line-height: 32px; */
     letter-spacing: 1.88px;
     margin: 0;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.2rem;
 `;
 
 export const InstrumentsContainer = styled.div`
@@ -248,7 +248,7 @@ export const InstrumentsContainer = styled.div`
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 20px;
+    gap: 0px;
 `;
 
 export const InstrumentsDivider = styled.div`
@@ -256,7 +256,7 @@ export const InstrumentsDivider = styled.div`
     stroke: #fff;
     background-color: #2d2d31;
     width: 1px;
-    height: 100%;
+    height: 65%;
     flex-shrink: 0;
 `;
 
@@ -299,6 +299,8 @@ export const InstrumentNameSection = styled.div`
     width: 50%;
     display: flex;
     align-items: center;
+    gap: 10px;
+    margin-left: 15px;
 
     @media (max-width: 600px) {
         width: 100%;
@@ -326,7 +328,7 @@ export const InstrumentIconContainer = styled.div<{
     $activeColor?: string;
 }>`
     display: flex;
-    padding: 10px 0;
+    padding: 10px 10px;
     position: relative;
     color: #bebebe;
     cursor: pointer;
@@ -347,9 +349,10 @@ export const InstrumentIconContainer = styled.div<{
                 content: "";
                 background-color: ${$activeColor};
                 width: 100%;
-                height: 2px;
+                height: 1px;
                 position: absolute;
                 top: 0;
+                left: 0;
                 z-index: 10;
             }
 
@@ -357,7 +360,7 @@ export const InstrumentIconContainer = styled.div<{
                 content: "";
                 background-color: ${$activeColor};
                 width: 100%;
-                height: 2px;
+                height: 1px;
                 position: absolute;
                 bottom: 0;
                 left: 0;
@@ -371,9 +374,9 @@ export const InstrumentIconContainer = styled.div<{
             &:hover {
                 &::after {
                     content: "";
-                    background-color: #fff;
+                    background-color: #dadada;
                     width: 100%;
-                    height: 2px;
+                    height: 1px;
                     position: absolute;
                     bottom: 0;
                     left: 0;
