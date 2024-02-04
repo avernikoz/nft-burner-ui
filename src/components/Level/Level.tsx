@@ -29,7 +29,7 @@ export const Number = styled.span`
     left: 50%;
     top: 50%; */
     text-shadow:
-        0 0 45px #25fe96,
+        0 0 45px #25fe9592,
         0 0 15px #ff682d97;
 `;
 
