@@ -25,6 +25,7 @@ import { ConnectWalletButton } from "../../components/ConnectWalletButton/Connec
 import BurnerLogoDesktopIcon from "../../assets/svg/burnerLogoDesktop.svg";
 import BurnerLogoMobileIcon from "../../assets/svg/burnerLogoMobile.svg";
 import { GAudioEngine } from "../../webl/audioEngine";
+import { Level } from "../../components/Level/Level";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
     setAboutPageActive,
@@ -139,6 +140,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                         setShowUI(false);
                     }}
                 />
+                <Level percentage={100} />
             </HeaderAppContainer>
             {showUI && !showBurnedScreen && !showConnectWalletScreen && (
                 <BodyContainer $showBackground={true}>
