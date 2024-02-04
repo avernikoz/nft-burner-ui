@@ -140,7 +140,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                         setShowUI(false);
                     }}
                 />
-                <Level percentage={100} />
+                <Level percentage={65} />
             </HeaderAppContainer>
             {showUI && !showBurnedScreen && !showConnectWalletScreen && (
                 <BodyContainer $showBackground={true}>
