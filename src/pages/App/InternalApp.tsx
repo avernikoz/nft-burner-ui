@@ -26,6 +26,7 @@ import BurnerLogoDesktopIcon from "../../assets/svg/burnerLogoDesktop.svg";
 import BurnerLogoMobileIcon from "../../assets/svg/burnerLogoMobile.svg";
 import { GAudioEngine } from "../../webl/audioEngine";
 import { Level } from "../../components/Level/Level";
+import { useUserLevel } from "../../context/UserLevelContext";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
     setAboutPageActive,
@@ -41,6 +42,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
     const [showBurnedScreen, setShowBurnedScreen] = useState<boolean>(false);
     const [showConnectWalletScreen, setShowConnectWalletScreen] = useState<boolean>(false);
     const [walletSelectPopupVisible, setWalletSelectPopupVisible] = useState<boolean>(false);
+    const { level, points } = useUserLevel();
 
     const NftController = useContext(NftContext);
 
@@ -140,7 +142,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                         setShowUI(false);
                     }}
                 />
-                <Level percentage={65} />
+                <Level level={level} points={points} />
             </HeaderAppContainer>
             {showUI && !showBurnedScreen && !showConnectWalletScreen && (
                 <BodyContainer $showBackground={true}>

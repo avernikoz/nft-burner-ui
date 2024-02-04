@@ -57,16 +57,16 @@ export const StyledSvgLevel = styled.svg`
     position: absolute;
 `;
 
-export const Level = ({ percentage }: { percentage: number }) => {
+export const Level = ({ level, points }: { level: number; points: number }) => {
     const radius = 75;
     const circumference = 2 * Math.PI * radius;
-    const offset = (percentage / 100) * circumference;
+    const offset = (points / 100) * circumference;
 
     useEffect(() => {
-        console.log(percentage);
+        console.log(points);
         // console.log(offset);
         // console.log(circumference);
-    }, [percentage]);
+    }, [points]);
 
     return (
         <MainLevelContainer>
@@ -100,7 +100,7 @@ export const Level = ({ percentage }: { percentage: number }) => {
                     />
                 </StyledSvgLevel>
 
-                <Number>2</Number>
+                <Number>{level}</Number>
             </CircleContainer>
         </MainLevelContainer>
     );
