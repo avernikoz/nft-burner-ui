@@ -47,7 +47,7 @@ export const BurningComplete = () => {
         };
 
         transitionFunc();
-    }, []);
+    }, [setPoints]);
 
     return (
         <>
