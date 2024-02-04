@@ -39,6 +39,7 @@ export const BurningComplete = () => {
     useEffect(() => {
         localStorage.setItem("isBurnedNFTAtLeastOnce", "true");
         setPoints(POINTS_PER_BURN);
+        console.debug("[useEffect] [BurningComplete]");
 
         const transitionFunc = async () => {
             setShowText(true);
@@ -47,7 +48,8 @@ export const BurningComplete = () => {
         };
 
         transitionFunc();
-    }, [setPoints]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <>
