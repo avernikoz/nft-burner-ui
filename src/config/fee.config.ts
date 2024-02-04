@@ -18,10 +18,10 @@ export const INSTRUMENTS_PRICE_CONFIG_USD =
         ? {
               laser: 0,
               lighter: 0.15,
-              tunder: 0.25,
+              thunder: 0.25,
           }
         : {
               laser: 0,
               lighter: 15,
-              tunder: 25,
+              thunder: 25,
           };

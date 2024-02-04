@@ -45,5 +45,5 @@ export class GReactGLBridgeFunctions {
         return GBurningSurfaceExport.GetExportUrl();
     }
 
-    static OnInstrumentClick(instrument: "laser" | "tunder" | "lighter"): void {}
+    static OnInstrumentClick(instrument: "laser" | "thunder" | "lighter"): void {}
 }

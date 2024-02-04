@@ -23,7 +23,7 @@ import { ReactComponent as InfoIcon } from "../../../../assets/svg/infoIcon.svg"
 // instruments
 import { ReactComponent as LaserIcon } from "../../../../assets/svg/instruments/updated/Laser.svg";
 import { ReactComponent as LighterIcon } from "../../../../assets/svg/instruments/updated/Lighter.svg";
-import { ReactComponent as TunderIcon } from "../../../../assets/svg/instruments/updated/Tunder.svg";
+import { ReactComponent as ThunderIcon } from "../../../../assets/svg/instruments/updated/Tunder.svg";
 
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import {
@@ -35,6 +35,7 @@ import {
     InstrumentNameSection,
     InstrumentNameText,
     InstrumentsContainer,
+    InstrumentsDivider,
     InstrumentsMainContainer,
     InstrumentsSection,
     NftBurnDialogContainer,
@@ -98,7 +99,7 @@ export const NftBurnDialog = ({
     const solanaConnection = useConnection();
     const signer = useEthersSigner();
     const toastController = useContext(ToastContext);
-    const [instrument, setInstrument] = useState<"laser" | "lighter" | "tunder">("laser");
+    const [instrument, setInstrument] = useState<"laser" | "lighter" | "thunder">("laser");
     const { data: floorPrice } = useNftFloorPrice(nft);
     const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
     const { instrumentPriceInNetworkToken } = useInstumentsPrice({ instrument, network: nft?.network });
@@ -232,7 +233,7 @@ export const NftBurnDialog = ({
                                 position="top"
                             />
                             <NftBurnDialogInfoTitle className="instruments">
-                                Instruments <InfoIcon />:
+                                Burner Tool Fee <InfoIcon />:
                             </NftBurnDialogInfoTitle>
                             <NftBurnDialogInfoValue>
                                 {instrumentPriceInNetworkToken} {burnerFeeToken}
@@ -292,7 +293,7 @@ export const NftBurnDialog = ({
                 <Tooltip
                     className="tooltip-burner-fee"
                     content="🎶 Available on Level 5 for free"
-                    target={".tunder-container"}
+                    target={".thunder-container"}
                     position="top"
                 />
                 <Tooltip
@@ -315,17 +316,7 @@ export const NftBurnDialog = ({
                             >
                                 <LaserIcon />
                             </InstrumentIconContainer>
-                            <InstrumentIconContainer
-                                className="tunder-container"
-                                $isActive={instrument === "tunder"}
-                                $activeColor={INSTRUMENTS_COLOR_MAP.tunder}
-                                onClick={() => {
-                                    GReactGLBridgeFunctions.OnInstrumentClick("tunder");
-                                    setInstrument("tunder");
-                                }}
-                            >
-                                <TunderIcon />
-                            </InstrumentIconContainer>
+
                             <InstrumentIconContainer
                                 className="lighter-container"
                                 $isActive={instrument === "lighter"}
@@ -337,9 +328,22 @@ export const NftBurnDialog = ({
                             >
                                 <LighterIcon />
                             </InstrumentIconContainer>
+                            <InstrumentIconContainer
+                                className="thunder-container"
+                                $isActive={instrument === "thunder"}
+                                $activeColor={INSTRUMENTS_COLOR_MAP.thunder}
+                                onClick={() => {
+                                    GReactGLBridgeFunctions.OnInstrumentClick("thunder");
+                                    setInstrument("thunder");
+                                }}
+                            >
+                                <ThunderIcon />
+                            </InstrumentIconContainer>
                         </InstrumentsContainer>
                     </InstrumentsSection>
+
                     <InstrumentNameSection>
+                        <InstrumentsDivider />
                         <InstrumentNameText $activeColor={INSTRUMENTS_COLOR_MAP[instrument]}>
                             {instrument.toUpperCase()}
                         </InstrumentNameText>

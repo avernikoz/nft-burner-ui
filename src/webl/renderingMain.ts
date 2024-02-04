@@ -165,6 +165,8 @@ const GSettings = {
     bRunSimulation: true,
 };
 
+class GTools {}
+
 const GPostProcessPasses: {
     CopyPresemt: RPresentPass | null;
     Blur: RBlurPass | null;
