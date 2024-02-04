@@ -12,9 +12,9 @@ export const getLevel = (): number => {
 };
 
 // Set the user's level in local storage
-// export const setLevel = (level: number): void => {
-//     localStorage.setItem(USER_LEVEL_KEY, String(level));
-// };
+export const setLevel = (level: number): void => {
+    localStorage.setItem(USER_LEVEL_KEY, String(level));
+};
 
 // Get the user's points from local storage, default to 0 if not set
 export const getPoints = (): number => {
