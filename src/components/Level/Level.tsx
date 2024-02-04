@@ -1,5 +1,4 @@
-import React, { useEffect } from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 
 export const MainLevelContainer = styled.div`
     position: absolute;
@@ -61,12 +60,6 @@ export const Level = ({ level, points }: { level: number; points: number }) => {
     const radius = 75;
     const circumference = 2 * Math.PI * radius;
     const offset = (points / 100) * circumference;
-
-    useEffect(() => {
-        console.log(points);
-        // console.log(offset);
-        // console.log(circumference);
-    }, [points]);
 
     return (
         <MainLevelContainer>

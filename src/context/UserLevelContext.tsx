@@ -1,6 +1,6 @@
 // UserLevelContext.tsx
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { getPoints, setPoints } from "../utils/gamification/level";
+import React, { createContext, useContext, useState } from "react";
+import { getLevel, getPoints, setPoints } from "../utils/gamification/level";
 
 interface UserLevelProviderProps {
     children: React.ReactNode;
@@ -16,19 +16,16 @@ const UserLevelContext = createContext<UserLevelContextProps | undefined>(undefi
 
 export const UserLevelProvider: React.FC<UserLevelProviderProps> = ({ children }) => {
     const [points, setLocalPoints] = useState(getPoints());
-    const [level, setLocalLevel] = useState(Math.floor(points / 100));
-
-    useEffect(() => {
-        setLocalPoints((prevPoints) => {
-            const newPoints = prevPoints % 100; // Ensure points are within the range [0, 99]
-            setLocalLevel(Math.floor(newPoints / 100));
-            setPoints(newPoints);
-            return newPoints;
-        });
-    }, [points]);
+    const [level, setLocalLevel] = useState(getLevel());
 
     const handleSetPoints = (newPoints: number) => {
-        setLocalPoints((prevPoints) => prevPoints + newPoints);
+        const prevPoints = points;
+        const updatedPoints = newPoints + prevPoints;
+
+        const { updatedLevel } = setPoints(updatedPoints);
+
+        setLocalPoints(updatedPoints);
+        setLocalLevel(updatedLevel);
     };
 
     return (
