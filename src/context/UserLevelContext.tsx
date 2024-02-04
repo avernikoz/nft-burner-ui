@@ -19,10 +19,7 @@ export const UserLevelProvider: React.FC<UserLevelProviderProps> = ({ children }
     const [level, setLocalLevel] = useState(getLevel());
 
     const handleSetPoints = (newPoints: number) => {
-        const prevPoints = points;
-        const updatedPoints = newPoints + prevPoints;
-
-        const { updatedLevel } = setPoints(updatedPoints);
+        const { updatedLevel, updatedPoints } = setPoints(newPoints);
 
         setLocalPoints(updatedPoints);
         setLocalLevel(updatedLevel);

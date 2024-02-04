@@ -23,16 +23,17 @@ export const getPoints = (): number => {
 };
 
 // Set the user's points in local storage, automatically update level if needed
-export const setPoints = (points: number): { updatedLevel: number } => {
+export const setPoints = (points: number): { updatedLevel: number; updatedPoints: number } => {
     const currentPoints = getPoints();
     const newPoints = currentPoints + points;
 
     // Calculate the new level based on the accumulated points
-    const newLevel = Math.floor(newPoints / POINTS_PER_LEVEL);
+    const currentLevel = getLevel();
+    const newLevel = Math.floor(newPoints / POINTS_PER_LEVEL) + currentLevel;
 
     // Update the level and set the remaining points
     setLevel(newLevel);
     localStorage.setItem(USER_POINTS_KEY, String(newPoints % POINTS_PER_LEVEL));
 
-    return { updatedLevel: newLevel };
+    return { updatedLevel: newLevel, updatedPoints: newPoints % POINTS_PER_LEVEL };
 };
