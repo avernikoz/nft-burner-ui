@@ -1,3 +1,4 @@
+import ReactGA from "react-ga4";
 import React, { useContext, useState } from "react";
 import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
 import { BurnButton } from "../BurnButton/BurnButton";
@@ -29,6 +30,7 @@ export const BurningComplete = () => {
                 <BurnButton
                     className="burnButton mainButton mainButtonLarge completeButton"
                     onClick={() => {
+                        ReactGA.event("burning_complete_burn_more_button_pressed");
                         NftController.setNftStatus(ENftBurnStatus.EMPTY);
                         IMAGE_STORE_SINGLETON_INSTANCE.setImageUrl(null);
                         IMAGE_STORE_SINGLETON_INSTANCE.setImage(null);
@@ -40,7 +42,10 @@ export const BurningComplete = () => {
 
                 <ShareButton
                     className="shareButton mainButton mainButtonLarge completeButton"
-                    onClick={() => setSharePopupVisible(true)}
+                    onClick={() => {
+                        ReactGA.event("burning_complete_share_button_pressed");
+                        setSharePopupVisible(true);
+                    }}
                 >
                     SHARE
                 </ShareButton>

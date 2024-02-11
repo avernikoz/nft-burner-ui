@@ -1,3 +1,4 @@
+import ReactGA from "react-ga4";
 import { useContext, useEffect, useState } from "react";
 import { INft } from "../../utils/types";
 import { BurnButton } from "../BurnButton/BurnButton";
@@ -48,7 +49,10 @@ export const Control = () => {
                 <BurnScheduleContainer>
                     <BurnButton
                         className="burnButton mainButton width35"
-                        onClick={() => setBurnPopupVisible(true)}
+                        onClick={() => {
+                            ReactGA.event("burn_button_open_popup_button_pressed");
+                            setBurnPopupVisible(true);
+                        }}
                         disabled={!nft}
                     >
                         BURN
@@ -56,7 +60,10 @@ export const Control = () => {
 
                     <ShareButton
                         className="shareButton mainButton width65"
-                        onClick={() => setSchedulePopupVisible(true)}
+                        onClick={() => {
+                            ReactGA.event("schedule_button_open_popup_button_pressed");
+                            setSchedulePopupVisible(true);
+                        }}
                         disabled={!nft}
                     >
                         SCHEDULE BURN EVENT
