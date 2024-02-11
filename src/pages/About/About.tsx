@@ -1,18 +1,17 @@
+import { RefObject, useEffect, useRef, useState } from "react";
 import ReactGA from "react-ga4";
 import LazyLoad from "react-lazyload";
-import { styled, css } from "styled-components";
-import React, { ReactNode, RefObject, useEffect, useRef, useState } from "react";
-import "./About.css";
+import { css, styled } from "styled-components";
 import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
+import "./About.css";
 
+import { ProgressSpinner } from "primereact/progressspinner";
 import { ReactComponent as DownArrowIcon } from "../../assets/svg/downArrow.svg";
 import { ReactComponent as RightArrowIcon } from "../../assets/svg/rightArrow.svg";
 import { Header } from "../../components/Header/Header";
-import { ProgressSpinner } from "primereact/progressspinner";
 
-import { ReactComponent as DiscordIcon } from "../../assets/svg/social/discord.svg";
-import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
+import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { APP_ENVIRONMENT } from "../../config/config";
 
 //=========================
@@ -454,6 +453,49 @@ export const LPDescText = styled.span`
     letter-spacing: 0.48px;
     //width: clamp(32px, 40vw, 512px);
 `;
+
+//=========================
+// 	  	   PAGE Youtube Video
+//=========================
+
+export const MainVideoWrapper = styled.div`
+    min-height: 100vh;
+    width: 100vw;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+`;
+
+export const VideoContainer = styled.div`
+    position: relative;
+    width: 80%; /* Full width of the parent element */
+    padding-bottom: 56.25%; /* Maintain  16:9 aspect ratio */
+`;
+
+export const VideoIframe = styled.iframe`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+`;
+
+export const LPPageVideo = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => {
+    return (
+        <MainVideoWrapper ref={refProp}>
+            <VideoContainer>
+                <VideoIframe
+                    src="https://www.youtube.com/embed/4rx4oXUtXg8?si=dloQUuracglDwv7Z"
+                    title="NFT Burner Demo"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen={true}
+                />
+            </VideoContainer>
+        </MainVideoWrapper>
+    );
+};
 
 //=========================
 // 	  	   PAGE 2
@@ -1158,6 +1200,9 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
             <LPContainerMain>
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
+                <LazyLoad height={"100vh"}>
+                    <LPPageVideo refProp={myRef} />
+                </LazyLoad>
                 <LazyLoad height={"100vh"}>
                     <LPPage2 refProp={myRef} />
                 </LazyLoad>
