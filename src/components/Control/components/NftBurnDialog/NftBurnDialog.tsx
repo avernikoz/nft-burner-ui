@@ -1,3 +1,4 @@
+import ReactGA from "react-ga4";
 import * as Sentry from "@sentry/react";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -99,6 +100,7 @@ export const NftBurnDialog = ({
 
     const handleBurn = async () => {
         try {
+            ReactGA.event({ category: "nft_burn_popup", action: "burn_nft", label: nft.network.toString() });
             if (!burnerFee) {
                 throw new Error("Empty burner fuel fee");
             }
@@ -134,6 +136,7 @@ export const NftBurnDialog = ({
             setLoadingSecondTransaction(false);
 
             await sleep(3500);
+            ReactGA.event({ category: "nft_burn_popup", action: "nft_burned_onchain", label: nft.network.toString() });
             NftController.setNftStatus(ENftBurnStatus.BURNED_ONCHAIN);
             setVisible();
         } catch (error) {

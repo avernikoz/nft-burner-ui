@@ -1,3 +1,4 @@
+import ReactGA from "react-ga4";
 import * as Sentry from "@sentry/react";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line import/no-unresolved
@@ -47,6 +48,7 @@ export const WalletSelector = ({
             GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory);
             setWalletSelectPopupVisible(false);
             setAccount(acc);
+            ReactGA.event({ category: "wallet_dialog_popup", action: "connect_wallet", label: acc.network.toString() });
         },
         [activeIndex, setWalletSelectPopupVisible],
     );

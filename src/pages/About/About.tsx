@@ -1,3 +1,4 @@
+import ReactGA from "react-ga4";
 import { styled, css } from "styled-components";
 import React, { RefObject, useEffect, useRef, useState } from "react";
 import "./About.css";
@@ -268,6 +269,7 @@ export const StartButton = ({ setAboutPageActive }: { setAboutPageActive: (isAbo
         <StartMenuButton
             disabled={!loadingFinished}
             onClick={() => {
+                ReactGA.event("start_button_landing_page_pressed");
                 setAboutPageActive(false);
                 GReactGLBridgeFunctions.OnStartButtonPressed();
             }}
@@ -307,6 +309,7 @@ export const AboutFirstSection = ({
                 <AboutStartContainer>
                     <StartMenuButton
                         onClick={() => {
+                            ReactGA.event("about_button_landing_page_pressed");
                             GReactGLBridgeFunctions.OnAboutButtonPressed();
                             setShowMore();
                         }}
