@@ -1,4 +1,5 @@
 import ReactGA from "react-ga4";
+import LazyLoad from "react-lazyload";
 import { styled, css } from "styled-components";
 import React, { RefObject, useEffect, useRef, useState } from "react";
 import "./About.css";
@@ -1157,16 +1158,32 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
             <LPContainerMain>
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
-                <LPPage2 refProp={myRef} />
-                <LPPage3 />
-                <LPPage4 />
+                <LazyLoad height={"100vh"}>
+                    <LPPage2 refProp={myRef} />
+                </LazyLoad>
+                <LazyLoad height={"100vh"}>
+                    <LPPage3 />
+                </LazyLoad>
+                <LazyLoad height={"100vh"}>
+                    <LPPage4 />
+                </LazyLoad>
                 <SectionDivider />
-                <SubPage1 />
-                <SubPage2 />
-                <SubPage3 />
-                <SubPage4 />
+                <LazyLoad height={"100vh"}>
+                    <SubPage1 />
+                </LazyLoad>
+                <LazyLoad height={"100vh"}>
+                    <SubPage2 />
+                </LazyLoad>
+                <LazyLoad height={"100vh"}>
+                    <SubPage3 />
+                </LazyLoad>
+                <LazyLoad height={"100vh"}>
+                    <SubPage4 />
+                </LazyLoad>
                 <SectionDivider />
-                <LPPageFinal />
+                <LazyLoad height={"100vh"}>
+                    <LPPageFinal />
+                </LazyLoad>
                 <SectionDivider />
                 <LPPageStartBlock setAboutPageActive={setAboutPageActive} />
                 <SectionDivider />
