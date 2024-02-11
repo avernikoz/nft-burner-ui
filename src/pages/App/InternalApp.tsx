@@ -1,3 +1,4 @@
+import ReactGA from "react-ga4";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import React, { useContext, useEffect, useState } from "react";
@@ -150,7 +151,12 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
             {showConnectWalletScreen && (
                 <BodyContainer>
                     <div className="half" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                        <ConnectWalletButton onClick={() => setWalletSelectPopupVisible(true)}>
+                        <ConnectWalletButton
+                            onClick={() => {
+                                ReactGA.event("connect_wallet_open_popup_button_pressed");
+                                setWalletSelectPopupVisible(true);
+                            }}
+                        >
                             Connect wallet
                         </ConnectWalletButton>
                     </div>
