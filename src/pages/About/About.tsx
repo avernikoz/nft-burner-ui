@@ -15,16 +15,6 @@ import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.s
 import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
 import { APP_ENVIRONMENT } from "../../config/config";
 
-export const TransparentPlaceholder: React.FC = (): ReactNode => (
-    <div
-        style={{
-            width: "100%", // Adjust width as needed
-            height: "100%", // Adjust height as needed
-            backgroundColor: "transparent", // Set the background color to transparent
-        }}
-    />
-);
-
 //=========================
 // 	  MEDIA QUERIES
 //=========================
@@ -1113,12 +1103,12 @@ export const LPPageSocial = () => (
             <SocialContainer>
                 <Page2Title2 style={{ width: "auto" }}>Our social media</Page2Title2>
                 <SocialIconsContainer>
-                    <SocialLink href="https://twitter.com" target="_blank" rel="noopener noreferrer">
+                    <SocialLink href="https://twitter.com/nftburnerapp" target="_blank" rel="noopener noreferrer">
                         <TwitterIcon />
                     </SocialLink>
-                    <SocialLink href="https://discord.com" target="_blank" rel="noopener noreferrer">
+                    {/* <SocialLink href="https://discord.com" target="_blank" rel="noopener noreferrer">
                         <DiscordIcon />
-                    </SocialLink>
+                    </SocialLink> */}
                     <SocialLink href="https://instagram.com" target="_blank" rel="noopener noreferrer">
                         <InstagramIcon />
                     </SocialLink>
@@ -1168,30 +1158,30 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
             <LPContainerMain>
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
-                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
+                <LazyLoad height={"100vh"}>
                     <LPPage2 refProp={myRef} />
                 </LazyLoad>
-                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
+                <LazyLoad height={"100vh"}>
                     <LPPage3 />
                 </LazyLoad>
-                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
+                <LazyLoad height={"100vh"}>
                     <LPPage4 />
                 </LazyLoad>
                 <SectionDivider />
-                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
+                <LazyLoad height={"100vh"}>
                     <SubPage1 />
                 </LazyLoad>
-                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
+                <LazyLoad height={"100vh"}>
                     <SubPage2 />
                 </LazyLoad>
-                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
+                <LazyLoad height={"100vh"}>
                     <SubPage3 />
                 </LazyLoad>
-                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
+                <LazyLoad height={"100vh"}>
                     <SubPage4 />
                 </LazyLoad>
                 <SectionDivider />
-                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
+                <LazyLoad height={"100vh"}>
                     <LPPageFinal />
                 </LazyLoad>
                 <SectionDivider />
