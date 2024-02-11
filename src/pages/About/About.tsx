@@ -1,7 +1,7 @@
 import ReactGA from "react-ga4";
 import LazyLoad from "react-lazyload";
 import { styled, css } from "styled-components";
-import React, { RefObject, useEffect, useRef, useState } from "react";
+import React, { ReactNode, RefObject, useEffect, useRef, useState } from "react";
 import "./About.css";
 import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
 
@@ -14,6 +14,16 @@ import { ReactComponent as DiscordIcon } from "../../assets/svg/social/discord.s
 import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
 import { APP_ENVIRONMENT } from "../../config/config";
+
+export const TransparentPlaceholder: React.FC = (): ReactNode => (
+    <div
+        style={{
+            width: "100%", // Adjust width as needed
+            height: "100%", // Adjust height as needed
+            backgroundColor: "transparent", // Set the background color to transparent
+        }}
+    />
+);
 
 //=========================
 // 	  MEDIA QUERIES
@@ -1158,30 +1168,30 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
             <LPContainerMain>
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
-                <LazyLoad height={"100vh"}>
+                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
                     <LPPage2 refProp={myRef} />
                 </LazyLoad>
-                <LazyLoad height={"100vh"}>
+                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
                     <LPPage3 />
                 </LazyLoad>
-                <LazyLoad height={"100vh"}>
+                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
                     <LPPage4 />
                 </LazyLoad>
                 <SectionDivider />
-                <LazyLoad height={"100vh"}>
+                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
                     <SubPage1 />
                 </LazyLoad>
-                <LazyLoad height={"100vh"}>
+                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
                     <SubPage2 />
                 </LazyLoad>
-                <LazyLoad height={"100vh"}>
+                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
                     <SubPage3 />
                 </LazyLoad>
-                <LazyLoad height={"100vh"}>
+                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
                     <SubPage4 />
                 </LazyLoad>
                 <SectionDivider />
-                <LazyLoad height={"100vh"}>
+                <LazyLoad height={"100vh"} placeholder={<TransparentPlaceholder />}>
                     <LPPageFinal />
                 </LazyLoad>
                 <SectionDivider />
