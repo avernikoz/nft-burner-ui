@@ -1109,7 +1109,7 @@ export const LPPageSocial = () => (
                     {/* <SocialLink href="https://discord.com" target="_blank" rel="noopener noreferrer">
                         <DiscordIcon />
                     </SocialLink> */}
-                    <SocialLink href="https://instagram.com" target="_blank" rel="noopener noreferrer">
+                    <SocialLink href="https://www.instagram.com/nftburnerapp" target="_blank" rel="noopener noreferrer">
                         <InstagramIcon />
                     </SocialLink>
                 </SocialIconsContainer>
