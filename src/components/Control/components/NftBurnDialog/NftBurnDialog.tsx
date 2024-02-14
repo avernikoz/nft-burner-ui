@@ -85,7 +85,8 @@ export const NftBurnDialog = ({
     const signer = useEthersSigner();
     const toastController = useContext(ToastContext);
     const { data: floorPrice } = useNftFloorPrice(nft);
-    const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    // const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    const burnerFee = 0;
 
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
 
@@ -101,7 +102,7 @@ export const NftBurnDialog = ({
     const handleBurn = async () => {
         try {
             ReactGA.event({ category: "nft_burn_popup", action: "burn_nft", label: nft.network.toString() });
-            if (!burnerFee) {
+            if (burnerFee === undefined) {
                 throw new Error("Empty burner fuel fee");
             }
 
@@ -195,7 +196,7 @@ export const NftBurnDialog = ({
                                 Burner Fuel Fee <InfoIcon />:
                             </NftBurnDialogInfoTitle>
                             <NftBurnDialogInfoValue>
-                                {burnerFee} {burnerFeeToken}
+                                {burnerFee === 0 ? `Free` : `${burnerFee} ${burnerFeeToken}`}
                             </NftBurnDialogInfoValue>
                         </NftBurnDialogInfoContainer>
                     </div>
