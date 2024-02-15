@@ -17,6 +17,8 @@ import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import { NftContext } from "../NftProvider/NftProvider";
 import { ENftBurnStatus } from "../../utils/types";
 import { NftSelectorDialog } from "./components/NetworkSelectorDialog/NetworkSelectorDialog";
+import { Level } from "../Level/Level";
+import { useUserLevel } from "../../context/UserLevelContext";
 
 export const WalletSelector = ({
     hideUI,
@@ -39,6 +41,7 @@ export const WalletSelector = ({
     const lastEvmIndex = 3;
     const suiAccount = useAccountBalance();
     const NftController = useContext(NftContext);
+    const { level, points } = useUserLevel();
 
     const connect = useCallback(
         (acc: IAccount) => {
@@ -323,6 +326,7 @@ export const WalletSelector = ({
                                 {/* <span className="chain-id">{account.id}</span> */}
                             </div>
                         </ProfileLabel>
+                        <Level showTooltip={true} level={level} points={points} showLevelText={false} levelSize={50} />
                     </>
                 )}
             </ButtonContainer>
