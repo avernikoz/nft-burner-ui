@@ -122,7 +122,7 @@ function scGetVectorFieldForce(scale: number) {
 			randVelLQ.x = randVelNoise.r;
 			randVelLQ.y = randVelNoise.g;
 			randVelLQ = randVelLQ * 2.f - 1.f;
-			randVel += (randVelLQ) * RandVelocityScale * 0.5;
+			randVel += (randVelLQ) * RandVelocityScale * 2.5;
 
 			//const float clampValue = 10.f;
 			const float clampValue = 50.f;
@@ -715,10 +715,10 @@ function scFlameSpecificShading(bUsesTexture: boolean, artificialFlameAmount: nu
 
 		//const float ArtFlameAmount = 0.45f;//TODO:Randomise this
 		t *= float(` +
-        MathLerp(0.2, 0.95, Math.random()) +
+        MathLerp(0.2, 0.95, 1.0) +
         /* glsl */ `);
 
-		colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 5.0f, t);
+		colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * vec3(0.2, 0.1, 1.0) * 5.0f, t);
 
 		//colorFinal.rgb *= CircularFadeOut(interpolatorTexCoords.y);
 
@@ -785,6 +785,19 @@ function scEmbersSpecificShading() {
 		/* vec3 colorBright = vec3(1.f, 0.5f, 0.1f) * 1.5f;
 		vec3 colorLow = vec3(0.5f, 0.5f, 0.5f); */
 
+		vec2 uv = interpolatorTexCoords * 0.05f;
+		float instanceId = float(interpolatorInstanceId);
+		uv.x += instanceId * 0.073f;
+		uv.y += instanceId * 0.177f;
+		uv.y += interpolatorFrameIndex * 0.0037f;
+		uv.x += interpolatorFrameIndex * 0.0053f;
+		float noise = texture(ColorTexture, interpolatorTexCoords).r;
+		//noise = clamp(MapToRange(noise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
+
+		colorFinal.rgb = vec3(1.0, 0.05, 1.0) * noise * 2.0;
+		colorFinal.rgb *= 20.0 * (1.0 - interpolatorAge);
+		//colorFinal.a = noise > 0.5 ? 1.0 : 0.0;
+
 		float t = interpolatorAge;
 		t = CircularFadeOut(clamp(t, 0.f, 1.f));
 		float curFire = (1.f - t) * 10.f;
@@ -794,9 +807,9 @@ function scEmbersSpecificShading() {
 		vec3 colorBright = vec3(curFire * (1.0 + (14.0 * (1. - t))), curFire * 0.75, curFire * 0.1);
 		vec3 colorLow = vec3(curFire, curFire * 0.75, curFire * 0.5);
 
-		colorFinal.rgb = mix(colorBright, colorLow , t);
+		/* colorFinal.rgb = mix(colorBright, colorLow , t);
 
-		colorFinal.rgb *= 2.f * (1.0 - t);
+		colorFinal.rgb *= 2.f * (1.0 - t); */
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		s *= 2.f;
@@ -812,8 +825,8 @@ function scEmbersSpecificShading() {
 		}
 		//s += 0.15f;
 		s = (1.f - clamp(s, 0.f, 1.f));
-		colorFinal.rgb *= s;
-		colorFinal.rgb *= 2.25f;
+		/* colorFinal.rgb *= s;
+		colorFinal.rgb *= 2.25f; */
 		//colorFinal.rgb *= 50.f;
 		`;
 }
@@ -869,8 +882,11 @@ function scAshesSpecificShading() {
 		uv.y += instanceId * 0.177f;
 		uv.y += interpolatorFrameIndex * 0.0037f;
 		uv.x += interpolatorFrameIndex * 0.0053f;
-		float noise = texture(ColorTexture, uv).r;
-		noise = clamp(MapToRange(noise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
+		float noise = texture(ColorTexture, interpolatorTexCoords).r;
+		//noise = clamp(MapToRange(noise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
+
+		colorFinal.rgb = vec3(1.0, 0.0, 1.0) * noise * 2.0;
+		colorFinal.a = noise > 0.5 ? 1.0 : 0.0;
 		
 		const vec3 colorEmber = vec3(0.5, 0.4, 0.4);
 		const vec3 colorEmber2 = vec3(0.9, 0.4, 0.1f) * 10.f;
@@ -922,12 +938,13 @@ function scAshesSpecificShading() {
 		//color += colorEmber * (dx + dy) * 0.5f;
 
 		
-		colorFinal.rgb = color;
+		/* colorFinal.rgb = color;
 		if(noise < 0.5)
 		{
 			noise = 0.0;
 		}
 		colorFinal.a = noise;
+		colorFinal.a = min(1.0, colorFinal.a * 1.2);
 		
 		const float thres = 0.8f;
 		if(interpolatorAge >= thres)
@@ -935,7 +952,7 @@ function scAshesSpecificShading() {
 			float s = MapToRange(interpolatorAge, thres, 1.0, 1.0, 0.0);
 			colorFinal.rgba *= s;
 			
-		}
+		} */
 
 		`
     );

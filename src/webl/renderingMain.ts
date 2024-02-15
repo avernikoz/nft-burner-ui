@@ -407,7 +407,7 @@ export function RenderMain() {
     let CurTool: ToolBase;
     //const CurTool = new LighterTool(gl);
     //const CurTool = new LaserTool(gl);
-    CurTool = new ThunderTool(gl);
+    CurTool = new LaserTool(gl);
 
     //==============================
     // 	   INIT BURNING SURFACE
@@ -467,6 +467,14 @@ export function RenderMain() {
 
         //BackGroundRenderPass.FloorTransform.Translation = -0.35;
     }
+
+    FlameParticlesDesc.inRandomSpawnThres = 0.5;
+    FlameParticlesDesc.inSpawnRange.x = 100.0;
+
+    /* AfterBurnAshesParticlesDesc.inSpawnRange.x = 0.05;
+    AfterBurnAshesParticlesDesc.inSpawnRange.y = 10.05; */
+    AfterBurnAshesParticlesDesc.inNumSpawners2D = 32;
+    AfterBurnAshesParticlesDesc.inInitialVelocityScale = 1.0;
 
     const DynamicParticlesArr: ParticlesEmitter[] = [];
     function ResetParticleEmitters(glContext: WebGL2RenderingContext) {
@@ -964,7 +972,9 @@ export function RenderMain() {
                     AfterBurnEmberParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                     AshesParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                     SmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
-                    AfterBurnSmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
+                    if (RenderStateMachine.currentState !== ERenderingState.Preloading) {
+                        AfterBurnSmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
+                    }
                     DustParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                 }
 
@@ -987,11 +997,11 @@ export function RenderMain() {
                 if (!bPreloaderState) {
                     BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
                     //Render Background floor
-                    BackGroundRenderPass.RenderFloor(
+                    /* BackGroundRenderPass.RenderFloor(
                         gl,
                         GPostProcessPasses.Bloom!.GetBloomTextureMIP(3)!,
                         GPostProcessPasses.Combiner!.SmokeNoiseTexture,
-                    );
+                    ); */
                 }
 
                 //=================================
@@ -1152,8 +1162,10 @@ export function RenderMain() {
                 //======================
                 BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, GScreenDesc.HalfResRenderTargetSize, true);
                 DustParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
-                AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-                SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                if (RenderStateMachine.currentState !== ERenderingState.Preloading) {
+                    AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                }
+                //SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 if (!bAshesInEmbersPass) {
                     AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 }

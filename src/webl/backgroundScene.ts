@@ -334,8 +334,8 @@ export class RBurntStampVisualizer {
         //Shader Parameters
         this.UniformParametersLocationListExport = GetUniformParametersList(gl, this.ShaderProgramExport);
 
-        this.ColorTextureMasked = GTexturePool.CreateTexture(gl, false, "burntSignMasked1_R8");
-        this.ColorTexture = GTexturePool.CreateTexture(gl, false, "burntSign1_R8");
+        this.ColorTextureMasked = GTexturePool.CreateTexture(gl, false, "hearty");
+        this.ColorTexture = GTexturePool.CreateTexture(gl, false, "hearty");
 
         const offsetMax = 0.05;
         this.Position.x = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);
@@ -361,7 +361,7 @@ export class RBurntStampVisualizer {
             GSceneDesc.Camera.ZoomScale,
         );
         gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
-        gl.uniform1f(this.UniformParametersLocationList.Scale, this.Scale);
+        gl.uniform1f(this.UniformParametersLocationList.Scale, this.Scale * 0.7);
         gl.uniform3f(
             this.UniformParametersLocationList.Position,
             this.Position.x + GSceneDesc.FirePlane.PositionOffset.x,

@@ -61,40 +61,5 @@ export const Level = ({ level, points }: { level: number; points: number }) => {
     const circumference = 2 * Math.PI * radius;
     const offset = (points / 100) * circumference;
 
-    return (
-        <MainLevelContainer>
-            <LevelText>LEVEL</LevelText>
-            <CircleContainer>
-                <StyledSvgLevel width={200} height={200}>
-                    <Circle
-                        stroke="#3f3f3f96"
-                        fill="transparent"
-                        strokeWidth="8"
-                        strokeDasharray={`${circumference} ${circumference}`}
-                        style={{ strokeDashoffset: circumference }}
-                        r={radius}
-                        cx={100}
-                        cy={100}
-                        $circumference={circumference}
-                    />
-                </StyledSvgLevel>
-                <StyledSvgLevel width={200} height={200}>
-                    <Circle
-                        stroke="#ffffff"
-                        fill="transparent"
-                        strokeWidth="8"
-                        strokeDasharray={`${circumference} ${circumference}`}
-                        style={{ strokeDashoffset: -offset, transform: "rotate(-90 0 0)" }}
-                        r={radius}
-                        cx={100}
-                        cy={100}
-                        $circumference={circumference}
-                        filter="drop-shadow(0px 0px 12px #25FE96)"
-                    />
-                </StyledSvgLevel>
-
-                <Number>{level}</Number>
-            </CircleContainer>
-        </MainLevelContainer>
-    );
+    return <MainLevelContainer></MainLevelContainer>;
 };

@@ -1284,10 +1284,10 @@ export function GetShaderSourceStampRenderPS() {
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
 		float stampMask = texture(ColorTexture, flippedUVs.xy).r;
 		float stampMaskDirty = texture(ColorTextureMasked, flippedUVs.xy).r;
-		stampMask = mix(stampMask, stampMaskDirty, MaskLerpParam * 0.85);
+		//stampMask = mix(stampMask, stampMaskDirty, MaskLerpParam * 0.85);
 		//vec3 color = vec3(1.0, 0.41, 0.0);
 		//vec3 color = vec3(0.0, 1.0, 0.2);
-		vec3 color = ColorScale;
+		vec3 color = ColorScale * 0.75;
 		color *= stampMask;
 		//color.rgb *= ColorScale;
 		outColor = color;

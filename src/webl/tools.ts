@@ -610,9 +610,9 @@ export class LaserTool extends ToolBase {
 
     LaserStrength = 5.0 + Math.random() * 5.0;
 
-    LaserBrightness = 4.0;
+    LaserBrightness = 1.0;
 
-    LaserColor = { r: 1.0 * this.LaserBrightness, g: 0.4 * this.LaserBrightness, b: 0.2 * this.LaserBrightness };
+    LaserColor = { r: 0.7 * this.LaserBrightness, g: 0.1 * this.LaserBrightness, b: 1.0 * this.LaserBrightness };
 
     LaserGlowZPos = -0.3;
 
@@ -726,7 +726,7 @@ export class LaserTool extends ToolBase {
 
                 this.PlayLaserSound();
 
-                GCameraShakeController.ShakeCameraFast();
+                //GCameraShakeController.ShakeCameraFast();
             }
         } else {
             if (GUserInputDesc.bPointerInputPressedPrevFrame || this.bIntersectionPrevFrame) {
@@ -862,7 +862,7 @@ export class LaserTool extends ToolBase {
         gl.uniform1i(this.UniformParametersLocationList.NoiseTexture, 2);
 
         //Textures
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        //gl.drawArrays(gl.TRIANGLES, 0, 6);
 
         if (
             this.AnimationComponent.IsFadeInFinished() &&
@@ -926,7 +926,7 @@ export class LaserTool extends ToolBase {
 
     RenderToFlameRT(gl: WebGL2RenderingContext): void {
         if (this.bActiveThisFrame) {
-            this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+            //this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
         }
     }
 }

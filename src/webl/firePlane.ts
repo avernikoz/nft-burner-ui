@@ -39,6 +39,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         FuelTexture: gl.getUniformLocation(shaderProgram, "FuelTexture"),
         FlameColorLUT: gl.getUniformLocation(shaderProgram, "FlameColorLUT"),
         ImageTexture: gl.getUniformLocation(shaderProgram, "ImageTexture"),
+        ImageTexture2: gl.getUniformLocation(shaderProgram, "ImageTexture2"),
         AshTexture: gl.getUniformLocation(shaderProgram, "AshTexture"),
         AfterBurnTexture: gl.getUniformLocation(shaderProgram, "AfterBurnTexture"),
         DeltaTime: gl.getUniformLocation(shaderProgram, "DeltaTime"),
@@ -206,6 +207,8 @@ export class GBurningSurface {
     VisualizerFlameColorLUT: WebGLTexture;
 
     VisualizerImageTexture: WebGLTexture;
+
+    VisualizerImageTexture2: WebGLTexture;
 
     CurrentImageTextureSrc: string;
 
@@ -410,6 +413,7 @@ export class GBurningSurface {
         //this.CurrentImageTextureSrc = "punkBlue";
         //this.CurrentImageTextureSrc = "assets/example2.png";
         this.VisualizerImageTexture = GTexturePool.CreateTexture(gl, false, this.CurrentImageTextureSrc, true, true);
+        this.VisualizerImageTexture2 = GTexturePool.CreateTexture(gl, false, "heart", true, true);
         this.FirePlaneImagePreProcess(gl);
         this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "ashTexture_R8", true);
 
@@ -637,6 +641,9 @@ export class GBurningSurface {
         gl.activeTexture(gl.TEXTURE0 + 5);
         gl.bindTexture(gl.TEXTURE_2D, this.VisualizerImageTexture);
         gl.uniform1i(this.UniformParametersLocationListPreProcess.ImageTexture, 5);
+        gl.activeTexture(gl.TEXTURE0 + 6);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerImageTexture2);
+        gl.uniform1i(this.UniformParametersLocationListPreProcess.ImageTexture2, 6);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
 

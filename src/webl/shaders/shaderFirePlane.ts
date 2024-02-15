@@ -219,7 +219,7 @@ export const ShaderSourceFireUpdatePS =
 		const float kMutualScale = 1.0 + float(` +
     Math.random() * 1.5 +
     /* glsl */ `);
-		const float GFireSpreadSpeed = 3. * kMutualScale;
+		const float GFireSpreadSpeed = 3.0 * kMutualScale;
 		const float NoiseAdvectedSpreadStrength = 0.45f;
 		const float GFuelConsumeSpeed = 0.45f * kMutualScale;
 		const float GFireDissipationSpeed = 0.5f * kMutualScale; //How fast fire fades when no more fuel is left. Try 0.05
@@ -530,6 +530,7 @@ export function GetShaderSourceFirePlanePreProcess() {
 		layout(location = 0) out vec4 OutFirePlane;
 
 		uniform sampler2D ImageTexture;
+		uniform sampler2D ImageTexture2;
 
 		in vec2 vsOutTexCoords;
 
@@ -538,6 +539,7 @@ export function GetShaderSourceFirePlanePreProcess() {
 			vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
 
 			vec3 surfaceColor = textureLod(ImageTexture, flippedUVs.xy, 0.0).rgb;
+			vec3 surfaceColor2 = textureLod(ImageTexture2, flippedUVs.xy, 0.0).rgb;
 
 			const float kRandomValue = float(` +
         MathLerp(0.007, 0.07, Math.random()) +
@@ -555,7 +557,7 @@ export function GetShaderSourceFirePlanePreProcess() {
 			vec3 edge = sqrt(dx*dx + dy*dy);
 			float luminance = dot( edge.rgb, vec3( 0.299f, 0.587f, 0.114f ) );
 
-			OutFirePlane = vec4(surfaceColor.rgb, luminance);
+			OutFirePlane = vec4(surfaceColor.rgb, 1.0 - surfaceColor2.r);
 
 		}`
     );
@@ -974,7 +976,7 @@ export function GetShaderSourceFireVisualizerPS() {
 				vec3 surfaceMaterialColor = texture(SurfaceMaterialColorTexture, materialSamplingUV.xy).rgb;
 				surfaceMaterialColor = min(vec3(1.0), surfaceMaterialColor *= 3.0f);
 				//surfaceMaterialColor = vec3(1.0);
-				surfaceColor.rgb = mix(surfaceColor.rgb, surfaceMaterialColor.rgb, roughness * ImageMixRoughnessScale);
+				//surfaceColor.rgb = mix(surfaceColor.rgb, surfaceMaterialColor.rgb, roughness * ImageMixRoughnessScale);
 			}
 
 
@@ -1017,8 +1019,8 @@ export function GetShaderSourceFireVisualizerPS() {
 		#if 1 //NOISE EMBERS SCALE
 			//float noiseConst = textureLod(NoiseTextureLQ, 0.5 * (vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0043)), 0.f).r;
 			//float noiseConst = textureLod(NoiseTextureLQ, 50.f + vec2(Time * 0.0013, Time * 0.0093), 0.f).r;
-			float noiseConst = textureLod(NoiseTextureLQ, 50.f + vec2(Time * 0.013, Time * 0.0093), 0.f).r;
-			noiseConst = clamp(MapToRange(noiseConst, 0.4, 0.6, 0.25, 1.0), 0.1f, 1.f);
+			float noiseConst = textureLod(NoiseTextureLQ, 50.f + vec2(Time * 0.013, Time * 0.0093) * 2.0, 0.f).r;
+			noiseConst = clamp(MapToRange(noiseConst, 0.4, 0.6, 0.1, 1.0), 0.0f, 1.f);
 		#if (1 && (PAPER || WOOD))
 			
 			vec3 noiseVec = textureLod(AfterBurnTexture, (vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0043)), 0.f).rgb;
@@ -1117,19 +1119,23 @@ export function GetShaderSourceFireVisualizerPS() {
 		#endif
 		#endif////BURNED IMAGE
 
-		#if PAPER
+			#if PAPER
+			#endif
 			ashesColor = vec3(0.0);
-		#endif
+			//here disable
+			//ashesColor = vec3(0.1, 0.2, 1.0) * luminance * noiseConst * 15.0;
+			ashesColor = vec3(1.0, 0.05, 0.0) * luminance * noiseConst * 15.0;
+			//ashesColor = vec3(0.1, 0.9, 0.8) * luminance * noiseConst * 15.0;
 
 			surfaceColor = mix(ashesColor, surfaceColor, /* saturate */(curFuel));
 
 			}
 
-			if(surfaceColor.r <= 1.f || curFuel > 0.99f)
+			if(curFuel > 0.99f)
 			{
 
 			#if 1 //!PBR
-				surfaceColor = surfaceColor * lightingDiffuseFinal;
+				surfaceColor = surfaceColor * max(vec3(0.3), lightingDiffuseFinal);
 				surfaceColor += lightingSpecFinal;
 			#else
 				const float minRoughness = 0.25f;
@@ -1212,7 +1218,7 @@ export function GetShaderSourceFireVisualizerPS() {
 
 		curFire *= FireBrightnessScale;
 
-		vec3 brightFlameColor = vec3(1.0, 0.2, 0.1) * curFire;
+		vec3 brightFlameColor = vec3(1.0, 0.1, 0.1) * curFire;
 		
 		if(curFire > 4.f)
 		{
