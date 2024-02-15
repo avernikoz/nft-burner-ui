@@ -5,8 +5,8 @@ import { GTexturePool } from "./texturePool";
 
 export class GReactGLBridgeFunctions {
     static OnStartButtonPressed() {
-        //GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, false);
-        GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady, false);
+        GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, false);
+        //GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady, false);
     }
 
     static OnAboutButtonPressed() {

@@ -557,15 +557,53 @@ export class GBurningSurface {
         this.ApplyFire(gl, curInputPos, MathVector2Normalize(curInputDir), sizeScale, 0.5);
     }
 
+     */
+
     ApplyFireAuto(gl: WebGL2RenderingContext, pos: Vector2, size: number) {
         const curInputPos = pos;
-        const curInputDir = { x: 1, y: 1 };
 
-        const curSourceIndex = this.CurrentFireTextureIndex;
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[curSourceIndex]);
+        //BurningSurface.Reset(gl);
+
+        //this.BindFireRT(gl);
+        //const curSourceIndex = this.CurrentFireTextureIndex;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[0]);
         gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
-        this.ApplyFirePass.Execute(gl, curInputPos, MathVector2Normalize(curInputDir), size, 1.5, false);
-    } */
+
+        /* Set up blending */
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.MAX);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        this.ApplyFirePass.Execute(
+            gl,
+            { x: curInputPos.x, y: curInputPos.y },
+            { x: 1, y: 0 },
+            { x: size, y: size },
+            100.0,
+            true,
+            false,
+            false,
+        );
+        gl.disable(gl.BLEND);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[1]);
+        gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
+
+        /* Set up blending */
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.MAX);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        this.ApplyFirePass.Execute(
+            gl,
+            { x: curInputPos.x, y: curInputPos.y },
+            { x: 0, y: 1 },
+            { x: size, y: size },
+            100.0,
+            true,
+            false,
+            false,
+        );
+        gl.disable(gl.BLEND);
+    }
 
     UpdateFire(gl: WebGL2RenderingContext) {
         const curSourceIndex = this.CurrentFireTextureIndex;

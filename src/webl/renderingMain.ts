@@ -372,7 +372,7 @@ export function RenderMain() {
     const FirePlaneSizePixels = { x: 512, y: 512 };
     //const FirePlaneSizePixels = { x: 1024, y: 1024 };
     const BurningSurface = new GBurningSurface(gl, FirePlaneSizePixels);
-    BurningSurface.SetToBurned(gl);
+    //BurningSurface.SetToBurned(gl);
 
     const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
     const FirePlaneAnimationController = new AnimationController(
@@ -836,6 +836,7 @@ export function RenderMain() {
             if (GTexturePool.AreAllTexturesLoaded() && !bInitialImagePreProcessed) {
                 BurningSurface.FirePlaneImagePreProcess(gl);
                 //BurningSurface.SetToBurned(gl);
+                BurningSurface.ApplyFireAuto(gl, { x: MathLerp(-0.1, 0.2, Math.random()), y: -0.3 }, 0.01);
                 bInitialImagePreProcessed = true;
             }
 
@@ -962,12 +963,16 @@ export function RenderMain() {
                 // 		PARTICLES UPDATE
                 //=========================
                 {
-                    FlameParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                     EmberParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                     AfterBurnEmberParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                     AshesParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
-                    SmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
-                    AfterBurnSmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
+
+                    if (!bPreloaderState) {
+                        FlameParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
+                        SmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
+                        AfterBurnSmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
+                    }
+
                     DustParticles.Update(gl, BurningSurface.GetCurFireTexture()!);
                 }
 
@@ -1081,7 +1086,9 @@ export function RenderMain() {
                 CurTool.RenderToFlameRT(gl);
 
                 if (1 || RenderStateMachine.bCanBurn) {
-                    FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
+                    if (!bPreloaderState) {
+                        FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
+                    }
 
                     GPostProcessPasses.FlamePostProcess!.Execute(
                         gl,
@@ -1114,7 +1121,7 @@ export function RenderMain() {
                         flameSourceTextureRef!,
                         GRenderTargets.FirePlaneTexture,
                     );
-                    if (RenderStateMachine.currentState === ERenderingState.Preloading) {
+                    if (bPreloaderState) {
                         gl.enable(gl.BLEND);
                         gl.blendFunc(gl.ONE, gl.ONE);
                         gl.blendEquation(gl.FUNC_ADD);
@@ -1155,11 +1162,15 @@ export function RenderMain() {
                 //======================
                 BindRenderTarget(gl, GRenderTargets.SmokeFramebuffer!, GScreenDesc.HalfResRenderTargetSize, true);
                 DustParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
-                AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-                SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+                if (!bPreloaderState) {
+                    SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                    AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                }
                 if (!bAshesInEmbersPass) {
                     AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 }
+
                 CurTool.RenderToSmokeRT(gl);
 
                 //======================
