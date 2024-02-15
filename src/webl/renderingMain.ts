@@ -67,7 +67,7 @@ import { ERenderingState, GRenderingStateMachine } from "./states";
 import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController } from "./animationController";
 import { GAudioEngine } from "./audioEngine";
-import { LaserTool, LighterTool, ThunderTool, ToolBase } from "./tools";
+import { EBurningTool, LaserTool, LighterTool, ThunderTool, ToolBase } from "./tools";
 import { GTexturePool } from "./texturePool";
 import { GReactGLBridgeFunctions } from "./reactglBridge";
 import { GTransitionAnimationsConstants } from "./transitionAnimations";
@@ -165,7 +165,30 @@ const GSettings = {
     bRunSimulation: true,
 };
 
-class GTools {}
+export class GTool {
+    static Current: ToolBase;
+
+    static ENewAssignedToolType: EBurningTool = EBurningTool.Laser;
+
+    static bNewToolAssignedThisFrame = false;
+
+    static SetNewTool(gl: WebGL2RenderingContext) {
+        switch (GTool.ENewAssignedToolType) {
+            case EBurningTool.Laser:
+                GTool.Current = new LaserTool(gl);
+                break;
+            case EBurningTool.Lighter:
+                GTool.Current = new LighterTool(gl);
+                break;
+            case EBurningTool.Thunder:
+                GTool.Current = new ThunderTool(gl);
+                break;
+
+            default:
+                break;
+        }
+    }
+}
 
 const GPostProcessPasses: {
     CopyPresemt: RPresentPass | null;
@@ -421,11 +444,7 @@ export function RenderMain() {
     //======================
     // 		INIT TOOLS
     //======================
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    let CurTool: ToolBase;
-    CurTool = new LaserTool(gl);
-    //const CurTool = new LighterTool(gl);
-    //CurTool = new ThunderTool(gl);
+    GTool.Current = new LaserTool(gl);
 
     //==============================
     // 		INIT PARTICLES
@@ -636,21 +655,21 @@ export function RenderMain() {
                     const lighterParam = {
                         buttonText: "Lighter",
                         handleClick: () => {
-                            CurTool = new LighterTool(gl);
+                            GTool.Current = new LighterTool(gl);
                         },
                     };
                     toolsFolder.add(lighterParam, "handleClick").name(lighterParam.buttonText);
                     const laserParam = {
                         buttonText: "Laser",
                         handleClick: () => {
-                            CurTool = new LaserTool(gl);
+                            GTool.Current = new LaserTool(gl);
                         },
                     };
                     toolsFolder.add(laserParam, "handleClick").name(laserParam.buttonText);
                     const thunderParam = {
                         buttonText: "Thunder",
                         handleClick: () => {
-                            CurTool = new ThunderTool(gl);
+                            GTool.Current = new ThunderTool(gl);
                         },
                     };
                     toolsFolder.add(thunderParam, "handleClick").name(thunderParam.buttonText);
@@ -669,7 +688,7 @@ export function RenderMain() {
 
             BurningSurface.SubmitDebugUI(GDatGUI);
             BackGroundRenderPass.SubmitDebugUI(GDatGUI);
-            CurTool.SubmitDebugUI(GDatGUI);
+            GTool.Current.SubmitDebugUI(GDatGUI);
             GTexturePool.SubmitDebugUI(GDatGUI);
             BurntStampSprite.SubmitDebugUI(GDatGUI);
         }
@@ -721,6 +740,16 @@ export function RenderMain() {
             }
 
             UserInputUpdatePerFrame();
+
+            //=========================
+            // 		TOOL UPDATE
+            //=========================
+            if (RenderStateMachine.currentState === ERenderingState.Inventory) {
+                if (GTool.bNewToolAssignedThisFrame) {
+                    GTool.SetNewTool(gl);
+                    GTool.bNewToolAssignedThisFrame = false;
+                }
+            }
 
             //============================
             // 		SCENE STATE UPDATE
@@ -876,7 +905,7 @@ export function RenderMain() {
                 //=========================
                 // 		TOOL UPDATE
                 //=========================
-                CurTool.UpdateMain(gl, BurningSurface);
+                GTool.Current.UpdateMain(gl, BurningSurface);
 
                 //=========================
                 // BURNING SURFACE UPDATE
@@ -1059,7 +1088,7 @@ export function RenderMain() {
                 gl.blendEquation(gl.MAX);
                 SpotlightRenderPass.RenderSourceSprite(gl);
 
-                CurTool.RenderToFirePlaneRT(gl);
+                GTool.Current.RenderToFirePlaneRT(gl);
 
                 //======================
                 // 		GUI RENDER
@@ -1087,7 +1116,7 @@ export function RenderMain() {
                 let flameSourceTextureRef = GRenderTargets.FlameTexture;
                 BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, GScreenDesc.RenderTargetSize, true);
 
-                CurTool.RenderToFlameRT(gl);
+                GTool.Current.RenderToFlameRT(gl);
 
                 if (1 || RenderStateMachine.bCanBurn) {
                     if (!bPreloaderState) {
@@ -1175,7 +1204,7 @@ export function RenderMain() {
                     AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 }
 
-                CurTool.RenderToSmokeRT(gl);
+                GTool.Current.RenderToSmokeRT(gl);
 
                 //======================
                 // 		POST PROCESS
