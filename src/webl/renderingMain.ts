@@ -835,8 +835,12 @@ export function RenderMain() {
 
             if (GTexturePool.AreAllTexturesLoaded() && !bInitialImagePreProcessed) {
                 BurningSurface.FirePlaneImagePreProcess(gl);
-                //BurningSurface.SetToBurned(gl);
-                BurningSurface.ApplyFireAuto(gl, { x: MathLerp(-0.1, 0.2, Math.random()), y: -0.3 }, 0.01);
+                if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
+                    BurningSurface.SetToBurned(gl);
+                } else {
+                    BurningSurface.ApplyFireAuto(gl, { x: MathLerp(-0.1, 0.2, Math.random()), y: -0.3 }, 0.01);
+                }
+                //
                 bInitialImagePreProcessed = true;
             }
 
