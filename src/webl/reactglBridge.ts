@@ -14,8 +14,8 @@ export class GReactGLBridgeFunctions {
     }
 
     static GetLoadingProgressParameterNormalised() {
-        if (GTexturePool.NumPendingTextures > 0 && GTexturePool.NumTexturesInPool > 0) {
-            return 1.0 - GTexturePool.NumPendingTextures / GTexturePool.NumTexturesInPool;
+        if (GTexturePool.NumPendingHighPriorityTextures > 0 && GTexturePool.NumTexturesInPool > 0) {
+            return 1.0 - GTexturePool.NumPendingHighPriorityTextures / GTexturePool.NumTexturesInPool;
         } else {
             return null;
         }

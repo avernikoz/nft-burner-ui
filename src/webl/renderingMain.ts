@@ -363,6 +363,24 @@ export function RenderMain() {
 
     GTexturePool.ExtASTC = gl.getExtension("WEBGL_compressed_texture_astc");
 
+    GTexturePool.LoadGlobalTextures(gl);
+
+    //==============================
+    // 	   INIT BURNING SURFACE
+    //==============================
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const FirePlaneSizePixels = { x: 512, y: 512 };
+    //const FirePlaneSizePixels = { x: 1024, y: 1024 };
+    const BurningSurface = new GBurningSurface(gl, FirePlaneSizePixels);
+    BurningSurface.SetToBurned(gl);
+
+    const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
+    const FirePlaneAnimationController = new AnimationController(
+        firePlanePos,
+        MathVector3Add(firePlanePos, { x: 0, y: -0.05, z: 0.0 }),
+        MathVector3Add(firePlanePos, { x: 0, y: 0.05, z: 0.0 }),
+    );
+
     //==============================
     // 		ALLOCATE RESOURCES
     //==============================
@@ -405,25 +423,13 @@ export function RenderMain() {
     //======================
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let CurTool: ToolBase;
+    CurTool = new LaserTool(gl);
     //const CurTool = new LighterTool(gl);
-    //const CurTool = new LaserTool(gl);
-    CurTool = new ThunderTool(gl);
+    //CurTool = new ThunderTool(gl);
 
     //==============================
-    // 	   INIT BURNING SURFACE
+    // 		INIT PARTICLES
     //==============================
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const FirePlaneSizePixels = { x: 512, y: 512 };
-    //const FirePlaneSizePixels = { x: 1024, y: 1024 };
-    const BurningSurface = new GBurningSurface(gl, FirePlaneSizePixels);
-    //BurningSurface.SetToBurned(gl);
-
-    const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
-    const FirePlaneAnimationController = new AnimationController(
-        firePlanePos,
-        MathVector3Add(firePlanePos, { x: 0, y: -0.05, z: 0.0 }),
-        MathVector3Add(firePlanePos, { x: 0, y: 0.05, z: 0.0 }),
-    );
 
     const EmberParticlesDesc = GetEmberParticlesDesc();
     const AfterBurnEmberParticlesDesc = GetEmberParticlesDesc();
@@ -434,9 +440,6 @@ export function RenderMain() {
     /* ;
     AfterBurnEmberParticlesDesc.inNumSpawners2D = 64; */
 
-    //==============================
-    // 		INIT PARTICLES
-    //==============================
     if (GScreenDesc.bWideScreen) {
         /* EmberParticlesDesc.inDownwardForceScale = 2.5;
         AfterBurnAshesParticlesDesc.inDownwardForceScale = 2.5;
