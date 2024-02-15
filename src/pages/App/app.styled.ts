@@ -94,8 +94,9 @@ export const LogoContainer = styled.div`
     width: auto;
     padding: 0px;
     z-index: 99;
-    padding-right: 1.25rem;
+    padding-right: 0.5rem;
     padding-bottom: 6px;
+    margin-left: 12px;
 
     @media (max-width: 600px) {
         // Styles for screens 600px and below (mobile)

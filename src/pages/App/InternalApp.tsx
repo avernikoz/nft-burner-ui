@@ -27,6 +27,7 @@ import BurnerLogoMobileIcon from "../../assets/svg/burnerLogoMobile.svg";
 import { GAudioEngine } from "../../webl/audioEngine";
 import { Level } from "../../components/Level/Level";
 import { useUserLevel } from "../../context/UserLevelContext";
+import { BetaContainer, BetaText } from "../../components/Header/Header";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
     setAboutPageActive,
@@ -134,6 +135,9 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                     <DesktopLogoIcon src={BurnerLogoDesktopIcon} />
                     <MobileLogoIcon src={BurnerLogoMobileIcon} />
                 </LogoContainer>
+                <BetaContainer>
+                    <BetaText> beta</BetaText>
+                </BetaContainer>
                 <LogoDivider />
                 <WalletSelector
                     walletSelectPopupVisible={walletSelectPopupVisible}
