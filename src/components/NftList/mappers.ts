@@ -94,6 +94,7 @@ export function solanaNFTMapper(
     return nfts.map((item, i) => ({
         logoURI: item.logoURI,
         name: item.name,
+        nftId: item.accounts.mint.toString(),
         id: i,
         solanaAccount: item.accounts,
         cNFT: false,
