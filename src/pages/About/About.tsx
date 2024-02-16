@@ -601,9 +601,9 @@ export const LPPage2Additional = () => (
     </Page2AddWrapper>
 );
 
-export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => {
+export const LPPage2 = () => {
     return (
-        <LPSectionExtendableCentered ref={refProp}>
+        <LPSectionExtendableCentered>
             <LPShrinkContainer>
                 <Page2Title>
                     A Call for Renewal: <br /> The Case for <span style={{ color: "#FF852D" }}>Burning </span>
