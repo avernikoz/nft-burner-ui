@@ -4,8 +4,8 @@ import { SolanaCNft, SolanaNft } from "../utils/types";
 import { WalletContextState } from "@solana/wallet-adapter-react";
 
 // Type guard function
-function isSolanaCNft(nft: SolanaNft | SolanaCNft): nft is SolanaCNft {
-    return (nft as SolanaCNft).cNFT !== undefined;
+function isSolanaRegularNFT(nft: SolanaNft | SolanaCNft): nft is SolanaNft {
+    return (nft as SolanaNft).solanaAccount !== undefined;
 }
 
 export async function handleSolanaTransaction({
@@ -30,18 +30,18 @@ export async function handleSolanaTransaction({
 
     let burnRes;
 
-    if (isSolanaCNft(nft)) {
-        // nft is SolanaCNft
-        burnRes = await SOLANA_NFT_CLIENT_INSTANCE.burnCNFT({
-            owner: solanaWallet.publicKey,
-            nft: { id: new PublicKey(nft.nftId) },
-            transaction: payRes,
-        });
-    } else {
+    if (isSolanaRegularNFT(nft)) {
         // nft is SolanaNft
         burnRes = await SOLANA_NFT_CLIENT_INSTANCE.burnNFT({
             owner: solanaWallet.publicKey,
             nft: nft.solanaAccount,
+            transaction: payRes,
+        });
+    } else {
+        // nft is SolanaCNft
+        burnRes = await SOLANA_NFT_CLIENT_INSTANCE.burnCNFT({
+            owner: solanaWallet.publicKey,
+            nft: { id: new PublicKey(nft.nftId) },
             transaction: payRes,
         });
     }
