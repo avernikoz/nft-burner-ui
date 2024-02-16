@@ -85,8 +85,8 @@ export const NftBurnDialog = ({
     const signer = useEthersSigner();
     const toastController = useContext(ToastContext);
     const { data: floorPrice } = useNftFloorPrice(nft);
-    // const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
-    const burnerFee = 0;
+    const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    // const burnerFee = 0;
 
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
 
