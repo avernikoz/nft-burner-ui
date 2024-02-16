@@ -1200,11 +1200,9 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
             <LPContainerMain>
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
+                <LPPageVideo refProp={myRef} />
                 <LazyLoad height={"100vh"}>
-                    <LPPageVideo refProp={myRef} />
-                </LazyLoad>
-                <LazyLoad height={"100vh"}>
-                    <LPPage2 refProp={myRef} />
+                    <LPPage2 />
                 </LazyLoad>
                 <LazyLoad height={"100vh"}>
                     <LPPage3 />
