@@ -1,17 +1,19 @@
-import { styled, css } from "styled-components";
-import React, { RefObject, useEffect, useRef, useState } from "react";
-import "./About.css";
+import { RefObject, useEffect, useRef, useState } from "react";
+import ReactGA from "react-ga4";
+import LazyLoad from "react-lazyload";
+import { css, styled } from "styled-components";
 import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
+import "./About.css";
 
+import { ProgressSpinner } from "primereact/progressspinner";
 import { ReactComponent as DownArrowIcon } from "../../assets/svg/downArrow.svg";
 import { ReactComponent as RightArrowIcon } from "../../assets/svg/rightArrow.svg";
 import { Header } from "../../components/Header/Header";
-import { ProgressSpinner } from "primereact/progressspinner";
 
-import { ReactComponent as DiscordIcon } from "../../assets/svg/social/discord.svg";
-import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
 import { GAudioEngine } from "../../webl/audioEngine";
+import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
+import { APP_ENVIRONMENT } from "../../config/config";
 
 //=========================
 // 	  MEDIA QUERIES
@@ -233,13 +235,7 @@ const GetRandomTitle = () => {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const RandomTitle = GetRandomTitle();
 
-export const AboutFirstSection = ({
-    setAboutPageActive,
-    setShowMore,
-}: {
-    setAboutPageActive: (isAboutPageActive: boolean) => void;
-    setShowMore: () => void;
-}) => {
+export const StartButton = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: boolean) => void }) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [loadingPercentage, setLoadingPercentage] = useState(0);
     const [loadingFinished, setLoadingFinished] = useState(false);
@@ -253,7 +249,9 @@ export const AboutFirstSection = ({
             const loadProgressRes = GReactGLBridgeFunctions.GetLoadingProgressParameterNormalised();
             if (loadProgressRes !== null) {
                 const percentage = loadProgressRes * 100;
-                console.debug("loadingPercentage: ", percentage);
+                if (APP_ENVIRONMENT === "development") {
+                    console.debug("loadingPercentage: ", percentage);
+                }
 
                 setLoadingPercentage(percentage);
             } else {
@@ -269,12 +267,50 @@ export const AboutFirstSection = ({
     }, []);
 
     return (
+        <StartMenuButton
+            disabled={!loadingFinished}
+            onClick={() => {
+                ReactGA.event("start_button_landing_page_pressed");
+                setAboutPageActive(false);
+                GReactGLBridgeFunctions.OnStartButtonPressed();
+            }}
+        >
+            <StartText
+                style={{
+                    background: `text linear-gradient(90deg, #ce3e00 0, #ce3e00 ${loadingPercentage}%, #969696 ${loadingPercentage}%)`,
+                    // backgroundClip: "text",
+                }}
+            >
+                START
+            </StartText>
+            {loadingFinished ? (
+                <RightArrowIcon />
+            ) : (
+                <ProgressSpinner
+                    strokeWidth={"7"}
+                    //color={"white"}
+                    style={{ width: "25px", height: "25px", margin: 0 }}
+                />
+            )}
+        </StartMenuButton>
+    );
+};
+
+export const AboutFirstSection = ({
+    setAboutPageActive,
+    setShowMore,
+}: {
+    setAboutPageActive: (isAboutPageActive: boolean) => void;
+    setShowMore: () => void;
+}) => {
+    return (
         <StartScreenWrapMain>
             <StartTitleAndButtonContainer>
                 {RandomTitle}
                 <AboutStartContainer>
                     <StartMenuButton
                         onClick={() => {
+                            ReactGA.event("about_button_landing_page_pressed");
                             GReactGLBridgeFunctions.OnAboutButtonPressed();
                             setShowMore();
                         }}
@@ -282,6 +318,7 @@ export const AboutFirstSection = ({
                         <AboutText>ABOUT</AboutText>
                         <DownArrowIcon />
                     </StartMenuButton>
+                    <StartButton setAboutPageActive={setAboutPageActive} />
                     <StartMenuButton
                         disabled={!loadingFinished}
                         onClick={() => {
@@ -448,6 +485,49 @@ export const LPDescText = styled.span`
 `;
 
 //=========================
+// 	  	   PAGE Youtube Video
+//=========================
+
+export const MainVideoWrapper = styled.div`
+    min-height: 100vh;
+    width: 100vw;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+`;
+
+export const VideoContainer = styled.div`
+    position: relative;
+    width: 80%; /* Full width of the parent element */
+    padding-bottom: 56.25%; /* Maintain  16:9 aspect ratio */
+`;
+
+export const VideoIframe = styled.iframe`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+`;
+
+export const LPPageVideo = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => {
+    return (
+        <MainVideoWrapper ref={refProp}>
+            <VideoContainer>
+                <VideoIframe
+                    src="https://www.youtube.com/embed/4rx4oXUtXg8?si=dloQUuracglDwv7Z"
+                    title="NFT Burner Demo"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen={true}
+                />
+            </VideoContainer>
+        </MainVideoWrapper>
+    );
+};
+
+//=========================
 // 	  	   PAGE 2
 //=========================
 
@@ -548,12 +628,6 @@ export const LPPage2Additional = () => (
             </Page2AdditionalTitle>
         </LPShrinkContainerMid>
         <Page2AdditionalImage />
-        <SectionDividerSpecific>
-            <SectionDividerLine />
-        </SectionDividerSpecific>
-        <SectionDividerSpecific2>
-            <SectionDividerLine />
-        </SectionDividerSpecific2>
     </Page2AddWrapper>
 );
 
@@ -575,7 +649,6 @@ export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => 
                     </Page2Title2>
                 </Page2Title2Background>
                 <LPPage2Additional />
-                <SectionDivider />
             </LPShrinkContainer>
         </LPSectionExtendableCentered>
     );
@@ -656,7 +729,6 @@ export const LPPage3 = () => {
                 <Page3OffsetSpace />
                 <Page3BackgroundImage />
             </LPShrinkContainer>
-            <SectionDivider />
         </LPSectionExtendableCentered>
     );
 };
@@ -1103,13 +1175,13 @@ export const LPPageSocial = () => (
             <SocialContainer>
                 <Page2Title2 style={{ width: "auto" }}>Our social media</Page2Title2>
                 <SocialIconsContainer>
-                    <SocialLink href="https://twitter.com" target="_blank" rel="noopener noreferrer">
+                    <SocialLink href="https://twitter.com/nftburnerapp" target="_blank" rel="noopener noreferrer">
                         <TwitterIcon />
                     </SocialLink>
-                    <SocialLink href="https://discord.com" target="_blank" rel="noopener noreferrer">
+                    {/* <SocialLink href="https://discord.com" target="_blank" rel="noopener noreferrer">
                         <DiscordIcon />
-                    </SocialLink>
-                    <SocialLink href="https://instagram.com" target="_blank" rel="noopener noreferrer">
+                    </SocialLink> */}
+                    <SocialLink href="https://www.instagram.com/nftburnerapp" target="_blank" rel="noopener noreferrer">
                         <InstagramIcon />
                     </SocialLink>
                 </SocialIconsContainer>
@@ -1117,6 +1189,32 @@ export const LPPageSocial = () => (
         </LPShrinkContainer>
     </LPSectionExtendableCentered>
 );
+
+export const LPPageStartBlock = ({
+    setAboutPageActive,
+}: {
+    setAboutPageActive: (isAboutPageActive: boolean) => void;
+}) => {
+    return (
+        <LPSectionExtendableCentered>
+            <LPShrinkContainer>
+                <div style={{ height: "25vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <div
+                        style={{
+                            height: "80px",
+                            width: "clamp(300px, 80vw, 620px)",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                        }}
+                    >
+                        <StartButton setAboutPageActive={setAboutPageActive} />
+                    </div>
+                </div>
+            </LPShrinkContainer>
+        </LPSectionExtendableCentered>
+    );
+};
 
 //=========================
 // 	  	   ENTRY
@@ -1132,17 +1230,39 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
             <LPContainerMain>
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
-                <LPPage2 refProp={myRef} />
-                <LPPage3 />
-                <LPPage4 />
+                <LazyLoad height={"100vh"}>
+                    <LPPageVideo refProp={myRef} />
+                </LazyLoad>
+                <LazyLoad height={"100vh"}>
+                    <LPPage2 refProp={myRef} />
+                </LazyLoad>
+                <LazyLoad height={"100vh"}>
+                    <LPPage3 />
+                </LazyLoad>
+                <LazyLoad height={"100vh"}>
+                    <LPPage4 />
+                </LazyLoad>
                 <SectionDivider />
-                <SubPage1 />
-                <SubPage2 />
-                <SubPage3 />
-                <SubPage4 />
+                <LazyLoad height={"100vh"}>
+                    <SubPage1 />
+                </LazyLoad>
+                <LazyLoad height={"100vh"}>
+                    <SubPage2 />
+                </LazyLoad>
+                <LazyLoad height={"100vh"}>
+                    <SubPage3 />
+                </LazyLoad>
+                <LazyLoad height={"100vh"}>
+                    <SubPage4 />
+                </LazyLoad>
                 <SectionDivider />
-                <LPPageFinal />
+                <LazyLoad height={"100vh"}>
+                    <LPPageFinal />
+                </LazyLoad>
                 <SectionDivider />
+                <LPPageStartBlock setAboutPageActive={setAboutPageActive} />
+                <SectionDivider />
+
                 <LPPageSocial />
             </LPContainerMain>
         </>

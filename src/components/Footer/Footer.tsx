@@ -4,8 +4,11 @@ import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
 import { ReactComponent as SoundEnabledIcon } from "../../assets/svg/soundEnabled.svg";
 import { ReactComponent as SoundDisabledIcon } from "../../assets/svg/soundDisabled.svg";
 import { ReactComponent as FAQIcon } from "../../assets/svg/faq.svg";
+import { ReactComponent as LetterIcon } from "../../assets/svg/letter.svg";
+
 import { ReactComponent as FullScreenIcon } from "../../assets/svg/fullScreen.svg";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
+import { ContactDialog } from "../ContactDialog/ContactDialog";
 
 export const FooterContainer = styled.div`
     background-color: rgba(0, 0, 0, 0);
@@ -130,33 +133,61 @@ const FAQIconElement = () => (
     </IconContainer>
 );
 
+const ContactIconElement = () => (
+    <IconContainer>
+        <LetterIcon />
+    </IconContainer>
+);
+
 export const FAQComponent = () => (
     <a target="_blank" rel="noopener noreferrer" href="https://nft-burner.gitbook.io/overview/">
         <FAQIconElement />
     </a>
 );
 
-export const Footer = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: boolean) => void }) => (
-    <FooterContainer>
-        <FooterButtonsContainer>
-            <SoundIconElement />
-            <Divider />
-            <FullScreenButton />
-            <Divider />
-            <FAQComponent />
-            <Divider />
-            <AboutContainer
-                onClick={() => {
-                    if (GRenderingStateMachine.GetInstance().currentState > ERenderingState.Inventory) {
-                        return;
-                    }
-                    GReactGLBridgeFunctions.OnAboutButtonPressed();
+export const ContactFormComponent = ({ showContactForm }: { showContactForm: () => void }) => {
+    return (
+        <div onClick={showContactForm}>
+            <ContactIconElement />
+        </div>
+    );
+};
 
-                    setAboutPageActive(true);
+export const Footer = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: boolean) => void }) => {
+    const [contactPopupVisible, setContactPopupVisible] = useState<boolean>(false);
+
+    return (
+        <>
+            <ContactDialog
+                visible={contactPopupVisible}
+                setVisible={() => {
+                    setContactPopupVisible(false);
                 }}
-            >
-                ABOUT
-            </AboutContainer>
-        </FooterButtonsContainer>
-    </FooterContainer>
-);
+            />
+            <FooterContainer>
+                <FooterButtonsContainer>
+                    <SoundIconElement />
+                    <Divider />
+                    <FullScreenButton />
+                    <Divider />
+                    <FAQComponent />
+                    <Divider />
+                    <ContactFormComponent showContactForm={() => setContactPopupVisible(true)} />
+                    <Divider />
+                    <AboutContainer
+                        onClick={() => {
+                            if (GRenderingStateMachine.GetInstance().currentState > ERenderingState.Inventory) {
+                                return;
+                            }
+                            GReactGLBridgeFunctions.OnAboutButtonPressed();
+
+                            setAboutPageActive(true);
+                        }}
+                    >
+                        ABOUT
+                    </AboutContainer>
+                </FooterButtonsContainer>
+            </FooterContainer>
+        </>
+    );
+};

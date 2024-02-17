@@ -1,3 +1,4 @@
+import ReactGA from "react-ga4";
 import { useContext, useEffect, useState } from "react";
 import { INft } from "../../utils/types";
 import { BurnButton } from "../BurnButton/BurnButton";
@@ -32,7 +33,8 @@ export const Control = () => {
 
     const [nft, setNft] = useState<INft | null>(null);
     const { data: floorPrice } = useNftFloorPrice(nft);
-    const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    // const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    const burnerFee = 0;
     const { networkFee } = useNetworkFee({ network: nft?.network });
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
     const networkFeeToken = getNetworkTokenSymbol(nft?.network);
@@ -50,6 +52,7 @@ export const Control = () => {
                     <BurnButton
                         className="burnButton mainButton width35"
                         onClick={() => {
+                            ReactGA.event("burn_button_open_popup_button_pressed");
                             GAudioEngine.getInstance().PlayUIClickSound();
                             setBurnPopupVisible(true);
                         }}
@@ -64,6 +67,7 @@ export const Control = () => {
                     <ShareButton
                         className="shareButton mainButton width65"
                         onClick={() => {
+                            ReactGA.event("schedule_button_open_popup_button_pressed");
                             GAudioEngine.getInstance().PlayUIClickSound();
                             setSchedulePopupVisible(true);
                         }}
@@ -87,7 +91,11 @@ export const Control = () => {
                             Burner Fuel Fee <InfoIcon />
                         </BurnerFuelInfoText>
                         <BurnerFuelInfoTextNumbers>
-                            {burnerFee !== null && burnerFee !== undefined ? `${burnerFee} ${burnerFeeToken}` : `-`}
+                            {burnerFee !== null && burnerFee !== undefined
+                                ? burnerFee === 0
+                                    ? `Free`
+                                    : `${burnerFee} ${burnerFeeToken}`
+                                : `-`}
                         </BurnerFuelInfoTextNumbers>
                     </BurnerFuelInfoContainer>
                     <NftInfoDivider />
