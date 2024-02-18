@@ -273,6 +273,10 @@ export const StartButton = ({ setAboutPageActive }: { setAboutPageActive: (isAbo
                 ReactGA.event("start_button_landing_page_pressed");
                 setAboutPageActive(false);
                 GReactGLBridgeFunctions.OnStartButtonPressed();
+                GAudioEngine.getInstance().PlayUIClickStartSound();
+            }}
+            onMouseEnter={() => {
+                GAudioEngine.getInstance().PlayUIHoverSound();
             }}
         >
             <StartText
@@ -319,35 +323,6 @@ export const AboutFirstSection = ({
                         <DownArrowIcon />
                     </StartMenuButton>
                     <StartButton setAboutPageActive={setAboutPageActive} />
-                    <StartMenuButton
-                        disabled={!loadingFinished}
-                        onClick={() => {
-                            setAboutPageActive(false);
-                            GReactGLBridgeFunctions.OnStartButtonPressed();
-                            GAudioEngine.getInstance().PlayUIClickStartSound();
-                        }}
-                        onMouseEnter={() => {
-                            GAudioEngine.getInstance().PlayUIHoverSound();
-                        }}
-                    >
-                        <StartText
-                            style={{
-                                background: `text linear-gradient(90deg, #ce3e00 0, #ce3e00 ${loadingPercentage}%, #969696 ${loadingPercentage}%)`,
-                                // backgroundClip: "text",
-                            }}
-                        >
-                            START
-                        </StartText>
-                        {loadingFinished ? (
-                            <RightArrowIcon />
-                        ) : (
-                            <ProgressSpinner
-                                strokeWidth={"7"}
-                                //color={"white"}
-                                style={{ width: "25px", height: "25px", margin: 0 }}
-                            />
-                        )}
-                    </StartMenuButton>
                 </AboutStartContainer>
             </StartTitleAndButtonContainer>
         </StartScreenWrapMain>
