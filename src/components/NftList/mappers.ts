@@ -17,7 +17,7 @@ export function suiMapper(
     }[],
 ): SuiNft[] {
     const proxy = NFT_IMAGES_CORS_PROXY_URL;
-    return nfts.map((nft, index) => {
+    return nfts.map((nft) => {
         let ipfsHash = nft.url;
         if (ipfsHash.includes("https://")) {
             ipfsHash = proxy + ipfsHash;
@@ -39,7 +39,7 @@ export function suiMapper(
 
 export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner, chainName: ALLOWED_EVM_CHAINS): EvmNft[] {
     const proxy = NFT_IMAGES_CORS_PROXY_URL;
-    const rawData = data.map((nft, index) => {
+    const rawData = data.map((nft) => {
         let ipfsHash = nft.rawMetadata?.image;
         if (!ipfsHash) {
             ipfsHash = "../../assets/svg/empty.jpg";
@@ -91,7 +91,7 @@ export function solanaNFTMapper(
         };
     }[],
 ): SolanaNft[] {
-    return nfts.map((item, i) => ({
+    return nfts.map((item) => ({
         logoURI: item.logoURI,
         name: item.name,
         nftId: item.accounts.mint.toString(),
@@ -104,7 +104,7 @@ export function solanaNFTMapper(
 
 export function solanaCNFTMapper(nfts: DasApiAsset[]): SolanaCNft[] {
     const cNFTsTransformed = nfts
-        .map((item, i) => {
+        .map((item) => {
             const links = item.content.links;
 
             if (!(links && "image" in links && links.image && typeof links.image === "string")) {
