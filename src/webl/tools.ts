@@ -124,9 +124,13 @@ class CAnimationComponent {
     }
 }
 
-/* class CAudioComponent {
-
-} */
+export enum EBurningTool {
+    Laser = 0,
+    Lighter,
+    Thunder,
+    //===
+    NUM,
+}
 
 export abstract class ToolBase {
     // Render Resources

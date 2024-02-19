@@ -10,6 +10,8 @@ import { IMAGE_STORE_SINGLETON_INSTANCE } from "../../config/config";
 import { GTransitionAnimationsConstants } from "../../webl/transitionAnimations";
 import { sleep } from "../../utils/sleep";
 import { GAudioEngine } from "../../webl/audioEngine";
+import { POINTS_PER_BURN } from "../../utils/gamification/level";
+import { useUserLevel } from "../../context/UserLevelContext";
 
 // import useSound from "use-sound";
 
@@ -32,9 +34,12 @@ export const BurningComplete = () => {
     const [sharePopupVisible, setSharePopupVisible] = useState<boolean>(false);
     const [showText, setShowText] = useState<boolean>(false);
     const nft = NftController.getActiveNft();
+    const { setPoints } = useUserLevel();
 
     useEffect(() => {
         localStorage.setItem("isBurnedNFTAtLeastOnce", "true");
+        setPoints(POINTS_PER_BURN);
+        console.debug("[useEffect] [BurningComplete]");
 
         const transitionFunc = async () => {
             setShowText(true);
@@ -43,6 +48,7 @@ export const BurningComplete = () => {
         };
 
         transitionFunc();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (

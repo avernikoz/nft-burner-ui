@@ -12,6 +12,7 @@ import { GTime, showError } from "./utils";
 import { Vector2 } from "./types";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { GTexturePool } from "./texturePool";
+import { RTexture } from "./texture";
 
 // ====================================================== SHADERS END ======================================================
 
@@ -141,6 +142,8 @@ export class ParticlesEmitter {
         this.FlipbookSizeRC = inFlipbookSizeRC;
 
         this.bUsesTexture = inTextureFileName != "";
+
+        this.ColorTexture = new RTexture();
 
         this.TimeBetweenParticleSpawn = this.ParticleLife / this.NumParticlesPerSpawner;
 
@@ -339,7 +342,15 @@ export class ParticlesEmitter {
         //========================================================= Allocate Rendering Data
 
         if (this.bUsesTexture) {
-            this.ColorTexture = GTexturePool.CreateTexture(gl, false, inTextureFileName, true);
+            this.ColorTexture.InnerTexture = GTexturePool.CreateTexture(
+                gl,
+                false,
+                inTextureFileName,
+                true,
+                false,
+                false,
+                this.ColorTexture,
+            );
         }
 
         if (inESpecificShadingMode === EParticleShadingMode.Flame) {
@@ -529,6 +540,10 @@ export class ParticlesEmitter {
     }
 
     Update(gl: WebGL2RenderingContext, fireTexture: WebGLTexture, initialEmitterPosition = { x: 0.0, y: 0.0 }) {
+        if (this.bUsesTexture && !this.ColorTexture.bLoaded) {
+            return;
+        }
+
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 
@@ -574,6 +589,10 @@ export class ParticlesEmitter {
     }
 
     Render(gl: WebGL2RenderingContext, blendMode: number, blendSource: number, blendDest: number) {
+        if (this.bUsesTexture && !this.ColorTexture.bLoaded) {
+            return;
+        }
+
         //gl.bindVertexArray(this.ParticleRenderVAO[1 - this.CurrentBufferIndex]);
         gl.bindVertexArray(this.ParticleInstancedRenderVAO[1 - this.CurrentBufferIndex]);
 
@@ -581,9 +600,9 @@ export class ParticlesEmitter {
         gl.useProgram(this.ParticleInstancedRenderShaderProgram);
 
         //Uniforms
-        if (this.bUsesTexture && this.ColorTexture) {
+        if (this.bUsesTexture) {
             gl.activeTexture(gl.TEXTURE0 + 4);
-            gl.bindTexture(gl.TEXTURE_2D, this.ColorTexture);
+            gl.bindTexture(gl.TEXTURE_2D, this.ColorTexture.InnerTexture);
             gl.uniform1i(this.ParticleRenderUniformParametersLocationList.ColorTexture, 4);
         }
 

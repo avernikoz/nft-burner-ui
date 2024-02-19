@@ -20,11 +20,24 @@ import { ReactComponent as FailedIcon } from "../../../../assets/svg/failedIcon.
 import { ReactComponent as BurnIcon } from "../../../../assets/svg/burnIcon.svg";
 import { ReactComponent as InfoIcon } from "../../../../assets/svg/infoIcon.svg";
 
+// instruments
+import { ReactComponent as LaserIcon } from "../../../../assets/svg/instruments/updated/Laser.svg";
+import { ReactComponent as LighterIcon } from "../../../../assets/svg/instruments/updated/Lighter.svg";
+import { ReactComponent as ThunderIcon } from "../../../../assets/svg/instruments/updated/Tunder.svg";
+
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import {
     BurningCeremonyHighlight,
     BurningCeremonyText,
     DialogImageContainer,
+    InstrumentHeadingText,
+    InstrumentIconContainer,
+    InstrumentNameSection,
+    InstrumentNameText,
+    InstrumentsContainer,
+    InstrumentsDivider,
+    InstrumentsMainContainer,
+    InstrumentsSection,
     NftBurnDialogContainer,
     NftBurnDialogImg,
     NftBurnDialogImgTitle,
@@ -41,6 +54,9 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { ConfirmBurningButton } from "../../../ConfirmBurningButton/ConfirmBurningButton";
 import { useNftFloorPrice } from "../../../../hooks/useNftFloorPrice";
 import { sleep } from "../../../../utils/sleep";
+import { useInstumentsPrice } from "../../../../hooks/useInstrumentsPrice";
+import { GReactGLBridgeFunctions } from "../../../../webl/reactglBridge";
+import { INSTRUMENTS_COLOR_MAP } from "../../../../config/styles.config";
 
 export const NftBurnDialog = ({
     nft,
@@ -83,8 +99,10 @@ export const NftBurnDialog = ({
     const solanaConnection = useConnection();
     const signer = useEthersSigner();
     const toastController = useContext(ToastContext);
+    const [instrument, setInstrument] = useState<"laser" | "lighter" | "thunder">("laser");
     const { data: floorPrice } = useNftFloorPrice(nft);
     const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    const { instrumentPriceInNetworkToken } = useInstumentsPrice({ instrument, network: nft?.network });
 
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
 
@@ -103,6 +121,10 @@ export const NftBurnDialog = ({
                 throw new Error("Empty burner fuel fee");
             }
 
+            if (instrumentPriceInNetworkToken === undefined) {
+                throw new Error("Empty instrument price");
+            }
+
             if (isEvm) {
                 setLoadingFirstTransaction(true);
             } else {
@@ -111,19 +133,27 @@ export const NftBurnDialog = ({
             }
 
             if (isEvm) {
-                await handleEvmPayTransaction({ nft: nft as EvmNft, signer, burnerFee });
+                await handleEvmPayTransaction({
+                    nft: nft as EvmNft,
+                    signer,
+                    burnerFee: burnerFee + instrumentPriceInNetworkToken,
+                });
                 setLoadingFirstTransaction(false);
                 setLoadingSecondTransaction(true);
                 setOnchainFeeSuccess(true);
                 await handleEvmBurnTransaction({ nft: nft as EvmNft, signer });
             } else if (isSui) {
-                await handleSuiTransaction({ nft: nft as SuiNft, signAndExecuteTransactionBlock, burnerFee });
+                await handleSuiTransaction({
+                    nft: nft as SuiNft,
+                    signAndExecuteTransactionBlock,
+                    burnerFee: burnerFee + instrumentPriceInNetworkToken,
+                });
             } else if (isSolana) {
                 await handleSolanaTransaction({
                     nft: nft as SolanaNft | SolanaCNft,
                     solanaConnection: solanaConnection.connection,
                     solanaWallet,
-                    burnerFee,
+                    burnerFee: burnerFee + instrumentPriceInNetworkToken,
                 });
             }
 
@@ -195,6 +225,20 @@ export const NftBurnDialog = ({
                                 {burnerFee} {burnerFeeToken}
                             </NftBurnDialogInfoValue>
                         </NftBurnDialogInfoContainer>
+                        <NftBurnDialogInfoContainer>
+                            <Tooltip
+                                className="tooltip-burner-fee"
+                                content="🎶 Elevate your burner vibes with personalized instruments – add a touch of harmony to your creativity!"
+                                target={".instruments"}
+                                position="top"
+                            />
+                            <NftBurnDialogInfoTitle className="instruments">
+                                Burner Tool Fee <InfoIcon />:
+                            </NftBurnDialogInfoTitle>
+                            <NftBurnDialogInfoValue>
+                                {instrumentPriceInNetworkToken} {burnerFeeToken}
+                            </NftBurnDialogInfoValue>
+                        </NftBurnDialogInfoContainer>
                     </div>
                     <div>
                         <BurningCeremonyText>
@@ -238,6 +282,74 @@ export const NftBurnDialog = ({
                     </StatusTransactionContainer>
                 </div>
             </NftBurnDialogContainer>
+            <InstrumentHeadingText>Choose Your Tool</InstrumentHeadingText>
+            <>
+                <Tooltip
+                    className="tooltip-burner-fee"
+                    content="🎶 Available on Level 0"
+                    target={".laser-container"}
+                    position="top"
+                />
+                <Tooltip
+                    className="tooltip-burner-fee"
+                    content="🎶 Available on Level 5 for free"
+                    target={".thunder-container"}
+                    position="top"
+                />
+                <Tooltip
+                    className="tooltip-burner-fee"
+                    content="🎶 Available on Level 3 for free"
+                    target={".lighter-container"}
+                    position="top"
+                />
+                <InstrumentsMainContainer>
+                    <InstrumentsSection>
+                        <InstrumentsContainer>
+                            <InstrumentIconContainer
+                                className="laser-container"
+                                $isActive={instrument === "laser"}
+                                $activeColor={INSTRUMENTS_COLOR_MAP.laser}
+                                onClick={() => {
+                                    GReactGLBridgeFunctions.OnInstrumentClick("laser");
+                                    setInstrument("laser");
+                                }}
+                            >
+                                <LaserIcon />
+                            </InstrumentIconContainer>
+
+                            <InstrumentIconContainer
+                                className="lighter-container"
+                                $isActive={instrument === "lighter"}
+                                $activeColor={INSTRUMENTS_COLOR_MAP.lighter}
+                                onClick={() => {
+                                    GReactGLBridgeFunctions.OnInstrumentClick("lighter");
+                                    setInstrument("lighter");
+                                }}
+                            >
+                                <LighterIcon />
+                            </InstrumentIconContainer>
+                            <InstrumentIconContainer
+                                className="thunder-container"
+                                $isActive={instrument === "thunder"}
+                                $activeColor={INSTRUMENTS_COLOR_MAP.thunder}
+                                onClick={() => {
+                                    GReactGLBridgeFunctions.OnInstrumentClick("thunder");
+                                    setInstrument("thunder");
+                                }}
+                            >
+                                <ThunderIcon />
+                            </InstrumentIconContainer>
+                        </InstrumentsContainer>
+                    </InstrumentsSection>
+
+                    <InstrumentNameSection>
+                        <InstrumentsDivider />
+                        <InstrumentNameText $activeColor={INSTRUMENTS_COLOR_MAP[instrument]}>
+                            {instrument.toUpperCase()}
+                        </InstrumentNameText>
+                    </InstrumentNameSection>
+                </InstrumentsMainContainer>
+            </>
             <div>
                 <ConfirmBurningButton
                     style={{ width: "100%", display: "flex", height: "58.5px" }}

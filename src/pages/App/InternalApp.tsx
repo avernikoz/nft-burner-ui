@@ -25,6 +25,10 @@ import { ConnectWalletButton } from "../../components/ConnectWalletButton/Connec
 import BurnerLogoDesktopIcon from "../../assets/svg/burnerLogoDesktop.svg";
 import BurnerLogoMobileIcon from "../../assets/svg/burnerLogoMobile.svg";
 import { GAudioEngine } from "../../webl/audioEngine";
+import { Level } from "../../components/Level/Level";
+import { useUserLevel } from "../../context/UserLevelContext";
+import { MainLevelContainer } from "../../components/Level/Level.styled";
+import { BetaContainer, BetaText } from "../../components/Header/Header";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
     setAboutPageActive,
@@ -40,6 +44,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
     const [showBurnedScreen, setShowBurnedScreen] = useState<boolean>(false);
     const [showConnectWalletScreen, setShowConnectWalletScreen] = useState<boolean>(false);
     const [walletSelectPopupVisible, setWalletSelectPopupVisible] = useState<boolean>(false);
+    const { level, points } = useUserLevel();
 
     const NftController = useContext(NftContext);
 
@@ -124,6 +129,22 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
         };
     }, [NftController, NftController.setNftStatus]);
 
+    const isBurningNFTComplete = showBurnedScreen && !showConnectWalletScreen;
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        setIsVisible(isBurningNFTComplete);
+
+        // Hide the container after 5 seconds
+        if (isBurningNFTComplete) {
+            const timeoutId = setTimeout(() => {
+                setIsVisible(false);
+            }, 5000);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [isBurningNFTComplete]);
+
     return (
         <div className="App">
             <HeaderAppContainer>
@@ -131,6 +152,9 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                     <DesktopLogoIcon src={BurnerLogoDesktopIcon} />
                     <MobileLogoIcon src={BurnerLogoMobileIcon} />
                 </LogoContainer>
+                <BetaContainer>
+                    <BetaText> beta</BetaText>
+                </BetaContainer>
                 <LogoDivider />
                 <WalletSelector
                     walletSelectPopupVisible={walletSelectPopupVisible}
@@ -139,6 +163,10 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                         setShowUI(false);
                     }}
                 />
+
+                <MainLevelContainer $isVisible={isVisible}>
+                    <Level showTooltip={false} level={level} points={points} showLevelText={true} levelSize={200} />
+                </MainLevelContainer>
             </HeaderAppContainer>
             {showUI && !showBurnedScreen && !showConnectWalletScreen && (
                 <BodyContainer $showBackground={true}>
@@ -165,7 +193,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                     </div>
                 </BodyContainer>
             )}
-            {showBurnedScreen && !showConnectWalletScreen && <BurningComplete />}
+            {isBurningNFTComplete && <BurningComplete />}
 
             <Footer setAboutPageActive={setAboutPageActive} />
         </div>

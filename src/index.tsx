@@ -13,6 +13,7 @@ import { NftProvider } from "./components/NftProvider/NftProvider";
 import { ToastProvider } from "./components/ToastProvider/ToastProvider";
 
 import { configureSentry } from "./utils/configureSentry";
+import { UserLevelProvider } from "./context/UserLevelContext";
 
 // Sentry init
 configureSentry();
@@ -28,7 +29,9 @@ root.render(
                 <EVMWalletContext>
                     <SuiWalletContext>
                         <NftProvider>
-                            <App />
+                            <UserLevelProvider>
+                                <App />
+                            </UserLevelProvider>
                         </NftProvider>
                     </SuiWalletContext>
                 </EVMWalletContext>

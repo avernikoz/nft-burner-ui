@@ -5,7 +5,7 @@ export const FlameParticlesDesc = {
     inName: "Flame Particles",
     inNumSpawners2D: 64,
     inNumParticlesPerSpawner: 1,
-    inSpawnRange: { x: 10.0 + Math.random() * 40.0, y: 1000.0 }, //TODO:depends on temperature
+    inSpawnRange: { x: 10.0 + Math.random() * 100.0, y: 1000.0 }, //TODO:depends on temperature
     inParticleLife: 2.4,
     inNumLoops: 3.0,
     inTextureFileName: "Flame02_16x4",
@@ -58,7 +58,7 @@ export const SmokeParticlesDesc = {
     inName: "Smoke Particles",
     inNumSpawners2D: 32,
     inNumParticlesPerSpawner: 2,
-    inSpawnRange: { x: MathLerp(20.0, 70.0, Math.random()), y: 1000.0 },
+    inSpawnRange: { x: MathLerp(20.0, 200.0, Math.random()), y: 1000.0 },
     inParticleLife: 3.5,
     inNumLoops: 1.0,
     inTextureFileName: "Explosion01-nofire_5x5",
