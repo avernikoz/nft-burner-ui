@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/react";
 
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import {
     ALCHEMY_MULTICHAIN_CLIENT_INSTANCE,
@@ -15,16 +15,17 @@ import { NftFilters } from "alchemy-sdk";
 import { ProgressSpinner } from "primereact/progressspinner";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid as Grid } from "react-window";
-import { ENftBurnStatus, INft } from "../../utils/types";
+import EmptySVG from "../../assets/svg/emptyNFT.svg";
+import { filterOutCNFTDuplicates } from "../../utils/filterOutCNFTDuplicates";
+import { ENftBurnStatus, INft, SolanaCNft } from "../../utils/types";
+import { EmptyNFTList } from "../EmptyNFTList/EmptyNFTList";
 import { NftItem } from "../NftItem/NftItem";
 import { NftContext } from "../NftProvider/NftProvider";
 import { ToastContext } from "../ToastProvider/ToastProvider";
 import { List, NftListAutosizerContainer, NftListTitle, SpinnerContainer } from "./NftList.styled";
 import { evmMapper, solanaCNFTMapper, solanaNFTMapper, suiMapper } from "./mappers";
-import { useEthersSigner } from "./variables";
 import { getChainName, getItemSize, getRowCount } from "./utils";
-import EmptySVG from "../../assets/svg/emptyNFT.svg";
-import { EmptyNFTList } from "../EmptyNFTList/EmptyNFTList";
+import { useEthersSigner } from "./variables";
 
 export const NftList = () => {
     const suietWallet = suietUseWallet();
@@ -76,12 +77,14 @@ export const NftList = () => {
                         const pubkey = solanaWallet.publicKey as PublicKey;
 
                         const rawNfts = await SOLANA_NFT_CLIENT_INSTANCE.getNFTs(pubkey);
-                        const mappedNFts: INft[] = solanaNFTMapper(rawNfts);
+                        const mappedNFts = solanaNFTMapper(rawNfts);
+                        const basicNFTs: INft[] = mappedNFts;
 
                         const rawCNfts = await SOLANA_NFT_CLIENT_INSTANCE.getCNFTs(pubkey);
-                        const mappedCNFTs: INft[] = solanaCNFTMapper(rawCNfts);
+                        const mappedCNFTs: SolanaCNft[] = solanaCNFTMapper(rawCNfts);
+                        const filtredCNFTs = filterOutCNFTDuplicates(mappedNFts, mappedCNFTs);
 
-                        const allSolanaNFTs = mappedNFts.concat(mappedCNFTs);
+                        const allSolanaNFTs: INft[] = basicNFTs.concat(filtredCNFTs);
                         setNFTList(allSolanaNFTs);
                     } else if (suiChangeOrConnected) {
                         const rawNfts = await SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address as string });

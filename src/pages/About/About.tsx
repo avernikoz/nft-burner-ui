@@ -606,9 +606,9 @@ export const LPPage2Additional = () => (
     </Page2AddWrapper>
 );
 
-export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => {
+export const LPPage2 = () => {
     return (
-        <LPSectionExtendableCentered ref={refProp}>
+        <LPSectionExtendableCentered>
             <LPShrinkContainer>
                 <Page2Title>
                     A Call for Renewal: <br /> The Case for <span style={{ color: "#FF852D" }}>Burning </span>
@@ -1205,11 +1205,9 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
             <LPContainerMain>
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
+                <LPPageVideo refProp={myRef} />
                 <LazyLoad height={"100vh"}>
-                    <LPPageVideo refProp={myRef} />
-                </LazyLoad>
-                <LazyLoad height={"100vh"}>
-                    <LPPage2 refProp={myRef} />
+                    <LPPage2 />
                 </LazyLoad>
                 <LazyLoad height={"100vh"}>
                     <LPPage3 />

@@ -33,8 +33,8 @@ export const Control = () => {
 
     const [nft, setNft] = useState<INft | null>(null);
     const { data: floorPrice } = useNftFloorPrice(nft);
-    // const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
-    const burnerFee = 0;
+    const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    // const burnerFee = 0;
     const { networkFee } = useNetworkFee({ network: nft?.network });
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
     const networkFeeToken = getNetworkTokenSymbol(nft?.network);

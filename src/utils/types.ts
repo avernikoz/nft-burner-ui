@@ -18,6 +18,7 @@ export interface BaseNft {
 
 // Interface for Solana network
 export interface SolanaNft extends BaseNft {
+    nftId: string;
     cNFT: boolean;
     solanaAccount: {
         metadataAccount: PublicKey;
