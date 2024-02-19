@@ -28,7 +28,7 @@ export function suiMapper(
         return {
             name: nft.name,
             logoURI: ipfsHash,
-            id: index,
+            id: nft.nftId,
             network: ALLOWED_NETWORKS.Sui,
             nftId: nft.nftId,
             kioskId: nft.kioskId,
@@ -56,7 +56,7 @@ export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner, chainName: AL
         return {
             name: nft.title,
             logoURI: ipfsHash,
-            id: index,
+            id: nft.tokenId,
             contractAddress: nft.contract.address,
             contractType: mappedContractType,
             nftTokenId: nft.tokenId,
@@ -95,7 +95,7 @@ export function solanaNFTMapper(
         logoURI: item.logoURI,
         name: item.name,
         nftId: item.accounts.mint.toString(),
-        id: i,
+        id: item.accounts.mint.toString(),
         solanaAccount: item.accounts,
         cNFT: false,
         network: ALLOWED_NETWORKS.Solana,
@@ -115,7 +115,7 @@ export function solanaCNFTMapper(nfts: DasApiAsset[]): SolanaCNft[] {
                 logoURI: links.image as string,
                 name: item.content.metadata.name,
                 nftId: item.id.toString(),
-                id: i,
+                id: item.id.toString(),
                 network: ALLOWED_NETWORKS.Solana,
                 cNFT: true,
             };

@@ -10,7 +10,7 @@ export enum ENftBurnStatus {
 
 // Base interface with properties common to all networks
 export interface BaseNft {
-    id: number;
+    id: string;
     name: string;
     logoURI: string;
     network: ALLOWED_NETWORKS;

@@ -33,7 +33,7 @@ export const NftList = () => {
     const signer = useEthersSigner();
     const [nftList, setNFTList] = useState<INft[]>([]);
     const wagmiAccount = useAccount();
-    const [activeNft, setActiveNft] = useState<number | null>(null);
+    const [activeNft, setActiveNft] = useState<string | null>(null);
     const [showSpinner, setShowSpinner] = useState<boolean>(true);
     const toastController = useContext(ToastContext);
     const NftController = useContext(NftContext);
@@ -185,7 +185,7 @@ export const NftList = () => {
                                                         <NftItem
                                                             item={item}
                                                             key={index}
-                                                            isActive={index == activeNft}
+                                                            isActive={item.id == activeNft}
                                                             onClick={() => handleItemClick(item)}
                                                         />
                                                     </div>
