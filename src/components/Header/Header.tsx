@@ -26,9 +26,38 @@ export const HeaderLine = styled.div`
     background-color: #515158;
 `;
 
+export const BetaContainer = styled.div`
+    //background-color: #500fe9cf;
+    display: flex;
+    align-items: center;
+    border: 2px solid #ff842d7a;
+    border-radius: 32px;
+    position: relative;
+    bottom: -5%;
+    margin: 0px 4px;
+`;
+
+export const BetaText = styled.span`
+    color: #ff842de8;
+
+    font-family: Rubik;
+    font-size: clamp(8px, 1vw, 16px);
+    font-style: normal;
+    font-weight: 500;
+    letter-spacing: 0px;
+    position: relative;
+    //bottom: -5%;
+    transform: translateY(0%);
+    margin: 4px 8px;
+    //width: clamp(32px, 40vw, 512px);
+`;
+
 export const Header = () => (
     <HeaderContainer>
         <BurnerLogoIcon />
+        <BetaContainer>
+            <BetaText> beta</BetaText>
+        </BetaContainer>
         <HeaderLine />
     </HeaderContainer>
 );

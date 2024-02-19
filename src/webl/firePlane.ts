@@ -215,7 +215,7 @@ export class GBurningSurface {
 
     NormalsTexture: WebGLTexture;
 
-    SurfaceMaterialColorTexture: WebGLTexture;
+    SurfaceMaterialColorTexture: WebGLTexture | null = null;
 
     VisualizerAfterBurnNoiseTexture: WebGLTexture;
 
@@ -409,15 +409,29 @@ export class GBurningSurface {
         this.CurrentImageTextureSrc = "apeBlue";
         //this.CurrentImageTextureSrc = "punkBlue";
         //this.CurrentImageTextureSrc = "assets/example2.png";
-        this.VisualizerImageTexture = GTexturePool.CreateTexture(gl, false, this.CurrentImageTextureSrc, true, true);
+        this.VisualizerImageTexture = GTexturePool.CreateTexture(
+            gl,
+            false,
+            this.CurrentImageTextureSrc,
+            true,
+            true,
+            true,
+        );
         this.FirePlaneImagePreProcess(gl);
-        this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "ashTexture_R8", true);
+        this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "ashTexture_R8", true, false, true);
 
-        this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(gl, false, "afterBurnNoise2_R8");
+        this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(
+            gl,
+            false,
+            "afterBurnNoise2_R8",
+            true,
+            false,
+            true,
+        );
         //this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise128");
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/cracksNoise.png");
 
-        this.VisualizerFirePlaneNoiseTexture = GTexturePool.CreateTexture(gl, false, "fireNoise_R8");
+        this.VisualizerFirePlaneNoiseTexture = GTexturePool.CreateTexture(gl, false, "fireNoise_R8", true, false, true);
 
         const matName = `copper`;
 
@@ -462,7 +476,7 @@ export class GBurningSurface {
         );
         this.RoughnessParams.Contrast = 1.0 + Math.random();
 
-        this.SurfaceMaterialColorTexture = GTexturePool.CreateTexture(gl, false, "oxidCopperRGH", true);
+        //this.SurfaceMaterialColorTexture = GTexturePool.CreateTexture(gl, false, "oxidCopperRGH", true);
         //this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/paperRGH.png");
 
         const matOffsetSign = { x: 1, y: 1 };
@@ -543,15 +557,53 @@ export class GBurningSurface {
         this.ApplyFire(gl, curInputPos, MathVector2Normalize(curInputDir), sizeScale, 0.5);
     }
 
+     */
+
     ApplyFireAuto(gl: WebGL2RenderingContext, pos: Vector2, size: number) {
         const curInputPos = pos;
-        const curInputDir = { x: 1, y: 1 };
 
-        const curSourceIndex = this.CurrentFireTextureIndex;
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[curSourceIndex]);
+        //BurningSurface.Reset(gl);
+
+        //this.BindFireRT(gl);
+        //const curSourceIndex = this.CurrentFireTextureIndex;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[0]);
         gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
-        this.ApplyFirePass.Execute(gl, curInputPos, MathVector2Normalize(curInputDir), size, 1.5, false);
-    } */
+
+        /* Set up blending */
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.MAX);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        this.ApplyFirePass.Execute(
+            gl,
+            { x: curInputPos.x, y: curInputPos.y },
+            { x: 1, y: 0 },
+            { x: size, y: size },
+            100.0,
+            true,
+            false,
+            false,
+        );
+        gl.disable(gl.BLEND);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[1]);
+        gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
+
+        /* Set up blending */
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.MAX);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        this.ApplyFirePass.Execute(
+            gl,
+            { x: curInputPos.x, y: curInputPos.y },
+            { x: 0, y: 1 },
+            { x: size, y: size },
+            100.0,
+            true,
+            false,
+            false,
+        );
+        gl.disable(gl.BLEND);
+    }
 
     UpdateFire(gl: WebGL2RenderingContext) {
         const curSourceIndex = this.CurrentFireTextureIndex;
@@ -769,9 +821,11 @@ export class GBurningSurface {
         gl.bindTexture(gl.TEXTURE_2D, this.RoughnessTexture);
         gl.uniform1i(this.VisualizerUniformParametersLocationList.RoughnessTexture, 11);
 
-        gl.activeTexture(gl.TEXTURE0 + 12);
-        gl.bindTexture(gl.TEXTURE_2D, this.SurfaceMaterialColorTexture);
-        gl.uniform1i(this.VisualizerUniformParametersLocationList.SurfaceMaterialColorTexture, 12);
+        if (this.SurfaceMaterialColorTexture !== null) {
+            gl.activeTexture(gl.TEXTURE0 + 12);
+            gl.bindTexture(gl.TEXTURE_2D, this.SurfaceMaterialColorTexture);
+            gl.uniform1i(this.VisualizerUniformParametersLocationList.SurfaceMaterialColorTexture, 12);
+        }
 
         gl.activeTexture(gl.TEXTURE0 + 13);
         gl.bindTexture(gl.TEXTURE_2D, this.NormalsTexture);
@@ -913,9 +967,11 @@ export class GBurningSurface {
         gl.bindTexture(gl.TEXTURE_2D, this.RoughnessTexture);
         gl.uniform1i(this.VisualizerExportUniformParametersLocationList.RoughnessTexture, 11);
 
-        gl.activeTexture(gl.TEXTURE0 + 12);
-        gl.bindTexture(gl.TEXTURE_2D, this.SurfaceMaterialColorTexture);
-        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.SurfaceMaterialColorTexture, 12);
+        if (this.SurfaceMaterialColorTexture !== null) {
+            gl.activeTexture(gl.TEXTURE0 + 12);
+            gl.bindTexture(gl.TEXTURE_2D, this.SurfaceMaterialColorTexture);
+            gl.uniform1i(this.VisualizerUniformParametersLocationList.SurfaceMaterialColorTexture, 12);
+        }
 
         gl.activeTexture(gl.TEXTURE0 + 13);
         gl.bindTexture(gl.TEXTURE_2D, this.NormalsTexture);

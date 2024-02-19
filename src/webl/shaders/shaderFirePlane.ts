@@ -971,9 +971,12 @@ export function GetShaderSourceFireVisualizerPS() {
 				//Surface Material
 				surfaceColor = firePlaneImageTexture.rgb;
 
+				#if 0
 				vec3 surfaceMaterialColor = texture(SurfaceMaterialColorTexture, materialSamplingUV.xy).rgb;
 				surfaceMaterialColor = min(vec3(1.0), surfaceMaterialColor *= 3.0f);
-				//surfaceMaterialColor = vec3(1.0);
+				#else
+				vec3 surfaceMaterialColor = vec3(1.0);
+				#endif
 				surfaceColor.rgb = mix(surfaceColor.rgb, surfaceMaterialColor.rgb, roughness * ImageMixRoughnessScale);
 			}
 
