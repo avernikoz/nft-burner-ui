@@ -28,6 +28,7 @@ import BurnerLogoMobileIcon from "../../assets/svg/burnerLogoMobile.svg";
 import { GAudioEngine } from "../../webl/audioEngine";
 import { Level } from "../../components/Level/Level";
 import { useUserLevel } from "../../context/UserLevelContext";
+import { MainLevelContainer } from "../../components/Level/Level.styled";
 import { BetaContainer, BetaText } from "../../components/Header/Header";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
@@ -129,6 +130,22 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
         };
     }, [NftController, NftController.setNftStatus]);
 
+    const isBurningNFTComplete = showBurnedScreen && !showConnectWalletScreen;
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        setIsVisible(isBurningNFTComplete);
+
+        // Hide the container after 5 seconds
+        if (isBurningNFTComplete) {
+            const timeoutId = setTimeout(() => {
+                setIsVisible(false);
+            }, 5000);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [isBurningNFTComplete]);
+
     return (
         <div className="App">
             <HeaderAppContainer>
@@ -147,7 +164,10 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                         setShowUI(false);
                     }}
                 />
-                <Level level={level} points={points} />
+
+                <MainLevelContainer $isVisible={isVisible}>
+                    <Level showTooltip={false} level={level} points={points} showLevelText={true} levelSize={200} />
+                </MainLevelContainer>
             </HeaderAppContainer>
             {showUI && !showBurnedScreen && !showConnectWalletScreen && (
                 <BodyContainer $showBackground={true}>
@@ -175,7 +195,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                     </div>
                 </BodyContainer>
             )}
-            {showBurnedScreen && !showConnectWalletScreen && <BurningComplete />}
+            {isBurningNFTComplete && <BurningComplete />}
 
             <Footer setAboutPageActive={setAboutPageActive} />
         </div>
