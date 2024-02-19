@@ -13,6 +13,7 @@ import { NftProvider } from "./components/NftProvider/NftProvider";
 import { ToastProvider } from "./components/ToastProvider/ToastProvider";
 
 import { configureSentry } from "./utils/configureSentry";
+import { UserLevelProvider } from "./context/UserLevelContext";
 import { REACT_APP_GOOGLE_TAG_MANAGER_ID } from "./config/analytics.config";
 
 // Sentry init
@@ -35,7 +36,9 @@ root.render(
                 <EVMWalletContext>
                     <SuiWalletContext>
                         <NftProvider>
-                            <App />
+                            <UserLevelProvider>
+                                <App />
+                            </UserLevelProvider>
                         </NftProvider>
                     </SuiWalletContext>
                 </EVMWalletContext>

@@ -1,11 +1,14 @@
 import { GAudioEngine } from "./audioEngine";
+import { GBurningSurfaceExport } from "./firePlane";
+import { GTool } from "./renderingMain";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
+import { EBurningTool } from "./tools";
 
 export class GReactGLBridgeFunctions {
     static OnStartButtonPressed() {
         GRenderingStateMachine.SetRenderingState(ERenderingState.Intro, false);
-        // GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady, false);
+        //GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady, false);
     }
 
     static OnAboutButtonPressed() {
@@ -13,8 +16,8 @@ export class GReactGLBridgeFunctions {
     }
 
     static GetLoadingProgressParameterNormalised() {
-        if (GTexturePool.NumPendingTextures > 0 && GTexturePool.NumTexturesInPool > 0) {
-            return 1.0 - GTexturePool.NumPendingTextures / GTexturePool.NumTexturesInPool;
+        if (GTexturePool.NumPendingHighPriorityTextures > 0 && GTexturePool.NumTexturesInPool > 0) {
+            return 1.0 - GTexturePool.NumPendingHighPriorityTextures / GTexturePool.NumTexturesInPool;
         } else {
             return null;
         }
@@ -38,5 +41,28 @@ export class GReactGLBridgeFunctions {
 
     static OnBurnMore() {
         GRenderingStateMachine.OnBurnMoreButtonPress();
+    }
+
+    static GetSharePopupBurnImg(): string {
+        return GBurningSurfaceExport.GetExportUrl();
+    }
+
+    static OnInstrumentClick(instrument: "laser" | "thunder" | "lighter"): void {
+        switch (instrument) {
+            case "laser":
+                GTool.ENewAssignedToolType = EBurningTool.Laser;
+                break;
+            case "lighter":
+                GTool.ENewAssignedToolType = EBurningTool.Lighter;
+                break;
+            case "thunder":
+                GTool.ENewAssignedToolType = EBurningTool.Thunder;
+                break;
+
+            default:
+                break;
+        }
+
+        GTool.bNewToolAssignedThisFrame = true;
     }
 }

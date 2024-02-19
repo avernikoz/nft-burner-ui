@@ -25,6 +25,7 @@ import { NftScheduleDialog } from "./components/NftScheduleDialog/NftScheduleDia
 import { Tooltip } from "primereact/tooltip";
 import { ReactComponent as InfoIcon } from "../../assets/svg/infoIcon.svg";
 import { useNetworkFee } from "../../hooks/useNetworkFee";
+import { GAudioEngine } from "../../webl/audioEngine";
 
 export const Control = () => {
     const [burnPopupVisible, setBurnPopupVisible] = useState<boolean>(false);
@@ -52,7 +53,11 @@ export const Control = () => {
                         className="burnButton mainButton width35"
                         onClick={() => {
                             ReactGA.event("burn_button_open_popup_button_pressed");
+                            GAudioEngine.getInstance().PlayUIClickSound();
                             setBurnPopupVisible(true);
+                        }}
+                        onMouseEnter={() => {
+                            GAudioEngine.getInstance().PlayUIHoverSound();
                         }}
                         disabled={!nft}
                     >
@@ -63,7 +68,11 @@ export const Control = () => {
                         className="shareButton mainButton width65"
                         onClick={() => {
                             ReactGA.event("schedule_button_open_popup_button_pressed");
+                            GAudioEngine.getInstance().PlayUIClickSound();
                             setSchedulePopupVisible(true);
+                        }}
+                        onMouseEnter={() => {
+                            GAudioEngine.getInstance().PlayUIHoverSound();
                         }}
                         disabled={!nft}
                     >

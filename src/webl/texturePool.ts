@@ -1,4 +1,4 @@
-import { APP_ENVIRONMENT } from "../config/config";
+import { RTexture } from "./texture";
 
 const KTX_HEADER_LEN = 12 + 13 * 4; // identifier + header elements (not including key value meta-data pairs)
 class KTXMetaData {
@@ -90,7 +90,7 @@ class KTXMetaData {
 }
 
 export class GTexturePool {
-    static NumPendingTextures = 0;
+    static NumPendingHighPriorityTextures = 0;
 
     static SizeBytes = 0.0; //Size loaded from files
 
@@ -118,10 +118,8 @@ export class GTexturePool {
     }
 
     static AreAllTexturesLoaded(): boolean {
-        if (GTexturePool.NumPendingTextures > 0) {
-            if (APP_ENVIRONMENT === "development") {
-                console.log("Num Pending Textures: " + GTexturePool.NumPendingTextures);
-            }
+        if (GTexturePool.NumPendingHighPriorityTextures > 0) {
+            console.log("Num Pending Textures" + GTexturePool.NumPendingHighPriorityTextures);
             return false;
         } else {
             return true;
@@ -137,6 +135,8 @@ export class GTexturePool {
         texture: WebGLTexture,
         textureBaseName: string,
         bGenerateMips = false,
+        bHighPriorityTexture = false,
+        pTexture: RTexture | null = null,
     ) {
         let bImageLoaded = false;
         const bSingleChannelTexture = textureBaseName.endsWith("_R8");
@@ -168,7 +168,12 @@ export class GTexturePool {
                             );
                         }
 
-                        GTexturePool.NumPendingTextures -= 1;
+                        if (bHighPriorityTexture) {
+                            GTexturePool.NumPendingHighPriorityTextures -= 1;
+                        }
+                        if (pTexture) {
+                            pTexture.bLoaded = true;
+                        }
                         return;
                     }
                 } catch {}
@@ -213,7 +218,12 @@ export class GTexturePool {
                         const blob = await fetchRes.blob();
                         const image = await loadImageAsync(URL.createObjectURL(blob));
                         uploadImage(image);
-                        GTexturePool.NumPendingTextures -= 1;
+                        if (bHighPriorityTexture) {
+                            GTexturePool.NumPendingHighPriorityTextures -= 1;
+                        }
+                        if (pTexture) {
+                            pTexture.bLoaded = true;
+                        }
                         const contentLength = fetchRes.headers.get("Content-Length");
                         if (contentLength) {
                             const fileSizeBytes = parseInt(contentLength, 10);
@@ -245,10 +255,15 @@ export class GTexturePool {
         textureBaseName: string,
         bGenerateMips = false,
         bUseTrilinearFilter = false,
+        bHighPriorityTexture = false,
+        pTexture: RTexture | null = null,
     ): WebGLTexture {
         //Check hash map
         const existingTexture = GTexturePool.TextureMap.get(textureBaseName);
         if (existingTexture) {
+            if (pTexture) {
+                pTexture.bLoaded = true;
+            }
             return existingTexture;
         }
 
@@ -258,8 +273,10 @@ export class GTexturePool {
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
 
-        GTexturePool.NumPendingTextures += 1;
-        GTexturePool.LoadTextureImageAsync(gl, texture, textureBaseName, bGenerateMips);
+        if (bHighPriorityTexture) {
+            GTexturePool.NumPendingHighPriorityTextures += 1;
+        }
+        GTexturePool.LoadTextureImageAsync(gl, texture, textureBaseName, bGenerateMips, bHighPriorityTexture, pTexture);
 
         //Move into the beginning
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -433,11 +450,16 @@ export class GTexturePool {
 
     static SubmitDebugUI(datGui: dat.GUI) {
         const folder = datGui.addFolder("Texture Pool");
-        folder.open();
+        //folder.open();
 
         folder.add(GTexturePool, "SizeMegaBytes").name("SizeMb").step(0.01).listen();
         folder.add(GTexturePool, "SizeMegaBytesGPU").name("SizeMbGPU").step(0.01).listen();
         folder.add(GTexturePool, "NumTexturesInPool").name("NumTextures").step(1).listen();
         folder.add(GTexturePool, "bLogTexturesInPool").name("Log All Textures").listen();
+    }
+
+    static LoadGlobalTextures(gl: WebGL2RenderingContext) {
+        GTexturePool.CreateTexture(gl, false, "perlinNoise1024", false, false, true);
+        GTexturePool.CreateTexture(gl, false, "perlinNoise512", false, false, true);
     }
 }

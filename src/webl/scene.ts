@@ -81,8 +81,8 @@ export const GSceneStateDescsArray: SceneStateDescription[] = new Array(ERenderi
 export function InitializeSceneStateDescsArr() {
     //Preloader
     GSceneStateDescsArray[ERenderingState.Preloading] = {
-        CameraPosition: { x: -2.6, y: 0.0, z: -3.61 },
-        SpotlightPosition: { x: -5.0, y: 0.94, z: -2.5 },
+        CameraPosition: { x: -4.75, y: 0.0, z: -3.61 },
+        SpotlightPosition: { x: -7.0, y: 0.94, z: -2.5 },
         SpotlightFocusPosition: { x: 0, y: 0.25, z: 1.5 },
         SpotlightSize: { x: GSceneDesc.Spotlight.SizeScale.x, y: 3.5 },
         FloorHeight: -5,
@@ -92,7 +92,7 @@ export function InitializeSceneStateDescsArr() {
     //Intro
     GSceneStateDescsArray[ERenderingState.Intro] = {
         CameraPosition: { x: -1.6, y: 0.0, z: -3.61 },
-        SpotlightPosition: { x: -2.88, y: 1.57, z: -1.71 },
+        SpotlightPosition: { x: -2.88, y: MathLerp(0.3, 1.7, Math.random()), z: MathLerp(-1.5, -2.5, Math.random()) },
         SpotlightFocusPosition: { x: 0, y: 0.5, z: 1.5 },
         SpotlightSize: { x: GSceneDesc.Spotlight.SizeScale.x, y: GSceneDesc.Spotlight.SizeScale.y },
         FloorHeight: -1,
@@ -112,7 +112,7 @@ export function InitializeSceneStateDescsArr() {
     //Burn
     GSceneStateDescsArray[ERenderingState.BurningReady] = {
         CameraPosition: { x: 0, y: 0.0, z: -4.0 },
-        SpotlightPosition: { x: 0.0, y: MathLerp(1.75, 3, Math.random()), z: -1.0 },
+        SpotlightPosition: { x: 0.0, y: MathLerp(1.75, 3, Math.random()), z: MathLerp(-0.75, -1.75, Math.random()) },
         SpotlightFocusPosition: { x: 0.0, y: 0.0, z: 1.5 },
         SpotlightSize: { x: GSceneDesc.Spotlight.SizeScale.x, y: GSceneDesc.Spotlight.SizeScale.y },
         FloorHeight: -1.75,
@@ -211,14 +211,14 @@ export function GSceneDescSubmitDebugUI(datGui: dat.GUI) {
     {
         const folder = datGui.addFolder("SceneDesc");
         //folder.open();
-        /* folder.add(GSceneDesc.FirePlane.PositionOffset, "x", -2, 5).name("PlanePosX").step(0.01);
-        folder.add(GSceneDesc.FirePlane.PositionOffset, "y", -3, 10).name("PlanePosY").step(0.01);
-        folder.add(GSceneDesc.FirePlane.PositionOffset, "z", -10, 2).name("PlanePosZ").step(0.01); */
+        folder.add(GSceneDesc.FirePlane.PositionOffset, "x", -2, 5).name("PlanePosX").step(0.01).listen();
+        folder.add(GSceneDesc.FirePlane.PositionOffset, "y", -3, 10).name("PlanePosY").step(0.01).listen();
+        folder.add(GSceneDesc.FirePlane.PositionOffset, "z", -10, 2).name("PlanePosZ").step(0.01).listen();
         folder.add(GSceneDesc.FirePlane.OrientationEuler, "pitch", -Math.PI, Math.PI).name("pitch").step(0.01);
         folder.add(GSceneDesc.FirePlane.OrientationEuler, "yaw", -Math.PI, Math.PI).name("yaw").step(0.01);
         folder.add(GSceneDesc.FirePlane.OrientationEuler, "roll", -Math.PI, Math.PI).name("roll").step(0.01);
 
-        folder.add(GSceneDesc.Camera.Position, "x", -2, 5).name("CamPosX").step(0.01).listen();
+        folder.add(GSceneDesc.Camera.Position, "x", -5, 5).name("CamPosX").step(0.01).listen();
         folder.add(GSceneDesc.Camera.Position, "y", -3, 10).name("CamPosY").step(0.01).listen();
         folder.add(GSceneDesc.Camera.Position, "z", -10, 2).name("CamPosZ").step(0.01).listen();
         folder.add(GSceneDesc.Camera, "ZoomScale", 0, 5).name("Zoom").step(0.01).listen();

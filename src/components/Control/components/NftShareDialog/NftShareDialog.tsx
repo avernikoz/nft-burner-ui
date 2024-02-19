@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { INft } from "../../../../utils/types";
 import {
     DialogImageContainer,
@@ -13,6 +13,7 @@ import { ReactComponent as TwitterIcon } from "../../../../assets/svg/twitter.sv
 import { SocialIconContainer, SocialMainText, SocialTitleText } from "../NftScheduleDialog/NftScheduleDialog.styled";
 // import { ConfirmBurningButton } from "../../../ConfirmBurningButton/ConfirmBurningButton";
 import { generateTwitterIntentShare } from "../../../../utils/generateTwitterIntentShareText";
+import { GReactGLBridgeFunctions } from "../../../../webl/reactglBridge";
 
 export const NftShareDialog = ({
     nft,
@@ -36,6 +37,11 @@ export const NftShareDialog = ({
         };
     }, [visible]);
 
+    const burnedImage = useMemo(() => {
+        return GReactGLBridgeFunctions.GetSharePopupBurnImg();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [nft.id, nft.name, nft.network]);
+
     return (
         <StyledDialog
             header="Share on social media"
@@ -47,7 +53,7 @@ export const NftShareDialog = ({
         >
             <NftBurnDialogContainer>
                 <DialogImageContainer>
-                    <NftBurnDialogImg crossOrigin="anonymous" src={nft.logoURI} alt={nft.name} />
+                    <NftBurnDialogImg crossOrigin="anonymous" src={burnedImage} alt={nft.name} />
                 </DialogImageContainer>
                 <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
                     <div>

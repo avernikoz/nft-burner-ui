@@ -109,7 +109,7 @@ function scGetVectorFieldForce(scale: number) {
             scale +
             /* glsl */ `);
 			//randVel = normalize(randVel);
-			randVel = (randVel) * RandVelocityScale /* * 0.5 */;
+			randVel = (randVel) * RandVelocityScale * 2.0 /* * 0.5 */;
 
 
 			//LQ Noise
@@ -223,7 +223,7 @@ export function GetParticleUpdateShaderVS(
 	  //check if particle was spawned at least once
 	  bool IsParticleAlive()
 	  {
-		  const vec2 BoundsStart = vec2(-5.f, -5.f);//Make it -5 just to be sure
+		  const vec2 BoundsStart = vec2(-10.f, -10.f);//Make it -5 just to be sure
 		  return ((inPosition.x >= BoundsStart.x) && (inPosition.y >= BoundsStart.y)); 
 	  }
   
@@ -261,7 +261,7 @@ export function GetParticleUpdateShaderVS(
 
 			  //Get Cur Fire based on Pos
 			  vec2 fireUV = (inDefaultPosition + 1.f) * 0.5f;
-			  float curFire = texture(FireTexture, fireUV.xy).r;
+			  float curFire = textureLod(FireTexture, fireUV.xy, 0.0).r;
 			
 			  vec2 kSpawnRange = vec2(float(` +
         spawnFireRange.x +
@@ -399,7 +399,7 @@ function scTransformBasedOnMotion(condition: boolean) {
 			{
 				velLength = min(1.0, velLength);
 				pos.y *= clamp(1.f - velLength * 0.8, 0.5f, 1.f);
-				pos.x *= (1.f + velLength * 2.0);
+				pos.x *= (1.f + velLength * 4.0);
 				
 				// Calculate the angle between the initial direction (1, 0) and the desired direction
 				float angle = atan(curVelocity.y, curVelocity.x);
@@ -511,7 +511,7 @@ export function GetParticleRenderInstancedVS(
 	
 		void main()
 		{
-			float kSizeScale = 1.f + FirePlanePositionOffset.z - CameraDesc.z;
+			float kSizeScale = 1.f + 0.0 - CameraDesc.z;
 
 			const vec2 kInitTranslate = vec2(float(` +
         initialTranslation.x +
@@ -651,7 +651,7 @@ export function GetParticleRenderInstancedVS(
   
 				//translate
 				vec2 translation = inPosition;
-				translation += FirePlanePositionOffset.xy;
+				//translation += FirePlanePositionOffset.xy;
 				translation -= CameraDesc.xy;
 				translation.xy *= CameraDesc.w;
 				translation /= kSizeScale;
@@ -715,7 +715,7 @@ function scFlameSpecificShading(bUsesTexture: boolean, artificialFlameAmount: nu
 
 		//const float ArtFlameAmount = 0.45f;//TODO:Randomise this
 		t *= float(` +
-        MathLerp(0.25, 0.75, Math.random()) +
+        MathLerp(0.2, 0.95, Math.random()) +
         /* glsl */ `);
 
 		colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 5.0f, t);
@@ -791,22 +791,53 @@ function scEmbersSpecificShading() {
 		
 		curFire = 1.0;
 
-		vec3 colorBright = vec3(curFire * (1.0 + (4.0 * (1. - t))), curFire * 0.75, curFire * 0.1);
+		vec3 colorBright = vec3(curFire * (1.0 + (14.0 * (1. - t))), curFire * 0.75, curFire * 0.1);
 		vec3 colorLow = vec3(curFire, curFire * 0.75, curFire * 0.5);
 
 		colorFinal.rgb = mix(colorBright, colorLow , t);
 
 		colorFinal.rgb *= 2.f * (1.0 - t);
 
-		/* if(t < 0.5f)
+		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		s *= 2.f;
+		if(s > 0.5f)
 		{
-			colorFinal.rgb = colorBright;
+			s += 0.25f;
+			//s = 1.f;
 		}
 		else
 		{
-			colorFinal.rgb = mix(colorBright, colorLow, (t - 0.5f) * 2.f);
-		} */
+			s -= 0.25f;
+			//s = 0.f;
+		}
+		//s += 0.15f;
+		s = (1.f - clamp(s, 0.f, 1.f));
+		colorFinal.rgb *= s;
+		colorFinal.rgb *= 2.25f;
+		//colorFinal.rgb *= 50.f;
+		`;
+}
+
+function scEmbersImpactSpecificShading() {
+    return /* glsl */ `
+		/* vec3 colorBright = vec3(1.f, 0.5f, 0.1f) * 1.5f;
+		vec3 colorLow = vec3(0.5f, 0.5f, 0.5f); */
+
+		float t = interpolatorAge;
+		t = CircularFadeOut(clamp(t, 0.f, 1.f));
+		float curFire = (1.f - t) * 10.f;
 		
+		curFire = 1.0;
+
+		vec3 colorBright = vec3(0.8, 0.7, 1.0) * curFire;
+		vec3 colorLow = vec3(0.7, 0.4, 1.0) * curFire;
+
+		colorFinal.rgb = mix(colorBright, colorLow , interpolatorTexCoords.x);
+
+		colorFinal.rgb *= 2.f * (1.0 - t);
+		
+		colorFinal.rgb *= 10.0;
+
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		s *= 2.f;
 		if(s > 0.5f)
@@ -972,6 +1003,8 @@ function scGetBasedOnShadingMode(
             return scFlameSpecificShading(bUsesTexture, artificialFlameAmount);
         case EParticleShadingMode.Embers:
             return scEmbersSpecificShading();
+        case EParticleShadingMode.EmbersImpact:
+            return scEmbersImpactSpecificShading();
         case EParticleShadingMode.Smoke:
             return scSmokeSpecificShading(alphaScale);
         case EParticleShadingMode.AfterBurnSmoke:

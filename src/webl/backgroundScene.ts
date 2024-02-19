@@ -1,3 +1,4 @@
+import { GCameraShakeController } from "./controller";
 import { GUserInputDesc } from "./input";
 import { CreateTextureRT } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
@@ -18,11 +19,12 @@ import {
     GetShaderSourceGenericSpriteRenderVS,
     GetShaderSourceGenericSpriteRenderPS,
     GetShaderSourceGlowRenderPS,
+    GetShaderSourceStampRenderPS,
 } from "./shaders/shaderBackgroundScene";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { GetShaderSourceUISpriteRenderVS } from "./shaders/shaderUI";
 import { GTexturePool } from "./texturePool";
-import { GTime, MathLerp, MathMapToRange } from "./utils";
+import { GTime, MathClamp, MathLerp, MathMapToRange } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -35,6 +37,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
         ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
         ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
+        ColorTextureMasked: gl.getUniformLocation(shaderProgram, "ColorTextureMasked"),
         NormalTexture: gl.getUniformLocation(shaderProgram, "NormalTexture"),
         RoughnessTexture: gl.getUniformLocation(shaderProgram, "RoughnessTexture"),
         SpotlightTexture: gl.getUniformLocation(shaderProgram, "SpotlightTexture"),
@@ -47,6 +50,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         Time: gl.getUniformLocation(shaderProgram, "Time"),
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
         BloomTexture: gl.getUniformLocation(shaderProgram, "BloomTexture"),
+        MaskLerpParam: gl.getUniformLocation(shaderProgram, "MaskLerpParam"),
         //Lights
         FireTextureDownsampled: gl.getUniformLocation(shaderProgram, "FireTextureDownsampled"),
         PointLightsTexture: gl.getUniformLocation(shaderProgram, "PointLightsTexture"),
@@ -56,6 +60,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         Position: gl.getUniformLocation(shaderProgram, "Position"),
         Orientation: gl.getUniformLocation(shaderProgram, "Orientation"),
         Scale: gl.getUniformLocation(shaderProgram, "Scale"),
+        ColorScale: gl.getUniformLocation(shaderProgram, "ColorScale"),
 
         ToolPosition: gl.getUniformLocation(shaderProgram, "ToolPosition"),
         ToolRadius: gl.getUniformLocation(shaderProgram, "ToolRadius"),
@@ -210,6 +215,8 @@ export class RSpotlightRenderPass {
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
+    LightFlareSizeDefault = { x: 0.5 + Math.random(), y: 0.5 + Math.random() };
+
     RenderFlare(gl: WebGL2RenderingContext) {
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
@@ -224,8 +231,12 @@ export class RSpotlightRenderPass {
             GSceneDesc.Camera.ZoomScale,
         );
         gl.uniform1f(this.UniformParametersLocationListFlare.ScreenRatio, GScreenDesc.ScreenRatio);
-        const flareSize = { x: 0.5, y: 0.5 };
-        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, flareSize.x, flareSize.y);
+
+        gl.uniform2f(
+            this.UniformParametersLocationListFlare.SpotlightScale,
+            this.LightFlareSizeDefault.x,
+            this.LightFlareSizeDefault.y,
+        );
         gl.uniform3f(
             this.UniformParametersLocationListFlare.SpotlightPos,
             GSceneDesc.Spotlight.Position.x,
@@ -286,7 +297,13 @@ export class RBurntStampVisualizer {
 
     UniformParametersLocationList;
 
+    ShaderProgramExport;
+
+    UniformParametersLocationListExport;
+
     ColorTexture;
+
+    ColorTextureMasked;
 
     Position = { x: 0.0, y: 0.0, z: 0.0 };
 
@@ -301,20 +318,33 @@ export class RBurntStampVisualizer {
         this.ShaderProgram = CreateShaderProgramVSPS(
             gl,
             GetShaderSourceGenericSpriteRenderVS(),
-            GetShaderSourceGenericSpriteRenderPS(),
+            GetShaderSourceStampRenderPS(),
         );
 
         //Shader Parameters
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
 
-        this.ColorTexture = GTexturePool.CreateTexture(gl, false, "burntSign2");
+        //Create Shader Program
+        this.ShaderProgramExport = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceGenericSpriteRenderVS(),
+            GetShaderSourceGenericSpriteRenderPS(),
+        );
+
+        //Shader Parameters
+        this.UniformParametersLocationListExport = GetUniformParametersList(gl, this.ShaderProgramExport);
+
+        this.ColorTextureMasked = GTexturePool.CreateTexture(gl, false, "burntSignMasked1_R8");
+        this.ColorTexture = GTexturePool.CreateTexture(gl, false, "burntSign1_R8");
 
         const offsetMax = 0.05;
         this.Position.x = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);
         this.Position.y = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);
 
-        const rollOffsetMax = Math.PI / 4;
-        this.FinalOrientation = MathMapToRange(Math.random(), 0.0, 1.0, -rollOffsetMax, rollOffsetMax);
+        this.FinalOrientation = MathMapToRange(Math.random(), 0.0, 1.0, -this.RollOffsetMax, this.RollOffsetMax);
+
+        this.ColorScale = { r: 0.0, g: Math.max(0.5, Math.random()), b: Math.max(0.5, Math.random()) };
+        this.ResetAnimation();
     }
 
     Render(gl: WebGL2RenderingContext) {
@@ -332,12 +362,33 @@ export class RBurntStampVisualizer {
         );
         gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
         gl.uniform1f(this.UniformParametersLocationList.Scale, this.Scale);
-        gl.uniform3f(this.UniformParametersLocationList.Position, this.Position.x, this.Position.y, this.Position.z);
+        gl.uniform3f(
+            this.UniformParametersLocationList.Position,
+            this.Position.x + GSceneDesc.FirePlane.PositionOffset.x,
+            this.Position.y + GSceneDesc.FirePlane.PositionOffset.y,
+            this.Position.z + GSceneDesc.FirePlane.PositionOffset.z,
+        );
         gl.uniform3f(
             this.UniformParametersLocationList.Orientation,
             this.Orientation.pitch,
             this.Orientation.yaw,
             this.Orientation.roll,
+        );
+        /* const colorScale = { r: 1.0, g: 1.0, b: 1.0 };
+        if (this.AnimationT >= 1.0) {
+            colorScale.r = 2.0 * 1 + this.ColorGlowT * 0.5;
+            colorScale.g = 1.25;
+        }
+		*/
+        gl.uniform3f(
+            this.UniformParametersLocationList.ColorScale,
+            this.ColorScale.r * this.ColorGlowT,
+            this.ColorScale.g * this.ColorGlowT,
+            this.ColorScale.b * this.ColorGlowT,
+        );
+        gl.uniform1f(
+            this.UniformParametersLocationList.MaskLerpParam,
+            MathClamp((this.ColorGlowT - 1.0) * 0.25, 0.0, 0.99),
         );
 
         //Textures
@@ -345,10 +396,18 @@ export class RBurntStampVisualizer {
         gl.bindTexture(gl.TEXTURE_2D, this.ColorTexture);
         gl.uniform1i(this.UniformParametersLocationList.ColorTexture, 1);
 
+        gl.activeTexture(gl.TEXTURE0 + 2);
+        gl.bindTexture(gl.TEXTURE_2D, this.ColorTextureMasked);
+        gl.uniform1i(this.UniformParametersLocationList.ColorTextureMasked, 2);
+
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
     AnimationT = 0.0;
+
+    ColorGlowT = 1.0;
+
+    ColorScale;
 
     AnimationSpeed = 5.0;
 
@@ -356,18 +415,99 @@ export class RBurntStampVisualizer {
 
     FinalOrientation = 0.0;
 
+    StartorientationOffset = Math.PI * (1 + Math.random());
+
+    RollOffsetMax = Math.PI / 16;
+
     AnimationFinishedEventProcessed = false;
+
+    CameraShakeFinishedEventProcessed = false;
+
+    StampPower = Math.random() * 0.25;
 
     RunAnimation() {
         if (this.AnimationT <= 1.0) {
             this.Position.z = MathLerp(this.PositionStart, 0.0, this.AnimationT);
             this.Orientation.roll = MathLerp(
-                this.FinalOrientation - Math.PI / 2,
+                this.FinalOrientation - this.StartorientationOffset,
                 this.FinalOrientation,
                 this.AnimationT,
             );
+            //this.Position.x = MathLerp(-2.0, 0, this.AnimationT);
+        } else if (this.AnimationT <= 1.5) {
+            const x = this.AnimationT - 1.0;
+            this.ColorGlowT = 1 + Math.sqrt(x);
+            GSceneDesc.FirePlane.PositionOffset.z =
+                (0.5 * Math.sin(2 * Math.PI * x * 2 - 1.5) + 0.5) * (0.1 + this.StampPower);
 
-            this.AnimationT += GTime.Delta * this.AnimationSpeed;
+            if (!this.CameraShakeFinishedEventProcessed) {
+                GCameraShakeController.ShakeCameraFast();
+                this.CameraShakeFinishedEventProcessed = true;
+            }
+            //...
+        } else if (this.ColorGlowT <= 5.0) {
+            this.ColorGlowT += GTime.Delta * 7.0;
+            GSceneDesc.FirePlane.PositionOffset.z = 0.0;
+        }
+
+        this.AnimationT += GTime.Delta * this.AnimationSpeed;
+    }
+
+    SetStateAnimationFinished() {
+        this.Position.z = 0.0;
+        this.Orientation.roll = this.FinalOrientation;
+    }
+
+    ResetAnimation() {
+        this.AnimationT = 0.0;
+        this.ColorGlowT = 1.0;
+        this.AnimationFinishedEventProcessed = false;
+        this.FinalOrientation = MathMapToRange(Math.random(), 0.0, 1.0, -this.RollOffsetMax, this.RollOffsetMax);
+        this.PositionStart = MathLerp(-5, -10, Math.random());
+        this.ColorScale = { r: 0.0, g: Math.max(0.5, Math.random()), b: Math.max(0.5, Math.random()) };
+        this.CameraShakeFinishedEventProcessed = false;
+    }
+
+    ExportStampHeightOffset = Math.random() * 0.05;
+
+    RenderExport(gl: WebGL2RenderingContext) {
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.ShaderProgramExport);
+
+        //Constants
+        gl.uniform4f(this.UniformParametersLocationListExport.CameraDesc, 0.0, 0.0, 0.0, 1.0);
+        gl.uniform1f(this.UniformParametersLocationListExport.ScreenRatio, 1.0);
+
+        gl.uniform1f(this.UniformParametersLocationListExport.Scale, 0.75);
+
+        const position = { x: -0.75, y: -0.885 + this.ExportStampHeightOffset, z: 0.0 };
+
+        gl.uniform3f(this.UniformParametersLocationListExport.Position, position.x, position.y, position.z);
+        gl.uniform3f(
+            this.UniformParametersLocationListExport.Orientation,
+            this.Orientation.pitch,
+            this.Orientation.yaw,
+            MathLerp(this.Orientation.roll + 0.2, this.Orientation.roll - 0.5, Math.random()),
+        );
+
+        //Textures
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this.ColorTexture);
+        gl.uniform1i(this.UniformParametersLocationListExport.ColorTexture, 1);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    SubmitDebugUI(datGui: dat.GUI) {
+        {
+            const folder = datGui.addFolder("Burnt Stamp");
+            //folder.open();
+
+            folder.add(this, "AnimationT", 0, 20).step(0.01).listen();
+            folder.add(this.Position, "x", -2, 5).name("PosX").step(0.01).listen();
+            folder.add(this.Position, "y", -3, 10).name("PosY").step(0.01).listen();
+            folder.add(this.Position, "z", -10, 2).name("PosZ").step(0.01).listen();
         }
     }
 }
@@ -576,7 +716,13 @@ export class RRenderGlow {
 
         //Constants
         gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
-        gl.uniform1f(this.UniformParametersLocationList.Size, 0.25);
+        gl.uniform1f(
+            this.UniformParametersLocationList.Size,
+            1.0 *
+                (0.75 +
+                    (Math.sin(GTime.Cur * 2) * 0.5 + 0.5) * 0.5 +
+                    (Math.sin(GTime.Cur * 2 * 2.7) * 0.5 + 0.5) * 0.1),
+        );
         gl.uniform2f(
             this.UniformParametersLocationList.Position,
             GUserInputDesc.InputPosPrevViewSpace.x,
