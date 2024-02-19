@@ -27,11 +27,8 @@ import BurnerLogoMobileIcon from "../../assets/svg/burnerLogoMobile.svg";
 import { GAudioEngine } from "../../webl/audioEngine";
 import { Level } from "../../components/Level/Level";
 import { useUserLevel } from "../../context/UserLevelContext";
-<<<<<<< HEAD
 import { MainLevelContainer } from "../../components/Level/Level.styled";
-=======
 import { BetaContainer, BetaText } from "../../components/Header/Header";
->>>>>>> feature/add-ui-for-instruments
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
     setAboutPageActive,
