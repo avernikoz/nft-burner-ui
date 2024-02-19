@@ -1,7 +1,6 @@
 /* Camera Control */
 
 import { GSceneDesc } from "./scene";
-import { Vector3 } from "./types";
 import { GTime } from "./utils";
 
 const GController = {

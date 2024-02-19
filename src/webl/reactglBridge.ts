@@ -1,10 +1,9 @@
-import { isHeightAndWidthProps } from "react-virtualized-auto-sizer";
 import { GAudioEngine } from "./audioEngine";
 import { GBurningSurfaceExport } from "./firePlane";
 import { GTool } from "./renderingMain";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
-import { EBurningTool, LaserTool } from "./tools";
+import { EBurningTool } from "./tools";
 
 export class GReactGLBridgeFunctions {
     static OnStartButtonPressed() {

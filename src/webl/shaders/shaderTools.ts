@@ -1,5 +1,3 @@
-import { MathLerp } from "../utils";
-
 export function GetShaderSourceSingleFlameRenderVS() {
     return /* glsl */ `#version 300 es
 	
