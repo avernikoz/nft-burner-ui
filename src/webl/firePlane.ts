@@ -1,20 +1,21 @@
-import { CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
+import { RBurntStampVisualizer } from "./backgroundScene";
+import { BindRenderTarget, CreateFramebufferWithAttachment, CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import {
+    GetShaderSourceApplyFireVS,
+    GetShaderSourceFirePlanePreProcess,
+    GetShaderSourceFireVisualizerExportPS,
+    GetShaderSourceFireVisualizerPS,
     GetShaderSourceFireVisualizerVS,
     ShaderSourceApplyFirePS,
-    ShaderSourceApplyFireVS,
     ShaderSourceFireUpdatePS,
-    GetShaderSourceFireVisualizerPS,
-    GetShaderSourceFirePlanePreProcess,
 } from "./shaders/shaderFirePlane";
 import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
-import { GUserInputDesc } from "./input";
-import { Vector2 } from "./types";
-import { GTime, MathClamp, MathGetVectorLength, MathVector2Normalize } from "./utils";
 import { GTexturePool } from "./texturePool";
+import { Vector2 } from "./types";
+import { GTime } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -26,6 +27,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         SpotlightScale: gl.getUniformLocation(shaderProgram, "SpotlightScale"),
         CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
         ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
+
         FirePlanePositionOffset: gl.getUniformLocation(shaderProgram, "FirePlanePositionOffset"),
         PointerPositionOffset: gl.getUniformLocation(shaderProgram, "PointerPositionOffset"),
         SizeScale: gl.getUniformLocation(shaderProgram, "SizeScale"),
@@ -53,6 +55,8 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         RoughnessScaleAddContrastMin: gl.getUniformLocation(shaderProgram, "RoughnessScaleAddContrastMin"),
         SurfaceMaterialColorTexture: gl.getUniformLocation(shaderProgram, "SurfaceMaterialColorTexture"),
         AfterBurnEmbersParam: gl.getUniformLocation(shaderProgram, "AfterBurnEmbersParam"),
+        bSmoothOutEdges: gl.getUniformLocation(shaderProgram, "bSmoothOutEdges"),
+        bApplyFireUseNoise: gl.getUniformLocation(shaderProgram, "bApplyFireUseNoise"),
     };
     return params;
 }
@@ -60,9 +64,15 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
 export class RApplyFireRenderPass {
     public colorTexture;
 
-    public shaderProgram;
+    public ShaderProgramMotion;
+
+    public ShaderProgram;
 
     public UniformParametersLocationList;
+
+    public UniformParametersLocationListMotion;
+
+    public NoiseTexture;
 
     constructor(gl: WebGL2RenderingContext, imageSrc: string | null) {
         //Create Texture
@@ -73,54 +83,87 @@ export class RApplyFireRenderPass {
             this.colorTexture = GTexturePool.CreateTexture(gl, false, imageSrc);
         }
 
-        this.shaderProgram = CreateShaderProgramVSPS(gl, ShaderSourceApplyFireVS, ShaderSourceApplyFirePS);
+        this.ShaderProgramMotion = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceApplyFireVS(true),
+            ShaderSourceApplyFirePS,
+        );
+        this.ShaderProgram = CreateShaderProgramVSPS(gl, GetShaderSourceApplyFireVS(false), ShaderSourceApplyFirePS);
 
         //Shader Parameters
-        this.UniformParametersLocationList = GetUniformParametersList(gl, this.shaderProgram);
+        this.UniformParametersLocationListMotion = GetUniformParametersList(gl, this.ShaderProgramMotion);
+        this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
+
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
     }
 
     Execute(
         gl: WebGL2RenderingContext,
         positionOffset: Vector2,
         velDirection: Vector2,
-        sizeScale: number,
+        sizeScale: Vector2,
         strength: number,
+        bMotionBasedTransform: boolean,
+        bSmoothOutEdges: boolean,
+        bApplyFireUseNoise: boolean,
     ) {
-        gl.useProgram(this.shaderProgram);
+        let ParametersLocationListRef = this.UniformParametersLocationListMotion;
+        if (bMotionBasedTransform) {
+            gl.useProgram(this.ShaderProgramMotion);
+        } else {
+            gl.useProgram(this.ShaderProgram);
+            ParametersLocationListRef = this.UniformParametersLocationList;
+        }
 
         //VAO
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
         //Bind Constants
         gl.uniform4f(
-            this.UniformParametersLocationList.CameraDesc,
+            ParametersLocationListRef.CameraDesc,
             GSceneDesc.Camera.Position.x,
             GSceneDesc.Camera.Position.y,
             GSceneDesc.Camera.Position.z,
             GSceneDesc.Camera.ZoomScale,
         );
-        gl.uniform1f(this.UniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform1f(ParametersLocationListRef.ScreenRatio, GScreenDesc.ScreenRatio);
         gl.uniform3f(
-            this.UniformParametersLocationList.FirePlanePositionOffset,
+            ParametersLocationListRef.FirePlanePositionOffset,
             GSceneDesc.FirePlane.PositionOffset.x,
             GSceneDesc.FirePlane.PositionOffset.y,
             GSceneDesc.FirePlane.PositionOffset.z,
         );
 
-        gl.uniform2f(this.UniformParametersLocationList.PointerPositionOffset, positionOffset.x, positionOffset.y);
-        gl.uniform1f(this.UniformParametersLocationList.SizeScale, sizeScale);
-        gl.uniform1f(this.UniformParametersLocationList.AppliedFireStrength, strength);
-        gl.uniform2f(this.UniformParametersLocationList.VelocityDir, velDirection.x, velDirection.y);
+        gl.uniform2f(ParametersLocationListRef.PointerPositionOffset, positionOffset.x, positionOffset.y);
+        gl.uniform2f(ParametersLocationListRef.SizeScale, sizeScale.x, sizeScale.y);
+        gl.uniform1f(ParametersLocationListRef.AppliedFireStrength, strength);
+        gl.uniform1f(ParametersLocationListRef.Time, GTime.Cur);
+        gl.uniform1i(ParametersLocationListRef.bSmoothOutEdges, bSmoothOutEdges ? 1 : 0);
+        gl.uniform1i(ParametersLocationListRef.bApplyFireUseNoise, bApplyFireUseNoise ? 1 : 0);
+        gl.uniform2f(ParametersLocationListRef.VelocityDir, velDirection.x, velDirection.y);
 
         //Textures
-        gl.activeTexture(gl.TEXTURE0 + 0);
-        gl.uniform1i(this.UniformParametersLocationList.ColorTexture, 0);
+        gl.activeTexture(gl.TEXTURE0 + 4);
+        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
+        gl.uniform1i(ParametersLocationListRef.ColorTexture, 4);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 }
 
-export class RFirePlanePass {
+export class GBurningSurfaceExport {
+    static SetExportUrl(url: string) {
+        GBurningSurfaceExport.ExportUrl = url;
+    }
+
+    static GetExportUrl() {
+        return GBurningSurfaceExport.ExportUrl;
+    }
+
+    private static ExportUrl: string;
+}
+
+export class GBurningSurface {
     public RenderTargetSize;
 
     public FrameBuffer;
@@ -151,9 +194,13 @@ export class RFirePlanePass {
 
     VisualizerShaderProgram: WebGLProgram;
 
+    VisualizerExportShaderProgram: WebGLProgram;
+
     ImagePreProcessShaderProgram: WebGLProgram;
 
     public VisualizerUniformParametersLocationList;
+
+    public VisualizerExportUniformParametersLocationList;
 
     VisualizerFlameColorLUT: WebGLTexture;
 
@@ -167,7 +214,7 @@ export class RFirePlanePass {
 
     NormalsTexture: WebGLTexture;
 
-    SurfaceMaterialColorTexture: WebGLTexture;
+    SurfaceMaterialColorTexture: WebGLTexture | null = null;
 
     VisualizerAfterBurnNoiseTexture: WebGLTexture;
 
@@ -180,6 +227,11 @@ export class RFirePlanePass {
     ProcessedImageTextureSize: number;
 
     AfterBurnEmbersParam = 0;
+
+    //Export
+    BurntSurfaceExportTexture;
+
+    BurntSurfaceExportTextureFBO;
 
     //Paper
 
@@ -356,15 +408,29 @@ export class RFirePlanePass {
         this.CurrentImageTextureSrc = "apeBlue";
         //this.CurrentImageTextureSrc = "punkBlue";
         //this.CurrentImageTextureSrc = "assets/example2.png";
-        this.VisualizerImageTexture = GTexturePool.CreateTexture(gl, false, this.CurrentImageTextureSrc, true, true);
+        this.VisualizerImageTexture = GTexturePool.CreateTexture(
+            gl,
+            false,
+            this.CurrentImageTextureSrc,
+            true,
+            true,
+            true,
+        );
         this.FirePlaneImagePreProcess(gl);
-        this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "ashTexture_R8", true);
+        this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "ashTexture_R8", true, false, true);
 
-        this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(gl, false, "afterBurnNoise2_R8");
+        this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(
+            gl,
+            false,
+            "afterBurnNoise2_R8",
+            true,
+            false,
+            true,
+        );
         //this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise128");
         //this.VisualizerAfterBurnNoiseTexture = CreateTexture(gl, 7, "assets/cracksNoise.png");
 
-        this.VisualizerFirePlaneNoiseTexture = GTexturePool.CreateTexture(gl, false, "fireNoise_R8");
+        this.VisualizerFirePlaneNoiseTexture = GTexturePool.CreateTexture(gl, false, "fireNoise_R8", true, false, true);
 
         const matName = `copper`;
 
@@ -409,7 +475,7 @@ export class RFirePlanePass {
         );
         this.RoughnessParams.Contrast = 1.0 + Math.random();
 
-        this.SurfaceMaterialColorTexture = GTexturePool.CreateTexture(gl, false, "oxidCopperRGH", true);
+        //this.SurfaceMaterialColorTexture = GTexturePool.CreateTexture(gl, false, "oxidCopperRGH", true);
         //this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/paperRGH.png");
 
         const matOffsetSign = { x: 1, y: 1 };
@@ -421,6 +487,30 @@ export class RFirePlanePass {
         }
         this.MaterialUVOffset.x = Math.random() * matOffsetSign.x;
         this.MaterialUVOffset.y = Math.random() * matOffsetSign.y;
+
+        //================================================ Export Shader
+
+        this.BurntSurfaceExportTexture = CreateTextureRT(
+            gl,
+            { x: this.ProcessedImageTextureSize, y: this.ProcessedImageTextureSize },
+            gl.RGBA8,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+        );
+        this.BurntSurfaceExportTextureFBO = CreateFramebufferWithAttachment(gl, this.BurntSurfaceExportTexture!);
+
+        //Create Shader Program
+        this.VisualizerExportShaderProgram = CreateShaderProgramVSPS(
+            gl,
+            ShaderSourceFullscreenPassVS,
+            GetShaderSourceFireVisualizerExportPS(),
+        );
+
+        //Shader Parameters
+        this.VisualizerExportUniformParametersLocationList = GetUniformParametersList(
+            gl,
+            this.VisualizerExportShaderProgram,
+        );
     }
 
     SubmitDebugUI(datGui: dat.GUI) {
@@ -439,13 +529,12 @@ export class RFirePlanePass {
         }
     }
 
-    ApplyFire(gl: WebGL2RenderingContext, pos: Vector2, direction: Vector2, size: number, strength: number) {
+    /* ApplyFire(gl: WebGL2RenderingContext, pos: Vector2, direction: Vector2, size: number, strength: number) {
         this.BindFireRT(gl);
 
-        /* Set up blending */
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.ONE, gl.ONE);
-        this.ApplyFirePass.Execute(gl, pos, direction, size, strength);
+        this.ApplyFirePass.Execute(gl, pos, direction, size, strength, false);
         gl.disable(gl.BLEND);
     }
 
@@ -467,15 +556,52 @@ export class RFirePlanePass {
         this.ApplyFire(gl, curInputPos, MathVector2Normalize(curInputDir), sizeScale, 0.5);
     }
 
+     */
+
     ApplyFireAuto(gl: WebGL2RenderingContext, pos: Vector2, size: number) {
         const curInputPos = pos;
-        const curInputDir = { x: 1, y: 1 };
 
-        const curSourceIndex = this.CurrentFireTextureIndex;
-        //Raster particle to current fire texture
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[curSourceIndex]);
+        //BurningSurface.Reset(gl);
+
+        //this.BindFireRT(gl);
+        //const curSourceIndex = this.CurrentFireTextureIndex;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[0]);
         gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
-        this.ApplyFirePass.Execute(gl, curInputPos, MathVector2Normalize(curInputDir), size, 1.5);
+
+        /* Set up blending */
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.MAX);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        this.ApplyFirePass.Execute(
+            gl,
+            { x: curInputPos.x, y: curInputPos.y },
+            { x: 1, y: 0 },
+            { x: size, y: size },
+            100.0,
+            true,
+            false,
+            false,
+        );
+        gl.disable(gl.BLEND);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[1]);
+        gl.viewport(0, 0, this.RenderTargetSize.x, this.RenderTargetSize.y);
+
+        /* Set up blending */
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.MAX);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        this.ApplyFirePass.Execute(
+            gl,
+            { x: curInputPos.x, y: curInputPos.y },
+            { x: 0, y: 1 },
+            { x: size, y: size },
+            100.0,
+            true,
+            false,
+            false,
+        );
+        gl.disable(gl.BLEND);
     }
 
     UpdateFire(gl: WebGL2RenderingContext) {
@@ -694,9 +820,11 @@ export class RFirePlanePass {
         gl.bindTexture(gl.TEXTURE_2D, this.RoughnessTexture);
         gl.uniform1i(this.VisualizerUniformParametersLocationList.RoughnessTexture, 11);
 
-        gl.activeTexture(gl.TEXTURE0 + 12);
-        gl.bindTexture(gl.TEXTURE_2D, this.SurfaceMaterialColorTexture);
-        gl.uniform1i(this.VisualizerUniformParametersLocationList.SurfaceMaterialColorTexture, 12);
+        if (this.SurfaceMaterialColorTexture !== null) {
+            gl.activeTexture(gl.TEXTURE0 + 12);
+            gl.bindTexture(gl.TEXTURE_2D, this.SurfaceMaterialColorTexture);
+            gl.uniform1i(this.VisualizerUniformParametersLocationList.SurfaceMaterialColorTexture, 12);
+        }
 
         gl.activeTexture(gl.TEXTURE0 + 13);
         gl.bindTexture(gl.TEXTURE_2D, this.NormalsTexture);
@@ -707,6 +835,213 @@ export class RFirePlanePass {
         gl.uniform1i(this.VisualizerUniformParametersLocationList.SpotlightTexture, 14);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    ExportFirePlane(gl: WebGL2RenderingContext, BurntStampSprite: RBurntStampVisualizer) {
+        BindRenderTarget(
+            gl,
+            this.BurntSurfaceExportTextureFBO!,
+            { x: this.ProcessedImageTextureSize, y: this.ProcessedImageTextureSize },
+            true,
+        );
+
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.VisualizerExportShaderProgram);
+
+        //Constants
+        gl.uniform4f(
+            this.VisualizerExportUniformParametersLocationList.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(this.VisualizerExportUniformParametersLocationList.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform3f(
+            this.VisualizerExportUniformParametersLocationList.FirePlanePositionOffset,
+            GSceneDesc.FirePlane.PositionOffset.x,
+            GSceneDesc.FirePlane.PositionOffset.y,
+            GSceneDesc.FirePlane.PositionOffset.z,
+        );
+        gl.uniform3f(
+            this.VisualizerExportUniformParametersLocationList.OrientationEuler,
+            GSceneDesc.FirePlane.OrientationEuler.pitch,
+            GSceneDesc.FirePlane.OrientationEuler.yaw,
+            GSceneDesc.FirePlane.OrientationEuler.roll,
+        );
+
+        gl.uniform1f(
+            this.VisualizerExportUniformParametersLocationList.NoiseTextureInterpolator,
+            this.NoiseTextureInterpolator,
+        );
+        gl.uniform1f(
+            this.VisualizerExportUniformParametersLocationList.AfterBurnEmbersParam,
+            this.AfterBurnEmbersParam,
+        );
+
+        gl.uniform1f(this.VisualizerExportUniformParametersLocationList.Time, GTime.Cur);
+
+        gl.uniform3f(
+            this.VisualizerExportUniformParametersLocationList.SpotlightPos,
+            GSceneDesc.Spotlight.Position.x,
+            GSceneDesc.Spotlight.Position.y,
+            GSceneDesc.Spotlight.Position.z,
+        );
+        gl.uniform4f(
+            this.VisualizerExportUniformParametersLocationList.RoughnessScaleAddContrastMin,
+            this.RoughnessParams.Scale,
+            this.RoughnessParams.Add,
+            this.RoughnessParams.Contrast,
+            this.RoughnessParams.Min,
+        );
+
+        //Tool
+        gl.uniform3f(
+            this.VisualizerExportUniformParametersLocationList.ToolPosition,
+            GSceneDesc.Tool.Position.x,
+            GSceneDesc.Tool.Position.y,
+            GSceneDesc.Tool.Position.z,
+        );
+        gl.uniform1f(this.VisualizerExportUniformParametersLocationList.ToolRadius, GSceneDesc.Tool.Radius);
+        gl.uniform3f(
+            this.VisualizerExportUniformParametersLocationList.ToolColor,
+            GSceneDesc.Tool.Color.r,
+            GSceneDesc.Tool.Color.g,
+            GSceneDesc.Tool.Color.b,
+        );
+
+        gl.uniform2f(
+            this.VisualizerExportUniformParametersLocationList.SpecularIntensityAndPower,
+            this.ShadingParams.SpecularIntensity,
+            this.ShadingParams.SpecularPower,
+        );
+        gl.uniform2f(
+            this.VisualizerExportUniformParametersLocationList.MaterialUVOffset,
+            this.MaterialUVOffset.x,
+            this.MaterialUVOffset.y,
+        );
+
+        gl.uniform1f(
+            this.VisualizerExportUniformParametersLocationList.DiffuseIntensity,
+            this.ShadingParams.DiffuseIntensity,
+        );
+
+        //Textures
+        const curSourceIndex = this.CurrentFireTextureIndex;
+        gl.activeTexture(gl.TEXTURE0 + 2);
+        gl.bindTexture(gl.TEXTURE_2D, this.FireTexture[curSourceIndex]);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.FireTexture, 2);
+
+        gl.activeTexture(gl.TEXTURE0 + 3);
+        gl.bindTexture(gl.TEXTURE_2D, this.FuelTexture[this.CurrentFuelTextureIndex]);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.FuelTexture, 3);
+
+        gl.activeTexture(gl.TEXTURE0 + 4);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerFlameColorLUT);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.FlameColorLUT, 4);
+
+        gl.activeTexture(gl.TEXTURE0 + 5);
+        //gl.bindTexture(gl.TEXTURE_2D, this.VisualizerImageTexture);
+        gl.bindTexture(gl.TEXTURE_2D, this.ProcessedImageTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.ImageTexture, 5);
+
+        gl.activeTexture(gl.TEXTURE0 + 6);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerAshTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.AshTexture, 6);
+
+        gl.activeTexture(gl.TEXTURE0 + 7);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerAfterBurnNoiseTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.AfterBurnTexture, 7);
+
+        gl.activeTexture(gl.TEXTURE0 + 8);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerFirePlaneNoiseTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.NoiseTexture, 8);
+
+        gl.activeTexture(gl.TEXTURE0 + 9);
+        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTextureLQ);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.NoiseTextureLQ, 9);
+
+        gl.activeTexture(gl.TEXTURE0 + 11);
+        gl.bindTexture(gl.TEXTURE_2D, this.RoughnessTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.RoughnessTexture, 11);
+
+        if (this.SurfaceMaterialColorTexture !== null) {
+            gl.activeTexture(gl.TEXTURE0 + 12);
+            gl.bindTexture(gl.TEXTURE_2D, this.SurfaceMaterialColorTexture);
+            gl.uniform1i(this.VisualizerUniformParametersLocationList.SurfaceMaterialColorTexture, 12);
+        }
+
+        gl.activeTexture(gl.TEXTURE0 + 13);
+        gl.bindTexture(gl.TEXTURE_2D, this.NormalsTexture);
+        gl.uniform1i(this.VisualizerExportUniformParametersLocationList.NormalsTexture, 13);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.blendEquation(gl.FUNC_ADD);
+        BurntStampSprite.RenderExport(gl);
+        gl.disable(gl.BLEND);
+
+        //////////////////
+        //Read Results
+        //////////////////
+
+        const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)!;
+        gl.flush();
+        const res = gl.clientWaitSync(sync, 0, 0);
+        if (res === gl.WAIT_FAILED || res === gl.TIMEOUT_EXPIRED) {
+            console.error("FAILED TO EXPORT BURNT IMAGE");
+        }
+        gl.deleteSync(sync);
+
+        const pixels = new Uint8Array(this.ProcessedImageTextureSize * this.ProcessedImageTextureSize * 4);
+        gl.readPixels(
+            0,
+            0,
+            this.ProcessedImageTextureSize,
+            this.ProcessedImageTextureSize,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            pixels,
+        );
+
+        // Step 2: Create a data URL
+        const canvas = document.createElement("canvas");
+        canvas.width = this.ProcessedImageTextureSize;
+        canvas.height = this.ProcessedImageTextureSize;
+        const ctx = canvas.getContext("2d")!;
+
+        const imageData = ctx.createImageData(canvas.width, canvas.height);
+        //imageData.data.set(pixels);
+        // Flip the image vertically
+        for (let y = 0; y < canvas.height; y++) {
+            for (let x = 0; x < canvas.width; x++) {
+                const index = (y * canvas.width + x) * 4;
+                const flippedIndex = ((canvas.height - 1 - y) * canvas.width + x) * 4;
+                imageData.data.set(pixels.subarray(index, index + 4), flippedIndex);
+            }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        const dataUrl = canvas.toDataURL("image/jpeg");
+
+        return dataUrl;
+
+        // Step 3: Create a link and trigger download
+        /* const downloadLink = document.createElement("a");
+        downloadLink.href = dataUrl;
+        downloadLink.download = "texture.jpg";
+
+        // Append the link to the document (optional)
+        document.body.appendChild(downloadLink);
+
+        // Trigger a click on the link
+        downloadLink.click();
+
+        // Remove the link from the document (optional)
+        document.body.removeChild(downloadLink); */
     }
 
     GetCurFireTexture() {

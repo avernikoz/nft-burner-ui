@@ -230,3 +230,158 @@ export const FillButton = styled(Button)`
         animation: none;
     }
 `;
+
+export const InstrumentHeadingText = styled.p`
+    color: #a6a6a6;
+    font-family: Khand;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 500;
+    /* line-height: 32px; */
+    letter-spacing: 1.88px;
+    margin: 0;
+    margin-bottom: 0.2rem;
+`;
+
+export const InstrumentsContainer = styled.div`
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0px;
+`;
+
+export const InstrumentsDivider = styled.div`
+    stroke-width: 4px;
+    stroke: #fff;
+    background-color: #2d2d31;
+    width: 1px;
+    height: 65%;
+    flex-shrink: 0;
+`;
+
+export const InstrumentsMainContainer = styled.div`
+    display: flex;
+    margin-bottom: 1.5rem;
+    position: relative;
+    &::before {
+        content: "";
+        background-color: #2d2d31;
+        width: 100%;
+        height: 1px;
+        position: absolute;
+        top: 0;
+    }
+
+    &::after {
+        content: "";
+        background-color: #2d2d31;
+        width: 100%;
+        height: 1px;
+        position: absolute;
+        bottom: 0;
+    }
+
+    @media (max-width: 600px) {
+        flex-direction: column;
+    }
+`;
+
+export const InstrumentsSection = styled.div`
+    width: 50%;
+
+    @media (max-width: 600px) {
+        width: 100%;
+    }
+`;
+
+export const InstrumentNameSection = styled.div`
+    width: 50%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 15px;
+
+    @media (max-width: 600px) {
+        width: 100%;
+        justify-content: center;
+    }
+`;
+
+export const InstrumentNameText = styled.p<{
+    $activeColor: string;
+}>`
+    color: ${({ $activeColor }) => $activeColor};
+    font-family: Khand;
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 32px;
+    letter-spacing: 2.88px;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin: 0;
+`;
+
+export const InstrumentIconContainer = styled.div<{
+    $isActive?: boolean;
+    $activeColor?: string;
+}>`
+    display: flex;
+    padding: 10px 10px;
+    position: relative;
+    color: #bebebe;
+    cursor: pointer;
+
+    &:hover {
+        color: #fff;
+        background-color: rgb(186 177 177 / 9%);
+    }
+
+    ${({ $isActive, $activeColor }) =>
+        $isActive &&
+        $activeColor &&
+        css`
+            background-color: rgb(186 177 177 / 9%);
+            color: #fff;
+
+            &::before {
+                content: "";
+                background-color: ${$activeColor};
+                width: 100%;
+                height: 1px;
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 10;
+            }
+
+            &::after {
+                content: "";
+                background-color: ${$activeColor};
+                width: 100%;
+                height: 1px;
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                z-index: 10;
+            }
+        `}
+
+    ${({ $isActive }) =>
+        !$isActive &&
+        css`
+            &:hover {
+                &::after {
+                    content: "";
+                    background-color: #dadada;
+                    width: 100%;
+                    height: 1px;
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    z-index: 10;
+                }
+            }
+        `}
+`;

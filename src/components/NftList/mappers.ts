@@ -17,7 +17,7 @@ export function suiMapper(
     }[],
 ): SuiNft[] {
     const proxy = NFT_IMAGES_CORS_PROXY_URL;
-    return nfts.map((nft, index) => {
+    return nfts.map((nft) => {
         let ipfsHash = nft.url;
         if (ipfsHash.includes("https://")) {
             ipfsHash = proxy + ipfsHash;
@@ -28,7 +28,7 @@ export function suiMapper(
         return {
             name: nft.name,
             logoURI: ipfsHash,
-            id: index,
+            id: nft.nftId,
             network: ALLOWED_NETWORKS.Sui,
             nftId: nft.nftId,
             kioskId: nft.kioskId,
@@ -39,7 +39,7 @@ export function suiMapper(
 
 export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner, chainName: ALLOWED_EVM_CHAINS): EvmNft[] {
     const proxy = NFT_IMAGES_CORS_PROXY_URL;
-    const rawData = data.map((nft, index) => {
+    const rawData = data.map((nft) => {
         let ipfsHash = nft.rawMetadata?.image;
         if (!ipfsHash) {
             ipfsHash = "../../assets/svg/empty.jpg";
@@ -56,7 +56,7 @@ export function evmMapper(data: OwnedNft[], signer: JsonRpcSigner, chainName: AL
         return {
             name: nft.title,
             logoURI: ipfsHash,
-            id: index,
+            id: nft.tokenId,
             contractAddress: nft.contract.address,
             contractType: mappedContractType,
             nftTokenId: nft.tokenId,
@@ -91,10 +91,11 @@ export function solanaNFTMapper(
         };
     }[],
 ): SolanaNft[] {
-    return nfts.map((item, i) => ({
+    return nfts.map((item) => ({
         logoURI: item.logoURI,
         name: item.name,
-        id: i,
+        nftId: item.accounts.mint.toString(),
+        id: item.accounts.mint.toString(),
         solanaAccount: item.accounts,
         cNFT: false,
         network: ALLOWED_NETWORKS.Solana,
@@ -103,7 +104,7 @@ export function solanaNFTMapper(
 
 export function solanaCNFTMapper(nfts: DasApiAsset[]): SolanaCNft[] {
     const cNFTsTransformed = nfts
-        .map((item, i) => {
+        .map((item) => {
             const links = item.content.links;
 
             if (!(links && "image" in links && links.image && typeof links.image === "string")) {
@@ -114,7 +115,7 @@ export function solanaCNFTMapper(nfts: DasApiAsset[]): SolanaCNft[] {
                 logoURI: links.image as string,
                 name: item.content.metadata.name,
                 nftId: item.id.toString(),
-                id: i,
+                id: item.id.toString(),
                 network: ALLOWED_NETWORKS.Solana,
                 cNFT: true,
             };

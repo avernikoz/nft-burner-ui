@@ -25,6 +25,7 @@ import { NftScheduleDialog } from "./components/NftScheduleDialog/NftScheduleDia
 import { Tooltip } from "primereact/tooltip";
 import { ReactComponent as InfoIcon } from "../../assets/svg/infoIcon.svg";
 import { useNetworkFee } from "../../hooks/useNetworkFee";
+import { GAudioEngine } from "../../webl/audioEngine";
 
 export const Control = () => {
     const [burnPopupVisible, setBurnPopupVisible] = useState<boolean>(false);
@@ -32,8 +33,8 @@ export const Control = () => {
 
     const [nft, setNft] = useState<INft | null>(null);
     const { data: floorPrice } = useNftFloorPrice(nft);
-    // const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
-    const burnerFee = 0;
+    const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
+    // const burnerFee = 0;
     const { networkFee } = useNetworkFee({ network: nft?.network });
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
     const networkFeeToken = getNetworkTokenSymbol(nft?.network);
@@ -52,7 +53,11 @@ export const Control = () => {
                         className="burnButton mainButton width35"
                         onClick={() => {
                             ReactGA.event("burn_button_open_popup_button_pressed");
+                            GAudioEngine.getInstance().PlayUIClickSound();
                             setBurnPopupVisible(true);
+                        }}
+                        onMouseEnter={() => {
+                            GAudioEngine.getInstance().PlayUIHoverSound();
                         }}
                         disabled={!nft}
                     >
@@ -63,7 +68,11 @@ export const Control = () => {
                         className="shareButton mainButton width65"
                         onClick={() => {
                             ReactGA.event("schedule_button_open_popup_button_pressed");
+                            GAudioEngine.getInstance().PlayUIClickSound();
                             setSchedulePopupVisible(true);
+                        }}
+                        onMouseEnter={() => {
+                            GAudioEngine.getInstance().PlayUIHoverSound();
                         }}
                         disabled={!nft}
                     >

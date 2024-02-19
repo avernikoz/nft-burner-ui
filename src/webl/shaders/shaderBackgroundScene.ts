@@ -740,7 +740,7 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 				reflectionColor.rgb *= m;
 			}
 
-			colorFinal.rgb += max(vec3(0.25), imageColor) * reflectionColor * 1.f;
+			colorFinal.rgb += max(vec3(0.25), imageColor) * reflectionColor * 2.f;
 			vec3 virtualPointLightsColor = vec3(1.f, 0.5f, 0.1f);
 			colorFinal.rgb += imageColor * virtualPointLightsColor * virtualPointLightsIntensityFinal * 2.f;
 			colorFinal.rgb *= shadow;
@@ -1006,23 +1006,6 @@ export function GetShaderSourceLightFlareRenderPS() {
 
 	in vec2 vsOutTexCoords;
 
-	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
-	{
-		///Translate to origin, scale by ranges ratio, translate to new position
-		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
-	}
-	vec2 MapToRange(vec2 uv, float t0, float t1, float newt0, float newt1)
-	{
-		uv.x = MapToRange(uv.x, t0, t1, newt0, newt1);
-		uv.y = MapToRange(uv.y, t0, t1, newt0, newt1);
-		return uv;
-	}
-
-	float Contrast(float color, float contrast)
-	{
-		return max(float(0.f), contrast * (color - 0.5f) + 0.5f);
-	}
-
 	void main()
 	{
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
@@ -1034,6 +1017,79 @@ export function GetShaderSourceLightFlareRenderPS() {
 
 
 		outSpotlightColor = vec3(light * 1.0f);
+
+	}`;
+}
+
+export function GetShaderSourceLaserFlareRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outSpotlightColor;
+
+	uniform sampler2D SpotlightTexture;
+
+	uniform float Time;
+
+	in vec2 vsOutTexCoords;
+
+	void main()
+	{
+		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+
+		float s = length(vsOutTexCoords - vec2(0.5, 0.5));
+		
+
+		vec3 light = texture(SpotlightTexture, flippedUVs.xy).rgb;
+
+		float brightness = sin(Time) * 0.5 + 0.5;
+		//float brightness = 1.0;
+		
+		light *= vec3(1.0, 0.75, 0.8) * (3.0 + brightness * 0.25);
+		
+		light *= max(0.25, s);
+
+
+		outSpotlightColor = light;
+
+	}`;
+}
+
+export function GetShaderSourceThunderFlareRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outSpotlightColor;
+
+	uniform sampler2D SpotlightTexture;
+
+	uniform float Time;
+
+	in vec2 vsOutTexCoords;
+
+	void main()
+	{
+		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+
+		float s = length(vsOutTexCoords - vec2(0.5, 0.5));
+		
+
+		vec3 light = texture(SpotlightTexture, flippedUVs.xy).rgb;
+
+		//float brightness = sin(Time) * 0.5 + 0.5;
+		//float brightness = 1.0;
+		
+		
+		light *= max(0.25, s);
+
+		light *= 5.0;
+
+
+		outSpotlightColor = light;
 
 	}`;
 }
@@ -1087,7 +1143,8 @@ export function GetShaderSourceLightSourceSpriteRenderVS() {
 			}`;
 }
 export function GetShaderSourceLightSourceSpriteRenderPS() {
-    return /* glsl */ `#version 300 es
+    return (
+        /* glsl */ `#version 300 es
 	
 	precision highp float;
 	precision highp sampler2D;
@@ -1153,9 +1210,12 @@ export function GetShaderSourceLightSourceSpriteRenderPS() {
 			light *= m * m;
 		} */
 
-		outSpotlightColor = vec3(min(vec3(1.0), light * 2.0f));
+		outSpotlightColor = vec3(min(vec3(1.0+float(` +
+        Math.random() +
+        /* glsl */ `)), light * 2.0f));
 
-	}`;
+	}`
+    );
 }
 
 export function GetShaderSourceGenericSpriteRenderVS() {
@@ -1203,6 +1263,37 @@ export function GetShaderSourceGenericSpriteRenderVS() {
 	}`;
 }
 
+export function GetShaderSourceStampRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outColor;
+
+	uniform sampler2D ColorTexture;
+	uniform sampler2D ColorTextureMasked;
+
+	uniform vec3 ColorScale;
+	uniform float MaskLerpParam;
+
+	in vec2 vsOutTexCoords;
+
+	void main()
+	{
+		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+		float stampMask = texture(ColorTexture, flippedUVs.xy).r;
+		float stampMaskDirty = texture(ColorTextureMasked, flippedUVs.xy).r;
+		stampMask = mix(stampMask, stampMaskDirty, MaskLerpParam * 0.85);
+		//vec3 color = vec3(1.0, 0.41, 0.0);
+		//vec3 color = vec3(0.0, 1.0, 0.2);
+		vec3 color = ColorScale;
+		color *= stampMask;
+		//color.rgb *= ColorScale;
+		outColor = color;
+	}`;
+}
+
 export function GetShaderSourceGenericSpriteRenderPS() {
     return /* glsl */ `#version 300 es
 	
@@ -1218,8 +1309,8 @@ export function GetShaderSourceGenericSpriteRenderPS() {
 	void main()
 	{
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
-		vec4 color = texture(ColorTexture, flippedUVs.xy);
-		color.rgb *= 3.f;
+		vec4 color = texture(ColorTexture, flippedUVs.xy).rrrr;
+		color.a *= 0.6;
 		outColor = color;
 	}`;
 }
@@ -1237,10 +1328,10 @@ export function GetShaderSourceGlowRenderPS() {
 	void main()
 	{
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
-		vec3 color = vec3(1.0, 0.8, 0.7) * 0.5;
+		vec3 color = vec3(1.0, 0.85, 0.85) * 0.25;
 		//color.rgb *= 3.f;
 		float s = 1.0 - min(1.0, 2.0 * length(flippedUVs - vec2(0.5)));
-		color *= s * s;
+		color *= s * s ;
 		outColor = vec4(color, 1.0);
 	}`;
 }

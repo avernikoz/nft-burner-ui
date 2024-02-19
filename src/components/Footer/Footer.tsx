@@ -169,8 +169,8 @@ export const Footer = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPag
                     <SoundIconElement />
                     <Divider />
                     <FullScreenButton />
-                    <Divider />
-                    <FAQComponent />
+                    {/* <Divider /> */}
+                    {/* <FAQComponent /> */}
                     <Divider />
                     <ContactFormComponent showContactForm={() => setContactPopupVisible(true)} />
                     <Divider />

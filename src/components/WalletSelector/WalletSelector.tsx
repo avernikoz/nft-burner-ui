@@ -17,6 +17,8 @@ import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import { NftContext } from "../NftProvider/NftProvider";
 import { ENftBurnStatus } from "../../utils/types";
 import { NftSelectorDialog } from "./components/NetworkSelectorDialog/NetworkSelectorDialog";
+import { Level } from "../Level/Level";
+import { useUserLevel } from "../../context/UserLevelContext";
 import { useWalletBalance } from "../../hooks/useWalletBalance";
 import { getEVMNetworkName } from "../../utils/getEVMNetworkName";
 
@@ -39,6 +41,7 @@ export const WalletSelector = ({
     const toastController = useContext(ToastContext);
     const lastEvmIndex = 3;
     const NftController = useContext(NftContext);
+    const { level, points } = useUserLevel();
     const { data: walletBalanceData } = useWalletBalance({ address: account?.id, network: account?.network });
 
     const connect = useCallback(
@@ -290,6 +293,7 @@ export const WalletSelector = ({
                                 {/* <span className="chain-id">{account.id}</span> */}
                             </div>
                         </ProfileLabel>
+                        <Level showTooltip={true} level={level} points={points} showLevelText={false} levelSize={50} />
                     </>
                 )}
             </ButtonContainer>

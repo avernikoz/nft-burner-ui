@@ -38,7 +38,6 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         FirePlaneTexture: gl.getUniformLocation(shaderProgram, "FirePlaneTexture"),
         SpotlightTexture: gl.getUniformLocation(shaderProgram, "SpotlightTexture"),
         PointLightsTexture: gl.getUniformLocation(shaderProgram, "PointLightsTexture"),
-        LogoImageTexture: gl.getUniformLocation(shaderProgram, "LogoImageTexture"),
         LensTexture: gl.getUniformLocation(shaderProgram, "LensTexture"),
         BloomTexture: gl.getUniformLocation(shaderProgram, "BloomTexture"),
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
@@ -522,8 +521,6 @@ export class RCombinerPass {
 
     SmokeNoiseTexture: WebGLTexture;
 
-    LogoImageTexture: WebGLTexture;
-
     LensTexture: WebGLTexture;
 
     constructor(gl: WebGL2RenderingContext) {
@@ -536,7 +533,6 @@ export class RCombinerPass {
         this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
 
         this.SmokeNoiseTexture = GTexturePool.CreateTexture(gl, false, "smokeNoiseColor");
-        this.LogoImageTexture = GTexturePool.CreateTexture(gl, false, "logoNewY");
         this.LensTexture = GTexturePool.CreateTexture(gl, false, "lensDirt6Edit");
     }
 
@@ -625,10 +621,6 @@ export class RCombinerPass {
         gl.activeTexture(gl.TEXTURE0 + 9);
         gl.bindTexture(gl.TEXTURE_2D, this.LensTexture);
         gl.uniform1i(this.UniformParametersLocationList.LensTexture, 9);
-
-        gl.activeTexture(gl.TEXTURE0 + 10);
-        gl.bindTexture(gl.TEXTURE_2D, this.LogoImageTexture);
-        gl.uniform1i(this.UniformParametersLocationList.LogoImageTexture, 10);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }

@@ -14,6 +14,14 @@ export function MathGetVectorLength(vec2: Vector2) {
 export function MathClamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max);
 }
+
+export function MathSignedMax(value: number, max: number) {
+    if (value < 0.0) {
+        return Math.min(value, -max);
+    } else {
+        return Math.max(value, max);
+    }
+}
 export function MathVector2Normalize(vec: Vector2) {
     const length = Math.sqrt(vec.x * vec.x + vec.y * vec.y);
     if (length === 0) {
@@ -84,6 +92,39 @@ export function MathIntersectionSphereSphere(pos1: Vector2, radius1: number, pos
     const distance = Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
 
     return distance <= radius1 + radius2;
+}
+
+export function MathIntersectionRayAABB(
+    rayOrigin: Vector3,
+    rayDirection: Vector3,
+    aabbCenter: Vector3,
+    aabbExtent: Vector3,
+) {
+    // Calculate the inverse direction of the ray
+    const invDirection: Vector3 = {
+        x: 1.0 / rayDirection.x,
+        y: 1.0 / rayDirection.y,
+        z: 1.0 / rayDirection.z,
+    };
+
+    // Calculate the minimum and maximum t values for each axis
+    const tmin = (aabbCenter.x - aabbExtent.x - rayOrigin.x) * invDirection.x;
+    const tmax = (aabbCenter.x + aabbExtent.x - rayOrigin.x) * invDirection.x;
+    const tymin = (aabbCenter.y - aabbExtent.y - rayOrigin.y) * invDirection.y;
+    const tymax = (aabbCenter.y + aabbExtent.y - rayOrigin.y) * invDirection.y;
+    const tzmin = (aabbCenter.z - aabbExtent.z - rayOrigin.z) * invDirection.z;
+    const tzmax = (aabbCenter.z + aabbExtent.z - rayOrigin.z) * invDirection.z;
+
+    // Find the maximum and minimum t values for intersection
+    const tEnter = Math.max(Math.max(Math.min(tmin, tmax), Math.min(tymin, tymax)), Math.min(tzmin, tzmax));
+    const tExit = Math.min(Math.min(Math.max(tmin, tmax), Math.max(tymin, tymax)), Math.max(tzmin, tzmax));
+
+    // Check if the intersection is outside the valid range
+    if (tExit < 0 || tEnter > tExit) {
+        return false;
+    } else {
+        return true;
+    }
 }
 
 export function uint16ToFloat16(uint16Value: number): number {

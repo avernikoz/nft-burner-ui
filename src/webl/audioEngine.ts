@@ -14,7 +14,7 @@ async function LoadAudioBufferAsync(context: AudioContext, url: string): Promise
     }
 }
 
-class SoundSample {
+export class SoundSample {
     Buffer: AudioBuffer | null = null;
 
     SourceNode: AudioBufferSourceNode | null = null;
@@ -54,8 +54,15 @@ class SoundSample {
                     };
                 }
             } else {
+                if (this.bIsPlaying && this.SourceNode) {
+                    this.SourceNode.stop();
+                }
                 this.InitSourceNode(context);
                 this.SourceNode!.start();
+                this.bIsPlaying = true;
+                this.SourceNode!.onended = () => {
+                    this.bIsPlaying = false;
+                };
             }
         }
     }
@@ -79,17 +86,21 @@ export class GAudioEngine {
 
     //Sounds
 
-    private SoundClick: AudioBuffer | null = null;
-
     private SoundIntro: AudioBuffer | null = null;
 
-    private SoundStamp: AudioBuffer | null = null;
+    private SoundStamp: SoundSample = new SoundSample();
 
-    private SoundLighterStart: SoundSample = new SoundSample();
+    private SoundUIHover: SoundSample = new SoundSample();
 
-    private SoundLoopLighterGas: SoundSample = new SoundSample();
+    private SoundFireExting: SoundSample = new SoundSample();
 
-    private SoundFireBurst: AudioBuffer | null = null;
+    private SoundTransition: SoundSample = new SoundSample();
+
+    private SoundUIClick: SoundSample = new SoundSample();
+
+    private SoundUISelect: SoundSample = new SoundSample();
+
+    private SoundUIClickStart: SoundSample = new SoundSample();
 
     private SoundLoopFlame: SoundSample = new SoundSample();
 
@@ -110,6 +121,14 @@ export class GAudioEngine {
         return GAudioEngine.instance;
     }
 
+    public static GetContext(): AudioContext {
+        return GAudioEngine.getInstance().Context!;
+    }
+
+    public static GetMasterGain(): GainNode {
+        return GAudioEngine.getInstance().MasterGain!;
+    }
+
     private constructor() {
         if (window.AudioContext) {
             this.Context = new AudioContext();
@@ -122,14 +141,18 @@ export class GAudioEngine {
 
     async LoadSoundsAsync() {
         if (this.Context && this.MasterGain) {
-            this.SoundClick = await LoadAudioBufferAsync(this.Context, "assets/audio/bassShot.mp3");
-            this.SoundIntro = await LoadAudioBufferAsync(this.Context, "assets/audio/intro.mp3");
-            this.SoundStamp = await LoadAudioBufferAsync(this.Context, "assets/audio/stamp.mp3");
-            this.SoundFireBurst = await LoadAudioBufferAsync(this.Context, "assets/audio/fireBurst2.mp3");
+            this.SoundUIHover.Init(this.Context, "assets/audio/bassShotFade.mp3", this.MasterGain, 0.75);
+            this.SoundUIClick.Init(this.Context, "assets/audio/mhFesel.mp3", this.MasterGain, 0.5);
+            this.SoundUISelect.Init(this.Context, "assets/audio/selectSound.mp3", this.MasterGain, 0.25);
+            this.SoundUIClickStart.Init(this.Context, "assets/audio/mhIntro3.mp3", this.MasterGain, 0.25);
 
-            this.SoundLighterStart.Init(this.Context, "assets/audio/lighterStart.mp3", this.MasterGain);
+            this.SoundTransition.Init(this.Context, "assets/audio/fadeFast.mp3", this.MasterGain, 0.1);
 
-            this.SoundLoopLighterGas.Init(this.Context, "assets/audio/lighterGasLoop.mp3", this.MasterGain, 0.5);
+            this.SoundFireExting.Init(this.Context, "assets/audio/afterBurnExting.mp3", this.MasterGain, 0.5);
+
+            this.SoundStamp.Init(this.Context, "assets/audio/magStamp.mp3", this.MasterGain, 2.0);
+
+            this.SoundIntro = await LoadAudioBufferAsync(this.Context, "assets/audio/introLow4.mp3");
 
             this.GainBurningSound = this.Context.createGain();
             this.GainBurningSound.connect(this.MasterGain);
@@ -153,24 +176,42 @@ export class GAudioEngine {
         }
     }
 
-    PlayClickSound() {
-        if (!this.isSoundEnabled) {
-            return;
+    PlayUIHoverSound() {
+        if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
+            this.SoundUIHover.Play(this.Context!);
         }
+    }
 
-        if (this.Context != null) {
-            this.SourceCurrent = this.Context.createBufferSource();
-            if (this.SoundClick) {
-                this.SourceCurrent.buffer = this.SoundClick;
-                this.SourceCurrent.connect(this.Context.destination);
-                this.SourceCurrent.start();
-            }
+    PlayUIClickSound() {
+        if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
+            this.SoundUIClick.Play(this.Context!);
+        }
+    }
 
-            /* const oscillator = this.audioContext.createOscillator();
-            oscillator.frequency.value = 140;
-            oscillator.connect(this.audioContext.destination);
-            oscillator.start();
-            oscillator.stop(this.audioContext.currentTime + 0.1); */
+    PlayUISelectSound() {
+        //if (!!localStorage.getItem("isBurnedNFTAtLeastOnce"))
+        {
+            //this.SoundUISelect.Play(this.Context!);
+        }
+    }
+
+    PlayUIClickStartSound() {
+        if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
+            this.SoundUIClickStart.Play(this.Context!);
+        }
+    }
+
+    PlayFireExtingSound() {
+        //if (!!localStorage.getItem("isBurnedNFTAtLeastOnce"))
+        {
+            this.SoundFireExting.Play(this.Context!);
+        }
+    }
+
+    PlayTransitionSound() {
+        //if (!!localStorage.getItem("isBurnedNFTAtLeastOnce"))
+        {
+            this.SoundTransition.Play(this.Context!);
         }
     }
 
@@ -179,21 +220,7 @@ export class GAudioEngine {
     }
 
     PlayStampSound() {
-        this.PlaySoundBuffer(this.SoundStamp);
-    }
-
-    PlayLighterStartSound() {
-        this.SoundLighterStart.Play(this.Context!);
-    }
-
-    PlayLighterGasSound() {
-        this.SoundLoopLighterGas.Play(this.Context!, true);
-    }
-
-    ForceStopLighterGasSound() {
-        if (this.SoundLoopLighterGas.SourceNode) {
-            this.SoundLoopLighterGas.Stop();
-        }
+        this.SoundStamp.Play(this.Context!);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

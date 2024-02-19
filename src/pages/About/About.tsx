@@ -11,6 +11,7 @@ import { ReactComponent as RightArrowIcon } from "../../assets/svg/rightArrow.sv
 import { Header } from "../../components/Header/Header";
 
 import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagram.svg";
+import { GAudioEngine } from "../../webl/audioEngine";
 import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { APP_ENVIRONMENT } from "../../config/config";
 
@@ -64,7 +65,7 @@ export const MainQuoteText = styled.span`
         0px 0px 50px rgba(255, 255, 255, 0.5),
         0px 0px 10px #fff; */
     font-family: Poppins;
-    font-size: clamp(24px, 10vw, 296px);
+    font-size: clamp(50px, 10vw, 296px);
     font-style: normal;
     font-weight: 700;
 
@@ -272,6 +273,10 @@ export const StartButton = ({ setAboutPageActive }: { setAboutPageActive: (isAbo
                 ReactGA.event("start_button_landing_page_pressed");
                 setAboutPageActive(false);
                 GReactGLBridgeFunctions.OnStartButtonPressed();
+                GAudioEngine.getInstance().PlayUIClickStartSound();
+            }}
+            onMouseEnter={() => {
+                GAudioEngine.getInstance().PlayUIHoverSound();
             }}
         >
             <StartText
@@ -601,9 +606,9 @@ export const LPPage2Additional = () => (
     </Page2AddWrapper>
 );
 
-export const LPPage2 = ({ refProp }: { refProp: RefObject<HTMLDivElement> }) => {
+export const LPPage2 = () => {
     return (
-        <LPSectionExtendableCentered ref={refProp}>
+        <LPSectionExtendableCentered>
             <LPShrinkContainer>
                 <Page2Title>
                     A Call for Renewal: <br /> The Case for <span style={{ color: "#FF852D" }}>Burning </span>
@@ -1200,11 +1205,9 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
             <LPContainerMain>
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
+                <LPPageVideo refProp={myRef} />
                 <LazyLoad height={"100vh"}>
-                    <LPPageVideo refProp={myRef} />
-                </LazyLoad>
-                <LazyLoad height={"100vh"}>
-                    <LPPage2 refProp={myRef} />
+                    <LPPage2 />
                 </LazyLoad>
                 <LazyLoad height={"100vh"}>
                     <LPPage3 />
