@@ -1,4 +1,4 @@
-import { Ref, useRef } from "react";
+import { useRef } from "react";
 import { Circle, CircleContainer, LevelContainer, LevelNumber, LevelText, StyledSvgLevel } from "./Level.styled";
 import { Tooltip } from "primereact/tooltip";
 
