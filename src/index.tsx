@@ -14,9 +14,16 @@ import { ToastProvider } from "./components/ToastProvider/ToastProvider";
 
 import { configureSentry } from "./utils/configureSentry";
 import { UserLevelProvider } from "./context/UserLevelContext";
+import { REACT_APP_GOOGLE_TAG_MANAGER_ID } from "./config/analytics.config";
 
 // Sentry init
 configureSentry();
+
+import("react-ga4").then((ga4) => {
+    if (REACT_APP_GOOGLE_TAG_MANAGER_ID) {
+        ga4.default.initialize(REACT_APP_GOOGLE_TAG_MANAGER_ID);
+    }
+});
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(

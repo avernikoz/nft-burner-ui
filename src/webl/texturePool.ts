@@ -1,4 +1,3 @@
-import { APP_ENVIRONMENT } from "../config/config";
 import { RTexture } from "./texture";
 
 const KTX_HEADER_LEN = 12 + 13 * 4; // identifier + header elements (not including key value meta-data pairs)

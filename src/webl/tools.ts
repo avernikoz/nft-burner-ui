@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { GAudioEngine, SoundSample } from "./audioEngine";
 import { GCameraShakeController } from "./controller";
 import { GBurningSurface } from "./firePlane";
@@ -9,7 +10,6 @@ import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import {
     GetShaderSourceLaserFlareRenderPS,
-    GetShaderSourceLightFlareRenderPS,
     GetShaderSourceLightFlareRenderVS,
     GetShaderSourceThunderFlareRenderPS,
 } from "./shaders/shaderBackgroundScene";
@@ -23,7 +23,6 @@ import {
 } from "./shaders/shaderTools";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
-import { Vector3 } from "./types";
 import {
     GTime,
     MathClamp,

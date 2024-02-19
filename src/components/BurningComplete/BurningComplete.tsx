@@ -1,3 +1,4 @@
+import ReactGA from "react-ga4";
 import React, { useContext, useEffect, useState } from "react";
 import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
 import { BurnButton } from "../BurnButton/BurnButton";
@@ -70,6 +71,7 @@ export const BurningComplete = () => {
                         GAudioEngine.getInstance().PlayUIClickSound();
                         const stateUpdateDelay = GTransitionAnimationsConstants.BurnMoreTransitionDuration * 1000;
                         setTimeout(() => {
+                            ReactGA.event("burning_complete_burn_more_button_pressed");
                             NftController.setNftStatus(ENftBurnStatus.EMPTY);
                             IMAGE_STORE_SINGLETON_INSTANCE.setImageUrl(null);
                             IMAGE_STORE_SINGLETON_INSTANCE.setImage(null);
@@ -88,6 +90,8 @@ export const BurningComplete = () => {
                     onClick={() => {
                         setSharePopupVisible(true);
                         GAudioEngine.getInstance().PlayUIClickSound();
+                        ReactGA.event("burning_complete_share_button_pressed");
+                        setSharePopupVisible(true);
                     }}
                     onMouseEnter={() => {
                         GAudioEngine.getInstance().PlayUIHoverSound();

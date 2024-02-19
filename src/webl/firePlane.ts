@@ -1,22 +1,21 @@
+import { RBurntStampVisualizer } from "./backgroundScene";
 import { BindRenderTarget, CreateFramebufferWithAttachment, CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import {
+    GetShaderSourceApplyFireVS,
+    GetShaderSourceFirePlanePreProcess,
+    GetShaderSourceFireVisualizerExportPS,
+    GetShaderSourceFireVisualizerPS,
     GetShaderSourceFireVisualizerVS,
     ShaderSourceApplyFirePS,
     ShaderSourceFireUpdatePS,
-    GetShaderSourceFireVisualizerPS,
-    GetShaderSourceFirePlanePreProcess,
-    GetShaderSourceFireVisualizerExportPS,
-    GetShaderSourceApplyFireVS,
 } from "./shaders/shaderFirePlane";
 import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
-import { GUserInputDesc } from "./input";
-import { Vector2 } from "./types";
-import { GTime, MathClamp, MathGetVectorLength, MathVector2Normalize } from "./utils";
-import { RBurntStampVisualizer } from "./backgroundScene";
 import { GTexturePool } from "./texturePool";
+import { Vector2 } from "./types";
+import { GTime } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {

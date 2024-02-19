@@ -3530,10 +3530,10 @@
   dependencies:
     "@solana/wallet-adapter-base" "^0.9.23"
 
-"@solana/wallet-adapter-react-ui@^0.9.34":
-  version "0.9.34"
-  resolved "https://registry.yarnpkg.com/@solana/wallet-adapter-react-ui/-/wallet-adapter-react-ui-0.9.34.tgz#107a0e6264ad11f04cc08739eb89d72c820fcb6d"
-  integrity sha512-jHysnZMtug66gRC37COXZCoOBYN2vjPNot9SgtHltaVfA/3WNohk6PUlWoYNCpY9ZPeRBZDk9AmH+HNkUX3GIQ==
+"@solana/wallet-adapter-react-ui@^0.9.35":
+  version "0.9.35"
+  resolved "https://registry.npmjs.org/@solana/wallet-adapter-react-ui/-/wallet-adapter-react-ui-0.9.35.tgz#f44bf71a636845cf6862ac7fd556ee6f7b1a3757"
+  integrity sha512-SyHUavEAyzBL5zim5xAlYaqP5jF3bOtxi/02wgXzMpKXUYpG4EiXXY3DeGw5eUbcvvej45rQENtTHWEEH9fW+A==
   dependencies:
     "@solana/wallet-adapter-base" "^0.9.23"
     "@solana/wallet-adapter-base-ui" "^0.1.2"
@@ -4685,6 +4685,13 @@
   version "18.2.15"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-18.2.15.tgz#921af67f9ee023ac37ea84b1bc0cc40b898ea522"
   integrity sha512-HWMdW+7r7MR5+PZqJF6YFNSCtjz1T0dsvo/f1BV6HkV+6erD/nA7wd9NM00KVG83zf2nJ7uATPO9ttdIPvi3gg==
+  dependencies:
+    "@types/react" "*"
+
+"@types/react-lazyload@^3.2.3":
+  version "3.2.3"
+  resolved "https://registry.npmjs.org/@types/react-lazyload/-/react-lazyload-3.2.3.tgz#42129b6e11353bfe8ed2ba5e1b964676ee23668b"
+  integrity sha512-s03gWlHXiFqZr7TEFDTx8Lkl+ZEYrwTkXP9MNZ3Z3blzsPrnkYjgeSK2tjfzVv/TYVCnDk6TZwNRDHQlHy/1Ug==
   dependencies:
     "@types/react" "*"
 
@@ -13195,6 +13202,11 @@ react-error-overlay@^6.0.11:
   resolved "https://registry.yarnpkg.com/react-error-overlay/-/react-error-overlay-6.0.11.tgz#92835de5841c5cf08ba00ddd2d677b6d17ff9adb"
   integrity sha512-/6UZ2qgEyH2aqzYZgQPxEnz33NJ2gNsnHA2o5+o4wW9bLM/JYQitNP9xPhsXwC08hMMovfGe/8retsdDsczPRg==
 
+react-ga4@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.npmjs.org/react-ga4/-/react-ga4-2.1.0.tgz#56601f59d95c08466ebd6edfbf8dede55c4678f9"
+  integrity sha512-ZKS7PGNFqqMd3PJ6+C2Jtz/o1iU9ggiy8Y8nUeksgVuvNISbmrQtJiZNvC/TjDsqD0QlU5Wkgs7i+w9+OjHhhQ==
+
 react-is@^16.13.1, react-is@^16.7.0:
   version "16.13.1"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
@@ -13209,6 +13221,11 @@ react-is@^18.0.0:
   version "18.2.0"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-18.2.0.tgz#199431eeaaa2e09f86427efbb4f1473edb47609b"
   integrity sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==
+
+react-lazyload@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.npmjs.org/react-lazyload/-/react-lazyload-3.2.0.tgz#497bd06a6dbd7015e3376e1137a67dc47d2dd021"
+  integrity sha512-zJlrG8QyVZz4+xkYZH5v1w3YaP5wEFaYSUWC4CT9UXfK75IfRAIEdnyIUF+dXr3kX2MOtL1lUaZmaQZqrETwgw==
 
 react-lifecycles-compat@^3.0.0:
   version "3.0.4"
