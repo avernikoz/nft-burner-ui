@@ -1250,8 +1250,11 @@ export function GetShaderSourceGenericSpriteRenderVS() {
 	void main()
 	{
 		vec3 pos = vec3(VertexBuffer.xy, 0.0f);
-		pos = rotateVectorWithEuler(pos, Orientation.x, Orientation.y, Orientation.z);
 		pos.xy *= Scale;
+		pos.xy *= 0.3;
+		pos.x *= 2.3;
+		pos = rotateVectorWithEuler(pos, Orientation.x, Orientation.y, Orientation.z);
+		
 		pos += Position;
 		pos.xyz -= CameraDesc.xyz;
 
@@ -1282,13 +1285,11 @@ export function GetShaderSourceStampRenderPS() {
 	void main()
 	{
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
-		float stampMask = texture(ColorTexture, flippedUVs.xy).r;
-		float stampMaskDirty = texture(ColorTextureMasked, flippedUVs.xy).r;
-		stampMask = mix(stampMask, stampMaskDirty, MaskLerpParam * 0.85);
+		vec3 stampMask = texture(ColorTexture, flippedUVs.xy).rgb;
 		//vec3 color = vec3(1.0, 0.41, 0.0);
 		//vec3 color = vec3(0.0, 1.0, 0.2);
 		vec3 color = ColorScale;
-		color *= stampMask;
+		color = stampMask;
 		//color.rgb *= ColorScale;
 		outColor = color;
 	}`;

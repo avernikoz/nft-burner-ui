@@ -165,6 +165,8 @@ export class GBurningSurfaceExport {
 }
 
 export class GBurningSurface {
+    public static pInstance: GBurningSurface | null = null;
+
     public RenderTargetSize;
 
     public FrameBuffer;
@@ -238,7 +240,7 @@ export class GBurningSurface {
 
     RoughnessParams = { Scale: 1.0, Add: 0.0, Contrast: 1.0, Min: 0.0 }; //Use variadic contrast [from 1 to 2]
 
-    ShadingParams = { SpecularIntensity: 0.6, SpecularPower: 8.0, DiffuseIntensity: 1.05 };
+    ShadingParams = { SpecularIntensity: 1.0, SpecularPower: 32.0, DiffuseIntensity: 1.05 };
 
     MaterialUVOffset = { x: 0.0, y: 0.0 };
 
@@ -277,6 +279,8 @@ export class GBurningSurface {
     }
 
     constructor(gl: WebGL2RenderingContext, inRenderTargetSize = { x: 512, y: 512 }) {
+        GBurningSurface.pInstance = this;
+
         this.RenderTargetSize = inRenderTargetSize;
 
         //FBO
@@ -291,8 +295,8 @@ export class GBurningSurface {
 
         //Fire Texture
         this.FuelTexture = [];
-        this.FuelTexture[0] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT);
-        this.FuelTexture[1] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT);
+        this.FuelTexture[0] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT, true);
+        this.FuelTexture[1] = CreateTextureRT(gl, inRenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT, true);
 
         //link our RTs to Framebuffers
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[0]);
@@ -406,8 +410,8 @@ export class GBurningSurface {
 
         this.VisualizerFlameColorLUT = GTexturePool.CreateTexture(gl, false, "flameColorLUT5");
         //this.CurrentImageTextureSrc = "assets/example.jpg";
-        this.CurrentImageTextureSrc = "apeBlue";
-        //this.CurrentImageTextureSrc = "punkBlue";
+        //this.CurrentImageTextureSrc = "apeBlue";
+        this.CurrentImageTextureSrc = "punkBlue";
         //this.CurrentImageTextureSrc = "assets/example2.png";
         this.VisualizerImageTexture = GTexturePool.CreateTexture(
             gl,
@@ -418,7 +422,7 @@ export class GBurningSurface {
             true,
         );
         this.FirePlaneImagePreProcess(gl);
-        this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "ashTexture_R8", true, false, true);
+        this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "afterBurnNoise7_R8", true, false, true);
 
         this.VisualizerAfterBurnNoiseTexture = GTexturePool.CreateTexture(
             gl,
@@ -457,7 +461,7 @@ export class GBurningSurface {
             `assets/background/` + matName + `DFS` + fileFormat,
             true,
         ); */
-        this.NormalsTexture = GTexturePool.CreateTexture(gl, false, matName + `NRM`, true, true);
+        this.NormalsTexture = GTexturePool.CreateTexture(gl, false, `foilNRM`, true, true);
         //this.RoughnessTexture = CreateTexture(gl, 7, `assets/background/` + matName + `RGH` + fileFormat, true);
 
         //this.RoughnessTexture = CreateTexture(gl, 7, "assets/background/oxidCopperRGH.png");
@@ -1047,6 +1051,10 @@ export class GBurningSurface {
 
     GetCurFireTexture() {
         return this.FireTexture[this.CurrentFireTextureIndex];
+    }
+
+    GetCurFuelTexture() {
+        return this.FuelTexture[this.CurrentFuelTextureIndex];
     }
 
     GetCurFireTextureHighestMipFramebuffer() {

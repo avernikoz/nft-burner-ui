@@ -5,7 +5,7 @@ export const FlameParticlesDesc = {
     inName: "Flame Particles",
     inNumSpawners2D: 64,
     inNumParticlesPerSpawner: 1,
-    inSpawnRange: { x: 10.0 + Math.random() * 100.0, y: 1000.0 }, //TODO:depends on temperature
+    inSpawnRange: { x: 10.0 + Math.random() * 500.0, y: 1000.0 }, //TODO:depends on temperature
     inParticleLife: 2.4,
     inNumLoops: 3.0,
     inTextureFileName: "Flame02_16x4",
@@ -29,10 +29,10 @@ export const FlameParticlesDesc = {
 export function GetEmberParticlesDesc() {
     return {
         inName: "Ember Particles",
-        inNumSpawners2D: 32,
+        inNumSpawners2D: 24,
         inNumParticlesPerSpawner: 1,
         inSpawnRange: { x: 0.1, y: 100000.0 },
-        inParticleLife: 2.8,
+        inParticleLife: 0.8,
         inNumLoops: 1.0,
         inTextureFileName: "",
         inFlipbookSizeRC: { x: 16.0, y: 4.0 },
@@ -45,7 +45,7 @@ export function GetEmberParticlesDesc() {
         inBuoyancyForceScale: 5.0,
         inDownwardForceScale: 1.0,
         inbOriginAtCenter: true,
-        inbMotionBasedTransform: true,
+        inbMotionBasedTransform: false,
         inEFadeInOutMode: 0,
         inbOneShotParticle: false,
         inEInitialPositionMode: 0,
@@ -83,7 +83,7 @@ export const AfterBurnSmokeParticlesDesc = {
     inName: "After Burn Smoke Particles",
     inNumSpawners2D: 4,
     inNumParticlesPerSpawner: 1,
-    inSpawnRange: { x: 0.001, y: 1.0 },
+    inSpawnRange: { x: 0.1, y: 1.0 },
     inParticleLife: 12.7,
     inNumLoops: 4.0,
     inTextureFileName: "DiscSmoke01_16x4",
@@ -111,7 +111,7 @@ export const AfterBurnAshesParticlesDesc = {
     inName: "Ashes Particles",
     inNumSpawners2D: 16,
     inNumParticlesPerSpawner: 1,
-    inSpawnRange: { x: 0.001, y: 10.0 },
+    inSpawnRange: { x: 0.1, y: 10.0 },
     inParticleLife: 6.8,
     inNumLoops: 1.0,
     //inTextureFileName: "",

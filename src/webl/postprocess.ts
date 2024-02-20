@@ -1,5 +1,6 @@
 //Bloom
 
+import { GBurningSurface } from "./firePlane";
 import { CreateTextureRT } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
@@ -43,6 +44,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         NoiseTexture: gl.getUniformLocation(shaderProgram, "NoiseTexture"),
         FlameNoiseTexture: gl.getUniformLocation(shaderProgram, "FlameNoiseTexture"),
         FlameNoiseTexture2: gl.getUniformLocation(shaderProgram, "FlameNoiseTexture2"),
+        FuelTexture: gl.getUniformLocation(shaderProgram, "FuelTexture"),
     };
     return params;
 }
@@ -621,6 +623,10 @@ export class RCombinerPass {
         gl.activeTexture(gl.TEXTURE0 + 9);
         gl.bindTexture(gl.TEXTURE_2D, this.LensTexture);
         gl.uniform1i(this.UniformParametersLocationList.LensTexture, 9);
+
+        gl.activeTexture(gl.TEXTURE0 + 10);
+        gl.bindTexture(gl.TEXTURE_2D, GBurningSurface.pInstance!.GetCurFuelTexture());
+        gl.uniform1i(this.UniformParametersLocationList.FuelTexture, 10);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }

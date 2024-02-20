@@ -208,6 +208,36 @@ export const ShaderSourceFireUpdatePS =
 		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
 	}
 
+	vec2 snapToCardinalDirection(vec2 directionVector) {
+		// Normalize the direction vector
+		float magnitude = length(directionVector);
+		vec2 normalizedVector = directionVector / magnitude;
+	
+		// Find the dominant axis
+		float absX = abs(normalizedVector.x);
+		float absY = abs(normalizedVector.y);
+	
+		vec2 snappedVector;
+	
+		if (absX > absY) {
+			// Snap to left or right
+			if (normalizedVector.x >= 0.0) {
+				snappedVector = vec2(1.0, 0.0);  // Snap to right
+			} else {
+				snappedVector = vec2(-1.0, 0.0);  // Snap to left
+			}
+		} else {
+			// Snap to up or down
+			if (normalizedVector.y >= 0.0) {
+				snappedVector = vec2(0.0, 1.0);  // Snap to up
+			} else {
+				snappedVector = vec2(0.0, -1.0);  // Snap to down
+			}
+		}
+	
+		return snappedVector;
+	}
+
 	void main()
 	{
 		ivec2 SampleCoord = ivec2(gl_FragCoord.xy);
@@ -219,9 +249,9 @@ export const ShaderSourceFireUpdatePS =
 		const float kMutualScale = 1.0 + float(` +
     Math.random() * 1.5 +
     /* glsl */ `);
-		const float GFireSpreadSpeed = 3. * kMutualScale;
+		const float GFireSpreadSpeed = 4. * kMutualScale;
 		const float NoiseAdvectedSpreadStrength = 0.45f;
-		const float GFuelConsumeSpeed = 0.45f * kMutualScale;
+		const float GFuelConsumeSpeed = 0.75f * kMutualScale;
 		const float GFireDissipationSpeed = 0.5f * kMutualScale; //How fast fire fades when no more fuel is left. Try 0.05
 		const float kIgnitionThreshold = 0.75; //When pixel becomes a source of fire
 		const float kHeatRaiseSpeedDuringCombustion = 1.0;
@@ -251,7 +281,7 @@ export const ShaderSourceFireUpdatePS =
 			neighborFire = texelFetch(FireTexture, SampleCoord + ivec2(1, 0), 0).r;
 			if(neighborFire > originalFireValue && neighborFire > kIgnitionThreshold)
 			{
-				accumulatedFire += neighborFire * weight * GFireSpreadSpeed * DeltaTime;
+				accumulatedFire += neighborFire * weight * GFireSpreadSpeed * DeltaTime * 0.25;
 			}
 			if(SampleCoord.x > 0)
 			{
@@ -259,7 +289,7 @@ export const ShaderSourceFireUpdatePS =
 				neighborFire = texelFetch(FireTexture, SampleCoord - ivec2(1, 0), 0).r;
 				if(neighborFire > originalFireValue && neighborFire > kIgnitionThreshold)
 				{
-					accumulatedFire += neighborFire * weight * GFireSpreadSpeed * DeltaTime;
+					accumulatedFire += neighborFire * weight * GFireSpreadSpeed * DeltaTime* 0.25;
 				}
 			}	
 			if(SampleCoord.y > 0)
@@ -268,14 +298,14 @@ export const ShaderSourceFireUpdatePS =
 				neighborFire = texelFetch(FireTexture, SampleCoord - ivec2(0, 1), 0).r;
 				if(neighborFire > originalFireValue && neighborFire > kIgnitionThreshold)
 				{
-					accumulatedFire += neighborFire * weight * GFireSpreadSpeed * DeltaTime;
+					accumulatedFire += neighborFire * weight * GFireSpreadSpeed * DeltaTime* 0.25;
 				}
 			}	
 			//down
 			neighborFire = texelFetch(FireTexture, SampleCoord + ivec2(0, 1), 0).r;
 			if(neighborFire > originalFireValue && neighborFire > kIgnitionThreshold)
 			{
-				accumulatedFire += neighborFire * weight * GFireSpreadSpeed * DeltaTime;
+				accumulatedFire += neighborFire * weight * GFireSpreadSpeed * DeltaTime* 0.25;
 			}
 		#endif//SIDES SPREAD
 
@@ -344,8 +374,8 @@ export const ShaderSourceFireUpdatePS =
 			const float fireTextureSize = 512.0;
 			vec2 texCoords = vec2((float(SampleCoord.x) + 0.5) / (fireTextureSize), (float(SampleCoord.y) + 0.5) / (fireTextureSize));
 			vec2 noiseSamplingUV = texCoords;
-			noiseSamplingUV *= noisePrecision;
-			noiseSamplingUV += vec2(Time * 0.00013, Time * 0.000093);
+			noiseSamplingUV *= noisePrecision * 2.0;
+			noiseSamplingUV += vec2(Time * 0.0013, Time * 0.00093);
 			vec3 noiseVec3 = textureLod(NoiseTexture, noiseSamplingUV, 0.f).rgb;
 			vec2 noiseDirVec = noiseVec3.rg;
 			{
@@ -363,15 +393,21 @@ export const ShaderSourceFireUpdatePS =
 			noiseDirVec.x = clamp(MapToRange(noiseDirVec.x, 0.4, 0.6, -1.0, 1.0), -1.0, 1.0);
 			noiseDirVec.y = clamp(MapToRange(noiseDirVec.y, 0.4, 0.6, -1.0, 1.0), -1.0, 1.0);
 
+			//noiseDirVec.xy = vec2(1.0, 0.0);
+
+			noiseDirVec.xy = vec2(abs(noiseDirVec.x), abs(noiseDirVec.y)) * snapToCardinalDirection(noiseDirVec.xy);
+
 			float distWeight = 1.f - min(1.0, length(noiseDirVec));
 			distWeight *= distWeight;
+
+			distWeight = max(0.25, distWeight);
 
 			noiseDirVec *= offsetLength;
 
 			neighborFire = textureLod(FireTexture, texCoords + noiseDirVec, 0.f).r;
-			if(neighborFire > originalFireValue && neighborFire > kIgnitionThreshold * 0.5)
+			if(neighborFire > originalFireValue)
 			{
-				accumulatedFire += neighborFire * distWeight * NoiseAdvectedSpreadStrength * GFireSpreadSpeed * DeltaTime;
+				accumulatedFire += neighborFire * distWeight * GFireSpreadSpeed * DeltaTime;
 			}
 
 		}
@@ -539,6 +575,8 @@ export function GetShaderSourceFirePlanePreProcess() {
 
 			vec3 surfaceColor = textureLod(ImageTexture, flippedUVs.xy, 0.0).rgb;
 
+			#if 1
+
 			const float kRandomValue = float(` +
         MathLerp(0.007, 0.07, Math.random()) +
         /* glsl */ `);
@@ -553,7 +591,21 @@ export function GetShaderSourceFirePlanePreProcess() {
 			vec3 dx = (e - w)*.5;
 
 			vec3 edge = sqrt(dx*dx + dy*dy);
+
+			#else
+
+			vec3 edge = surfaceColor;
+
+			#endif
+
 			float luminance = dot( edge.rgb, vec3( 0.299f, 0.587f, 0.114f ) );
+
+			const float borderThres = 0.005;
+
+			if((vsOutTexCoords.x > 1.0 - borderThres) || (vsOutTexCoords.x < borderThres) || (vsOutTexCoords.y > 1.0 - borderThres) || (vsOutTexCoords.y < borderThres) )
+			{
+				luminance = 0.0;
+			}
 
 			OutFirePlane = vec4(surfaceColor.rgb, luminance);
 
@@ -729,6 +781,179 @@ export function GetShaderSourceFireVisualizerPS() {
 
 	}
 
+	vec3 QuadraticInterpolateBezier(float x, vec3 y0, vec3 y1, vec3 y2)
+	{
+		return mix(mix(y0, y1, x), mix(y1, y2, x), x);
+	}
+
+	vec3 QuadraticInterpolate(float x, vec3 y0, vec3 y1, vec3 y2)
+	{
+		if(x < 0.5)
+		{
+			float t = MapToRange(x, 0.0, 0.5, 0.0, 1.0);
+			return mix(y0, y1, t);
+		}
+		else
+		{
+			float t = MapToRange(x, 0.5, 1.0, 0.0, 1.0);
+			return mix(y1, y2, t);
+		}
+	}
+
+	float noise1(in float v, float scl)
+	{
+		return fract(sin(v * scl) * scl);
+	}
+
+	float rand(vec2 co) {
+		return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+	}
+
+	float hash2(vec2 p)
+	{  
+		vec3 p3 = fract(vec3(p.xyx) * .2831);
+    	p3 += dot(p3, p3.yzx + 19.19);
+    	return fract((p3.x + p3.y) * p3.z);
+	}
+
+	float hash12(vec2 p)
+	{
+		vec3 p3  = fract(vec3(p.xyx) * .1031);
+	    p3 += dot(p3, p3.yzx + 33.33);
+	    return fract((p3.x + p3.y) * p3.z);
+	}
+
+	//============================================================= SINE NOISE begin
+
+	#define _PI2 6.2831853
+	#define _TemporalFrequency 0.4 //!
+	#define _Twist 0.5
+	#define _Detail 0.5 //!
+	#define _Falloff 0.55
+	#define _Frequency _PI2
+	#define _DetailFrequency _PI2 
+	#define GOLDEN_ANGLE 2.39996322
+
+	//identity rotated GOLDEN_ANGLE around x, then around y
+	#define m3 mat3(-0.7373688220977783, 0.4562871754169464, 0.49808549880981445, 0, -0.7373688220977783, 0.6754903197288513, 0.6754903197288513, 0.49808549880981445, 0.5437127947807312)
+	//matrix often used on shadertoy for rotations of FBM octaves
+	//#define m3 mat3( 0.00,  0.80,  0.60,	-0.80,  0.36, -0.48,-0.60, -0.48,  0.64 )
+
+	vec3 twistedSineNoise33(vec3 q)
+	{ 
+	  float a = 1.;
+	  vec3 sum = vec3(0);
+	  for(int i = 0; i <7 ; i++){
+		q = m3 * q; 
+		vec3 s = sin( q.zxy / a) * a;  
+		q += s * _Twist;
+		sum += s;
+		a *= _Falloff;
+	  }
+	  return sum;
+	}
+ 
+	//9 vec3 sines
+	float fog(vec2 uv)
+	{
+		vec3 p = vec3(uv * _Frequency, Time * _TemporalFrequency);
+
+		//p.y -= Time * 0.1;
+
+		vec3 n = twistedSineNoise33(p);
+		n += sin(n * _DetailFrequency) * _Detail;
+		return (n.x + n.y + n.z) * 0.11 + 0.5;
+	}
+
+	//===================================================================== SINE NOISE end
+
+
+	//============================================================= SWIRL FBM NOISE begin
+
+
+	float hash( float n ){return fract(sin(n)*43758.5453);}
+
+	float noiseGrad( in vec2 x )
+	{
+		x *= 1.75;
+	    vec2 p = floor(x);
+	    vec2 f = fract(x);
+
+	    f = f*f*(3.0-2.0*f);
+
+	    float n = p.x + p.y*57.0;
+
+	    float res = mix(mix( hash(n+  0.0), hash(n+  1.0),f.x),
+	                    mix( hash(n+ 57.0), hash(n+ 58.0),f.x),f.y);
+	    return res;
+	}
+
+	
+	float fbm( in vec2 p )
+	{	
+		const mat2 m2 = mat2( 0.80,  0.60, -0.60,  0.80 );
+
+		float z=2.;
+		float rz = 0.;
+		p *= 0.25;
+		for (float i= 1.;i < 6.;i++ )
+		{
+			rz += abs((noiseGrad(p)-0.5)*2.)/z;
+			z = z * 2.;
+			p = p * 2. * m2;
+		}
+		return rz;
+	}
+
+	//============================================================= SWIRL FBM NOISE end
+
+
+
+	//============================================================= DITHER NOISE begin
+
+
+		//checkerboard noise
+	vec2 stepnoise(vec2 p, float size) {
+	    p += 10.0;
+	    float x = floor(p.x/size)*size;
+	    float y = floor(p.y/size)*size;
+	
+	    x = fract(x*0.1) + 1.0 + x*0.0002;
+	    y = fract(y*0.1) + 1.0 + y*0.0003;
+	
+	    float a = fract(1.0 / (0.000001*x*y + 0.00001));
+	    a = fract(1.0 / (0.000001234*a + 0.00001));
+	
+	    float b = fract(1.0 / (0.000002*(x*y+x) + 0.00001));
+	    b = fract(1.0 / (0.0000235*b + 0.00001));
+	
+	    return vec2(a, b);
+	}
+
+	float tent(float f) {
+	    return 1.0 - abs(fract(f)-0.5)*2.0;
+	}
+
+	#define SEED1 (1.705)
+	#define SEED2 (1.379)
+	#define DMUL 8.12235325
+
+	float poly(float a, float b, float c, float ta, float tb, float tc) {
+	    return (a*ta + b*tb + c*tc) / (ta+tb+tc);
+	}
+	float mask(vec2 p) {
+	    vec2 r = stepnoise(p, 5.5)-0.5;
+	    p[0] += r[0]*DMUL;
+	    p[1] += r[1]*DMUL;
+	
+	    float f = fract(p[0]*SEED1 + p[1]/(SEED1+0.15555))*1.03;
+	    return poly(pow(f, 150.0), f*f, f, 1.0, 0.0, 1.3);
+	}
+
+
+	//============================================================= DITHER NOISE end
+
+
 	#define PAPER 0
 	#define WOOD 0
 
@@ -737,9 +962,7 @@ export function GetShaderSourceFireVisualizerPS() {
 		const float ImageMixRoughnessScale = 0.75f;
 		const bool bInverseRoughness = false;
 		const float TopSpecFadeScale = 2.0;
-		const float NormalHarshness = float(` +
-        MathLerp(0.5, 1.0, Math.random()) +
-        /* glsl */ `);
+		
 
 		
 		ivec2 SampleCoord = ivec2(gl_FragCoord.xy);
@@ -749,6 +972,10 @@ export function GetShaderSourceFireVisualizerPS() {
 		bool bIsBurntSurface = curFuel < 0.01;
 		bool bIsPureUnBurntSurface = curFuel > 0.995;
 		
+
+		float NormalHarshness = mix(0.1, 1.0, clamp(curFuel, 0.0, 1.0));
+
+
 		vec3 surfaceColor = vec3(0.0);
 
 		//if(curFire < 4.0f || curFuel < 0.5)
@@ -832,6 +1059,8 @@ export function GetShaderSourceFireVisualizerPS() {
 				//roughness = roughness * clamp(pow(length(vsOutTexCoords.xy - vec2(0.5) * 1.0f), 1.f/4.f), 0.0, 1.0);
 
 				roughness = max(roughness,RoughnessScaleAddContrastMin.w); 
+
+				roughness = 0.0;
 			}
 
 			//===================
@@ -868,7 +1097,7 @@ export function GetShaderSourceFireVisualizerPS() {
 					spotlightMask = texelFetch(SpotlightTexture, texelPos, 0).r;
 
 					const float spotLightMaskScale = 5.0f;
-					const float spotlightAmbientLight = 0.15f;
+					const float spotlightAmbientLight = 0.5f;
 					spotlightMask = clamp(spotlightMask * spotLightMaskScale, spotlightAmbientLight, 1.0);
 
 					//spotlightMask = 2.0f;
@@ -883,7 +1112,7 @@ export function GetShaderSourceFireVisualizerPS() {
 					//Specular
 					float specular = pow(max(0.f, dot(halfVec, normal)), specularPowerScaledCur);
 					//float specular = pow(max(0.f, dot(halfVec, normal)), SpecularIntensityAndPower.y * 8.f);
-					lightingSpecFinal += min(5.f, specular * max(0.25, curFuel) * SpecularIntensityAndPower.x * max(0.75,(1.f - roughness)) * nDotL * spotlightMask);
+					lightingSpecFinal += min(50.f, specular * SpecularIntensityAndPower.x * max(0.75,(1.f - roughness)) * nDotL * spotlightMask);
 				}
 
 				//Tool Light
@@ -1006,22 +1235,59 @@ export function GetShaderSourceFireVisualizerPS() {
         /* glsl */ `);
 				ashesColor += ashesTintScale * vec3(0., 0.725,  1.0) * MapToRange(textureLod(NoiseTextureLQ, ashesTintUV, 0.f).r, 0.4, 0.6, 0.0, 1.0);
 			}
-			//OutFirePlane = vec4(ashesColor.rgb, 1); return;
+			
+
+			ashesColor *= 0.0;
+
+			#if 0
+			//float noise = rand(vsOutTexCoords.xy + fract(Time));
+			int bitness = 1;
+			float noise = hash2(vec2(0.0, fract(Time)) + vec2(ivec2(gl_FragCoord.xy) / bitness + ivec2(fract(Time * 2.0) > 0.5 ? 1 : 0)));
+			if(noise < 0.7)
+			{
+				noise = 0.0;
+			}
+			ashesColor += (noise);
+
+			for(int i = 0; i < 6; i++)
+			{
+				noise = hash2(vec2(0.0, fract(Time)) + vec2(ivec2(gl_FragCoord.xy) / bitness) + float(i) * 2.7);
+				if(noise < 0.7)
+				{
+					noise = 0.0;
+				}
+				ashesColor *= (noise);
+			}
+			#endif
+			
+			
+			
+
+			/* const vec3 orange = vec3(1.0, 0.5, 0.0);
+
+			vec3 vToCam = normalize(CameraDesc.xyz - interpolatorWorldSpacePos);
+			float angleWeight = max(0.f, dot(vToCam, normal));
+			ashesColor = orange * noise * (1.0 - angleWeight); */
+
+
 			const float kRandomOffset = float(` +
         MathLerp(0.01, 0.5, Math.random()) +
         /* glsl */ `);
 			float afterBurnEmbers = texture(AfterBurnTexture, vsOutTexCoords.xy + vec2(kRandomOffset, 0.0)).r;
 			afterBurnEmbers = afterBurnEmbers * clamp(pow(length(vsOutTexCoords.xy - vec2(0.5) * 1.0f), 1.f), 0.0, 1.0);
+
+			afterBurnEmbers *= 0.0f;
+
 			//afterBurnEmbers = 1.f - afterBurnEmbers;
 		#endif
 			
-			vec3 embersColor = vec3(afterBurnEmbers, afterBurnEmbers * 0.2, afterBurnEmbers * 0.1);
+			vec3 embersColor = vec3(0.1, 0.2, 0.9) * afterBurnEmbers;
 			float emberScale = 1.f;
 		#if 1 //NOISE EMBERS SCALE
 			//float noiseConst = textureLod(NoiseTextureLQ, 0.5 * (vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0043)), 0.f).r;
 			//float noiseConst = textureLod(NoiseTextureLQ, 50.f + vec2(Time * 0.0013, Time * 0.0093), 0.f).r;
-			float noiseConst = textureLod(NoiseTextureLQ, 50.f + vec2(Time * 0.013, Time * 0.0093), 0.f).r;
-			noiseConst = clamp(MapToRange(noiseConst, 0.4, 0.6, 0.25, 1.0), 0.1f, 1.f);
+			float noiseConst = textureLod(NoiseTextureLQ, 50.f + vec2(Time * 0.013, Time * 0.0593), 0.f).r;
+			noiseConst = clamp(MapToRange(noiseConst, 0.4, 0.6, 0.0, 1.0), 0.0f, 1.f);
 		#if (1 && (PAPER || WOOD))
 			
 			vec3 noiseVec = textureLod(AfterBurnTexture, (vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0043)), 0.f).rgb;
@@ -1036,7 +1302,8 @@ export function GetShaderSourceFireVisualizerPS() {
 			//emberScale *= emberScale;
 			//emberScale = (sin(Time * PI * 0.35) + 1.0f) * 0.5;
 		#else
-			vec3 noiseVec = textureLod(NoiseTextureLQ, vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0093), 0.f).rgb;
+			const float embersNoiseSpeedScale = 3.0;
+			vec3 noiseVec = textureLod(NoiseTextureLQ,  0.4 * vsOutTexCoords.xy - vec2(Time * 0.0013 * embersNoiseSpeedScale, Time * 0.0093 * embersNoiseSpeedScale), 0.f).rgb;
 			float t = NoiseTextureInterpolator;
 			//float t = mod(Time, 3.f);
 			if(t < 1.f)
@@ -1051,12 +1318,13 @@ export function GetShaderSourceFireVisualizerPS() {
 			{
 				emberScale = mix(noiseVec.z, noiseVec.x, t - 2.f);
 			}
-			emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.25f, 2.f);
-			emberScale *= 1.5;
+			emberScale = clamp(MapToRange(emberScale, 0.4, 0.6, 0.0, 1.0), 0.0f, 1.f);
+			//emberScale *= 1.5;
 			//emberScale *= clamp(noiseConst + 0.5, 0.5, 1.5);
 			emberScale *= clamp(noiseConst * 1.25, 0.5, 1.25);
 			#endif
 
+			
 
 			#if PAPER
 			//emberScale = max(0.25, emberScale * 0.75);
@@ -1074,7 +1342,7 @@ export function GetShaderSourceFireVisualizerPS() {
 
 			ashesColor.rgb += embersColor;
 			#if !(PAPER)
-			ashesColor.b += (1.f - emberScale) * 0.05f;
+			//ashesColor.b += (1.f - emberScale) * 0.05f;
 			#endif
 
 		#if 1 //BURNED IMAGE
@@ -1099,8 +1367,125 @@ export function GetShaderSourceFireVisualizerPS() {
 		#else//PREPROCESS
 			float luminance = firePlaneImageTexture.a;
 		#endif//PREPROCESS
+
+		const vec3 yellow = vec3(1.0, 0.9, 0.0);
+			const vec3 turqoise = vec3(0.0, 0.95, 0.7);
+			const vec3 red = vec3(1.0, 0.2, 0.0);
+			const vec3 purple = vec3(0.5, 0.0, 1.0);
+
+			float colorScale = 2.0;
+
+			emberScale = fog(vsOutTexCoords);
+
+			emberScale = clamp(MapToRange(emberScale, 0.2, 0.8, 0.0, 1.0), 0.0, 1.0);
+
+
+			//vec3 curColor = QuadraticInterpolateBezier(clamp(emberScale, 0.0, 1.0), turqoise, yellow, purple);
+			vec3 curColor = QuadraticInterpolate(clamp(emberScale, 0.0, 1.0), red, turqoise, purple);
+			curColor = min(vec3(1.0), curColor);
+			//vec3 curColor = mix(turqoise, red, emberScale);
+
+			///=============================================================================
+
 			
-			burnedImageTexture = luminance * 10.0 * vec3(1, 0.2, 0.1);
+
+			{
+				float t = -Time*0.05;
+				// Normalized pixel coordinates (from 0 to 1)
+				vec2 uv = vsOutTexCoords - 0.5;
+				float curvature = 70.0 ;
+	
+				uv*= curvature *.05+0.0001;
+	
+				float r  = sqrt(dot(uv,uv));
+				float x = dot(normalize(uv), vec2(.5,0.))+t;	
+				float y = dot(normalize(uv), vec2(.0,.5))+t;
+	
+				const float ray_density = 10.0;
+	
+				x = fbm(vec2(y*ray_density*0.5,r+x*ray_density*.2));
+				y = fbm(vec2(r+y*ray_density*0.1,x*ray_density*.5));
+	
+				float gamma = 2.0;
+				float ray_brightness = 5.0;
+	
+				float val;
+				val = fbm(vec2(r+y*ray_density,r+x*ray_density-y));
+				val = smoothstep(gamma*.02-.1,ray_brightness+(gamma*0.02-.1)+.001,val);
+				val = sqrt(val);
+
+				val *= 2.0;
+				val *= val;
+				val = clamp(abs(val), 0.0, 1.0);
+				val = Contrast(val, 1.5);
+				/* if(val < 0.1)
+				{
+					val = 0.0;
+				}
+				val *= 20.0; */
+				val *= 3.0;
+				//val *= 10.0;
+				//val = MapToRange(val, 0.4, 0.6, 0.0, 1.0);
+				//val *= 0.1;
+				vec3 col = vec3(val) * curColor;
+	
+				/* vec3 colors = vec3(2.8, 0.0, 2.0) * 2.0;
+				//colors = vec3(4.0, 2.0, 0.5);
+				colors = curColor * vec3(0.2, 0.2, 0.5);
+				float brightness = 3.0;
+				float spotBrightness = -15.0; */
+	
+				//
+
+				
+	
+				/* vec3 col = val / colors;
+				col = clamp(1.-col,0.,1.); */
+				//col = mix(col,vec3(1.),spotBrightness-r/0.1/curvature*200./brightness);
+				//col = clamp(col,0.,1.);
+				//col = pow(col,vec3(1.7));
+	
+				float d = length(vsOutTexCoords - vec2(0.5));
+				d = clamp(d, 0.0, 1.0);
+				col *= d * d;
+	
+				/* col.r = MapToRange(col.r, 0.1, 0.8, 0.0, 1.0);
+				col.b = MapToRange(col.b, 0.1, 0.8, 0.0, 1.0); */
+
+				float ditherNoise = mask(vsOutTexCoords * vec2(64.0, 32.0));
+				if(ditherNoise < 0.8)
+				{
+					ditherNoise = 0.0;
+				}
+				//ashesColor.rgb += ditherNoise * 0.1;
+
+				/* vec3 colCopy = col;
+				col = step(vec3(ditherNoise), colCopy) * 0.1; */
+	
+				ashesColor.rgb += col;
+	
+	
+				}
+	
+	
+				//==================================================================================
+
+			ashesColor *= 10.0;
+			
+			if(luminance > 0.1)
+			{
+				luminance = 1.0;
+			}
+
+			//float mutNoise = hash2(vec2(Time, ivec2(gl_FragCoord.xy) / 32));
+			float mutNoise = sin(Time * 60.0) > 0.0 ? 1.0 : 0.0;
+			mutNoise = max(0.75, mutNoise);
+			mutNoise = max(min(1.0, 1.0 - noiseConst), mutNoise);
+			//mutNoise = 1.0;
+			//float mutNoise = rand(vec2(mod(Time, 0.2) + 1.0, 2.0));
+
+			
+			burnedImageTexture = luminance * curColor * 2.0 * mutNoise * (1.0 + 1.0 * clamp(noiseConst, 0.0, 1.0));
 			//burnedImageTexture = luminance * 10.0 * vec3(0.5, 0.2, 0.7);
 			//burnedImageTexture = luminance * 10.0 * vec3(0.2, 0.2, 1.0);
 			//ashesColor.rgb += burnedImageTexture * emberScale;
@@ -1115,7 +1500,7 @@ export function GetShaderSourceFireVisualizerPS() {
 			//ashesColor.rgb += min(1.0, luminance * 5.0) * 0.25;
 			//ashesColor += burnedImageTexture;
 			//float curFireLOD = texture(FireTexture, vsOutTexCoords.xy).r;
-			vec3 finalAfterBurnColor = max(ashesColor.rgb, burnedImageTexture * 2.0f *emberScale);
+			vec3 finalAfterBurnColor = max(ashesColor.rgb, burnedImageTexture * 2.0f);
 			ashesColor.rgb = mix(finalAfterBurnColor * (1.0 - AfterBurnEmbersParam) * (1.0 - AfterBurnEmbersParam), max(0.75, (1.0 - AfterBurnEmbersParam * 0.75)) * max(ashesColor.rgb, vec3(min(0.9, luminance * 10.0) * 1.0)), AfterBurnEmbersParam);
 		#endif
 		#endif////BURNED IMAGE
@@ -1128,7 +1513,7 @@ export function GetShaderSourceFireVisualizerPS() {
 
 			}
 
-			if(surfaceColor.r <= 1.f || curFuel > 0.99f)
+			if(true)
 			{
 
 			#if 1 //!PBR
@@ -1215,7 +1600,7 @@ export function GetShaderSourceFireVisualizerPS() {
 
 		curFire *= FireBrightnessScale;
 
-		vec3 brightFlameColor = vec3(1.0, 0.2, 0.1) * curFire;
+		vec3 brightFlameColor = vec3(0.0, 0.1, 1.0) * curFire;
 		
 		if(curFire > 4.f)
 		{
@@ -1223,14 +1608,14 @@ export function GetShaderSourceFireVisualizerPS() {
 		}
 		else if(curFire > 2.0)
 		{
-			vec3 lowFlameColor = vec3(0.1f, 0.2, 1.0) * (curFire * 0.5) - 1.0;
+			vec3 lowFlameColor = vec3(1.0f, 0.0, 0.5) * (curFire * 0.75) - 0.0;
 			float f = (curFire * 0.5) - 1.0;
 			f *= f;
 			fireColor = mix(lowFlameColor, brightFlameColor, f);
 		}
 		else if(curFire > 0.001)
 		{
-			vec3 lowFlameColor = vec3(0.1f, 0.2, 1.0) * (curFire * 0.5);
+			vec3 lowFlameColor = vec3(1.0f, 0.0, 0.5) * (curFire * 0.75) - 0.0;
 			float fireInv = clamp(1.f - curFire, 0.0, 1.0);
 			vec3 lowestFlameColor = vec3(0.4f, 0.26, 0.12) * fireInv * 0.01;
 			float t = curFire * 0.5;

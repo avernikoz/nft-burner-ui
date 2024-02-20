@@ -570,6 +570,7 @@ export function GetShaderSourceCombinerPassPS() {
 		uniform sampler2D SmokeNoiseTexture;
 		uniform sampler2D PointLightsTexture;
 		uniform sampler2D LensTexture;
+		uniform sampler2D FuelTexture;
 	
 		in vec2 vsOutTexCoords;
 
@@ -672,11 +673,164 @@ export function GetShaderSourceCombinerPassPS() {
 		    case 5: return Uncharted2Tonemap(color);
 		    }
 		}
+		
 
 		// Function to generate random float between 0 and 1
 		float rand(vec2 co) {
 		    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
 		}
+
+		
+		uvec4 murmurHash41(uint src) {
+			const uint M = 0x5bd1e995u;
+			uvec4 h = uvec4(1190494759u, 2147483647u, 3559788179u, 179424673u);
+			src *= M; src ^= src>>24u; src *= M;
+			h *= M; h ^= src;
+			h ^= h>>13u; h *= M; h ^= h>>15u;
+			return h;
+		}
+		
+		// 4 outputs, 1 input
+		vec4 hash41(float src) {
+			uvec4 h = murmurHash41(floatBitsToUint(src));
+			return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0;
+		}
+		
+		uvec4 murmurHash44(uvec4 src) {
+			const uint M = 0x5bd1e995u;
+			uvec4 h = uvec4(1190494759u, 2147483647u, 3559788179u, 179424673u);
+			src *= M; src ^= src>>24u; src *= M;
+			h *= M; h ^= src.x; h *= M; h ^= src.y; h *= M; h ^= src.z; h *= M; h ^= src.w;
+			h ^= h>>13u; h *= M; h ^= h>>15u;
+			return h;
+		}
+		
+		// 4 outputs, 4 inputs
+		vec4 hash44(vec4 src) {
+			uvec4 h = murmurHash44(floatBitsToUint(src));
+			return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0;
+		}
+
+
+		vec4 RandRect(float seed)
+		{
+		    const vec2 maxSize = vec2(1.f, 0.2f);
+		    vec4 rand = hash41(seed);
+		    rand = rand * 1.5f - 0.25f; // scale larger than screen so blocks don't appear to crowd to much in the center
+		    vec4 result = vec4(min(rand.x,rand.z), min(rand.y,rand.w), max(rand.x,rand.z), max(rand.y,rand.w));
+		    // scale delta to more uniformly sample the 'maxSize' (if we just clamp we get an abnormally large count of 'maxSize' rects)
+		    vec2 delta = result.zw-result.xy;
+		    delta *= maxSize;
+		    result.zw = result.xy + min(maxSize, delta); // min not really needed if hash function is [0,1] bound
+		    return result;
+		}
+
+		bool RectContains(vec2 p, vec4 rect) 
+		{
+		    return p.x >= rect.x && p.y >= rect.y && p.x <= rect.z && p.y <= rect.w;
+		}
+
+		vec2 GlitchOffset(vec2 uv, int channel, float glitchAmount)
+		{
+		    int steps = int(floor(glitchAmount * 32.f));
+		
+		    vec2 rects = vec2(0.f);
+		    for(int i = 0; i < steps; i++) {
+		        float seed = float(i) + floor(Time * 5.f) * 1.1385f;
+		        vec4 rect = RandRect(seed);
+		        rect.xz += float(channel)*0.035f;
+		        if(RectContains(uv,rect)) {
+		            rects = hash41(seed*1.317f).rg;
+		            // [-1,1]
+		            rects = rects*2.f-vec2(1.f);
+		        }
+		    }
+		    return rects * 0.0625f;
+		}
+
+		vec2 Warp(vec2 pos)
+		{
+			// Display warp.
+			// 0.0 = none
+			// 1.0/8.0 = extreme
+			const vec2 warp=vec2(1.0/24.0, 1.0/16.0); 
+
+			pos=pos*2.0-1.0;    
+			pos*=vec2(1.0+(pos.y*pos.y)*warp.x,1.0+(pos.x*pos.x)*warp.y);
+			return pos*0.5+0.5;
+		}
+
+
+
+		// Distance in emulated pixels to nearest texel.
+		vec2 Dist(vec2 pos)
+		{
+			const vec2 res = vec2(320.0,160.0);
+			pos=pos*res;
+			return -((pos-floor(pos)) - vec2(0.5));
+			}
+    
+		// 1D Gaussian.
+		float Gaus(float pos,float scale){ return exp2(scale*pos*pos);}
+
+		// Return scanline weight.
+		float Scan(vec2 pos,float off)
+		{
+			// Hardness of scanline.
+			//  -8.0 = soft
+			// -16.0 = medium
+			const float hardScan=-1.0;
+
+			float dst=Dist(pos).y;
+			return Gaus(dst+off,hardScan);
+		}
+
+
+		//============================================================= SINE NOISE begin
+
+		#define _PI2 6.2831853
+		#define _TemporalFrequency 0.3 //!
+		#define _Twist 0.5
+		#define _Detail 0.5 //!
+		#define _Falloff 0.55
+		#define _Frequency _PI2
+		#define _DetailFrequency _PI2 
+		#define GOLDEN_ANGLE 2.39996322
+
+		//identity rotated GOLDEN_ANGLE around x, then around y
+		#define m3 mat3(-0.7373688220977783, 0.4562871754169464, 0.49808549880981445, 0, -0.7373688220977783, 0.6754903197288513, 0.6754903197288513, 0.49808549880981445, 0.5437127947807312)
+		//matrix often used on shadertoy for rotations of FBM octaves
+		//#define m3 mat3( 0.00,  0.80,  0.60,	-0.80,  0.36, -0.48,-0.60, -0.48,  0.64 )
+
+		vec3 twistedSineNoise33(vec3 q)
+		{ 
+		  float a = 1.;
+		  vec3 sum = vec3(0);
+		  for(int i = 0; i <7 ; i++){
+		    q = m3 * q; 
+		    vec3 s = sin( q.zxy / a) * a;  
+		    q += s * _Twist;
+		    sum += s;
+		    a *= _Falloff;
+		  }
+		  return sum;
+		}
+	 
+		//9 vec3 sines
+		float fog(vec2 uv)
+		{
+		    vec3 p = vec3(uv * _Frequency, Time * _TemporalFrequency);
+
+			//p.y -= Time * 0.1;
+
+		    vec3 n = twistedSineNoise33(p);
+		    n += sin(n * _DetailFrequency) * _Detail;
+		    return (n.x + n.y + n.z) * 0.11 + 0.5;
+		}
+
+		//===================================================================== SINE NOISE end
+
+
 	
 		void main()
 		{
@@ -687,12 +841,13 @@ export function GetShaderSourceCombinerPassPS() {
         /* glsl */ `));
 
 			vec2 texCoords = vsOutTexCoords;
+			texCoords = Warp(texCoords);
 			ivec2 itexCoords = ivec2(gl_FragCoord.xy);
 			vec3 flame = texelFetch(FlameTexture, itexCoords, 0).rgb;
 			flame.rgb *= 1.1f;
 	
 		#if 1//heat distortion
-			vec2 distortionUV = vsOutTexCoords;
+			vec2 distortionUV = texCoords;
 			distortionUV.y -= Time * 0.25;
 			distortionUV.x *= 1.5;
 			distortionUV.y *= 0.75;
@@ -704,7 +859,7 @@ export function GetShaderSourceCombinerPassPS() {
 			distortionUV = MapToRange(distortionUV, -1.0, 1.0, 0.0, 1.0);
 			vec3 distortionNoise = textureLod(NoiseTexture, distortionUV.xy, 0.f).rgb;
 			distortionNoise = (distortionNoise * 2.f) - 1.f;
-			distortionUV = vsOutTexCoords;
+			distortionUV = texCoords;
 			float t = mod(Time, 2.f);
 			if(t < 1.f)
 			{
@@ -727,8 +882,55 @@ export function GetShaderSourceCombinerPassPS() {
 			distortionUV.y += distortionNoise.g;
 			vec3 firePlane = textureLod(FirePlaneTexture, distortionUV.xy, 0.f).rgb;
 		#else
-			vec4 firePlane = textureLod(FirePlaneTexture, texCoords.xy, 0.f);
+			vec3 firePlane = textureLod(FirePlaneTexture, texCoords.xy, 0.f);
 			#endif
+
+
+			vec3 glitchAmount = textureLod(NoiseTexture, vec2(Time * 0.5f,0), 0.f).rgb;
+    		glitchAmount = max(vec3(0.f), glitchAmount-0.35f); // remove some frames from any glitch
+
+			float globalGlitchMod = textureLod(NoiseTexture, vec2(Time * 0.0012f,Time * 0.017f), 0.f).r;
+    		//float globalGlitchOffset = 0.1f * ;
+    		float globalGlitchOffset = 0.03f;
+
+			const float glitchNoiseSpeedScale = 3.0;
+			float noisePos = textureLod(NoiseTexture, (texCoords + vec2(Time * 0.0012f * glitchNoiseSpeedScale,Time * 0.017f * glitchNoiseSpeedScale) ), 0.f).r;
+			noisePos = MapToRange(noisePos, 0.3, 0.7, 0.0, 1.0);
+			
+			//glitchAmount.g *= 10.0;
+
+			float curFuel = textureLod(FuelTexture, vec2(0.0, 0.0), 100.f).r;
+
+			vec2 offsets[3];
+    		offsets[0] = GlitchOffset(texCoords,0, glitchAmount.r-0.125f);
+    		offsets[1] = GlitchOffset(texCoords,1, glitchAmount.g-0.125f);
+    		offsets[2] = GlitchOffset(texCoords,2, glitchAmount.b-0.125f);
+
+			vec3 col = vec3(0.f);
+
+			vec2 dirVec = normalize(texCoords - vec2(0.5));
+
+			for(int channel = 0; channel < 3; channel++) {
+				vec2 normalUV = (texCoords * 2.f - vec2(1.f))*vec2(1,gl_FragCoord.x / gl_FragCoord.y);
+				//vec3 render = Render(normalUV + offsets[channel]);
+				float globalOffset = float(channel-1) * glitchAmount[channel] * globalGlitchOffset;
+				if(channel == 1)
+				{
+					globalOffset = -1.0 * glitchAmount[channel] * globalGlitchOffset * 0.25;
+				}
+				//vec3 render = textureLod(FirePlaneTexture, texCoords + dirVec * globalOffset * noisePos + offsets[channel] *0.5f, 0.f).rgb;
+				vec3 render = textureLod(FirePlaneTexture, texCoords + dirVec * globalOffset * noisePos + offsets[channel] *0.5f, 0.f).rgb;
+				//vec3 render = textureLod(FirePlaneTexture, texCoords + vec2(globalOffset, globalOffset * 0.5) + offsets[channel] *0.5f, 0.f).rgb;
+				//vec3 render = textureLod(FirePlaneTexture, texCoords + vec2(globalOffset, globalOffset * 0.5), 0.f).rgb;
+				//vec3 render = Render(normalUV + vec2(globalOffset, 0.f) + offsets[channel], 0.f);
+				col[channel] += render[channel];
+				//col[channel] += render[channel] > 0.5 ? render[channel] : 0.0;
+			}
+
+			//firePlane = max(firePlane, col * clamp(dot(heat.rgb, vec3(0.333f) * 4.0), 0.f, 1.f));
+			firePlane = max(firePlane, col * ((1.0 - (curFuel * curFuel)) + clamp(dot(heat.rgb, vec3(0.333f) * 4.0), 0.f, 1.f)));
+			//firePlane += col;
+			//firePlane = col;
 			
 			float pointLights = textureLod(PointLightsTexture, texCoords.xy, 0.f).r; 
 
@@ -787,6 +989,24 @@ export function GetShaderSourceCombinerPassPS() {
         (1.0 + Math.random() * 0.25) +
         /* glsl */ `);
 				smoke.rgba = smoke.rgba * 1.f + vec4(vec3(smokeNoise.r) * 0.15, smokeNoise.r * 0.15) * clamp(1.f - smoke.a, 0.0, 1.f);
+
+
+				//FLOOR FOG 
+
+				/* float fogr = fog(texCoords);
+				fogr *= (1.0 - texCoords.y) * (1.0 - texCoords.y);
+				fogr = clamp(fogr, 0.0, 1.0); */
+    			/* float g = fog(vec2(texCoords.x, texCoords.y)) - 0.37;
+    			float b = fog(vec2(texCoords.x, texCoords.y + 0.17));
+    			vec3 fogColor = vec3(r, g, b);
+    			float d = length(texCoords - vec2(0.5));
+    			fogColor *= smoothstep(0.0, 1.0, d); */
+
+				//smoke.rgba = smoke.rgba * 1.f + vec4(vec3(fogr) * 0.15, fogr * 0.15) * clamp(1.f - smoke.a, 0.0, 1.f);
+
+				//smoke.rgba = smoke.rgba * 1.f + vec4(fogColor, dot(fogColor, vec3(0.3))) * clamp(1.f - smoke.a, 0.0, 1.f);
+
+
 			}
 			smoke.rgb *= 0.75f;
 			smoke.rgb *= 0.25f;
@@ -930,7 +1150,10 @@ export function GetShaderSourceCombinerPassPS() {
 				}
 			}
 			#endif
-			
+
+			//Scanline
+			float weight = Scan(texCoords, 0.0);
+			final.rgb *= weight;
 
 			OutColor = vec4(final.rgb, 1);
 		}`

@@ -190,6 +190,10 @@ export class GTool {
     }
 }
 
+const CGConstants = {
+    bUpdateFire: true,
+};
+
 const GPostProcessPasses: {
     CopyPresemt: RPresentPass | null;
     Blur: RBlurPass | null;
@@ -305,10 +309,12 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
 }
 
 export function RenderMain() {
+    //RENDER DEBUG CONFIG
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const DEBUG_ENV = APP_ENVIRONMENT === "development";
     const DEBUG_UI = 1 && DEBUG_ENV;
     const DEBUG_STOP_SIMULATION = 0 && DEBUG_ENV;
+    const DEBUG_NO_SET_TO_BURNED = 1 && DEBUG_ENV;
 
     const canvas = getCanvas();
 
@@ -535,7 +541,7 @@ export function RenderMain() {
         `spotLightIcon2_R8`,
         `spotLightIcon2Inv`,
     );
-    SpotlightPositionController.bEnabled = false;
+    SpotlightPositionController.bEnabled = true;
     function ApplySpotlightControlFromGUI() {
         if (SpotlightPositionController.bIntersectionThisFrame) {
             //Control Spotlight
@@ -628,6 +634,8 @@ export function RenderMain() {
                         GRenderingStateMachine.OnBurnMoreButtonPress();
                     },
                 };
+
+                stateFolder.add(CGConstants, "bUpdateFire");
 
                 stateFolder.add(burnMoreParam, "handleClick").name(burnMoreParam.buttonText);
 
@@ -864,11 +872,14 @@ export function RenderMain() {
 
             if (GTexturePool.AreAllTexturesLoaded() && !bInitialImagePreProcessed) {
                 BurningSurface.FirePlaneImagePreProcess(gl);
-                if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
-                    BurningSurface.SetToBurned(gl);
-                } else {
-                    BurningSurface.ApplyFireAuto(gl, { x: MathLerp(-0.1, 0.2, Math.random()), y: -0.3 }, 0.01);
+                if (!DEBUG_NO_SET_TO_BURNED) {
+                    if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
+                        BurningSurface.SetToBurned(gl);
+                    } else {
+                        BurningSurface.ApplyFireAuto(gl, { x: MathLerp(-0.1, 0.2, Math.random()), y: -0.3 }, 0.01);
+                    }
                 }
+
                 //
                 bInitialImagePreProcessed = true;
             }
@@ -945,13 +956,17 @@ export function RenderMain() {
                     GSceneDesc.FirePlane.OrientationEuler.roll = 0.0;
                 }
                 //Update Main
-                BurningSurface.UpdateFire(gl);
+                if (CGConstants.bUpdateFire) {
+                    BurningSurface.UpdateFire(gl);
+                }
 
                 //=============================
                 // VIRTUAL POINT LIGHTS UPDATE
                 //=============================
                 const curFireTexture = BurningSurface.GetCurFireTexture()!;
                 gl.bindTexture(gl.TEXTURE_2D, curFireTexture);
+                gl.generateMipmap(gl.TEXTURE_2D);
+                gl.bindTexture(gl.TEXTURE_2D, BurningSurface.GetCurFuelTexture()!);
                 gl.generateMipmap(gl.TEXTURE_2D);
                 BackGroundRenderPass.PointLights.Update(gl, curFireTexture);
 
@@ -1071,11 +1086,11 @@ export function RenderMain() {
                             //Render BURNT Stamp
                             BurntStampSprite.RunAnimation();
 
-                            gl.enable(gl.BLEND);
+                            /* gl.enable(gl.BLEND);
                             gl.blendFunc(gl.ONE, gl.ONE);
-                            gl.blendEquation(gl.MAX);
+                            gl.blendEquation(gl.MAX); */
                             BurntStampSprite.Render(gl);
-                            gl.disable(gl.BLEND);
+                            //gl.disable(gl.BLEND);
                         }
                     } else {
                         if (BurntStampSprite.AnimationT > 0) {

@@ -791,12 +791,42 @@ function scEmbersSpecificShading() {
 		
 		curFire = 1.0;
 
+		const vec3 turqoise = vec3(0.0, 0.95, 0.9);
+		const vec3 red = vec3(1.0, 0.0, 0.3);
+		const vec3 purple = vec3(0.5, 0.0, 1.0);
+
+
+
 		vec3 colorBright = vec3(curFire * (1.0 + (14.0 * (1. - t))), curFire * 0.75, curFire * 0.1);
+
+
+		float noise = rand(vec2(float(interpolatorInstanceId), 12.0));
+		if(noise < 0.3)
+		{
+			colorBright = red;
+		}
+		else if(noise < 0.7)
+		{
+			colorBright = turqoise;
+		}
+		else
+		{
+			colorBright = purple;
+		}
+
+		colorBright = red;
+
+		colorBright *= 35.0 * (1.0 - t);
+
+
 		vec3 colorLow = vec3(curFire, curFire * 0.75, curFire * 0.5);
 
 		colorFinal.rgb = mix(colorBright, colorLow , t);
 
 		colorFinal.rgb *= 2.f * (1.0 - t);
+
+		
+		#if 0
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		s *= 2.f;
@@ -815,6 +845,23 @@ function scEmbersSpecificShading() {
 		colorFinal.rgb *= s;
 		colorFinal.rgb *= 2.25f;
 		//colorFinal.rgb *= 50.f;
+
+		#else
+
+		float s = 0.0;
+
+		const float borderThres = 0.1;
+		if((interpolatorTexCoords.x > 1.0 - borderThres) || (interpolatorTexCoords.x < borderThres) || (interpolatorTexCoords.y > 1.0 - borderThres) || (interpolatorTexCoords.y < borderThres) )
+		{
+			s = 1.0;
+		}
+
+		colorFinal.rgb *= s;
+		colorFinal.rgb *= 2.25f;
+
+
+
+		#endif
 		`;
 }
 
@@ -838,6 +885,8 @@ function scEmbersImpactSpecificShading() {
 		
 		colorFinal.rgb *= 10.0;
 
+#if 0
+
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		s *= 2.f;
 		if(s > 0.5f)
@@ -855,6 +904,24 @@ function scEmbersImpactSpecificShading() {
 		colorFinal.rgb *= s;
 		colorFinal.rgb *= 2.25f;
 		//colorFinal.rgb *= 50.f;
+
+#else
+
+		float s = 0.0;
+
+		const float borderThres = 0.1;
+		if((interpolatorTexCoords.x > 1.0 - borderThres) || (interpolatorTexCoords.x < borderThres) || (interpolatorTexCoords.y > 1.0 - borderThres) || (interpolatorTexCoords.y < borderThres) )
+		{
+			s = 1.0;
+		}
+
+		colorFinal.rgb *= s;
+		colorFinal.rgb *= 2.25f;
+
+
+
+#endif
+
 		`;
 }
 
@@ -1059,6 +1126,10 @@ export function GetParticleRenderColorPS(
 		{
 			///Translate to origin, scale by ranges ratio, translate to new position
 			return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+		}
+
+		float rand(vec2 co) {
+			return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
 		}
 	
 		void main()

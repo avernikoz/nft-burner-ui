@@ -334,8 +334,8 @@ export class RBurntStampVisualizer {
         //Shader Parameters
         this.UniformParametersLocationListExport = GetUniformParametersList(gl, this.ShaderProgramExport);
 
-        this.ColorTextureMasked = GTexturePool.CreateTexture(gl, false, "burntSignMasked1_R8");
-        this.ColorTexture = GTexturePool.CreateTexture(gl, false, "burntSign1_R8");
+        this.ColorTextureMasked = GTexturePool.CreateTexture(gl, false, "trashStamp");
+        this.ColorTexture = GTexturePool.CreateTexture(gl, false, "trashStamp");
 
         const offsetMax = 0.05;
         this.Position.x = MathMapToRange(Math.random(), 0.0, 1.0, -offsetMax, offsetMax);
@@ -556,7 +556,7 @@ export class RBackgroundRenderPass {
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleWhiteDFS.jpg", true, true);
         //this.ColorTexture = CreateTexture(gl, 5, "assets/background/marbleGreenDFS.jpg", true, true);
 
-        const matName = `goldTiles`;
+        const matName = `floorAsphalt`;
         //const fileFormat = `.jpg`;
         this.ColorTexture = GTexturePool.CreateTexture(gl, false, matName + `DFS`, true, true);
         this.NormalTexture = GTexturePool.CreateTexture(gl, false, matName + `NRM`, true, true);
