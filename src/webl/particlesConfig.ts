@@ -37,7 +37,7 @@ export function GetEmberParticlesDesc() {
         inTextureFileName: "",
         inFlipbookSizeRC: { x: 16.0, y: 4.0 },
         inDefaultSize: { x: 0.125 * 0.1, y: 0.125 * 0.1 },
-        inSizeRangeMinMax: { x: 0.5, y: 1.25 },
+        inSizeRangeMinMax: { x: 0.5, y: 1.0 },
         inRandomSizeChangeSpeed: 0.1,
         inSizeClampMax: { x: 0.0, y: 0.0 },
         inInitialVelocityScale: MathLerp(30.0, 100.0, Math.random()),
@@ -49,6 +49,7 @@ export function GetEmberParticlesDesc() {
         inEFadeInOutMode: 0,
         inbOneShotParticle: false,
         inEInitialPositionMode: 0,
+        inBrightness: 1.0,
         inRandomSpawnThres: 0.1,
         inESpecificShadingMode: EParticleShadingMode.Embers,
     };

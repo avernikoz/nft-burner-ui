@@ -465,7 +465,7 @@ export const ShaderSourceFireUpdatePS =
 		}
 
 		OutFuel = curFuel;
-		OutFire = curFire;
+		OutFire = min(kMaxHeat, curFire);
 
 	}`;
 

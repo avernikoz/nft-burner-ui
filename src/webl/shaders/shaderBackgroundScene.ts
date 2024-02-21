@@ -1035,6 +1035,11 @@ export function GetShaderSourceLaserFlareRenderPS() {
 
 	in vec2 vsOutTexCoords;
 
+	float Contrast(float color, float contrast)
+	{
+		return max(float(0.f), contrast * (color - 0.5f) + 0.5f);
+	}
+
 	void main()
 	{
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
@@ -1043,6 +1048,11 @@ export function GetShaderSourceLaserFlareRenderPS() {
 		
 
 		vec3 light = texture(SpotlightTexture, flippedUVs.xy).rgb;
+
+		const float contrast = 1.5;
+		light.r = Contrast(light.r, contrast);
+		light.g = Contrast(light.g, contrast);
+		light.b = Contrast(light.b, contrast);
 
 		float brightness = sin(Time) * 0.5 + 0.5;
 		//float brightness = 1.0;

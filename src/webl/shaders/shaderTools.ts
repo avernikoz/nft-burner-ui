@@ -390,7 +390,7 @@ export function GetShaderSourceLaserPS() {
 		//color *= 
 
 
-		outColor = color /* + 0.1 */;
+		outColor = color * 2.0; /* + 0.1 */;
 	}`;
 }
 

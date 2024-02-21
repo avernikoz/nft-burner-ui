@@ -8,6 +8,7 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
     if (randomVelocityScale > 0) {
         return (
             /* glsl */ `
+
 		vec2 uv = vec2(CurTime * 0.17f + 0.12f * float(gl_VertexID), CurTime * 0.09 + 0.07 * float(gl_VertexID));
 		//uv *= 0.1f;
 		vec2 noise = textureLod(NoiseTextureHQ, uv.xy, 0.0).rg;
@@ -26,12 +27,12 @@ function scGetRandomInitialVelocity(randomVelocityScale: number) {
             randomVelocityScale +
             /* glsl */ `);
 		outVelocity = (noise.xy) * InitialVelocityScale;
-		/* if(outVelocity.y < 0.f)
+		if(outVelocity.y < 0.f)
 		{
-			outVelocity.y *= 0.25f;
-		} */
-		outVelocity.y += InitialVelocityScale * 0.25f;
-		//outVelocity.y += abs(outVelocity.y) * 0.75f;
+			outVelocity.y += abs(outVelocity.y) * 0.75f;
+		}
+		//outVelocity.y += InitialVelocityScale * 0.25f;
+		//
 		`
         );
     } else {
@@ -394,11 +395,11 @@ export const ParticleUpdatePS = /* glsl */ `#version 300 es
 function scTransformBasedOnMotion(condition: boolean) {
     if (condition) {
         return /* glsl */ `vec2 curVelocity = inVelocity;
-			float velLength = length(curVelocity) * 0.10 * (1.0 - ageNorm) * (1.0 - ageNorm);
+			float velLength = length(curVelocity) * 0.10 * 0.75 * (1.0 - ageNorm) * (1.0 - ageNorm);
 			//if(velLength > 0.f)
 			{
 				velLength = min(5.0, velLength);
-				pos.y *= clamp(1.f - velLength * 0.8, 0.4f, 1.f);
+				pos.y *= clamp(1.f - velLength * 0.75, 0.5f, 1.f);
 				pos.x *= (1.f + velLength * 4.0);
 				
 				// Calculate the angle between the initial direction (1, 0) and the desired direction
@@ -560,9 +561,7 @@ export function GetParticleRenderInstancedVS(
 				//offset
 				pos += kInitTranslate;
 				
-				pos.xy *= CameraDesc.w;
-				pos.x /= ScreenRatio;
-				pos.xy /= kSizeScale;
+				
   
 			#if 1 //NOISE-DRIVEN SIZE
 			const float kSizeChangeSpeed = float(` +
@@ -643,6 +642,11 @@ export function GetParticleRenderInstancedVS(
 			` +
         scTransformBasedOnMotion(bMotionBasedTransform) +
         /* glsl */ `
+
+
+		pos.xy *= CameraDesc.w;
+		pos.x /= ScreenRatio;
+		pos.xy /= kSizeScale;
 
 			//fade in-out
 		` +
@@ -788,19 +792,20 @@ function scEmbersSpecificShading() {
 		float t = interpolatorAge;
 		t = CircularFadeOut(t);
 
-		/* vec3 colorBright = vec3((1.0 + (14.0 * (1. - t))), 1.0, 0.1);
+	#if 1
+		vec3 colorBright = vec3(1.0 * (1.0 + (14.0 * (1. - t))), 0.75, 0.1);
 		vec3 colorLow = vec3(1.0, 0.75, 0.5);
+		colorFinal.rgb = mix(colorBright, colorLow , t);
 
-		colorFinal.rgb = mix(colorBright, colorLow , t); */
-
+	#else
 		colorFinal.rgb = vec3(1.0, 0.5, 0.2) * 10.0;
-
 		colorFinal.rgb = mix(colorFinal.rgb, vec3(0.5, 0.0, 0.5), interpolatorAge * interpolatorAge);
+	#endif
 
 		colorFinal.rgb *= 2.f * (1.0 - t);
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
-		s *= 2.f;
+		//s *= 2.f;
 		/* if(s > 0.5f)
 		{
 			s += 0.25f;
@@ -814,6 +819,26 @@ function scEmbersSpecificShading() {
 		//s += 0.15f;
 		s = (1.f - clamp(s, 0.f, 1.f));
 		colorFinal.rgb *= s;
+
+
+		s = 1.0;
+
+		const float thres = 0.2;
+		if(interpolatorTexCoords.x > (1.0 - thres))
+		{	
+			float m = MapToRange(interpolatorTexCoords.x, (1.0 - thres), 1.0, 1.0, 0.0);
+			s = m * m;
+			colorFinal.rgb = min(vec3(1.0), colorFinal.rgb);
+		}
+		else if(interpolatorTexCoords.x < thres)
+		{
+			float m = MapToRange(interpolatorTexCoords.x, 0.0, thres, 0.0, 1.0);
+			s = m * m;
+			colorFinal.rgb = min(vec3(1.0), colorFinal.rgb);
+		}
+
+		colorFinal.rgb = mix(colorFinal.rgb, vec3(0.0), 1.0 - s);
+
 		colorFinal.rgb *= 3.0f;
 		`;
 }

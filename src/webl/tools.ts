@@ -571,7 +571,7 @@ export class LighterTool extends ToolBase {
 }
 
 //=============================================================================================================================
-// 														LASER
+// 														_LASER
 //=============================================================================================================================
 
 export class LaserTool extends ToolBase {
@@ -646,12 +646,12 @@ export class LaserTool extends ToolBase {
         );
         this.UniformParametersLocationListFlare = GetUniformParametersList(gl, this.ShaderProgramFlare);
 
-        this.LaserTexture = GTexturePool.CreateTexture(gl, false, "laserBeam0", false);
+        this.LaserTexture = GTexturePool.CreateTexture(gl, false, "FlamesTexture", false);
         this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
-        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `laserGlare0`);
+        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `laserGlare2`);
 
         this.AnimationComponent.Speed = 1.0;
-        this.AnimationComponent.FadeInSpeed = 15.0;
+        this.AnimationComponent.FadeInSpeed = 12.0;
         this.AnimationComponent.FadeOutSpeed = 30.0;
 
         //Audio
@@ -669,12 +669,15 @@ export class LaserTool extends ToolBase {
         const SparksParticlesDesc = GetEmberParticlesDesc();
         SparksParticlesDesc.inNumSpawners2D = 32;
         SparksParticlesDesc.inSpawnRange.x = 0.0;
-        SparksParticlesDesc.inParticleLife = MathLerp(0.5, 1.0, Math.random());
-        //SparksParticlesDesc.inDefaultSize.x *= 2.0;
+        SparksParticlesDesc.inParticleLife = 0.2;
+        SparksParticlesDesc.inDefaultSize.x *= 2.0;
         //SparksParticlesDesc.inDefaultSize.y *= 0.5;
-        SparksParticlesDesc.inInitialVelocityScale *= 0.25;
-        SparksParticlesDesc.inVelocityFieldForceScale *= 5.0;
+        //SparksParticlesDesc.inSizeRangeMinMax.y = 1.2;
+        //SparksParticlesDesc.inInitialVelocityScale *= 1.5;
+        //SparksParticlesDesc.inVelocityFieldForceScale *= 5.0;
         SparksParticlesDesc.inEInitialPositionMode = 2;
+        //SparksParticlesDesc.inBrightness = 5.0;
+
         SparksParticlesDesc.inRandomSpawnThres = 0.5;
         SparksParticlesDesc.inbOneShotParticle = true;
 
@@ -701,6 +704,8 @@ export class LaserTool extends ToolBase {
             GSceneDesc.FirePlane.PositionOffset,
             { x: 0.4, y: 0.4, z: 0.0 },
         );
+
+        this.bIntersection = true;
 
         const bInteracted =
             RenderStateMachine.currentState !== ERenderingState.BurningFinished &&
@@ -876,7 +881,7 @@ export class LaserTool extends ToolBase {
         }
     }
 
-    LaserGlareSizeDefault = 0.5;
+    LaserGlareSizeDefault = 1.0;
 
     RenderFlare(gl: WebGL2RenderingContext) {
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
@@ -897,7 +902,7 @@ export class LaserTool extends ToolBase {
             this.LaserGlareSizeDefault *
             (0.75 + (Math.sin(GTime.Cur * 2) * 0.5 + 0.5) * 0.5 + (Math.sin(GTime.Cur * 2 * 2.7) * 0.5 + 0.5) * 0.1);
 
-        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, finalGlareSize, finalGlareSize);
+        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, finalGlareSize * 2.0, finalGlareSize);
 
         gl.uniform1f(this.UniformParametersLocationListFlare.Time, GTime.CurClamped);
 
@@ -929,13 +934,13 @@ export class LaserTool extends ToolBase {
 
     RenderToFlameRT(gl: WebGL2RenderingContext): void {
         if (this.bActiveThisFrame) {
-            this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+            //this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
         }
     }
 }
 
 //=============================================================================================================================
-// 														THUNDER
+// 														_THUNDER
 //=============================================================================================================================
 
 export class ThunderTool extends ToolBase {
@@ -1039,13 +1044,10 @@ export class ThunderTool extends ToolBase {
         const SparksParticlesDesc = GetEmberParticlesDesc();
         SparksParticlesDesc.inNumSpawners2D = 32;
         SparksParticlesDesc.inSpawnRange.x = 0.0;
-        SparksParticlesDesc.inParticleLife = MathLerp(0.5, 1.0, Math.random());
-        SparksParticlesDesc.inDefaultSize.x *= 1.2;
-        SparksParticlesDesc.inDefaultSize.y *= 1.2;
-        //SparksParticlesDesc.inDefaultSize.x *= 2.0;
-        SparksParticlesDesc.inDefaultSize.y *= 0.5;
-        SparksParticlesDesc.inInitialVelocityScale *= 0.25;
-        SparksParticlesDesc.inVelocityFieldForceScale *= 10.0;
+        SparksParticlesDesc.inParticleLife = MathLerp(0.3, 0.75, Math.random());
+        SparksParticlesDesc.inDefaultSize.x *= 2.0;
+        //SparksParticlesDesc.inDefaultSize.y *= 0.5;
+        SparksParticlesDesc.inSizeRangeMinMax.y *= 1.25;
         SparksParticlesDesc.inEInitialPositionMode = 2;
         SparksParticlesDesc.inRandomSpawnThres = 0.5;
         SparksParticlesDesc.inbOneShotParticle = true;
@@ -1350,7 +1352,7 @@ export class ThunderTool extends ToolBase {
 
         const finalGlareSize = this.GlareSizeDefault * sizeScale;
 
-        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, finalGlareSize, finalGlareSize);
+        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, finalGlareSize * 1.5, finalGlareSize);
 
         gl.uniform1f(this.UniformParametersLocationListFlare.Time, GTime.CurClamped);
 

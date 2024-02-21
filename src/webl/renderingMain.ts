@@ -457,6 +457,7 @@ export function RenderMain() {
     AfterBurnEmberParticlesDesc.inSpawnRange.y = 1000.0;
     AfterBurnEmberParticlesDesc.inNumSpawners2D = 4;
     AfterBurnEmberParticlesDesc.inRandomSpawnThres = 0.5;
+    AfterBurnEmberParticlesDesc.inSizeRangeMinMax.y *= 1.25;
     /* ;
     AfterBurnEmberParticlesDesc.inNumSpawners2D = 64; */
 
