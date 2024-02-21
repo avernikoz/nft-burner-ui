@@ -395,7 +395,7 @@ export const ParticleUpdatePS = /* glsl */ `#version 300 es
 function scTransformBasedOnMotion(condition: boolean) {
     if (condition) {
         return /* glsl */ `vec2 curVelocity = inVelocity;
-			float velLength = length(curVelocity) * 0.10 * 0.75 * (1.0 - ageNorm) * (1.0 - ageNorm);
+			float velLength = length(curVelocity) * 0.10 * 0.85 * (1.0 - ageNorm) * (1.0 - ageNorm);
 			//if(velLength > 0.f)
 			{
 				velLength = min(5.0, velLength);

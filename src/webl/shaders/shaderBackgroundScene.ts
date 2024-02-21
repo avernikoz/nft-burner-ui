@@ -1040,8 +1040,55 @@ export function GetShaderSourceLaserFlareRenderPS() {
 		return max(float(0.f), contrast * (color - 0.5f) + 0.5f);
 	}
 
+	//============================================================= SWIRL FBM NOISE begin
+
+
+	float hash( float n ){return fract(sin(n)*43758.5453);}
+
+	float noiseGrad( in vec2 x )
+	{
+		x *= 1.75;
+	    vec2 p = floor(x);
+	    vec2 f = fract(x);
+
+	    f = f*f*(3.0-2.0*f);
+
+	    float n = p.x + p.y*57.0;
+
+	    float res = mix(mix( hash(n+  0.0), hash(n+  1.0),f.x),
+	                    mix( hash(n+ 57.0), hash(n+ 58.0),f.x),f.y);
+	    return res;
+	}
+
+	
+	float fbm( in vec2 p )
+	{	
+		const mat2 m2 = mat2( 0.80,  0.60, -0.60,  0.80 );
+
+		float z=2.;
+		float rz = 0.;
+		p *= 0.25;
+		for (float i= 1.;i < 6.;i++ )
+		{
+			rz += abs((noiseGrad(p)-0.5)*2.)/z;
+			z = z * 2.;
+			p = p * 2. * m2;
+		}
+		return rz;
+	}
+
+	//============================================================= SWIRL FBM NOISE end
+
+
+	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	{
+		///Translate to origin, scale by ranges ratio, translate to new position
+		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
+
 	void main()
 	{
+	#if 0
 		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
 
 		float s = length(vsOutTexCoords - vec2(0.5, 0.5));
@@ -1063,6 +1110,75 @@ export function GetShaderSourceLaserFlareRenderPS() {
 
 
 		outSpotlightColor = light;
+
+	#else
+
+		vec2 uv = vsOutTexCoords - vec2(0.5);
+		
+		//uv.x *= iResolution.x/iResolution.y;
+    	uv.x *= 3.0;
+    	uv.y *= 3.0;
+		
+    	#if 1
+    		float t = -Time*0.9;
+    		float curvature = 80.0;
+    		const float ray_density = 30.0;
+    		float gamma = 3.0;
+			float ray_brightness = 4.0;
+    		float spot_brightness = 3.0;
+    		float brightness = 3.0;
+    	#else
+    		float t = -Time*0.3;
+    		float curvature = 1.0;
+    		const float ray_density = 20.0;
+    		float gamma = 3.0;
+			float ray_brightness = 8.0;
+    		float spot_brightness = 5.0;
+    		float brightness = 2.0;
+    	#endif
+		
+		uv*= curvature*.05+0.0001;
+		
+		float r  = sqrt(dot(uv,uv));
+		float x = dot(normalize(uv), vec2(.5,0.))+t;	
+		float y = dot(normalize(uv), vec2(.0,.5))+t;
+	
+		//x = fbm(vec2(y*ray_density*0.5,r+x*ray_density*.2));
+		//y = fbm(vec2(r+y*ray_density*0.1,x*ray_density*.5));
+		
+		
+    	float val;
+    	val = fbm(vec2(r+y*ray_density,r+x*ray_density-y));
+		val = smoothstep(gamma*.02-.1,ray_brightness+(gamma*0.02-.1)+.001,val);
+		val = sqrt(val);
+		
+		vec3 col = val / vec3(3.8, 1.5, 0.5);
+		col = clamp(1.-col,0.,1.);
+		col = mix(col,vec3(1.),spot_brightness-r/0.1/curvature*200./brightness);
+    	col = clamp(col,0.,1.);
+    	col = pow(col,vec3(1.7));
+
+		float s = length(vsOutTexCoords - vec2(0.5));
+		float m = 1.0;
+		s = clamp(s, 0.0, 1.0);
+		if(s > 0.4)
+		{
+			//s = MapToRange(s, 0.0, 0.75, 0.0, 1.0);
+			m = MapToRange(s, 0.4, 1.0, 1.0, 0.0);
+			m *= m;
+			m *= m;
+			m *= m;
+			m *= m;
+		}
+		//s = smoothstep(0.0, 1.0, s);
+		/* if(s < 0.5)
+		{
+			s = 0.0;
+		} */
+		
+		outSpotlightColor = col * m * 1.5;
+
+	#endif
 
 	}`;
 }

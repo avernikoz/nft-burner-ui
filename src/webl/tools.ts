@@ -667,10 +667,10 @@ export class LaserTool extends ToolBase {
 
         //Particles
         const SparksParticlesDesc = GetEmberParticlesDesc();
-        SparksParticlesDesc.inNumSpawners2D = 32;
+        SparksParticlesDesc.inNumSpawners2D = 4;
         SparksParticlesDesc.inSpawnRange.x = 0.0;
-        SparksParticlesDesc.inParticleLife = 0.2;
-        SparksParticlesDesc.inDefaultSize.x *= 2.0;
+        SparksParticlesDesc.inParticleLife = 0.3;
+        SparksParticlesDesc.inDefaultSize.x *= 5.0;
         //SparksParticlesDesc.inDefaultSize.y *= 0.5;
         //SparksParticlesDesc.inSizeRangeMinMax.y = 1.2;
         //SparksParticlesDesc.inInitialVelocityScale *= 1.5;
@@ -881,7 +881,7 @@ export class LaserTool extends ToolBase {
         }
     }
 
-    LaserGlareSizeDefault = 1.0;
+    LaserGlareSizeDefault = 0.5;
 
     RenderFlare(gl: WebGL2RenderingContext) {
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
@@ -902,7 +902,7 @@ export class LaserTool extends ToolBase {
             this.LaserGlareSizeDefault *
             (0.75 + (Math.sin(GTime.Cur * 2) * 0.5 + 0.5) * 0.5 + (Math.sin(GTime.Cur * 2 * 2.7) * 0.5 + 0.5) * 0.1);
 
-        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, finalGlareSize * 2.0, finalGlareSize);
+        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, finalGlareSize * 1.5, finalGlareSize);
 
         gl.uniform1f(this.UniformParametersLocationListFlare.Time, GTime.CurClamped);
 
@@ -934,7 +934,7 @@ export class LaserTool extends ToolBase {
 
     RenderToFlameRT(gl: WebGL2RenderingContext): void {
         if (this.bActiveThisFrame) {
-            //this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+            this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
         }
     }
 }
