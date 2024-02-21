@@ -125,7 +125,7 @@ function scGetVectorFieldForce(scale: number) {
 			randVel += (randVelLQ) * RandVelocityScale * 0.5;
 
 			//const float clampValue = 10.f;
-			const float clampValue = 50.f;
+			const float clampValue = 100.f;
 			randVel = clamp(randVel, vec2(-clampValue), vec2(clampValue));
 
 
@@ -394,11 +394,11 @@ export const ParticleUpdatePS = /* glsl */ `#version 300 es
 function scTransformBasedOnMotion(condition: boolean) {
     if (condition) {
         return /* glsl */ `vec2 curVelocity = inVelocity;
-			float velLength = length(curVelocity) * 0.10;
-			if(velLength > 0.f)
+			float velLength = length(curVelocity) * 0.10 * (1.0 - ageNorm) * (1.0 - ageNorm);
+			//if(velLength > 0.f)
 			{
-				velLength = min(1.0, velLength);
-				pos.y *= clamp(1.f - velLength * 0.8, 0.5f, 1.f);
+				velLength = min(5.0, velLength);
+				pos.y *= clamp(1.f - velLength * 0.8, 0.4f, 1.f);
 				pos.x *= (1.f + velLength * 4.0);
 				
 				// Calculate the angle between the initial direction (1, 0) and the desired direction
@@ -786,21 +786,22 @@ function scEmbersSpecificShading() {
 		vec3 colorLow = vec3(0.5f, 0.5f, 0.5f); */
 
 		float t = interpolatorAge;
-		t = CircularFadeOut(clamp(t, 0.f, 1.f));
-		float curFire = (1.f - t) * 10.f;
-		
-		curFire = 1.0;
+		t = CircularFadeOut(t);
 
-		vec3 colorBright = vec3(curFire * (1.0 + (14.0 * (1. - t))), curFire * 0.75, curFire * 0.1);
-		vec3 colorLow = vec3(curFire, curFire * 0.75, curFire * 0.5);
+		/* vec3 colorBright = vec3((1.0 + (14.0 * (1. - t))), 1.0, 0.1);
+		vec3 colorLow = vec3(1.0, 0.75, 0.5);
 
-		colorFinal.rgb = mix(colorBright, colorLow , t);
+		colorFinal.rgb = mix(colorBright, colorLow , t); */
+
+		colorFinal.rgb = vec3(1.0, 0.5, 0.2) * 10.0;
+
+		colorFinal.rgb = mix(colorFinal.rgb, vec3(0.5, 0.0, 0.5), interpolatorAge * interpolatorAge);
 
 		colorFinal.rgb *= 2.f * (1.0 - t);
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		s *= 2.f;
-		if(s > 0.5f)
+		/* if(s > 0.5f)
 		{
 			s += 0.25f;
 			//s = 1.f;
@@ -809,12 +810,11 @@ function scEmbersSpecificShading() {
 		{
 			s -= 0.25f;
 			//s = 0.f;
-		}
+		} */
 		//s += 0.15f;
 		s = (1.f - clamp(s, 0.f, 1.f));
 		colorFinal.rgb *= s;
-		colorFinal.rgb *= 2.25f;
-		//colorFinal.rgb *= 50.f;
+		colorFinal.rgb *= 3.0f;
 		`;
 }
 

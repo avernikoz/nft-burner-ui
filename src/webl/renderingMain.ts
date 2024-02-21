@@ -309,6 +309,7 @@ export function RenderMain() {
     const DEBUG_ENV = APP_ENVIRONMENT === "development";
     const DEBUG_UI = 1 && DEBUG_ENV;
     const DEBUG_STOP_SIMULATION = 0 && DEBUG_ENV;
+    const DEBUG_NOT_BURNT_ONSTART = 1 && DEBUG_ENV;
 
     const canvas = getCanvas();
 
@@ -864,11 +865,14 @@ export function RenderMain() {
 
             if (GTexturePool.AreAllTexturesLoaded() && !bInitialImagePreProcessed) {
                 BurningSurface.FirePlaneImagePreProcess(gl);
-                if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
-                    BurningSurface.SetToBurned(gl);
-                } else {
-                    BurningSurface.ApplyFireAuto(gl, { x: MathLerp(-0.1, 0.2, Math.random()), y: -0.3 }, 0.01);
+                if (!DEBUG_NOT_BURNT_ONSTART) {
+                    if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
+                        BurningSurface.SetToBurned(gl);
+                    } else {
+                        BurningSurface.ApplyFireAuto(gl, { x: MathLerp(-0.1, 0.2, Math.random()), y: -0.3 }, 0.01);
+                    }
                 }
+
                 //
                 bInitialImagePreProcessed = true;
             }
