@@ -216,12 +216,10 @@ export const ShaderSourceFireUpdatePS =
 		float curFuel = texelFetch(FuelTexture, SampleCoord, 0).r;
 		//curFuel = 0.001f;
 		
-		const float kMutualScale = 1.0 + float(` +
-    Math.random() * 1.5 +
-    /* glsl */ `);
+		const float kMutualScale = 1.0 + float(` + Math.random() * 1.5 + /* glsl */ `);
 		const float GFireSpreadSpeed = 3. * kMutualScale;
 		const float NoiseAdvectedSpreadStrength = 0.45f;
-		const float GFuelConsumeSpeed = 0.45f * kMutualScale;
+		const float GFuelConsumeSpeed = float(` + MathLerp(0.4, 0.9, Math.random()) + /* glsl */ `) * kMutualScale;
 		const float GFireDissipationSpeed = 0.5f * kMutualScale; //How fast fire fades when no more fuel is left. Try 0.05
 		const float kIgnitionThreshold = 0.75; //When pixel becomes a source of fire
 		const float kHeatRaiseSpeedDuringCombustion = 1.0;

@@ -28,6 +28,7 @@ module.exports = {
         project: "./tsconfig.json",
     },
     rules: {
+        "lines-between-class-members": "off",
         "import/named": "off",
         // "no-console": ["error", { allow: ["debug", "warn"] }],
         indent: "off",

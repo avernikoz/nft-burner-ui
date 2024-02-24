@@ -224,7 +224,7 @@ export function GSceneDescSubmitDebugUI(datGui: dat.GUI) {
         folder.add(GSceneDesc.Camera, "ZoomScale", 0, 5).name("Zoom").step(0.01).listen();
 
         //folder.add(GSceneDesc.Floor.PositionOffset, "x", -2, 5).name("FloorPosX").step(0.01);
-        folder.add(GSceneDesc.Floor.Position, "y", -3, 10).name("FloorPosY").step(0.01);
+        folder.add(GSceneDesc.Floor.Position, "y", -3, 10).name("FloorPosY").step(0.01).listen();
         //folder.add(GSceneDesc.Floor.PositionOffset, "z", -10, 2).name("FloorPosZ").step(0.01);
 
         folder.add(GSceneDesc.Floor, "SizeScale", -2, 5).name("FloorSizeScale").step(0.01);

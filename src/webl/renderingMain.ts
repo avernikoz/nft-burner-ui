@@ -3,14 +3,6 @@ import { GBurningSurface, GBurningSurfaceExport } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUISingleton } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
-import {
-    AfterBurnAshesParticlesDesc,
-    AfterBurnSmokeParticlesDesc,
-    DustParticlesDesc,
-    FlameParticlesDesc,
-    GetEmberParticlesDesc,
-    SmokeParticlesDesc,
-} from "./particlesConfig";
 import { RBloomPass, RBlurPass, RCombinerPass, RFlamePostProcessPass, RPresentPass } from "./postprocess";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {
@@ -71,6 +63,14 @@ import { EBurningTool, LaserTool, LighterTool, ThunderTool, ToolBase } from "./t
 import { GTexturePool } from "./texturePool";
 import { GReactGLBridgeFunctions } from "./reactglBridge";
 import { GTransitionAnimationsConstants } from "./transitionAnimations";
+import {
+    GetAfterBurnAshesParticlesDesc,
+    GetAfterBurnSmokeParticlesDesc,
+    GetDustParticlesDesc,
+    GetEmberParticlesDesc,
+    GetFlameParticlesDesc,
+    GetSmokeParticlesDesc,
+} from "./particlesConfig";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -445,21 +445,23 @@ export function RenderMain() {
     //======================
     // 		INIT TOOLS
     //======================
-    GTool.Current = new LaserTool(gl);
+    GTool.Current = new ThunderTool(gl);
 
     //==============================
     // 		INIT PARTICLES
     //==============================
-
+    const FlameParticlesDesc = GetFlameParticlesDesc();
+    const SmokeParticlesDesc = GetSmokeParticlesDesc();
     const EmberParticlesDesc = GetEmberParticlesDesc();
+    const AfterBurnSmokeParticlesDesc = GetAfterBurnSmokeParticlesDesc();
     const AfterBurnEmberParticlesDesc = GetEmberParticlesDesc();
-    AfterBurnEmberParticlesDesc.inSpawnRange.x = 0.001;
-    AfterBurnEmberParticlesDesc.inSpawnRange.y = 1000.0;
-    AfterBurnEmberParticlesDesc.inNumSpawners2D = 4;
-    AfterBurnEmberParticlesDesc.inRandomSpawnThres = 0.5;
-    AfterBurnEmberParticlesDesc.inSizeRangeMinMax.y *= 1.25;
-    /* ;
-    AfterBurnEmberParticlesDesc.inNumSpawners2D = 64; */
+    AfterBurnEmberParticlesDesc.InitialVelocityScale *= 1.5;
+    AfterBurnEmberParticlesDesc.SpawnRange.x = 0.001;
+    AfterBurnEmberParticlesDesc.SpawnRange.y = 1000.0;
+    AfterBurnEmberParticlesDesc.NumSpawners2D = 4;
+    AfterBurnEmberParticlesDesc.RandomSpawnThres = 0.5;
+
+    const AfterBurnAshesParticlesDesc = GetAfterBurnAshesParticlesDesc();
 
     if (GScreenDesc.bWideScreen) {
         /* EmberParticlesDesc.inDownwardForceScale = 2.5;
@@ -470,22 +472,22 @@ export function RenderMain() {
     const bAshesInEmbersPass = 0;
     if (bPaperMaterial) {
         //FlameParticlesDesc.inDefaultSize.y *= 0.9;
-        FlameParticlesDesc.inRandomSpawnThres = 0.5;
-        FlameParticlesDesc.inSpawnRange.x = 500.0;
-        SmokeParticlesDesc.inSpawnRange.x = 5000.0;
-        SmokeParticlesDesc.inAlphaScale = 0.75;
-        SmokeParticlesDesc.inEAlphaFade = 1;
+        FlameParticlesDesc.RandomSpawnThres = 0.5;
+        FlameParticlesDesc.SpawnRange.x = 500.0;
+        SmokeParticlesDesc.SpawnRange.x = 5000.0;
+        SmokeParticlesDesc.AlphaScale = 0.75;
+        SmokeParticlesDesc.EAlphaFade = 1;
         //SmokeParticlesDesc.inBrightness = 0.0;
-        AfterBurnSmokeParticlesDesc.inSpawnRange.x = 0.1;
+        AfterBurnSmokeParticlesDesc.SpawnRange.x = 0.1;
 
-        AfterBurnAshesParticlesDesc.inSpawnRange.x = 0.05;
-        AfterBurnAshesParticlesDesc.inSpawnRange.y = 10.05;
-        AfterBurnAshesParticlesDesc.inNumSpawners2D = 64;
-        AfterBurnAshesParticlesDesc.inVelocityFieldForceScale = 50;
-        AfterBurnAshesParticlesDesc.inInitialVelocityScale = 1.0;
-        EmberParticlesDesc.inVelocityFieldForceScale = 50;
-        EmberParticlesDesc.inNumSpawners2D = 32;
-        SmokeParticlesDesc.inVelocityFieldForceScale = 30;
+        AfterBurnAshesParticlesDesc.SpawnRange.x = 0.05;
+        AfterBurnAshesParticlesDesc.SpawnRange.y = 10.05;
+        AfterBurnAshesParticlesDesc.NumSpawners2D = 64;
+        AfterBurnAshesParticlesDesc.VelocityFieldForceScale = 50;
+        AfterBurnAshesParticlesDesc.InitialVelocityScale = 1.0;
+        EmberParticlesDesc.VelocityFieldForceScale = 50;
+        EmberParticlesDesc.NumSpawners2D = 32;
+        SmokeParticlesDesc.VelocityFieldForceScale = 30;
 
         //DustParticlesDesc.inVelocityFieldForceScale = 50;
 
@@ -509,12 +511,12 @@ export function RenderMain() {
     const AfterBurnEmberParticles = new ParticlesEmitter(gl, AfterBurnEmberParticlesDesc);
     DynamicParticlesArr.push(AfterBurnEmberParticles);
     //
-    SmokeParticlesDesc.inAlphaScale = 0.2 + Math.random() * 0.8;
-    SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
+    SmokeParticlesDesc.AlphaScale = 0.2 + Math.random() * 0.8;
+    SmokeParticlesDesc.BuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
     DynamicParticlesArr.push(SmokeParticles);
-    AfterBurnSmokeParticlesDesc.inAlphaScale = 0.25 + Math.random() * 0.5;
+    AfterBurnSmokeParticlesDesc.AlphaScale = 0.25 + Math.random() * 0.5;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const AfterBurnSmokeParticles = new ParticlesEmitter(gl, AfterBurnSmokeParticlesDesc);
     DynamicParticlesArr.push(AfterBurnSmokeParticles);
@@ -524,7 +526,7 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     /* DustParticlesDesc.inBuoyancyForceScale = 5.0 * Math.random();
     DustParticlesDesc.inDownwardForceScale = DustParticlesDesc.inBuoyancyForceScale * 2.0; */
-    const DustParticles = new ParticlesEmitter(gl, DustParticlesDesc);
+    const DustParticles = new ParticlesEmitter(gl, GetDustParticlesDesc());
 
     //==============================
     // 		INIT GUI ELEMENTS
@@ -588,6 +590,16 @@ export function RenderMain() {
     //==============================
     InitializeSceneStateDescsArr();
     UpdateSceneStateDescsArr();
+
+    //DebugReset
+    if (DEBUG_ENV) {
+        document.addEventListener("keydown", function (event) {
+            if (event.key == "r") {
+                //DebugReset
+                GTool.Current = new LaserTool(gl);
+            }
+        });
+    }
 
     //===================
     // 		DEBUG UI
@@ -1121,8 +1133,6 @@ export function RenderMain() {
                 let flameSourceTextureRef = GRenderTargets.FlameTexture;
                 BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, GScreenDesc.RenderTargetSize, true);
 
-                GTool.Current.RenderToFlameRT(gl);
-
                 if (1 || RenderStateMachine.bCanBurn) {
                     if (!bPreloaderState) {
                         FlameParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
@@ -1136,6 +1146,7 @@ export function RenderMain() {
                     );
                     flameSourceTextureRef = GRenderTargets.FlameTexture2;
 
+                    GTool.Current.RenderToFlameRT(gl);
                     EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                     AfterBurnEmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                     if (bAshesInEmbersPass) {

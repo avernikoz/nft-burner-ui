@@ -222,7 +222,7 @@ export const ShaderSourceBloomDownsampleFirstPassPS =
     (1.0 + Math.random()) +
     /* glsl */ `);
 
-		OutColor = max(flame.rgb, firePlane.rgb * s).rgb;
+		OutColor = max(flame.rgb /* * 5.0 */, firePlane.rgb * s).rgb;
 	}`;
 export const ShaderSourceBloomDownsamplePS = /* glsl */ `#version 300 es
 	
@@ -844,6 +844,7 @@ export function GetShaderSourceCombinerPassPS() {
 			smoke.a *= smokeScale;
 			//smoke.rgb *= clamp(smokeScale, 0.5f, 1.f);
 
+			//firePlane.rgb  = max(firePlane.rgb , flame.rgb);
 			firePlane.rgb = smoke.rgb * 1.f + firePlane.rgb * clamp(1.f - smoke.a, 0.0, 1.f);
 
 			highp vec3 final = firePlane.rgb;

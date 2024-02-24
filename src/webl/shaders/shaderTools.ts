@@ -322,20 +322,22 @@ export function GetShaderSourceLaserPS() {
 
 	void main()
 	{
-		vec3 color = vec3(2.0, 0.41, 0.05) * 10.0;
+		vec3 color = vec3(2.0, 0.41, 0.075) * 10.0;
 
 		
 
 		vec2 laserUV = vsOutTexCoords;
 		laserUV.x = vsOutTexCoords.y;
 		laserUV.y = vsOutTexCoords.x;
+		//laserUV.x *= 3.0;
 
-		const float noiseSpeed = 5.0;
+		const float noiseSpeed = 4.0;
 		
 		vec2 distortionUV = vsOutTexCoords;
-		distortionUV.y -= Time * 0.25 * noiseSpeed;
+		distortionUV.y -= Time * 0.25 * noiseSpeed * 2.0;
 		distortionUV.x += Time * 0.005 * noiseSpeed;
-		distortionUV *= 0.1;
+		distortionUV *= 0.05;
+		distortionUV.y *= 5.0;
 		vec3 distortionNoise = textureLod(NoiseTexture, distortionUV.xy, 0.f).rgb;
 		//distortionNoise.x = clamp(MapToRange(distortionNoise.x, 0.4, 0.6, 0.0, 1.0), 0.0, 1.0);
 		distortionNoise.y = clamp(MapToRange(distortionNoise.y, 0.2, 0.8, 0.0, 1.0), 0.0, 1.0);
@@ -356,12 +358,24 @@ export function GetShaderSourceLaserPS() {
 		}
 
 		
-
-		laserUV.y += distortionNoise.x * 0.1;
+		laserUV.y += distortionNoise.x * 0.5;
 		laserUV.y = clamp(laserUV.y, 0.0, 1.0);
 
-		//laserUV.x *= 2.5;
-		const float beamSpeed = 3.0;
+		/* if(laserUV.y > 0.5)
+		{
+			laserUV.y += distortionNoise.x * 0.5;
+			laserUV.y = clamp(laserUV.y, 0.5, 1.0);
+		}
+		else */
+		{
+			/* laserUV.y += distortionNoise.x * 0.5;
+			laserUV.y = clamp(laserUV.y, 0.0, 0.5); */
+		}
+
+		
+
+		laserUV.x *= 4.5;
+		const float beamSpeed = 5.5;
 		laserUV.x -= Time * 0.75 * beamSpeed;
 
 		float s = texture(LaserTexture, laserUV).r;
@@ -387,7 +401,12 @@ export function GetShaderSourceLaserPS() {
 			}
 		}
 
-		//color *= 
+
+		const float brightThres = 0.45;
+		if(vsOutTexCoords.x > brightThres && vsOutTexCoords.x < (1.0 - brightThres))
+		{
+			color *= 1.5;
+		}
 
 
 		outColor = color * 2.0; /* + 0.1 */;
@@ -469,6 +488,12 @@ export function GetShaderSourceThunderPS() {
 		if(vsOutTexCoords.y > LineColorCutThreshold)
 		{
 			color *= 0.0;
+		}
+
+		float ss = sin(Time * 20.0);
+		if(ss > 0.8)
+		{
+			color *= 0.1;
 		}
 
 		outColor = color /* + 0.1 */;

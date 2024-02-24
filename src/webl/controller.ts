@@ -98,8 +98,12 @@ export class GCameraShakeController {
 
     static RandAmplitudeXYZ = { x: 0.0, y: 0.0, z: 0.0 };
 
-    static ShakeCameraFast() {
-        if (!this.bShakeEventRunning) {
+    static ShakeStrength = 1.0;
+
+    static ShakeCameraFast(strength = 1.0) {
+        if (!GCameraShakeController.bShakeEventRunning) {
+            this.ShakeStrength = strength;
+
             this.bShakeEventRunning = true;
             this.ShakeEventParam = 0.0;
 
@@ -116,7 +120,7 @@ export class GCameraShakeController {
 
     static OnUpdate() {
         if (this.bShakeEventRunning) {
-            const shakeStrength = 0.05 * 0.5 * this.RandAmplitudeXYZ.z;
+            const shakeStrength = 0.05 * 0.5 * GCameraShakeController.ShakeStrength * this.RandAmplitudeXYZ.z;
 
             const xOffset = Math.sin(this.ShakeEventParam * 37.0) * shakeStrength * this.RandAmplitudeXYZ.x;
             const yOffset = Math.sin(this.ShakeEventParam * 40.0) * shakeStrength * this.RandAmplitudeXYZ.y;

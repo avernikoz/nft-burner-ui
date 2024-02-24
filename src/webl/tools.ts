@@ -5,7 +5,7 @@ import { GBurningSurface } from "./firePlane";
 import { GMeshGenerator } from "./helpers/meshGenerator";
 import { GUserInputDesc } from "./input";
 import { EParticleShadingMode, ParticlesEmitter } from "./particles";
-import { GetEmberParticlesDesc } from "./particlesConfig";
+import { GetAfterBurnSmokeParticlesDesc, GetEmberParticlesDesc, GetSmokeParticlesDesc } from "./particlesConfig";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import {
@@ -23,6 +23,7 @@ import {
 } from "./shaders/shaderTools";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
+import { GetVec2, GetVec3 } from "./types";
 import {
     GTime,
     MathClamp,
@@ -137,6 +138,8 @@ export abstract class ToolBase {
     // Components
     AnimationComponent;
 
+    TimeSinceLastInteraction = 0.0;
+
     // Base
     bActiveThisFrame;
 
@@ -170,6 +173,14 @@ export abstract class ToolBase {
         GSceneDesc.Tool.Position.x = posWS.x + offset.x;
         GSceneDesc.Tool.Position.y = posWS.y + offset.y;
         GSceneDesc.Tool.Position.z = offset.z;
+    }
+
+    BaseUpdate() {
+        this.TimeSinceLastInteraction += GTime.Delta;
+    }
+
+    BaseReset() {
+        this.TimeSinceLastInteraction = 0.0;
     }
 
     RenderToFirePlaneRT(gl: WebGL2RenderingContext): void {}
@@ -250,63 +261,36 @@ export class LighterTool extends ToolBase {
             this.RandCur = Math.random();
         }, 0.1 * 1000);
 
-        const SparksParticlesDesc = {
-            inName: "Sparks Particles",
-            inNumSpawners2D: 3,
-            inNumParticlesPerSpawner: 1,
-            inSpawnRange: { x: 0.0, y: 1000.0 },
-            inParticleLife: 1.3,
-            inNumLoops: 1.0,
-            inTextureFileName: "",
-            inFlipbookSizeRC: { x: 16.0, y: 4.0 },
-            inDefaultSize: { x: 0.125 * 0.1, y: 0.125 * 0.25 },
-            inSizeRangeMinMax: { x: 0.25, y: 1.25 },
-            inSizeClampMax: { x: 0.0, y: 0.0 },
-            inInitialVelocityScale: 50.0,
-            inVelocityFieldForceScale: 100.0,
-            inBuoyancyForceScale: 15.0,
-            inDownwardForceScale: 1.0,
-            inbOriginAtCenter: true,
-            inbMotionBasedTransform: true,
-            inEFadeInOutMode: 0,
-            inESpecificShadingMode: EParticleShadingMode.Embers,
-            inEInitialPositionMode: 2,
-            inbOneShotParticle: true,
-        };
+        const SparksParticlesDesc = GetEmberParticlesDesc();
+        SparksParticlesDesc.NumSpawners2D = 4;
+        SparksParticlesDesc.NumParticlesPerSpawner = 1;
+        SparksParticlesDesc.ParticleLife = 0.7;
+        //SparksParticlesDesc.InitialVelocityScale *= 1.25;
+        //SparksParticlesDesc.VelocityFieldForceScale = 100.0;
+        SparksParticlesDesc.InitialVelocityAddScale.x = 0.5;
+        SparksParticlesDesc.InitialVelocityAddScale.y = 1.25;
+        const brihgtness = 3.0;
+        SparksParticlesDesc.Color = GetVec3(1.0 * brihgtness, 0.6 * brihgtness, 0.1 * brihgtness);
+        SparksParticlesDesc.MotionStretchScale = 3.0;
+        SparksParticlesDesc.BuoyancyForceScale = 15.0;
+        SparksParticlesDesc.DownwardForceScale = 1.0;
+        SparksParticlesDesc.EInitialPositionMode = 2;
+        SparksParticlesDesc.bOneShotParticle = true;
+        SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
 
         this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
 
-        const LighterSmokeParticleDesc = {
-            inName: "Lighter Smoke Particles",
-            inNumSpawners2D: 1,
-            inNumParticlesPerSpawner: 1,
-            inSpawnRange: { x: 0.0, y: 0.1 },
-            inParticleLife: 2.0,
-            inNumLoops: 1.0,
-            inTextureFileName: "CandleSmoke01_20x4",
-            inFlipbookSizeRC: { x: 20.0, y: 4.0 },
-            inDefaultSize: { x: 2.0 * 0.1, y: 3.525 * 0.15 },
-            inSizeRangeMinMax: { x: 0.99, y: 1.01 },
-            inSizeClampMax: { x: 1.0, y: 1.0 },
-            inInitialVelocityScale: 2.1,
-            inVelocityFieldForceScale: 1.0,
-            inBuoyancyForceScale: 10,
-            inDownwardForceScale: 0.0,
-            inbOriginAtCenter: false,
-            inbMotionBasedTransform: false,
-            inEAlphaFade: 1,
-            inAlphaScale: 0.95,
-            inBrightness: 0.0,
-            inRandomSpawnThres: 1.0,
-            inEFadeInOutMode: 0,
-            inESpecificShadingMode: EParticleShadingMode.AfterBurnSmoke,
-            inInitSpawnPosOffset: { x: 0.2, y: 0.0 },
-            inInitialTranslate: { x: 0.0, y: 0.95 },
-            inEInitialPositionMode: 2,
-            inbOneShotParticle: true,
-        };
+        const SmokeDesc = GetAfterBurnSmokeParticlesDesc();
+        SmokeDesc.NumSpawners2D = 1;
+        SmokeDesc.ParticleLife = 2;
+        SmokeDesc.NumLoops = 1.0;
+        SmokeDesc.DefaultSize = { x: 2.0 * 0.1, y: 3.525 * 0.15 };
+        SmokeDesc.AlphaScale = 0.95;
+        SmokeDesc.bOneShotParticle = true;
+        SmokeDesc.EInitialPositionMode = 2;
+        SmokeDesc.EFadeInOutMode = 1;
 
-        this.SmokeParticles = new ParticlesEmitter(gl, LighterSmokeParticleDesc);
+        this.SmokeParticles = new ParticlesEmitter(gl, SmokeDesc);
 
         //Audio
 
@@ -394,7 +378,7 @@ export class LighterTool extends ToolBase {
             });
             this.SmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!, {
                 x: GSceneDesc.Tool.Position.x,
-                y: GSceneDesc.Tool.Position.y - 0.5,
+                y: GSceneDesc.Tool.Position.y - 0.275,
             });
 
             //Apply Fire
@@ -588,8 +572,6 @@ export class LaserTool extends ToolBase {
 
     NoiseTexture;
 
-    LightFlareTexture;
-
     //Audio
     private SoundLaser: SoundSample = new SoundSample();
 
@@ -611,7 +593,7 @@ export class LaserTool extends ToolBase {
 
     //Desc
 
-    LaserStrength = 5.0 + Math.random() * 5.0;
+    LaserStrength = 5.0 + Math.random() * 10.0;
 
     LaserBrightness = 4.0;
 
@@ -648,7 +630,6 @@ export class LaserTool extends ToolBase {
 
         this.LaserTexture = GTexturePool.CreateTexture(gl, false, "FlamesTexture", false);
         this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
-        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `laserGlare2`);
 
         this.AnimationComponent.Speed = 1.0;
         this.AnimationComponent.FadeInSpeed = 12.0;
@@ -667,19 +648,24 @@ export class LaserTool extends ToolBase {
 
         //Particles
         const SparksParticlesDesc = GetEmberParticlesDesc();
-        SparksParticlesDesc.inNumSpawners2D = 4;
-        SparksParticlesDesc.inSpawnRange.x = 0.0;
-        SparksParticlesDesc.inParticleLife = 0.3;
-        SparksParticlesDesc.inDefaultSize.x *= 5.0;
-        //SparksParticlesDesc.inDefaultSize.y *= 0.5;
-        //SparksParticlesDesc.inSizeRangeMinMax.y = 1.2;
-        //SparksParticlesDesc.inInitialVelocityScale *= 1.5;
-        //SparksParticlesDesc.inVelocityFieldForceScale *= 5.0;
-        SparksParticlesDesc.inEInitialPositionMode = 2;
+        SparksParticlesDesc.NumSpawners2D = 4;
+        SparksParticlesDesc.NumParticlesPerSpawner = 32;
+        SparksParticlesDesc.ParticleLife = 0.4;
+        SparksParticlesDesc.InitialVelocityScale = 10;
+        //SparksParticlesDesc.SizeRangeMinMax.y = 0.75;
+        //SparksParticlesDesc.SizeRangeMinMax.x = 0.25;
+        SparksParticlesDesc.EInitialPositionMode = 2;
         //SparksParticlesDesc.inBrightness = 5.0;
-
-        SparksParticlesDesc.inRandomSpawnThres = 0.5;
-        SparksParticlesDesc.inbOneShotParticle = true;
+        //SparksParticlesDesc.RandomSpawnThres = 0.9;
+        SparksParticlesDesc.bOneShotParticle = true;
+        SparksParticlesDesc.bFreeFallParticle = true;
+        SparksParticlesDesc.bAlwaysRespawn = true;
+        SparksParticlesDesc.b3DSpace = true;
+        SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
+        SparksParticlesDesc.Color = GetVec3(1.0, 0.6, 0.1);
+        //SparksParticlesDesc.InitialVelocityAddScale.y *= 0.5;
+        //SparksParticlesDesc.InitialVelocityAddScale.x *= 1.25;
+        SparksParticlesDesc.MotionStretchScale = 3.75;
 
         this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
     }
@@ -734,7 +720,7 @@ export class LaserTool extends ToolBase {
 
                 this.PlayLaserSound();
 
-                GCameraShakeController.ShakeCameraFast();
+                GCameraShakeController.ShakeCameraFast(0.5);
             }
         } else {
             if (GUserInputDesc.bPointerInputPressedPrevFrame || this.bIntersectionPrevFrame) {
@@ -913,11 +899,6 @@ export class LaserTool extends ToolBase {
             -0.1,
         );
 
-        //Textures
-        gl.activeTexture(gl.TEXTURE0 + 1);
-        gl.bindTexture(gl.TEXTURE_2D, this.LightFlareTexture);
-        gl.uniform1i(this.UniformParametersLocationListFlare.SpotlightTexture, 1);
-
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
@@ -970,6 +951,8 @@ export class ThunderTool extends ToolBase {
 
     //Particles
     SparksParticles: ParticlesEmitter;
+
+    SmokeParticles: ParticlesEmitter;
 
     //Desc
 
@@ -1042,22 +1025,47 @@ export class ThunderTool extends ToolBase {
 
         //Particles
         const SparksParticlesDesc = GetEmberParticlesDesc();
-        SparksParticlesDesc.inNumSpawners2D = 32;
-        SparksParticlesDesc.inSpawnRange.x = 0.0;
-        SparksParticlesDesc.inParticleLife = MathLerp(0.3, 0.75, Math.random());
-        SparksParticlesDesc.inDefaultSize.x *= 2.0;
-        //SparksParticlesDesc.inDefaultSize.y *= 0.5;
-        SparksParticlesDesc.inSizeRangeMinMax.y *= 1.25;
-        SparksParticlesDesc.inEInitialPositionMode = 2;
-        SparksParticlesDesc.inRandomSpawnThres = 0.5;
-        SparksParticlesDesc.inbOneShotParticle = true;
-        SparksParticlesDesc.inESpecificShadingMode = EParticleShadingMode.EmbersImpact;
+        SparksParticlesDesc.NumSpawners2D = 18;
+        SparksParticlesDesc.ParticleLife = 2.0;
+        //SparksParticlesDesc.SizeRangeMinMax.y *= 1.25;
+        SparksParticlesDesc.SizeRangeMinMax.x = 0.25;
+        SparksParticlesDesc.EInitialPositionMode = 2;
+        SparksParticlesDesc.InitialVelocityScale = 10;
+        //SparksParticlesDesc.RandomSpawnThres = 0.5;
+        SparksParticlesDesc.bOneShotParticle = true;
+        SparksParticlesDesc.bFreeFallParticle = true;
+        //SparksParticlesDesc.bAlwaysRespawn = true;
+        SparksParticlesDesc.b3DSpace = true;
+        SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
+
+        const brihgtness = 2.0;
+        SparksParticlesDesc.Color = GetVec3(0.8 * brihgtness, 0.7 * brihgtness, 1.0 * brihgtness);
+        SparksParticlesDesc.MotionStretchScale = 1.25;
+        SparksParticlesDesc.InitialVelocityAddScale = GetVec2(0.6, 1.5);
 
         this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
+
+        const SmokeParticlesDesc = GetSmokeParticlesDesc();
+        SmokeParticlesDesc.NumSpawners2D = 1;
+        SmokeParticlesDesc.ParticleLife = 1.0;
+        SmokeParticlesDesc.DefaultSize.x *= 1.5;
+        SmokeParticlesDesc.DefaultSize.y *= 1.5;
+        SmokeParticlesDesc.BuoyancyForceScale *= 0.1;
+        SmokeParticlesDesc.bOneShotParticle = true;
+        SmokeParticlesDesc.EInitialPositionMode = 2;
+        SmokeParticlesDesc.EAlphaFade = 1.0;
+        //SmokeParticlesDesc.InitialVelocityScale = 20.0;
+        SmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
+        SmokeParticlesDesc.EFadeInOutMode = 1;
+        SmokeParticlesDesc.InitialTranslate = { x: 0.0, y: 0.25 };
+
+        this.SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
     }
 
     //Executes regardless of state
     UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
+        this.BaseUpdate();
+
         const RenderStateMachine = GRenderingStateMachine.GetInstance();
 
         if (!this.bActiveThisFrame) {
@@ -1078,6 +1086,8 @@ export class ThunderTool extends ToolBase {
             z: 0.0,
         });
 
+        this.bIntersection = true;
+
         const bInteracted =
             RenderStateMachine.currentState !== ERenderingState.BurningFinished &&
             RenderStateMachine.bCanBurn &&
@@ -1095,9 +1105,11 @@ export class ThunderTool extends ToolBase {
             {
                 //start fade in logic
 
+                this.BaseReset();
                 this.AnimationComponent.Reset();
 
                 this.SparksParticles.Reset(gl);
+                this.SmokeParticles.Reset(gl);
 
                 this.StartPos = {
                     x: MathSignedMax(GUserInputDesc.InputPosCurViewSpace.x, 0.5) * 6.0,
@@ -1147,15 +1159,11 @@ export class ThunderTool extends ToolBase {
             this.Brightness = Math.max(1.0, this.Brightness - 50.0 * GTime.Delta);
 
             //Color
-            GSceneDesc.Tool.Color.r = this.Color.r * this.Brightness;
-            GSceneDesc.Tool.Color.g = this.Color.g * this.Brightness;
-            GSceneDesc.Tool.Color.b = this.Color.b * this.Brightness;
+            const additionToolScale = 0.2;
+            GSceneDesc.Tool.Color.r = this.Color.r * this.Brightness * additionToolScale;
+            GSceneDesc.Tool.Color.g = this.Color.g * this.Brightness * additionToolScale;
+            GSceneDesc.Tool.Color.b = this.Color.b * this.Brightness * additionToolScale;
             GSceneDesc.Tool.Radius = 2.5 * this.AnimationComponent.FadeOutParameter;
-
-            this.SparksParticles.Update(gl, BurningSurface.GetCurFireTexture()!, {
-                x: GSceneDesc.Tool.Position.x,
-                y: GSceneDesc.Tool.Position.y,
-            });
 
             //Apply Fire
             if (this.AnimationComponent.IsFadeInFinished() && this.bFirstInteraction) {
@@ -1164,6 +1172,17 @@ export class ThunderTool extends ToolBase {
             }
         } else {
             GSceneDesc.Tool.Radius = 0.0;
+        }
+
+        if (this.TimeSinceLastInteraction < this.SparksParticles.Desc.ParticleLife) {
+            this.SparksParticles.Update(gl, BurningSurface.GetCurFireTexture()!, {
+                x: GSceneDesc.Tool.Position.x,
+                y: GSceneDesc.Tool.Position.y,
+            });
+            this.SmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!, {
+                x: GSceneDesc.Tool.Position.x,
+                y: GSceneDesc.Tool.Position.y,
+            });
         }
 
         if (RenderStateMachine.bCanBurn) {
@@ -1383,8 +1402,14 @@ export class ThunderTool extends ToolBase {
     }
 
     RenderToFlameRT(gl: WebGL2RenderingContext): void {
-        if (this.bActiveThisFrame) {
+        if (this.bActiveThisFrame || this.TimeSinceLastInteraction < this.SparksParticles.Desc.ParticleLife) {
             this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+        }
+    }
+
+    RenderToSmokeRT(gl: WebGL2RenderingContext): void {
+        if (this.bActiveThisFrame) {
+            this.SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
         }
     }
 }
