@@ -53,11 +53,11 @@ import {
     showError,
     uint16ToFloat16,
 } from "./utils";
-import { ApplyCameraControl, GCameraShakeController, SetupCameraControlThroughInput } from "./controller";
+import { ApplyCameraControl, SetupCameraControlThroughInput } from "./controller";
 import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./spatialController";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
-import { AnimationController } from "./animationController";
+import { AnimationController, GCameraShakeController, GSpotlightShakeController } from "./animationController";
 import { GAudioEngine } from "./audioEngine";
 import { EBurningTool, LaserTool, LighterTool, ThunderTool, ToolBase } from "./tools";
 import { GTexturePool } from "./texturePool";
@@ -692,7 +692,8 @@ export function RenderMain() {
                 const shakeParam = {
                     buttonText: "Camera Shake",
                     handleClick: () => {
-                        GCameraShakeController.ShakeCameraFast();
+                        //GCameraShakeController.ShakeCameraFast();
+                        GSpotlightShakeController.ShakeSpotlight(1.0);
                     },
                 };
                 folder.add(shakeParam, "handleClick").name(shakeParam.buttonText);
@@ -895,6 +896,17 @@ export function RenderMain() {
             }
 
             GCameraShakeController.OnUpdate();
+            if (bNewRenderStateThisFrame && RenderStateMachine.currentState === ERenderingState.BurningReady) {
+                GSpotlightShakeController.Init();
+            }
+            if (
+                (RenderStateMachine.currentState === ERenderingState.BurningReady &&
+                    RenderStateMachine.bTransitionFinished()) ||
+                RenderStateMachine.currentState === ERenderingState.BurningNow ||
+                RenderStateMachine.currentState === ERenderingState.BurningFinished
+            ) {
+                GSpotlightShakeController.OnUpdate();
+            }
 
             if (
                 /* GTexturePool.AreAllTexturesLoaded() && */

@@ -1,4 +1,4 @@
-import { GCameraShakeController } from "./controller";
+import { GCameraShakeController } from "./animationController";
 import { GUserInputDesc } from "./input";
 import { CreateTextureRT } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
@@ -532,7 +532,7 @@ export class RBackgroundRenderPass {
     PointLights: SceneLights;
 
     FloorTransform = {
-        FloorTexScale: 1.0,
+        FloorTexScale: MathLerp(0.75, 1.25, Math.random()),
         FloorBrightness: 1.0,
     };
 

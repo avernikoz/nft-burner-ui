@@ -1,3 +1,5 @@
+import { MathLerp } from "../utils";
+
 export function GetShaderSourceBackgroundFloorRenderPerspectiveVS() {
     return /* glsl */ `#version 300 es
 
@@ -410,7 +412,7 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 
 			//Normal
 			highp vec3 normal = texture(NormalTexture, materialSamplingUV.xy).rgb;
-			const float NormalHarshness = 1.0;
+			const float NormalHarshness = float(`+MathLerp(0.25, 1.0, Math.random())+ /* glsl */`);
 			normal = DecodeNormalTexture(normal, NormalHarshness);
 			//rotate normals
 			{
@@ -1310,12 +1312,7 @@ export function GetShaderSourceLightSourceSpriteRenderPS() {
 
 		float s = length(vsOutTexCoords - vec2(0.5));
 		float s2 = s;
-		if(s2 > 0.5)
-		{
-			s2 += 0.5f;
-			//light = vec3(0.0f);
-		}
-		//light *= pow(1.f - clamp(s2, 0.0, 1.0), 2.f);
+		
 
 		const float fadeStart = 0.3;
 		const float fadeSize = 0.2;
@@ -1335,6 +1332,20 @@ export function GetShaderSourceLightSourceSpriteRenderPS() {
 			float m = MapToRange(s, 0.7, 1.0, 1.0, 0.0);
 			light *= m * m;
 		} */
+
+		#if 0
+			if(gl_FrontFacing)
+			{
+				if(s2 < 0.2)
+				{
+					//s2 += 0.5f;
+					//light *= 0.5;
+					light *= 100.0;
+				}
+			}
+		#endif
+		
+		//light *= pow(1.f - clamp(s2, 0.0, 1.0), 2.f);
 
 		outSpotlightColor = vec3(min(vec3(1.0+float(` +
         Math.random() +

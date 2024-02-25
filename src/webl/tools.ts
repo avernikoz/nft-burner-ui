@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { GAudioEngine, SoundSample } from "./audioEngine";
-import { GCameraShakeController } from "./controller";
+import { GCameraShakeController, GSpotlightShakeController } from "./animationController";
 import { GBurningSurface } from "./firePlane";
 import { GMeshGenerator } from "./helpers/meshGenerator";
 import { GUserInputDesc } from "./input";
@@ -1132,6 +1132,7 @@ export class ThunderTool extends ToolBase {
                 }
 
                 GCameraShakeController.ShakeCameraFast();
+                GSpotlightShakeController.ShakeSpotlight(1.0);
             }
         } else {
             if (this.AnimationComponent.IsFadeInFinished()) {
