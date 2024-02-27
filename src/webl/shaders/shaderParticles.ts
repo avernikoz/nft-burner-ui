@@ -80,7 +80,10 @@ function scGetInitialPosition(EInitialPositionMode: number) {
 		`;
     } else if (EInitialPositionMode == 2) {
         return /* glsl */ `
-		curPos.xy = EmitterPosition;
+		curPos.xy = EmitterPosition.xy;
+		#if THIRD_DIMENSION
+		curPos.z = EmitterPosition.z;
+		#endif
 		`;
     } else {
         return /* glsl */ `
@@ -125,7 +128,7 @@ function scGetVectorFieldForce(inDesc: ParticleEmitterDesc) {
             /* glsl */ `
 
 		#if !FALLING
-			vec2 uv = (inPosition + 1.f) * 0.5f;
+			vec2 uv = (inPosition.xy + 1.f) * 0.5f;
 			uv.x += float(gl_VertexID) * 0.025;
 			uv.y += float(gl_VertexID) * 0.01;
 			//uv *= 0.5f;
@@ -143,7 +146,7 @@ function scGetVectorFieldForce(inDesc: ParticleEmitterDesc) {
 
 
 			//LQ Noise
-			uv = (inPosition + 1.f) * 0.5f;
+			uv = (inPosition.xy + 1.f) * 0.5f;
 			uv *= 0.01f;
 			uv.y -= CurTime * 0.00025f;
 			uv.x += CurTime * 0.0025f;
@@ -162,6 +165,13 @@ function scGetVectorFieldForce(inDesc: ParticleEmitterDesc) {
 
 			//curVel += randVel * DeltaTime;
 			netForce.xy += randVec;
+
+			#if THIRD_DIMENSION
+			//netForce.z -= 1000.0;
+			#endif
+
+			//Radial Velocity away from center
+			//netForce.xy += normalize(inPosition) * 2.0;
 
 		#else
 
@@ -294,7 +304,7 @@ export function GetParticleUpdateShaderVS(
 	  uniform float DeltaTime;
 	  uniform float CurTime;
 	  uniform float ParticleLife;
-	  uniform vec2 EmitterPosition; 
+	  uniform DIM_TYPE EmitterPosition; 
 	  uniform float FloorPosY;
 
 	  uniform sampler2D NoiseTexture;
@@ -428,7 +438,7 @@ export function GetParticleUpdateShaderVS(
 				//Floor Intersection
 				const float CollisionResponseCoef = 1.25;
 				float curDist = abs(curPos.y - FloorPosY);
-				const float particleRadius = 0.05;
+				const float particleRadius = 0.025;
 
 				bool bCollision = false;
 
@@ -483,9 +493,17 @@ function scTransformBasedOnMotion(inDesc: ParticleEmitterDesc) {
     if (inDesc.bMotionBasedTransform) {
         return /* glsl */ `DIM_TYPE curVelocity = inVelocity;
 			float velLength = length(curVelocity.xy) * 0.10 * 1.0 * (1.0 - ageNorm) * (1.0 - ageNorm);
+			#if THIRD_DIMENSION
+			//velLength += curVelocity.z * 0.1;
+			#endif
 			velLength *= float(`+inDesc.MotionStretchScale+/* glsl */`);
 			velLength *= max(0.5, (1.0 - min(1.0, inAge * 0.5)));
-			#if FALLING
+			#if (0 && THIRD_DIMENSION)
+			/* if(distToCam < 2.0)
+			{
+				velLength *= 0.0;
+			} */
+			velLength *= clamp(MapToRange(distToCam, 3.0, 1.0, 1.0, 0.0), 0.0, 1.0);
 			#endif
 			//if(velLength > 0.f)
 			{
@@ -581,6 +599,9 @@ export function GetParticleRenderInstancedVS(inDesc: ParticleEmitterDesc) {
 		flat out float interpolatorFrameIndex;
 		out vec2 interpolatorTexCoords;
 		flat out int interpolatorInstanceId;
+		#if (0 && THIRD_DIMENSION)
+		flat out float interpolatorDistToCam;
+		#endif
 	
 		//check if particle should never be drawn again
 		bool IsParticleDead()
@@ -717,6 +738,13 @@ export function GetParticleRenderInstancedVS(inDesc: ParticleEmitterDesc) {
 				pos.x *= float(` + inDesc.DefaultSize.x + /* glsl */ `);
 				pos.y *= float(` + inDesc.DefaultSize.y + /* glsl */ `);
 
+			#if (0 && THIRD_DIMENSION)
+				float distToCam = length(inPosition.xyz - CameraDesc.xyz);
+				float distToCamZ = abs(inPosition.z - CameraDesc.z);
+				interpolatorDistToCam = distToCamZ;
+				pos.xy *= 1.0 + (1.0 - min(1.0, distToCamZ * 0.5)) * 20.0;
+			#endif
+
 
 		//fade in-out
 		` +
@@ -731,14 +759,10 @@ export function GetParticleRenderInstancedVS(inDesc: ParticleEmitterDesc) {
 
 
 				DIM_TYPE translation = inPosition;
-				#if THIRD_DIMENSION
-				//translation.y += 10.0;
-				#endif
 				pos.xy += translation.xy;
 				pos.xy -= CameraDesc.xy;
 				pos.xy *= CameraDesc.w;
 				#if THIRD_DIMENSION
-				//translation.z = 2.0;
 				pos.xy /= (1.0 + translation.z - CameraDesc.z);
 				#else
 				pos.xy /= kSizeScale;
@@ -746,42 +770,6 @@ export function GetParticleRenderInstancedVS(inDesc: ParticleEmitterDesc) {
 				pos.x /= ScreenRatio;
 				gl_Position = vec4(pos.xy, 0.0, 1.0);
 
-				/* pos.xy *= CameraDesc.w;
-				pos.x /= ScreenRatio;
-				#if THIRD_DIMENSION
-				pos.xy /= (1.0 + translation.z - CameraDesc.z);
-				#else
-				pos.xy /= kSizeScale;
-				#endif
-
-			
-  
-				//translate
-				DIM_TYPE translation = inPosition;
-				#if THIRD_DIMENSION
-				//translation.z = 5.0;
-				#endif
-				//translation += FirePlanePositionOffset.xy;
-				translation.xy -= CameraDesc.xy;
-				
-				translation.xy *= CameraDesc.w;
-				#if THIRD_DIMENSION
-				//translation.z -= CameraDesc.z;
-				translation.z = 15.0;
-				translation.xy /= (1.0 + translation.z - CameraDesc.z);
-				#else
-				translation.xy /= kSizeScale;
-				#endif
-				translation.x /= ScreenRatio;
-
-				pos.xy += translation.xy;
-
-				#if THIRD_DIMENSION
-				gl_Position = vec4(pos.xy, 0.0, 1.0);
-				#else
-				gl_Position = vec4(pos.xy, 0.0, 1.0);
-				#endif */
-	
 				
 			}
 			
@@ -972,22 +960,9 @@ function scEmbersSpecificShading() {
 		colorFinal.rgb *= 2.f * (1.0 - t);
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
-		//s *= 2.f;
-		/* if(s > 0.5f)
-		{
-			s += 0.25f;
-			//s = 1.f;
-		}
-		else
-		{
-			s -= 0.25f;
-			//s = 0.f;
-		} */
-		//s += 0.15f;
 		s = (1.f - clamp(s, 0.f, 1.f));
 		colorFinal.rgb *= s;
 
-		
 		colorFinal.rgb *= 3.0f;
 
 		s = 1.0;
@@ -1037,8 +1012,8 @@ function scEmbersImpactSpecificShading(inDesc : ParticleEmitterDesc) {
 		colorFinal.rgb *= 10.0;
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
-		s *= 1.5f;
-		s *= (1.0 + interpolatorAge * 0.5);
+		//s *= 1.25f;
+		s *= (1.0 + interpolatorAge * 1.0);
 		/* if(s > 0.5f)
 		{
 			s += 0.25f;
@@ -1051,15 +1026,49 @@ function scEmbersImpactSpecificShading(inDesc : ParticleEmitterDesc) {
 		} */
 		//s += 0.15f;
 		s = (1.f - clamp(s, 0.f, 1.f));
+		
+
+		#if (0 && THIRD_DIMENSION)//DoF
+		float dNorm = 1.0 - clamp(MapToRange(interpolatorDistToCam, 2.0, 0.5, 0.0, 1.0), 0.0, 1.0);
+		dNorm = 1.0;
+		float dof = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		float c = 0.75;
+		//float c = 0.1;
+		//dof *= 2.f;
+		if(dof > 0.5f)
+		{
+			dof += c;
+			//s = 1.f;
+		}
+		else
+		{
+			dof -= c;
+			//s = 0.f;
+		}
+		dof = (1.f - clamp(dof, 0.f, 1.f));
+
+		//s = mix(s, dof, min(1.0, dNorm));
+
+		vec3 colorRadialCut = colorFinal.rgb * s * s * 2.25f * 2.0;
+
+		vec3 colorDoF = colorFinal.rgb * dof * clamp(1.0 - dNorm, 0.5, 1.0);
+
+		colorFinal.rgb = mix(colorRadialCut, colorDoF, dNorm);
+
+		#else
+
+
+		float dNorm = 0.0;
+
 		colorFinal.rgb *= s * s;
-
-
-		float s2 = 1.0;
-
 		colorFinal.rgb *= 2.25f * 2.0;
 
-		#if 1 //sides fade
-		float thres = mix(0.0, 0.2, interpolatorAge);
+		#endif //DoF
+
+		
+		#if 1 && THIRD_DIMENSION //sides fade
+		float s2 = 1.0;
+		float thres = mix(0.0, 0.2, max(0.0, interpolatorAge - dNorm));
 		if(interpolatorTexCoords.x > (1.0 - thres))
 		{	
 			float m = MapToRange(interpolatorTexCoords.x, (1.0 - thres), 1.0, 1.0, 0.0);
@@ -1076,7 +1085,7 @@ function scEmbersImpactSpecificShading(inDesc : ParticleEmitterDesc) {
 		#endif
 
 		t = interpolatorAge;
-		const float fThres = 0.7;
+		const float fThres = 0.55;
 		if(t > fThres)
 		{
 			t = MapToRange(t, fThres, 1.0, 0.0, 1.0);
@@ -1250,6 +1259,10 @@ export function GetParticleRenderColorPS(inDesc: ParticleEmitterDesc, bUsesTextu
 	  
 		precision mediump float;
 		precision mediump sampler2D;
+
+		
+		`+scParticleUpdateDefines(inDesc)+ /* glsl */`
+	
 	
 		out vec4 OutColor;
 	
@@ -1257,6 +1270,9 @@ export function GetParticleRenderColorPS(inDesc: ParticleEmitterDesc, bUsesTextu
 		flat in float interpolatorFrameIndex;
 		in vec2 interpolatorTexCoords;
 		flat in int interpolatorInstanceId;
+		#if (0 && THIRD_DIMENSION)
+		flat in float interpolatorDistToCam;
+		#endif
 
 		uniform sampler2D ColorTexture;
 		uniform sampler2D FlameColorLUT;

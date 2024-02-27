@@ -31,7 +31,7 @@ import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./s
 import { InitUserInputEvents, UserInputUpdatePerFrame } from "./input";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Vector2 } from "./types";
+import { GetVec3, Vector2 } from "./types";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -46,20 +46,20 @@ import {
     MathSmoothstep,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     MathVector2Normalize,
-    MathVector3Add,
+    Vec3Add,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    MathVector3Negate,
+    Vec3Negate,
     UpdateTime,
     showError,
     uint16ToFloat16,
 } from "./utils";
 import { ApplyCameraControl, SetupCameraControlThroughInput } from "./controller";
-import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./spatialController";
+import { RSpatialControllerVisualizationRenderer, SpatialControlPointWithTexture } from "./spatialController";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController, GCameraShakeController, GSpotlightShakeController } from "./animationController";
 import { GAudioEngine } from "./audioEngine";
-import { EBurningTool, LaserTool, LighterTool, ThunderTool, ToolBase } from "./tools";
+import { EBurningTool, FireballTool, LaserTool, LighterTool, ThunderTool, ToolBase } from "./tools";
 import { GTexturePool } from "./texturePool";
 import { GReactGLBridgeFunctions } from "./reactglBridge";
 import { GTransitionAnimationsConstants } from "./transitionAnimations";
@@ -401,8 +401,8 @@ export function RenderMain() {
     const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
     const FirePlaneAnimationController = new AnimationController(
         firePlanePos,
-        MathVector3Add(firePlanePos, { x: 0, y: -0.05, z: 0.0 }),
-        MathVector3Add(firePlanePos, { x: 0, y: 0.05, z: 0.0 }),
+        Vec3Add(firePlanePos, GetVec3(0, -0.05, 0.0)),
+        Vec3Add(firePlanePos, GetVec3(0, 0.05, 0.0)),
     );
 
     //==============================
@@ -440,12 +440,12 @@ export function RenderMain() {
 
     SetupPostProcessPasses(gl);
 
-    const SpatialControlUIVisualizer = new RSpatialControllerVisualizationRenderer(gl);
+    RSpatialControllerVisualizationRenderer.GInstance = new RSpatialControllerVisualizationRenderer(gl);
 
     //======================
     // 		INIT TOOLS
     //======================
-    GTool.Current = new ThunderTool(gl);
+    GTool.Current = new FireballTool(gl);
 
     //==============================
     // 		INIT PARTICLES
@@ -531,7 +531,7 @@ export function RenderMain() {
     //==============================
     // 		INIT GUI ELEMENTS
     //==============================
-    const SpotlightPositionController = new SpatialControlPoint(
+    const SpotlightPositionController = new SpatialControlPointWithTexture(
         gl,
         { x: 0.0, y: 0.9 },
         0.075,
@@ -576,7 +576,7 @@ export function RenderMain() {
         }
     }
 
-    const ConnectWalletButtonController = new SpatialControlPoint(
+    const ConnectWalletButtonController = new SpatialControlPointWithTexture(
         gl,
         { x: -0.75, y: 0.0 },
         0.35,
@@ -595,8 +595,9 @@ export function RenderMain() {
     if (DEBUG_ENV) {
         document.addEventListener("keydown", function (event) {
             if (event.key == "r") {
-                //DebugReset
-                GTool.Current = new LaserTool(gl);
+                //DebugReset ResetDebug
+                //GTool.Current = new FireballTool(gl);
+                GSceneDesc.Camera.Position.y = -0.8;
             }
         });
     }
@@ -1122,17 +1123,17 @@ export function RenderMain() {
                 //======================
                 // 		GUI RENDER
                 //======================
-                {
+                if (RSpatialControllerVisualizationRenderer.GInstance) {
                     gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ONE, gl.ONE);
                     gl.blendEquation(gl.MAX);
                     if (SpotlightPositionController.bEnabled) {
-                        SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
+                        RSpatialControllerVisualizationRenderer.GInstance.Render(gl, SpotlightPositionController);
                     }
 
                     if (ConnectWalletButtonController.bEnabled) {
                         if (RenderStateMachine.currentState === ERenderingState.Intro) {
-                            SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
+                            RSpatialControllerVisualizationRenderer.GInstance.Render(gl, ConnectWalletButtonController);
                         }
                     }
 

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/lines-between-class-members */
-import { start } from "repl";
+
 import { GSceneDesc, GSceneStateDescsArray } from "./scene";
 import { GetVec2, GetVec3, Vector3 } from "./types";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -7,11 +7,10 @@ import {
     GTime,
     MathGetVectorLength,
     MathLerpVec3,
-    MathSmoothstep,
     MathVector2Normalize,
-    MathVector3Add,
-    MathVector3Multiply,
-    MathVector3Negate,
+    Vec3Add,
+    Vec3Multiply,
+    Vec3Negate,
     MathVector3Normalize,
 } from "./utils";
 import { ERenderingState } from "./states";
@@ -58,9 +57,9 @@ export class AnimationController {
     }
 
     UpdateObjectPosition(objectPos: Vector3, accelerationScale: number) {
-        const curDiff = MathVector3Negate(objectPos, this.Position);
-        const curVelocity = MathVector3Multiply(curDiff, -accelerationScale);
-        return MathVector3Add(objectPos, MathVector3Multiply(curVelocity, Math.min(GTime.Delta, 1 / 60)));
+        const curDiff = Vec3Negate(objectPos, this.Position);
+        const curVelocity = Vec3Multiply(curDiff, -accelerationScale);
+        return Vec3Add(objectPos, Vec3Multiply(curVelocity, Math.min(GTime.Delta, 1 / 60)));
     }
 }
 
@@ -121,10 +120,10 @@ export class GSpotlightShakeController {
     static CachedSpotlightFocusPos = { x: 0.0, y: 0.0, z: 0.0 };
 
     static VelocityCur = GetVec3(0, 0, 0);
-    static kMaxBounds = GetVec3(1, 1);
+    static kMaxBounds = GetVec3(1, 1, 1.0);
     static DesiredFocusPos = GetVec3(0, 0, 0);
 
-    static kConnectionConstraintStiffness = 20.0;
+    static kConnectionConstraintStiffness = 10.0;
 
     static Init() {
         this.CachedSpotlightPos.x = GSceneStateDescsArray[ERenderingState.BurningReady].SpotlightPosition.x;
@@ -170,8 +169,9 @@ export class GSpotlightShakeController {
         this.VelocityCur.z = this.VelocityCur.z * 0.99;
 
         //Integrate
-        curFocusPos.x = curFocusPos.x + this.VelocityCur.x * dt;
-        curFocusPos.z = curFocusPos.z + this.VelocityCur.z * dt;
+        const focusOffsetScale = 2.0;
+        curFocusPos.x = curFocusPos.x + this.VelocityCur.x * focusOffsetScale * dt;
+        curFocusPos.z = curFocusPos.z + this.VelocityCur.z * focusOffsetScale * dt;
 
         const newDiff = GetVec2(
             this.CachedSpotlightFocusPos.x - curFocusPos.x,

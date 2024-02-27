@@ -1,4 +1,4 @@
-import { Color, Vector2, Vector3 } from "./types";
+import { Color, GetVec3, Vector2, Vector3 } from "./types";
 
 export function showError(errorText: string) {
     console.log(errorText);
@@ -35,20 +35,29 @@ export function MathVector3Normalize(vec: Vector3) {
     const length = Math.sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
     if (length === 0) {
         // Avoid division by zero
-        return { x: 0, y: 0, z: 0 };
+        return GetVec3(0, 0, 0);
     } else {
-        return { x: vec.x / length, y: vec.y / length, z: vec.z / length };
+        return GetVec3(vec.x / length, vec.y / length, vec.z / length);
     }
 }
 
-export function MathVector3Negate(a: Vector3, b: Vector3) {
-    return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+export function Vec2Negate(a: Vector2, b: Vector2): Vector2 {
+    return { x: a.x - b.x, y: a.y - b.y };
 }
-export function MathVector3Add(a: Vector3, b: Vector3) {
-    return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
+export function Vec2Add(a: Vector2, b: Vector2): Vector2 {
+    return { x: a.x + b.x, y: a.y + b.y };
 }
-export function MathVector3Multiply(vec: Vector3, scale: number) {
-    return { x: vec.x * scale, y: vec.y * scale, z: vec.z * scale };
+export function Vec2Multiply(vec: Vector2, scale: number): Vector2 {
+    return { x: vec.x * scale, y: vec.y * scale };
+}
+export function Vec3Negate(a: Vector3, b: Vector3) {
+    return new Vector3(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+export function Vec3Add(a: Vector3, b: Vector3) {
+    return new Vector3(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+export function Vec3Multiply(vec: Vector3, scale: number) {
+    return new Vector3(vec.x * scale, vec.y * scale, vec.z * scale);
 }
 
 export function MathMapToRange(t: number, t0: number, t1: number, newt0: number, newt1: number) {
@@ -73,11 +82,7 @@ export function MathLerpVec2(start: Vector2, end: Vector2, t: number): Vector2 {
     };
 }
 export function MathLerpVec3(start: Vector3, end: Vector3, t: number): Vector3 {
-    return {
-        x: MathLerp(start.x, end.x, t),
-        y: MathLerp(start.y, end.y, t),
-        z: MathLerp(start.z, end.z, t),
-    };
+    return new Vector3(MathLerp(start.x, end.x, t), MathLerp(start.y, end.y, t), MathLerp(start.z, end.z, t));
 }
 export function MathLerpColor(start: Color, end: Color, t: number): Color {
     return {
@@ -101,11 +106,7 @@ export function MathIntersectionRayAABB(
     aabbExtent: Vector3,
 ) {
     // Calculate the inverse direction of the ray
-    const invDirection: Vector3 = {
-        x: 1.0 / rayDirection.x,
-        y: 1.0 / rayDirection.y,
-        z: 1.0 / rayDirection.z,
-    };
+    const invDirection = GetVec3(1.0 / rayDirection.x, 1.0 / rayDirection.y, 1.0 / rayDirection.z);
 
     // Calculate the minimum and maximum t values for each axis
     const tmin = (aabbCenter.x - aabbExtent.x - rayOrigin.x) * invDirection.x;
@@ -125,6 +126,27 @@ export function MathIntersectionRayAABB(
     } else {
         return true;
     }
+}
+
+export function MathIntersectionAABBSphere(
+    sphereCenter: Vector3,
+    sphereRadius: number,
+    aabbCenter: Vector3,
+    aabbExtent: Vector3,
+): boolean {
+    // Calculate the squared distance between the sphere center and the AABB
+    const minDistX = Math.max(aabbCenter.x - aabbExtent.x, Math.min(sphereCenter.x, aabbCenter.x + aabbExtent.x));
+    const minDistY = Math.max(aabbCenter.y - aabbExtent.y, Math.min(sphereCenter.y, aabbCenter.y + aabbExtent.y));
+    const minDistZ = Math.max(aabbCenter.z - aabbExtent.z, Math.min(sphereCenter.z, aabbCenter.z + aabbExtent.z));
+
+    const sqDistX = (minDistX - sphereCenter.x) * (minDistX - sphereCenter.x);
+    const sqDistY = (minDistY - sphereCenter.y) * (minDistY - sphereCenter.y);
+    const sqDistZ = (minDistZ - sphereCenter.z) * (minDistZ - sphereCenter.z);
+
+    const sqDist = sqDistX + sqDistY + sqDistZ;
+
+    // Check if the squared distance is less than the squared sphere radius
+    return sqDist <= sphereRadius * sphereRadius;
 }
 
 export function uint16ToFloat16(uint16Value: number): number {
@@ -158,6 +180,29 @@ export function uint16ToFloat16(uint16Value: number): number {
     }
 
     return floatValue;
+}
+
+export function SetPositionSmooth(
+    inoutCurPos: Vector3,
+    inoutCurVelocity: Vector3,
+    desiredPos: Vector3,
+    dTime: number,
+    accelerationScale = 1.0,
+    dampingScale = 1.0,
+) {
+    const curDiff = Vec3Negate(inoutCurPos, desiredPos);
+    const acceleration = Vec3Negate(
+        Vec3Multiply(curDiff, -accelerationScale),
+        Vec3Multiply(inoutCurVelocity, dampingScale),
+    );
+
+    inoutCurVelocity.x += acceleration.x * dTime;
+    inoutCurVelocity.y += acceleration.y * dTime;
+    inoutCurVelocity.z += acceleration.z * dTime;
+
+    inoutCurPos.x += inoutCurVelocity.x * dTime;
+    inoutCurPos.y += inoutCurVelocity.y * dTime;
+    inoutCurPos.z += inoutCurVelocity.z * dTime;
 }
 
 /* 

@@ -500,3 +500,85 @@ export function GetShaderSourceThunderPS() {
 		//outColor = ColorScale /* + 0.1 */;
 	}`;
 }
+
+
+export function GetShaderSourceFireballRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outColor;
+
+	uniform sampler2D ColorTexture;
+	uniform sampler2D NoiseTexture;
+
+	uniform vec3 Color;
+	uniform float Time;
+	uniform int CurrentState; // 0 -nothing, 1- hovered, 2-launched
+
+	in vec2 vsOutTexCoords;
+
+	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	{
+		///Translate to origin, scale by ranges ratio, translate to new position
+		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
+
+	void main()
+	{
+		vec3 color = Color;
+
+		/* if(CurrentState == 0)
+		{
+			color = vec3(1.0, 0.0, 0.0);
+		}
+		else if(CurrentState == 1)
+		{
+			color = vec3(0.0, 1.0, 0.0);
+		}
+		else if(CurrentState == 2)
+		{
+			color = vec3(0.0, 0.0, 1.0);
+		} */
+
+		vec2 speed = vec2(0.01, 0.04);
+
+		if(CurrentState == 0)
+		{
+			speed *= 0.2;
+		}
+		else if(CurrentState == 1)
+		{
+			speed *= 0.5;
+		}
+
+		vec2 uv = vsOutTexCoords * 0.03;
+		uv.x -= Time * speed.x;
+		uv.y -= Time * speed.y;
+
+		float noise = textureLod(NoiseTexture, uv.xy, 0.f).r;
+		noise = max(0.0, MapToRange(noise, 0.2, 0.8, 0.0, 1.0));
+
+		float fadeScale = 2.0;
+
+		if(CurrentState == 0)
+		{
+			fadeScale = 2.0;
+		}
+
+		vec3 colorScale = vec3(1.0);
+		if(CurrentState >= 2)
+		{
+			colorScale = vec3(1.9, 1.5, 1.7) * 1.9;
+		}
+
+		//float a = max(0.0, 1.0 - length(vsOutTexCoords - vec2(0.5)) * 2.0);
+		float a = max(0.0, 1.0 - length(vsOutTexCoords - vec2(0.5)) * fadeScale);
+		a *= a;
+		a /= noise * 0.1;
+		a *= 0.10;
+
+		outColor = color * a * colorScale;
+	}`;
+}

@@ -9,11 +9,11 @@ import {
 import { CreateShader, CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { getWebGLProgram } from "./helpers/getWebGLProgram";
-import { GTime, MathClamp, showError } from "./utils";
+import { GTime, showError } from "./utils";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { GTexturePool } from "./texturePool";
 import { RTexture } from "./texture";
-import { GetVec2, GetVec3, Vector3 } from "./types";
+import { GetVec2, GetVec3 } from "./types";
 
 // ====================================================== SHADERS END ======================================================
 
@@ -79,7 +79,7 @@ export class ParticleEmitterDesc {
     b3DSpace = false;
     bAlwaysRespawn = false;
 
-    Color = GetVec3();
+    Color = GetVec3(1, 1, 1);
     InitialVelocityAddScale = GetVec2();
     MotionStretchScale = 1.0;
 }
@@ -516,7 +516,7 @@ export class ParticlesEmitter {
         this.CurrentBufferIndex = 0;
     }
 
-    Update(gl: WebGL2RenderingContext, fireTexture: WebGLTexture, initialEmitterPosition = { x: 0.0, y: 0.0 }) {
+    Update(gl: WebGL2RenderingContext, fireTexture: WebGLTexture, initialEmitterPosition = GetVec3(0.0, 0.0, 0.0)) {
         if (this.bUsesTexture && !this.ColorTexture.bLoaded) {
             return;
         }
@@ -532,11 +532,20 @@ export class ParticlesEmitter {
         gl.uniform1f(this.UniformParametersLocationList.DeltaTime, Math.min(1.0 / 60.0, GTime.Delta));
         gl.uniform1f(this.UniformParametersLocationList.ParticleLife, this.Desc.ParticleLife);
         gl.uniform1f(this.UniformParametersLocationList.CurTime, GTime.CurClamped);
-        gl.uniform2f(
-            this.UniformParametersLocationList.EmitterPosition,
-            initialEmitterPosition.x,
-            initialEmitterPosition.y,
-        );
+        if (this.Desc.b3DSpace) {
+            gl.uniform3f(
+                this.UniformParametersLocationList.EmitterPosition,
+                initialEmitterPosition.x,
+                initialEmitterPosition.y,
+                initialEmitterPosition.z,
+            );
+        } else {
+            gl.uniform2f(
+                this.UniformParametersLocationList.EmitterPosition,
+                initialEmitterPosition.x,
+                initialEmitterPosition.y,
+            );
+        }
 
         gl.uniform1f(this.UniformParametersLocationList.FloorPosY, GSceneDesc.Floor.Position.y);
 

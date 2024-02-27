@@ -57,9 +57,10 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
 	uniform float ScreenRatio;
 	uniform vec3 FirePlanePositionOffset;
 
-	uniform vec2 PointerPositionOffset;
+	uniform vec2 PointerPositionOffset;//ViewSpace
 	uniform vec2 SizeScale;
 	uniform vec2 VelocityDir;
+	uniform int bWorldSpacePosInput; 
 
 	out vec2 vsOutTexCoords;
 
@@ -82,10 +83,14 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
 		
 		//calculate offset
 		vec2 posOffset = PointerPositionOffset.xy;
-		posOffset.x *= ScreenRatio;
-		posOffset.xy /= CameraDesc.w;
+		if(bWorldSpacePosInput == 0)
+		{
+			posOffset.x *= ScreenRatio;
+			posOffset.xy /= CameraDesc.w;
 
-		posOffset.xy *= (FirePlanePositionOffset.z - CameraDesc.z + 1.f);
+			posOffset.xy *= (FirePlanePositionOffset.z - CameraDesc.z + 1.f);
+		}
+		
 		
 		pos = (scale.xy * pos.xy) + posOffset.xy;
 		gl_Position = vec4(pos.xy, 0.0, 1.0);
@@ -95,6 +100,7 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
 	}`
     );
 }
+
 export const ShaderSourceApplyFirePS =
     /* glsl */ `#version 300 es
 	
@@ -897,7 +903,7 @@ export function GetShaderSourceFireVisualizerPS() {
 					vec3 halfVecCur = normalize(vToCurLight + vToCam);
 					float specularCur = pow(max(0.f, dot(halfVecCur, normal)), specularPowerScaledCur);
 					const float specularIntensityCur = 1.0f;
-					lightingSpecFinal += ToolColor * specularCur * specularIntensityCur * max(0.75,(1.f - roughness));
+					lightingSpecFinal += ToolColor * specularCur * specularIntensityCur * attenuation * max(0.75,(1.f - roughness));
 				}
 
 			}
