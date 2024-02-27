@@ -1528,7 +1528,7 @@ export class FireballTool extends ToolBase {
         SmokeParticlesDesc.bOneShotParticle = true;
         SmokeParticlesDesc.EInitialPositionMode = 2;
         SmokeParticlesDesc.EAlphaFade = 1.0;
-        SmokeParticlesDesc.InitialVelocityScale = 40.0;
+        SmokeParticlesDesc.InitialVelocityScale = 30.0;
         SmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
         SmokeParticlesDesc.EFadeInOutMode = 1;
         SmokeParticlesDesc.AlphaScale = 1.0;
@@ -1732,12 +1732,15 @@ export class FireballTool extends ToolBase {
             this.TrailSmokeParticles.Reset(gl);
         }
 
-        const velZLength = Math.abs(this.VelocityCurrent.z);
-        /* this.ColorCurrent.Set(
-            this.ColorInitial.x * velZLength,
-            this.ColorInitial.y * velZLength,
-            this.ColorInitial.z * velZLength,
-        ); */
+        let velLengthScale = 0.75;
+        if (this.SpatialController.bDragState) {
+            velLengthScale = velLengthScale + Math.min(1.25, MathGetVectorLength(this.VelocityCurrent) * 0.5);
+        }
+        this.ColorCurrent.Set(
+            this.ColorInitial.x * velLengthScale,
+            this.ColorInitial.y * velLengthScale,
+            this.ColorInitial.z * velLengthScale,
+        );
 
         this.BaseUpdate();
         const RenderStateMachine = GRenderingStateMachine.GetInstance();
