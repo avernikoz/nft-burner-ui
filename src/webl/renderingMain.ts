@@ -72,6 +72,21 @@ import {
     GetSmokeParticlesDesc,
 } from "./particlesConfig";
 
+const ImageLink = {
+    url: "",
+    image: null as TexImageSource | null,
+};
+
+async function loadImageFromURL(url: string): Promise<TexImageSource> {
+    return new Promise((resolve, reject) => {
+        const img = document.createElement("img");
+        img.crossOrigin = "anonymous"; // Enable cross-origin requests if needed
+        img.onload = () => resolve(img);
+        img.onerror = (error) => reject(error);
+        img.src = url;
+    });
+}
+
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
         const vertexBufferCPU = new Float32Array([
@@ -617,7 +632,7 @@ export function RenderMain() {
 
                 const folder = GDatGUI.addFolder("Main");
 
-                folder.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
+                /* folder.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
                 folder.add(GTime, "Cur").name("CurTime").listen().step(0.0001);
 
                 folder.add(GScreenDesc, "ScreenRatio").name("ScreenRatio").listen().step(0.01);
@@ -625,7 +640,48 @@ export function RenderMain() {
 
                 folder.add(GGpuReadData, "CurFireValueCPU").listen().step(0.001);
 
-                folder.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses");
+                folder.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses"); */
+
+                // Define an object to hold your parameters
+
+                // Add a text input field to the GUI
+                folder.add(ImageLink, "url").name("Link");
+
+                /* const LoadLinkParam = {
+                    buttonText: "Upload",
+                    handleClick: () => {
+                        loadImageFromURL(ImageLink.url)
+                            .then((image: TexImageSource) => {
+                                console.log("IMAGE LOAD ATTEMPT");
+                                if (image) {
+                                    BurningSurface.UpdatePlaneSurfaceImage(gl, image, ImageLink.url);
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Error loading image:", error);
+                            });
+                    },
+                };
+
+                folder.add(LoadLinkParam, "buttonText").name(LoadLinkParam.buttonText); */
+
+                const uploadParam = {
+                    buttonText: "Upload",
+                    handleClick: () => {
+                        loadImageFromURL(ImageLink.url)
+                            .then((image: TexImageSource) => {
+                                console.log("IMAGE LOAD ATTEMPT");
+                                if (image) {
+                                    BurningSurface.UpdatePlaneSurfaceImage(gl, image, ImageLink.url);
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Error loading image:", error);
+                            });
+                    },
+                };
+
+                folder.add(uploadParam, "handleClick").name(uploadParam.buttonText);
 
                 //State Debug UI
                 const stateFolder = GDatGUI.addFolder("States");
@@ -640,7 +696,9 @@ export function RenderMain() {
                 const burnMoreParam = {
                     buttonText: "BurnMore",
                     handleClick: () => {
-                        GRenderingStateMachine.OnBurnMoreButtonPress();
+                        BurningSurface.Reset(gl);
+                        ResetParticleEmitters(gl);
+                        GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady);
                     },
                 };
 
@@ -690,23 +748,23 @@ export function RenderMain() {
                     toolsFolder.add(thunderParam, "handleClick").name(thunderParam.buttonText);
                 }
 
-                const shakeParam = {
+                /* const shakeParam = {
                     buttonText: "Camera Shake",
                     handleClick: () => {
                         //GCameraShakeController.ShakeCameraFast();
                         GSpotlightShakeController.ShakeSpotlight(1.0);
                     },
                 };
-                folder.add(shakeParam, "handleClick").name(shakeParam.buttonText);
+                folder.add(shakeParam, "handleClick").name(shakeParam.buttonText); */
             }
 
             GSceneDescSubmitDebugUI(GDatGUI);
 
-            BurningSurface.SubmitDebugUI(GDatGUI);
-            BackGroundRenderPass.SubmitDebugUI(GDatGUI);
-            GTool.Current.SubmitDebugUI(GDatGUI);
-            GTexturePool.SubmitDebugUI(GDatGUI);
-            BurntStampSprite.SubmitDebugUI(GDatGUI);
+            //BurningSurface.SubmitDebugUI(GDatGUI);
+            //BackGroundRenderPass.SubmitDebugUI(GDatGUI);
+            //GTool.Current.SubmitDebugUI(GDatGUI);
+            //GTexturePool.SubmitDebugUI(GDatGUI);
+            //BurntStampSprite.SubmitDebugUI(GDatGUI);
         }
 
         //deprecated fpsElem = document.querySelector("#fps");
