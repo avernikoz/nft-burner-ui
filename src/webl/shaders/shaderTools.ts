@@ -542,6 +542,8 @@ export function GetShaderSourceFireballRenderPS() {
 			color = vec3(0.0, 0.0, 1.0);
 		} */
 
+		vec2 uv = vsOutTexCoords * 0.03;
+
 		vec2 speed = vec2(0.01, 0.04);
 
 		if(CurrentState == 0)
@@ -553,7 +555,17 @@ export function GetShaderSourceFireballRenderPS() {
 			speed *= 0.5;
 		}
 
-		vec2 uv = vsOutTexCoords * 0.03;
+		
+
+		float angle = -Time * 0.01;
+
+		float rotatedX = uv.x * cos(angle) - uv.y * sin(angle);
+		float rotatedY = uv.x * sin(angle) + uv.y * cos(angle);
+
+		uv.x = rotatedX;
+		uv.y = rotatedY;
+
+		
 		uv.x -= Time * speed.x;
 		uv.y -= Time * speed.y;
 
@@ -571,6 +583,12 @@ export function GetShaderSourceFireballRenderPS() {
 		if(CurrentState >= 2)
 		{
 			colorScale = vec3(1.9, 1.5, 1.7) * 1.9;
+		}
+		else
+		{
+			float t =  (sin(Time * 3.14) + 1.0) * 0.5;
+			vec3 c = vec3(1.9, 1.5, 1.7) * 0.5 * (1.0 + t);
+			colorScale = mix(colorScale, c, t);
 		}
 
 		//float a = max(0.0, 1.0 - length(vsOutTexCoords - vec2(0.5)) * 2.0);
