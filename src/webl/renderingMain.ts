@@ -39,7 +39,7 @@ import {
     MathAlignToPowerOf2,
     MathClamp,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    MathGetVectorLength,
+    MathGetVec2Length,
     MathLerp,
     MathMapToRange,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

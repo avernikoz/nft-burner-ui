@@ -223,7 +223,9 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			vec3 l = normalize(lightPos - pixelPos);
 			vec3 h = normalize(v + l);
 
-			vec3 radiance = vec3(1.0); //lightDesc.Color * lightDesc.Intensity * attenuation;
+			//vec3 radiance = vec3(1.0); //lightDesc.Color * lightDesc.Intensity * attenuation;
+			vec3 radiance = vec3(1.0, 0.85, 0.95);
+			//vec3 radiance = vec3(1.0, 0.3, 0.3);
 
 			//calculate specular-diffuse ratio with Fresnel
 			vec3 F0 = vec3(0.04); //surface reflection at zero incidence
@@ -821,7 +823,7 @@ export function GetLightsUpdateShaderVS() {
 			const float MipLevel = 7.f;
 			float curFire = textureLod(FireTextureDownsampled, fireUV.xy, MipLevel).r;
 			
-			curFire *= 0.01;
+			curFire *= 0.01 * 2.0;
 
 			float lightIntensity = 0.0f;
 

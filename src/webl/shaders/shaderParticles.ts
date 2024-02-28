@@ -878,6 +878,8 @@ function scFlameSpecificShading(bUsesTexture: boolean) {
 
 		colorFinal.rgb = mix(colorFinal.rgb, colorFinal.a * flameColor * 5.0f, t);
 
+		//colorFinal.rgb = max(vec3(0.0), Contrast(colorFinal.rgb, 1.5));
+
 		//colorFinal.rgb *= CircularFadeOut(interpolatorTexCoords.y);
 
 	  #endif
@@ -999,7 +1001,7 @@ function scEmbersImpactSpecificShading(inDesc : ParticleEmitterDesc) {
 		//vec3 colorBright = vec3(0.8, 0.7, 1.0);
 		const vec3 colorBright = vec3(`+inDesc.Color.x+`, `+inDesc.Color.y+`, `+inDesc.Color.z+ /* glsl */`);
 
-		colorFinal.rgb = colorBright;
+		colorFinal.rgb = colorBright * DynamicBrightness;
 
 		float t = interpolatorAge;
 		t = 1.0 - CircularFadeOut(t);
@@ -1279,6 +1281,7 @@ export function GetParticleRenderColorPS(inDesc: ParticleEmitterDesc, bUsesTextu
 		
 		uniform vec2 FlipbookSizeRC;
 		uniform float CurTime;
+		uniform float DynamicBrightness;
   
 		float CircularFadeIn(float x) 
 		{
@@ -1296,6 +1299,16 @@ export function GetParticleRenderColorPS(inDesc: ParticleEmitterDesc, bUsesTextu
 		{
 			///Translate to origin, scale by ranges ratio, translate to new position
 			return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+		}
+
+		float Contrast(float color, float contrast)
+		{
+			return max(float(0.f), contrast * (color - 0.5f) + 0.5f);
+		}
+
+		vec3 Contrast(vec3 color, float contrast)
+		{
+			return vec3(Contrast(color.r, contrast), Contrast(color.g, contrast), Contrast(color.b, contrast));
 		}
 	
 		void main()

@@ -8,9 +8,13 @@ export function MathAlignToPowerOf2(num: number): number {
     return Math.pow(2, Math.ceil(Math.log2(num)));
 }
 
-export function MathGetVectorLength(vec2: Vector2) {
+export function MathGetVec2Length(vec2: Vector2) {
     return Math.sqrt(vec2.x * vec2.x + vec2.y * vec2.y);
 }
+export function MathGetVec3Length(vec: Vector3) {
+    return Math.sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
+
 export function MathClamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max);
 }

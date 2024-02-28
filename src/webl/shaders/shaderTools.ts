@@ -542,7 +542,7 @@ export function GetShaderSourceFireballRenderPS() {
 			color = vec3(0.0, 0.0, 1.0);
 		} */
 
-		vec2 uv = vsOutTexCoords * 0.03;
+		vec2 uv = (vsOutTexCoords * 0.03) + vec2(0.2);
 
 		vec2 speed = vec2(0.01, 0.04);
 
@@ -589,6 +589,11 @@ export function GetShaderSourceFireballRenderPS() {
 			float t =  (sin(Time * 3.14) + 1.0) * 0.5;
 			vec3 c = vec3(1.9, 1.5, 1.7) * 0.5 * (1.0 + t);
 			colorScale = mix(colorScale, c, t);
+		}
+
+		if(CurrentState == 2)
+		{
+			colorScale *= 1.5;
 		}
 
 		//float a = max(0.0, 1.0 - length(vsOutTexCoords - vec2(0.5)) * 2.0);

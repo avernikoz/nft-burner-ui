@@ -9,16 +9,22 @@ export class Vector3 {
 
     z: number;
 
-    constructor(inX = 1.0, inY = 1.0, inZ = 0.0) {
+    constructor(inX: number, inY: number, inZ: number) {
         this.x = inX;
         this.y = inY;
         this.z = inZ;
     }
 
-    Set(inX = 1.0, inY = 1.0, inZ = 0.0) {
+    /* Set(inX: number, inY: number, inZ: number) {
         this.x = inX;
         this.y = inY;
         this.z = inZ;
+    } */
+
+    Set(inVec3: Vector3) {
+        this.x = inVec3.x;
+        this.y = inVec3.y;
+        this.z = inVec3.z;
     }
 
     Mul(scale: number) {

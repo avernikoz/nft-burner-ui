@@ -27,11 +27,11 @@ import {
 } from "./shaders/shaderTools";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
-import { GetVec2, GetVec3 } from "./types";
+import { GetVec2, GetVec3, Vector3 } from "./types";
 import {
     GTime,
     MathClamp,
-    MathGetVectorLength,
+    MathGetVec2Length,
     MathIntersectionAABBSphere,
     MathIntersectionRayAABB,
     MathLerp,
@@ -45,6 +45,7 @@ import {
     Vec3Negate,
     MathVector3Normalize,
     SetPositionSmooth,
+    MathGetVec3Length,
 } from "./utils";
 import { BindRenderTarget } from "./resourcesUtils";
 import {
@@ -146,6 +147,7 @@ export enum EBurningTool {
     Laser = 0,
     Lighter,
     Thunder,
+    Fireball,
     //===
     NUM,
 }
@@ -166,6 +168,8 @@ export abstract class ToolBase {
     bIntersection;
 
     bIntersectionPrevFrame;
+
+    LastHitPositionWS = new Vector3(0, 0, 0);
 
     // Methods
     constructor() {
@@ -197,8 +201,9 @@ export abstract class ToolBase {
         this.TimeSinceLastInteraction += GTime.Delta;
     }
 
-    BaseReset() {
+    BaseReset(hitPosWS: Vector3) {
         this.TimeSinceLastInteraction = 0.0;
+        this.LastHitPositionWS.Set(hitPosWS);
     }
 
     RenderToFirePlaneRT(gl: WebGL2RenderingContext): void {}
@@ -369,7 +374,7 @@ export class LighterTool extends ToolBase {
         if (this.bActiveThisFrame) {
             //Animation
             this.AnimationComponent.Speed = MathLerp(1.0, 1.5, (Math.sin(GTime.CurClamped) + 1.0) * 0.5);
-            const velocityMagnitude = MathGetVectorLength(GUserInputDesc.InputVelocityCurViewSpace);
+            const velocityMagnitude = MathGetVec2Length(GUserInputDesc.InputVelocityCurViewSpace);
             this.AnimationComponent.Speed += velocityMagnitude * 50;
             this.AnimationComponent.Update();
             this.AnimationComponent.FadeInUpdate();
@@ -1128,7 +1133,7 @@ export class ThunderTool extends ToolBase {
             {
                 //start fade in logic
 
-                this.BaseReset();
+                this.BaseReset(this.StartPos);
                 this.AnimationComponent.Reset();
 
                 this.SparksParticles.Reset(gl);
@@ -1430,6 +1435,8 @@ export class ThunderTool extends ToolBase {
 // 														_FIREBALL
 //=============================================================================================================================
 
+class CProjectileComponent {}
+
 export class FireballTool extends ToolBase {
     ShaderProgram;
 
@@ -1453,7 +1460,7 @@ export class FireballTool extends ToolBase {
     TrailSmokeParticles: ParticlesEmitter;
 
     //Desc
-    Scale = 0.15;
+    Scale = 0.1;
     Orientation = { pitch: 0.0, yaw: 0.0, roll: 0.0 };
     ColorInitial = GetVec3(1.0, 0.7, 0.35);
     ColorCurrent = GetVec3(this.ColorInitial.x, this.ColorInitial.y, this.ColorInitial.z);
@@ -1462,6 +1469,9 @@ export class FireballTool extends ToolBase {
 
     SpatialController;
     ControllerInitialPos = GetVec2(0.0, -0.8);
+
+    //Projectile
+    ProjectileComponent = new CProjectileComponent();
 
     constructor(gl: WebGL2RenderingContext) {
         super();
@@ -1531,7 +1541,7 @@ export class FireballTool extends ToolBase {
         SmokeParticlesDesc.InitialVelocityScale = 30.0;
         SmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
         SmokeParticlesDesc.EFadeInOutMode = 1;
-        SmokeParticlesDesc.AlphaScale = 1.0;
+        SmokeParticlesDesc.AlphaScale = 0.5 + Math.random() * 0.5;
         SmokeParticlesDesc.InitialTranslate = { x: 0.0, y: 0.25 };
 
         this.SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
@@ -1565,10 +1575,10 @@ export class FireballTool extends ToolBase {
 
         const TrailSmokeParticlesDesc = GetSmokeParticlesDesc();
         TrailSmokeParticlesDesc.NumSpawners2D = 1;
-        TrailSmokeParticlesDesc.NumParticlesPerSpawner = 18;
+        TrailSmokeParticlesDesc.NumParticlesPerSpawner = 32;
         TrailSmokeParticlesDesc.ParticleLife = 1.2;
-        TrailSmokeParticlesDesc.DefaultSize.x *= 0.75;
-        TrailSmokeParticlesDesc.DefaultSize.y *= 0.75;
+        TrailSmokeParticlesDesc.DefaultSize.x *= 0.6;
+        TrailSmokeParticlesDesc.DefaultSize.y *= 0.6;
         TrailSmokeParticlesDesc.BuoyancyForceScale *= 0.1;
 
         TrailSmokeParticlesDesc.EInitialPositionMode = 2;
@@ -1576,7 +1586,7 @@ export class FireballTool extends ToolBase {
         TrailSmokeParticlesDesc.InitialVelocityScale = 0.0;
         TrailSmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
         TrailSmokeParticlesDesc.EFadeInOutMode = 0;
-        TrailSmokeParticlesDesc.AlphaScale = 0.75;
+        TrailSmokeParticlesDesc.AlphaScale = 0.25 + Math.random() * 0.5;
         TrailSmokeParticlesDesc.InitialTranslate = { x: 0.0, y: 0.25 };
         TrailSmokeParticlesDesc.bOneShotParticle = true;
         TrailSmokeParticlesDesc.b3DSpace = true;
@@ -1611,17 +1621,12 @@ export class FireballTool extends ToolBase {
     PositionInitial = GetVec3(0.0, this.CamHeightOffset - 0.33, 0.0);
     PositionCurrent = GetVec3(0.0, 0.0, 0.0);
     VelocityCurrent = GetVec3(0.0, 0.0, 0.0);
-    LaunchStrength = 500.0;
 
     bLaunched = false;
     TargetConstraintStrength = 5.0;
 
     AttemptLaunch(gl: WebGL2RenderingContext) {
-        if (this.VelocityCurrent.z > 1.0) {
-            const randDir = MathVector3Normalize(GetVec3(-1.0 + Math.random() * 2.0, -0.5 + Math.random() * 1.5, 1.0));
-
-            const dt = Math.min(1 / 60, GTime.Delta);
-
+        if (this.VelocityCurrent.z > 3.0) {
             //Higher when hit from the side
             this.VelocityCurrent.y *= 1.0 + Math.abs(this.PositionCurrent.x) * 0.75;
 
@@ -1662,7 +1667,7 @@ export class FireballTool extends ToolBase {
                 curTargetPos.z - this.PositionCurrent.z,
             );
 
-            let curDist = MathGetVectorLength(diff) * this.TargetConstraintStrength;
+            let curDist = MathGetVec2Length(diff) * this.TargetConstraintStrength;
             curDist *= curDist;
             const dir = MathVector3Normalize(diff);
 
@@ -1688,7 +1693,7 @@ export class FireballTool extends ToolBase {
                 this.ControllerInitialPos.y,
                 1.0,
                 this.ControllerInitialPos.y,
-                0.1,
+                0.4,
             ),
             MathMapToRange(this.SpatialController.PositionNDCSpace.y, this.ControllerInitialPos.y, 1.0, 1.0, 3.0),
         );
@@ -1713,6 +1718,8 @@ export class FireballTool extends ToolBase {
         }
     }
 
+    LastImpactStrength = 0.0;
+
     UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface): void {
         this.SpatialController.OnUpdate();
 
@@ -1734,36 +1741,39 @@ export class FireballTool extends ToolBase {
 
         let velLengthScale = 0.75;
         if (this.SpatialController.bDragState) {
-            velLengthScale = velLengthScale + Math.min(1.25, MathGetVectorLength(this.VelocityCurrent) * 0.5);
+            velLengthScale = velLengthScale + Math.min(1.25, MathGetVec3Length(this.VelocityCurrent) * 0.5);
         }
-        this.ColorCurrent.Set(
+        /* this.ColorCurrent.Set(
             this.ColorInitial.x * velLengthScale,
             this.ColorInitial.y * velLengthScale,
             this.ColorInitial.z * velLengthScale,
-        );
+        ); */
+        this.ColorCurrent.Set(this.ColorInitial);
+        this.ColorCurrent.Mul(velLengthScale);
+
+        //Update Tool
+        GSceneDesc.Tool.Position.x = this.PositionCurrent.x;
+        GSceneDesc.Tool.Position.y = this.PositionCurrent.y;
+        GSceneDesc.Tool.Position.z = this.PositionCurrent.z;
+
+        const toolBright = 1.0;
+        GSceneDesc.Tool.Color.r = this.ColorCurrent.x * toolBright;
+        GSceneDesc.Tool.Color.g = this.ColorCurrent.y * toolBright;
+        GSceneDesc.Tool.Color.b = this.ColorCurrent.z * toolBright;
 
         this.BaseUpdate();
         const RenderStateMachine = GRenderingStateMachine.GetInstance();
 
         if (this.bLaunched || this.SpatialController.bDragState) {
             this.TrailSmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!, this.PositionCurrent);
+
+            GSceneDesc.Tool.Radius = 2.5;
         }
 
         if (this.bLaunched) {
-            GSceneDesc.Tool.Position.x = this.PositionCurrent.x;
-            GSceneDesc.Tool.Position.y = this.PositionCurrent.y;
-            GSceneDesc.Tool.Position.z = this.PositionCurrent.z;
-
-            const toolBright = 1.0;
-            GSceneDesc.Tool.Color.r = this.ColorCurrent.x * toolBright;
-            GSceneDesc.Tool.Color.g = this.ColorCurrent.y * toolBright;
-            GSceneDesc.Tool.Color.b = this.ColorCurrent.z * toolBright;
-
-            GSceneDesc.Tool.Radius = 2.5;
-
             this.TrailSparksParticles.Update(gl, BurningSurface.GetCurFireTexture()!, this.PositionCurrent);
         } else {
-            GSceneDesc.Tool.Radius = 0.0;
+            //GSceneDesc.Tool.Radius = 0.0;
         }
 
         if (this.bLaunched) {
@@ -1782,15 +1792,23 @@ export class FireballTool extends ToolBase {
             if (bInteracted) {
                 this.bActiveThisFrame = true;
 
-                this.BaseReset();
+                this.BaseReset(this.PositionCurrent);
                 this.AnimationComponent.Reset();
 
                 this.SparksParticles.Reset(gl);
+
                 this.SmokeParticles.Reset(gl);
 
-                const impactAmount = Math.min(MathGetVectorLength(this.VelocityCurrent) * 0.5, 1.5);
-                GCameraShakeController.ShakeCameraFast(impactAmount);
+                //this.LastImpactStrength = MathGetVec3Length(this.VelocityCurrent);
+                this.LastImpactStrength =
+                    this.VelocityCurrent.z +
+                    MathGetVec2Length(GetVec2(this.VelocityCurrent.x, this.VelocityCurrent.y)) * 0.2;
+                const impactAmount = Math.min(this.LastImpactStrength * 0.25, 1.5);
+                const camShakeScale = MathClamp(MathMapToRange(this.LastImpactStrength, 4.0, 15.0, 0.0, 1.0), 0.0, 1.0);
+                GCameraShakeController.ShakeCameraFast(camShakeScale);
                 GSpotlightShakeController.ShakeSpotlight(impactAmount);
+                const colorScale = MathClamp(MathMapToRange(this.LastImpactStrength, 0.0, 12.0, 0.0, 1.5), 0.0, 1.5);
+                this.SparksParticles.SetDynamicBrightness(colorScale);
 
                 this.RenderToFireSurface(gl, BurningSurface);
 
@@ -1838,7 +1856,8 @@ export class FireballTool extends ToolBase {
             this.PositionCurrent.z > 0.1 ||
             this.PositionCurrent.z < GSceneDesc.Camera.Position.z - 1.0 ||
             Math.abs(this.PositionCurrent.x) > 5.0 ||
-            Math.abs(this.PositionCurrent.y) > 5.0
+            Math.abs(this.PositionCurrent.y) > 5.0 ||
+            this.PositionCurrent.y < GSceneDesc.Floor.Position.y
         );
     }
 
@@ -1856,7 +1875,7 @@ export class FireballTool extends ToolBase {
 
     RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
         const curInputPos = this.PositionCurrent;
-        const sizeScale = 0.055;
+        const sizeScale = this.Scale * 0.5;
 
         //BurningSurface.Reset(gl);
 
@@ -2000,8 +2019,8 @@ export class FireballTool extends ToolBase {
 
         gl.uniform3f(
             this.UniformParametersLocationListFlare.SpotlightPos,
-            GSceneDesc.Tool.Position.x,
-            GSceneDesc.Tool.Position.y,
+            this.LastHitPositionWS.x,
+            this.LastHitPositionWS.y,
             -0.1,
         );
 
@@ -2044,5 +2063,7 @@ export class FireballTool extends ToolBase {
         folder.add(this.AnimationComponent, "FadeOutParameter", 0, 1).step(0.01).listen();
         folder.add(this, "bActiveThisFrame", 0, 1).listen();
         folder.add(this, "bIntersection", 0, 1).listen();
+
+        folder.add(this, "LastImpactStrength", 0, 100).name("Impact Strngth").step(0.01).listen();
     }
 }

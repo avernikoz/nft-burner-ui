@@ -5,7 +5,7 @@ import { GetVec2, GetVec3, Vector3 } from "./types";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {
     GTime,
-    MathGetVectorLength,
+    MathGetVec2Length,
     MathLerpVec3,
     MathVector2Normalize,
     Vec3Add,
@@ -83,10 +83,18 @@ export class GCameraShakeController {
             this.bShakeEventRunning = true;
             this.ShakeEventParam = 0.0;
 
-            const rand = Math.random();
+            const rand = 0.25 + Math.random() * 0.75;
             this.RandAmplitudeXYZ.x = rand;
             this.RandAmplitudeXYZ.y = 1.0 - rand;
-            this.RandAmplitudeXYZ.z = 0.25 + Math.random() * 0.75;
+            this.RandAmplitudeXYZ.z = 0.25 + Math.random() * 0.4;
+            //this.RandAmplitudeXYZ.z = 0.5;
+
+            if (Math.random() > 0.5) {
+                this.RandAmplitudeXYZ.x *= -1.0;
+            }
+            if (Math.random() > 0.5) {
+                this.RandAmplitudeXYZ.y *= -1.0;
+            }
 
             this.CachedCamPos.x = GSceneDesc.Camera.Position.x;
             this.CachedCamPos.y = GSceneDesc.Camera.Position.y;
@@ -155,7 +163,7 @@ export class GSpotlightShakeController {
             this.CachedSpotlightFocusPos.z - curFocusPos.z,
         );
 
-        const curDist = MathGetVectorLength(diff) * this.kConnectionConstraintStiffness;
+        const curDist = MathGetVec2Length(diff) * this.kConnectionConstraintStiffness;
         const dir = MathVector2Normalize(diff);
 
         const dt = Math.min(1 / 60, GTime.Delta);

@@ -90,6 +90,8 @@ export class ParticlesEmitter {
     TimeBetweenParticleSpawn: number;
     NumActiveParticles: number;
 
+    DynamicBrightness = 1.0;
+
     InitialPositionsBufferGPU;
     PositionsBufferGPU;
     PrevPositionsBufferGPU;
@@ -516,6 +518,10 @@ export class ParticlesEmitter {
         this.CurrentBufferIndex = 0;
     }
 
+    SetDynamicBrightness(value: number) {
+        this.DynamicBrightness = value;
+    }
+
     Update(gl: WebGL2RenderingContext, fireTexture: WebGLTexture, initialEmitterPosition = GetVec3(0.0, 0.0, 0.0)) {
         if (this.bUsesTexture && !this.ColorTexture.bLoaded) {
             return;
@@ -628,6 +634,7 @@ export class ParticlesEmitter {
             this.Desc.FlipbookSizeRC.y,
         );
         gl.uniform1f(this.ParticleRenderUniformParametersLocationList.CurTime, GTime.CurClamped);
+        gl.uniform1f(this.ParticleRenderUniformParametersLocationList.DynamicBrightness, this.DynamicBrightness);
 
         /* Set up blending */
         gl.enable(gl.BLEND);
@@ -657,6 +664,7 @@ export class ParticlesEmitter {
             FlameColorLUT: gl.getUniformLocation(shaderProgram, "FlameColorLUT"),
             EmitterPosition: gl.getUniformLocation(shaderProgram, "EmitterPosition"),
             FloorPosY: gl.getUniformLocation(shaderProgram, "FloorPosY"),
+            DynamicBrightness: gl.getUniformLocation(shaderProgram, "DynamicBrightness"),
         };
         return params;
     }

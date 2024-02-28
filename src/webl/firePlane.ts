@@ -551,35 +551,6 @@ export class GBurningSurface {
         }
     }
 
-    /* ApplyFire(gl: WebGL2RenderingContext, pos: Vector2, direction: Vector2, size: number, strength: number) {
-        this.BindFireRT(gl);
-
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.ONE, gl.ONE);
-        this.ApplyFirePass.Execute(gl, pos, direction, size, strength, false);
-        gl.disable(gl.BLEND);
-    }
-
-    ApplyFireFromInput(gl: WebGL2RenderingContext) {
-        const curInputPos = GUserInputDesc.InputPosCurNDC;
-        const curInputDir = { x: 0, y: 0 };
-        curInputDir.x = GUserInputDesc.InputPosCurNDC.x - GUserInputDesc.InputPosPrevNDC.x;
-        curInputDir.y = GUserInputDesc.InputPosCurNDC.y - GUserInputDesc.InputPosPrevNDC.y;
-        const inputDirLength = MathGetVectorLength(curInputDir);
-        let sizeScale;
-        if (GUserInputDesc.bPointerInputMoving == false) {
-            sizeScale = 0.005;
-            curInputDir.x = 0;
-            curInputDir.y = 1;
-        } else {
-            sizeScale = MathClamp(inputDirLength * 0.5, 0.001, 0.05);
-        }
-
-        this.ApplyFire(gl, curInputPos, MathVector2Normalize(curInputDir), sizeScale, 0.5);
-    }
-
-     */
-
     ApplyFireAuto(gl: WebGL2RenderingContext, pos: Vector2, size: number) {
         const curInputPos = pos;
 
