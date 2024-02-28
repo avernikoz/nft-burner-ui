@@ -8,3 +8,6 @@
 
 [context.develop]
   command = "yarn build:dev"
+
+[context.marketmovie]
+  command = "yarn build:dev"
