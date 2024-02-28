@@ -5,3 +5,6 @@
 
 [context.master]
   command = "GENERATE_SOURCEMAP=false yarn build"
+
+[context.develop]
+  command = "yarn build:dev"
