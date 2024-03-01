@@ -445,7 +445,7 @@ export function RenderMain() {
     //======================
     // 		INIT TOOLS
     //======================
-    GTool.Current = new FireballTool(gl);
+    GTool.Current = new LaserTool(gl);
 
     //==============================
     // 		INIT PARTICLES
@@ -597,7 +597,8 @@ export function RenderMain() {
             if (event.key == "r") {
                 //DebugReset ResetDebug
                 //GTool.Current = new FireballTool(gl);
-                GSceneDesc.Camera.Position.y = -0.8;
+                //GSceneDesc.Camera.Position.y = -0.8;
+                BurningSurface.ClearPaint(gl);
             }
         });
     }

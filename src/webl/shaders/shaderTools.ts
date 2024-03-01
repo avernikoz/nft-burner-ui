@@ -269,8 +269,6 @@ export function GetShaderSourceLaserVS() {
 		vec2 uv2 = vec2(1.0, 1.0);
 		vec2 uv3 = vec2(1.0, 0.0);
 
-		//AddTriangleToBuffer(vertsT[0], vertsT[1], vertsT[2]);
-		//AddTriangleToBuffer(vertsT[0], vertsT[2], vertsT[3]);
 		uint vertId = uint(gl_VertexID);
 		vec3 pos = verts3;
 		vsOutTexCoords = uv3;

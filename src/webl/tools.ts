@@ -54,6 +54,7 @@ import {
     SpatialControlPointWithTexture,
 } from "./spatialController";
 import { bifrostWallet } from "@rainbow-me/rainbowkit/dist/wallets/walletConnectors";
+import { TransformFromNDCToWorld } from "./transform";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -169,6 +170,8 @@ export abstract class ToolBase {
 
     bIntersectionPrevFrame;
 
+    PositionCurrent = GetVec3(0.0, 0.0, 0.0);
+    PositionPrev = GetVec3(0.0, 0.0, 0.0);
     LastHitPositionWS = new Vector3(0, 0, 0);
 
     // Methods
@@ -701,6 +704,10 @@ export class LaserTool extends ToolBase {
 
         this.UpdatePositionMain({ x: 0.0, y: 0.0, z: this.LaserGlowZPos });
 
+        this.PositionPrev.Set(this.PositionCurrent);
+        const posWSCur = TransformFromNDCToWorld(GUserInputDesc.InputPosCurNDC);
+        this.PositionCurrent.Set(posWSCur);
+
         //Interactivity check
         this.LaserDir = MathVector3Normalize(
             Vec3Negate(
@@ -709,12 +716,14 @@ export class LaserTool extends ToolBase {
             ),
         );
 
-        this.bIntersection = MathIntersectionRayAABB(
+        /* this.bIntersection = MathIntersectionRayAABB(
             this.LaserStartPos,
             this.LaserDir,
             GSceneDesc.FirePlane.PositionOffset,
-            GetVec3(0.4, 0.4, 0.0),
-        );
+            GetVec3(1.0, 1.0, 0.0),
+        ); */
+
+        this.bIntersection = Math.abs(posWSCur.x) < 1.0 && Math.abs(posWSCur.y) < 1.0;
 
         //this.bIntersection = true;
 
@@ -742,6 +751,8 @@ export class LaserTool extends ToolBase {
 
                     this.bFirstInteraction = false;
                 }
+
+                this.PositionPrev.Set(this.PositionCurrent);
 
                 this.PlayLaserSound();
 
@@ -821,18 +832,20 @@ export class LaserTool extends ToolBase {
         gl.blendFunc(gl.ONE, gl.ONE);
         BurningSurface.ApplyFirePass.Execute(
             gl,
-            { x: curInputPos.x, y: curInputPos.y },
-            GUserInputDesc.InputVelocityCurViewSpace,
+            GetVec2(this.PositionPrev.x, this.PositionPrev.y),
+            GetVec2(this.PositionCurrent.x, this.PositionCurrent.y),
             { x: sizeScale, y: sizeScale },
             this.LaserStrength,
             true,
             false,
-            false,
+            true,
+            true,
         );
         gl.disable(gl.BLEND);
     }
 
     RenderToFirePlaneRT(gl: WebGL2RenderingContext) {
+        return;
         if (!this.bActiveThisFrame) {
             return;
         }
@@ -933,6 +946,10 @@ export class LaserTool extends ToolBase {
         const folder = datGui.addFolder("Tool Params");
         //folder.open();
 
+        folder.add(this.PositionCurrent, "x", -2, 5).name("StartPosX").step(0.01).listen();
+        folder.add(this.PositionCurrent, "y", -3, 10).name("StartPosY").step(0.01).listen();
+        folder.add(this.PositionCurrent, "z", -10, 2).name("StartPosZ").step(0.01).listen();
+
         folder.add(this.AnimationComponent, "FadeInParameter", 0, 1).step(0.01).listen();
         folder.add(this.AnimationComponent, "FadeOutParameter", 0, 1).step(0.01).listen();
         folder.add(this, "bActiveThisFrame", 0, 1).listen();
@@ -940,6 +957,7 @@ export class LaserTool extends ToolBase {
     }
 
     RenderToFlameRT(gl: WebGL2RenderingContext): void {
+        return;
         if (this.bActiveThisFrame) {
             this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
         }
@@ -1518,7 +1536,7 @@ export class FireballTool extends ToolBase {
         SparksParticlesDesc.b3DSpace = true;
         SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
 
-        const brihgtness = 1.0;
+        const brihgtness = 0.75;
         SparksParticlesDesc.Color = GetVec3(
             this.ColorInitial.x * brihgtness,
             this.ColorInitial.y * brihgtness,
@@ -1531,14 +1549,14 @@ export class FireballTool extends ToolBase {
 
         const SmokeParticlesDesc = GetSmokeParticlesDesc();
         SmokeParticlesDesc.NumSpawners2D = 3;
-        SmokeParticlesDesc.ParticleLife = 1.4;
-        SmokeParticlesDesc.DefaultSize.x *= 1.75;
-        SmokeParticlesDesc.DefaultSize.y *= 1.75;
+        SmokeParticlesDesc.ParticleLife = 1.8;
+        SmokeParticlesDesc.DefaultSize.x *= 1.0;
+        SmokeParticlesDesc.DefaultSize.y *= 1.4;
         SmokeParticlesDesc.BuoyancyForceScale *= 0.1;
         SmokeParticlesDesc.bOneShotParticle = true;
         SmokeParticlesDesc.EInitialPositionMode = 2;
         SmokeParticlesDesc.EAlphaFade = 1.0;
-        SmokeParticlesDesc.InitialVelocityScale = 30.0;
+        SmokeParticlesDesc.InitialVelocityScale = 15.0;
         SmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
         SmokeParticlesDesc.EFadeInOutMode = 1;
         SmokeParticlesDesc.AlphaScale = 0.5 + Math.random() * 0.5;
@@ -1619,7 +1637,7 @@ export class FireballTool extends ToolBase {
 
     //Phys
     PositionInitial = GetVec3(0.0, this.CamHeightOffset - 0.33, 0.0);
-    PositionCurrent = GetVec3(0.0, 0.0, 0.0);
+
     VelocityCurrent = GetVec3(0.0, 0.0, 0.0);
 
     bLaunched = false;

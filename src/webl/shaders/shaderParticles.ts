@@ -21,6 +21,13 @@ function scGetRandomInitialVelocity(inDesc: ParticleEmitterDesc) {
 		vec2 dirVec = noise.rg;
 		dirVec = dirVec * 2.f - 1.f;
 
+		/* if(gl_VertexID > 4 && gl_VertexID < 1000)
+		{
+			const vec2 dirVecOG = vec2(-2.0, 1.0) * 0.2;
+			dirVec = dirVecOG + (dirVec) * vec2(0.3, 0.1);
+			noise.z *= 0.5;
+		} */
+
 		dirVec.x *= float(`+inDesc.InitialVelocityAddScale.x+/* glsl */`);
 		dirVec.y *= float(`+inDesc.InitialVelocityAddScale.y+/* glsl */`);
 		#if 1
@@ -155,7 +162,7 @@ function scGetVectorFieldForce(inDesc: ParticleEmitterDesc) {
 			randVecLQ.x = randVecNoise.r;
 			randVecLQ.y = randVecNoise.g;
 			randVecLQ = randVecLQ * 2.f - 1.f;
-			randVec += (randVecLQ) * RandVecScale * 0.5;
+			randVec += (randVecLQ) * RandVecScale;
 
 			//const float clampValue = 10.f;
 			const float clampValue = 100.f;
