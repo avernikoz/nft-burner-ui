@@ -134,7 +134,7 @@ function scGetVectorFieldForce(inDesc: ParticleEmitterDesc) {
             //sample vector field based on cur pos
             /* glsl */ `
 
-		#if !FALLING
+		#if !GRAVITY
 			vec2 uv = (inPosition.xy + 1.f) * 0.5f;
 			uv.x += float(gl_VertexID) * 0.025;
 			uv.y += float(gl_VertexID) * 0.01;
@@ -152,6 +152,14 @@ function scGetVectorFieldForce(inDesc: ParticleEmitterDesc) {
 			randVec = (randVec) * RandVecScale * 2.0 /* * 0.5 */;
 
 
+			//randVec = randVec * (2.0 - abs(dot(randVec, curVel.xy)));
+			
+			/* if(dot(randVec, curVel.xy) < 0.5)
+			{
+				//randVec = randVec * (1.0 - abs(dot(randVec, curVel.xy)));
+				randVec *= 0.0;
+			} */
+
 			//LQ Noise
 			uv = (inPosition.xy + 1.f) * 0.5f;
 			uv *= 0.01f;
@@ -162,7 +170,7 @@ function scGetVectorFieldForce(inDesc: ParticleEmitterDesc) {
 			randVecLQ.x = randVecNoise.r;
 			randVecLQ.y = randVecNoise.g;
 			randVecLQ = randVecLQ * 2.f - 1.f;
-			randVec += (randVecLQ) * RandVecScale;
+			//randVec += (randVecLQ) * RandVecScale;
 
 			//const float clampValue = 10.f;
 			const float clampValue = 100.f;
@@ -268,11 +276,12 @@ function scGetParticleUpdateLogic(inDesc : ParticleEmitterDesc) : string
 function scParticleUpdateDefines(inDesc : ParticleEmitterDesc)
 {
 	const freeFall = `#define FALLING ` + (inDesc.bFreeFallParticle ? `1` : `0`);
+	const gravity = `#define GRAVITY ` + (inDesc.bUseGravity ? `1` : `0`);
 	const respawn = `#define ALWAYS_RESPAWN ` + (inDesc.bAlwaysRespawn ? `1` : `0`);
 	const dim = `#define THIRD_DIMENSION ` + (inDesc.b3DSpace ? `1` : `0`); 
 	const dimtype = `#define DIM_TYPE ` + (inDesc.b3DSpace ? `vec3` : `vec2`); 
 
-	return freeFall + ` \n ` + respawn + ` \n ` + dim + ` \n ` + dimtype;
+	return freeFall + ` \n ` + respawn + ` \n ` + dim + ` \n ` + dimtype + ` \n ` + gravity;
 }
 
 export function GetParticleUpdateShaderVS(
@@ -499,9 +508,10 @@ export const ParticleUpdatePS = /* glsl */ `#version 300 es
 function scTransformBasedOnMotion(inDesc: ParticleEmitterDesc) {
     if (inDesc.bMotionBasedTransform) {
         return /* glsl */ `DIM_TYPE curVelocity = inVelocity;
-			float velLength = length(curVelocity.xy) * 0.10 * 1.0 * (1.0 - ageNorm) * (1.0 - ageNorm);
+			float velLength = length(curVelocity.xy) * 0.10;
 			#if THIRD_DIMENSION
-			//velLength += curVelocity.z * 0.1;
+			velLength *= (1.0 - ageNorm) * (1.0 - ageNorm);
+			//velLength += curVelocity.z * 0.05;
 			#endif
 			velLength *= float(`+inDesc.MotionStretchScale+/* glsl */`);
 			velLength *= max(0.5, (1.0 - min(1.0, inAge * 0.5)));
@@ -914,8 +924,8 @@ function scSmokeSpecificShading(alphaScale = 0.25) {
 		colorFinal.a *= radialDistanceScale * radialDistanceScale;
 		#endif
 
-		float brightness = mix(0.35, 0.15, interpolatorAge);
-		colorFinal.rgb *= brightness;
+		/* float brightness = mix(0.35, 0.15, interpolatorAge);
+		colorFinal.rgb *= brightness; */
 		
 		colorFinal.rgb *= colorFinal.a;
 		`
@@ -933,10 +943,18 @@ function scAfterBurnSmokeSpecificShading(alphaScale = 0.25) {
 
 		colorFinal.a *= (alphaScale + colorFinal.r * 0.75);
 
-		#if 1
+		/* #if 1
 		float radialDistanceScale = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		radialDistanceScale = (1.f - clamp(radialDistanceScale, 0.f, 1.f));
 		colorFinal.a *= pow(radialDistanceScale, 5.f);
+		#endif */
+		#if 1
+		float s = 1.0 - interpolatorTexCoords.y;
+		if(s < 0.3)
+		{
+			s = MapToRange(s, 0.0, 0.3, 0.0, 1.0);
+			colorFinal *= s;
+		}
 		#endif
 
 		float brightness = mix(0.35, 0.15, interpolatorAge);
@@ -1010,11 +1028,18 @@ function scEmbersImpactSpecificShading(inDesc : ParticleEmitterDesc) {
 
 		colorFinal.rgb = colorBright * DynamicBrightness;
 
+		const float riseTHres = 0.2;
+		if(interpolatorAge < riseTHres)
+		{
+			float mm = MapToRange(interpolatorAge, 0.0, riseTHres, 0.5, 1.0);
+			colorFinal.rgb *= mm;
+		}
+
 		float t = interpolatorAge;
 		t = 1.0 - CircularFadeOut(t);
 		t = min(1.0, t + 0.2);
 
-		colorFinal.rgb *= 2.f * t;
+		colorFinal.rgb *= 2.f /* * t */;
 
 		//t = interpolatorAge
 		
@@ -1022,7 +1047,7 @@ function scEmbersImpactSpecificShading(inDesc : ParticleEmitterDesc) {
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
 		//s *= 1.25f;
-		s *= (1.0 + interpolatorAge * 1.0);
+		//s *= (1.0 + interpolatorAge * 1.0);
 		/* if(s > 0.5f)
 		{
 			s += 0.25f;
@@ -1093,6 +1118,7 @@ function scEmbersImpactSpecificShading(inDesc : ParticleEmitterDesc) {
 		colorFinal.rgb = mix(colorFinal.rgb, vec3(0.0), 1.0 - s2);
 		#endif
 
+		#if 0
 		t = interpolatorAge;
 		const float fThres = 0.55;
 		if(t > fThres)
@@ -1101,6 +1127,7 @@ function scEmbersImpactSpecificShading(inDesc : ParticleEmitterDesc) {
 			t = clamp(t, 0.0, 1.0);
 			colorFinal.rgb = mix(colorFinal.rgb, vec3(0.1) * s, t);
 		}
+		#endif
 		
 
 

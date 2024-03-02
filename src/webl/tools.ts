@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/lines-between-class-members */
 import { GAudioEngine, SoundSample } from "./audioEngine";
 import { GCameraShakeController, GSpotlightShakeController } from "./animationController";
-import { GBurningSurface } from "./firePlane";
+import { FirePaintDesc, GBurningSurface } from "./firePlane";
 import { GMeshGenerator } from "./helpers/meshGenerator";
 import { GUserInputDesc } from "./input";
 import { EParticleShadingMode, ParticlesEmitter } from "./particles";
@@ -27,7 +27,7 @@ import {
 } from "./shaders/shaderTools";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
-import { GetVec2, GetVec3, Vector3 } from "./types";
+import { GetVec2, GetVec3, SetVec2, Vector3 } from "./types";
 import {
     GTime,
     MathClamp,
@@ -161,6 +161,8 @@ export abstract class ToolBase {
 
     TimeSinceLastInteraction = 0.0;
 
+    ApplyFireDesc = new FirePaintDesc();
+
     // Base
     bActiveThisFrame;
 
@@ -172,6 +174,7 @@ export abstract class ToolBase {
 
     PositionCurrent = GetVec3(0.0, 0.0, 0.0);
     PositionPrev = GetVec3(0.0, 0.0, 0.0);
+    Orientation = { pitch: 0.0, yaw: 0.0, roll: 0.0 };
     LastHitPositionWS = new Vector3(0, 0, 0);
 
     // Methods
@@ -436,20 +439,21 @@ export class LighterTool extends ToolBase {
 
         BurningSurface.BindFireRT(gl);
 
+        SetVec2(this.ApplyFireDesc.PosCur, curInputPos.x, curInputPos.y);
+        this.ApplyFireDesc.Size.x = curInputPos.x + Math.asin(Math.sin(GTime.Cur * 7.0)) * 0.005;
+        this.ApplyFireDesc.Size.y = curInputPos.y + 0.1;
+        this.ApplyFireDesc.Strength = 4.0 * GTime.Delta;
+        this.ApplyFireDesc.bMotionBasedTransform = true;
+        this.ApplyFireDesc.bApplyFireUseNoise = false;
+        this.ApplyFireDesc.bSmoothOutEdges = true;
+        this.ApplyFireDesc.Velocity.x = 0.0;
+        this.ApplyFireDesc.Velocity.y = 1.0;
+
         /* Set up blending */
         gl.enable(gl.BLEND);
         gl.blendEquation(gl.FUNC_ADD);
         gl.blendFunc(gl.ONE, gl.ONE);
-        BurningSurface.ApplyFirePass.Execute(
-            gl,
-            { x: curInputPos.x + Math.asin(Math.sin(GTime.Cur * 7.0)) * 0.005, y: curInputPos.y + 0.1 },
-            { x: 0.0, y: 1.0 },
-            { x: sizeScale * 0.3, y: sizeScale },
-            4.0 * GTime.Delta,
-            true,
-            true,
-            false,
-        );
+        BurningSurface.ApplyFirePass.Execute(gl, this.ApplyFireDesc);
         gl.disable(gl.BLEND);
     }
 
@@ -820,27 +824,25 @@ export class LaserTool extends ToolBase {
 
     RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
         const curInputPos = GUserInputDesc.InputPosCurNDC;
-        const sizeScale = 0.0035;
+        const sizeScale = 0.01;
 
         //BurningSurface.Reset(gl);
 
         BurningSurface.BindFireRT(gl);
 
+        SetVec2(this.ApplyFireDesc.PosCur, this.PositionCurrent.x, this.PositionCurrent.y);
+        this.ApplyFireDesc.Size.x = sizeScale;
+        this.ApplyFireDesc.Size.y = sizeScale;
+        this.ApplyFireDesc.Strength = this.LaserStrength;
+        this.ApplyFireDesc.bMotionBasedTransform = true;
+        this.ApplyFireDesc.Velocity.x = GUserInputDesc.InputVelocityCurViewSpace.x;
+        this.ApplyFireDesc.Velocity.y = GUserInputDesc.InputVelocityCurViewSpace.y;
+
         /* Set up blending */
         gl.enable(gl.BLEND);
         gl.blendEquation(gl.MAX);
         gl.blendFunc(gl.ONE, gl.ONE);
-        BurningSurface.ApplyFirePass.Execute(
-            gl,
-            GetVec2(this.PositionPrev.x, this.PositionPrev.y),
-            GetVec2(this.PositionCurrent.x, this.PositionCurrent.y),
-            { x: sizeScale, y: sizeScale },
-            this.LaserStrength,
-            true,
-            false,
-            true,
-            true,
-        );
+        BurningSurface.ApplyFirePass.Execute(gl, this.ApplyFireDesc);
         gl.disable(gl.BLEND);
     }
 
@@ -1078,11 +1080,12 @@ export class ThunderTool extends ToolBase {
         //SparksParticlesDesc.RandomSpawnThres = 0.5;
         SparksParticlesDesc.bOneShotParticle = true;
         SparksParticlesDesc.bFreeFallParticle = true;
+        SparksParticlesDesc.bUseGravity = true;
         //SparksParticlesDesc.bAlwaysRespawn = true;
         SparksParticlesDesc.b3DSpace = true;
         SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
 
-        const brihgtness = 2.0;
+        const brihgtness = 1.0;
         SparksParticlesDesc.Color = GetVec3(0.8 * brihgtness, 0.7 * brihgtness, 1.0 * brihgtness);
         SparksParticlesDesc.MotionStretchScale = 1.25;
         SparksParticlesDesc.InitialVelocityAddScale = GetVec2(0.6, 1.5);
@@ -1249,20 +1252,21 @@ export class ThunderTool extends ToolBase {
 
         BurningSurface.BindFireRT(gl);
 
+        SetVec2(this.ApplyFireDesc.PosCur, curInputPos.x, curInputPos.y);
+        this.ApplyFireDesc.Size.x = sizeScale;
+        this.ApplyFireDesc.Size.y = sizeScale;
+        this.ApplyFireDesc.Strength = this.AppliedFireStrength * 10.0;
+        this.ApplyFireDesc.bMotionBasedTransform = true;
+        this.ApplyFireDesc.bApplyFireUseNoise = true;
+        this.ApplyFireDesc.bSmoothOutEdges = true;
+        this.ApplyFireDesc.Velocity.x = GUserInputDesc.InputVelocityCurViewSpace.x;
+        this.ApplyFireDesc.Velocity.y = GUserInputDesc.InputVelocityCurViewSpace.y;
+
         /* Set up blending */
         gl.enable(gl.BLEND);
         gl.blendEquation(gl.MAX);
         gl.blendFunc(gl.ONE, gl.ONE);
-        BurningSurface.ApplyFirePass.Execute(
-            gl,
-            { x: curInputPos.x, y: curInputPos.y },
-            GUserInputDesc.InputVelocityCurViewSpace,
-            { x: sizeScale, y: sizeScale },
-            this.AppliedFireStrength * 10.0,
-            true,
-            true,
-            true,
-        );
+        BurningSurface.ApplyFirePass.Execute(gl, this.ApplyFireDesc);
         gl.disable(gl.BLEND);
     }
 
@@ -1469,6 +1473,8 @@ export class FireballTool extends ToolBase {
 
     LightFlareTexture;
 
+    MaskTexture;
+
     //Audio
 
     //Particles
@@ -1478,8 +1484,8 @@ export class FireballTool extends ToolBase {
     TrailSmokeParticles: ParticlesEmitter;
 
     //Desc
-    Scale = 0.1;
-    Orientation = { pitch: 0.0, yaw: 0.0, roll: 0.0 };
+    Scale = 0.15;
+    RotationSpeed = 0.0;
     ColorInitial = GetVec3(1.0, 0.7, 0.35);
     ColorCurrent = GetVec3(this.ColorInitial.x, this.ColorInitial.y, this.ColorInitial.z);
 
@@ -1514,6 +1520,8 @@ export class FireballTool extends ToolBase {
 
         this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `lightGlare2`);
 
+        this.MaskTexture = GTexturePool.CreateTexture(gl, false, "crossIcon_R8");
+
         this.AnimationComponent.Speed = 1.0;
         this.AnimationComponent.FadeInSpeed = 10.0;
         this.AnimationComponent.FadeOutSpeed = 1.0;
@@ -1532,15 +1540,17 @@ export class FireballTool extends ToolBase {
         //SparksParticlesDesc.RandomSpawnThres = 0.5;
         SparksParticlesDesc.bOneShotParticle = true;
         SparksParticlesDesc.bFreeFallParticle = true;
+        SparksParticlesDesc.bUseGravity = true;
         //SparksParticlesDesc.bAlwaysRespawn = true;
         SparksParticlesDesc.b3DSpace = true;
         SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
 
-        const brihgtness = 0.75;
+        // eslint-disable-next-line prefer-const
+        let sparksBrightness = 0.75;
         SparksParticlesDesc.Color = GetVec3(
-            this.ColorInitial.x * brihgtness,
-            this.ColorInitial.y * brihgtness,
-            this.ColorInitial.z * brihgtness,
+            this.ColorInitial.x * sparksBrightness,
+            this.ColorInitial.y * sparksBrightness,
+            this.ColorInitial.z * sparksBrightness,
         );
         SparksParticlesDesc.MotionStretchScale = 1.3;
         SparksParticlesDesc.InitialVelocityAddScale = GetVec2(0.6, 1.5);
@@ -1566,37 +1576,44 @@ export class FireballTool extends ToolBase {
 
         //Particles
         const TrailSparksParticlesDesc = GetEmberParticlesDesc();
-        TrailSparksParticlesDesc.NumSpawners2D = 3;
+        TrailSparksParticlesDesc.NumSpawners2D = 2;
         TrailSparksParticlesDesc.NumParticlesPerSpawner = 32;
+        /* TrailSparksParticlesDesc.DefaultSize.y *= 0.75;
+        TrailSparksParticlesDesc.DefaultSize.x *= 0.75; */
+        TrailSparksParticlesDesc.DefaultSize.y *= 0.5;
         TrailSparksParticlesDesc.ParticleLife = 0.4;
         TrailSparksParticlesDesc.SizeRangeMinMax.x = 0.25;
-        TrailSparksParticlesDesc.VelocityFieldForceScale = 0;
+
         TrailSparksParticlesDesc.EInitialPositionMode = 2;
         TrailSparksParticlesDesc.bOneShotParticle = true;
         TrailSparksParticlesDesc.bAlwaysRespawn = true;
         TrailSparksParticlesDesc.b3DSpace = true;
         TrailSparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
-        TrailSparksParticlesDesc.Color = GetVec3(1.0, 0.6, 0.1);
-        TrailSparksParticlesDesc.InitialVelocityAddScale.y *= 0.25;
-        TrailSparksParticlesDesc.InitialVelocityAddScale.x *= 0.25;
+        /* TrailSparksParticlesDesc.InitialVelocityAddScale.y *= 0.75;
+        TrailSparksParticlesDesc.InitialVelocityAddScale.x *= 0.75; */
 
         TrailSparksParticlesDesc.bFreeFallParticle = true;
-        if (TrailSparksParticlesDesc.bFreeFallParticle) {
-            TrailSparksParticlesDesc.InitialVelocityScale = 20;
-            TrailSparksParticlesDesc.MotionStretchScale = 1.3;
-        } else {
-            TrailSparksParticlesDesc.InitialVelocityScale = 1;
-            TrailSparksParticlesDesc.MotionStretchScale = 1.3;
-        }
+        TrailSparksParticlesDesc.bUseGravity = false;
+        TrailSparksParticlesDesc.InitialVelocityScale = 6;
+        TrailSparksParticlesDesc.MotionStretchScale = 2.3;
+        TrailSparksParticlesDesc.VelocityFieldForceScale = 100.0;
+
+        //TrailSparksParticlesDesc.Color = GetVec3(1.0, 0.6, 0.1);
+        //sparksBrightness = 0.5;
+        TrailSparksParticlesDesc.Color = GetVec3(
+            this.ColorInitial.x * sparksBrightness,
+            this.ColorInitial.y * sparksBrightness,
+            this.ColorInitial.z * sparksBrightness,
+        );
 
         this.TrailSparksParticles = new ParticlesEmitter(gl, TrailSparksParticlesDesc);
 
         const TrailSmokeParticlesDesc = GetSmokeParticlesDesc();
         TrailSmokeParticlesDesc.NumSpawners2D = 1;
-        TrailSmokeParticlesDesc.NumParticlesPerSpawner = 32;
+        TrailSmokeParticlesDesc.NumParticlesPerSpawner = 64;
         TrailSmokeParticlesDesc.ParticleLife = 1.2;
-        TrailSmokeParticlesDesc.DefaultSize.x *= 0.6;
-        TrailSmokeParticlesDesc.DefaultSize.y *= 0.6;
+        TrailSmokeParticlesDesc.DefaultSize.x *= 0.45;
+        TrailSmokeParticlesDesc.DefaultSize.y *= 0.45;
         TrailSmokeParticlesDesc.BuoyancyForceScale *= 0.1;
 
         TrailSmokeParticlesDesc.EInitialPositionMode = 2;
@@ -1642,11 +1659,21 @@ export class FireballTool extends ToolBase {
 
     bLaunched = false;
     TargetConstraintStrength = 5.0;
+    LaunchVelocityX = 0.0;
 
     AttemptLaunch(gl: WebGL2RenderingContext) {
-        if (this.VelocityCurrent.z > 3.0) {
+        /*  if (this.VelocityCurrent.z > 2) {
+            if (this.VelocityCurrent.z < 3.0) {
+                this.VelocityCurrent.z = 3.1;
+            }
+        } */
+        let bCanLaunch = this.VelocityCurrent.z > 2.0;
+        bCanLaunch = bCanLaunch || (this.VelocityCurrent.z > 1.0 && Math.abs(this.VelocityCurrent.x) > 2);
+        if (bCanLaunch) {
             //Higher when hit from the side
             this.VelocityCurrent.y *= 1.0 + Math.abs(this.PositionCurrent.x) * 0.75;
+
+            this.LaunchVelocityX = this.VelocityCurrent.x;
 
             this.TrailSparksParticles.Reset(gl);
 
@@ -1688,6 +1715,8 @@ export class FireballTool extends ToolBase {
             let curDist = MathGetVec2Length(diff) * this.TargetConstraintStrength;
             curDist *= curDist;
             const dir = MathVector3Normalize(diff);
+
+            curDist *= 0.25 + Math.min(1.0, this.VelocityCurrent.z * 0.1);
 
             this.VelocityCurrent.x += dir.x * curDist * dt * 0.75;
             if (dir.y < 0.0) {
@@ -1732,7 +1761,21 @@ export class FireballTool extends ToolBase {
             this.PositionCurrent.z = MathLerp(this.PositionCurrent.z, worldPos.z, 0.25); */
 
             const dt = Math.min(1 / 60, GTime.Delta);
-            SetPositionSmooth(this.PositionCurrent, this.VelocityCurrent, worldPos, dt, 200.0, 10.0);
+            SetPositionSmooth(this.PositionCurrent, this.VelocityCurrent, worldPos, dt, 200.0, 15.0);
+        }
+    }
+
+    UpdateRotation() {
+        if (!this.bLaunched) {
+            this.RotationSpeed = Math.abs(this.VelocityCurrent.x) * 10.0;
+            this.Orientation.roll =
+                (this.Orientation.roll - Math.sign(this.VelocityCurrent.x) * this.RotationSpeed * GTime.Delta) %
+                (Math.PI * 2.0);
+        } else {
+            this.RotationSpeed = MathClamp(Math.abs(this.VelocityCurrent.x), 0.5, 1.25) * 40.0;
+            this.Orientation.roll =
+                (this.Orientation.roll - Math.sign(this.LaunchVelocityX) * this.RotationSpeed * GTime.Delta) %
+                (Math.PI * 2.0);
         }
     }
 
@@ -1749,6 +1792,8 @@ export class FireballTool extends ToolBase {
             }
         }
 
+        this.UpdateRotation();
+
         if (this.bLaunched) {
             this.LaunchUpdate();
         }
@@ -1759,7 +1804,7 @@ export class FireballTool extends ToolBase {
 
         let velLengthScale = 0.75;
         if (this.SpatialController.bDragState) {
-            velLengthScale = velLengthScale + Math.min(1.25, MathGetVec3Length(this.VelocityCurrent) * 0.5);
+            velLengthScale = velLengthScale + Math.min(1.0, MathGetVec3Length(this.VelocityCurrent) * 0.35);
         }
         /* this.ColorCurrent.Set(
             this.ColorInitial.x * velLengthScale,
@@ -1785,13 +1830,11 @@ export class FireballTool extends ToolBase {
         if (this.bLaunched || this.SpatialController.bDragState) {
             this.TrailSmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!, this.PositionCurrent);
 
-            GSceneDesc.Tool.Radius = 2.5;
+            GSceneDesc.Tool.Radius = 2.0;
         }
 
         if (this.bLaunched) {
             this.TrailSparksParticles.Update(gl, BurningSurface.GetCurFireTexture()!, this.PositionCurrent);
-        } else {
-            //GSceneDesc.Tool.Radius = 0.0;
         }
 
         if (this.bLaunched) {
@@ -1822,7 +1865,7 @@ export class FireballTool extends ToolBase {
                     this.VelocityCurrent.z +
                     MathGetVec2Length(GetVec2(this.VelocityCurrent.x, this.VelocityCurrent.y)) * 0.2;
                 const impactAmount = Math.min(this.LastImpactStrength * 0.25, 1.5);
-                const camShakeScale = MathClamp(MathMapToRange(this.LastImpactStrength, 4.0, 15.0, 0.0, 1.0), 0.0, 1.0);
+                const camShakeScale = MathClamp(MathMapToRange(this.LastImpactStrength, 4.0, 12.0, 0.0, 1.0), 0.0, 1.0);
                 GCameraShakeController.ShakeCameraFast(camShakeScale);
                 GSpotlightShakeController.ShakeSpotlight(impactAmount);
                 const colorScale = MathClamp(MathMapToRange(this.LastImpactStrength, 0.0, 12.0, 0.0, 1.5), 0.0, 1.5);
@@ -1893,27 +1936,39 @@ export class FireballTool extends ToolBase {
 
     RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
         const curInputPos = this.PositionCurrent;
-        const sizeScale = this.Scale * 0.5;
+        //const sizeScale = this.Scale * 0.5;
+        const sizeScale = this.Scale;
 
         //BurningSurface.Reset(gl);
 
         BurningSurface.BindFireRT(gl);
 
+        SetVec2(this.ApplyFireDesc.PosCur, curInputPos.x, curInputPos.y);
+        this.ApplyFireDesc.Size.x = sizeScale;
+        this.ApplyFireDesc.Size.y = sizeScale;
+        this.ApplyFireDesc.Strength = 100.0;
+        this.ApplyFireDesc.bMotionBasedTransform = false;
+        this.ApplyFireDesc.bApplyFireUseNoise = false;
+        this.ApplyFireDesc.bSmoothOutEdges = false;
+        this.ApplyFireDesc.Velocity.x = this.VelocityCurrent.x * GTime.Delta * 0.001;
+        this.ApplyFireDesc.Velocity.y = this.VelocityCurrent.y * GTime.Delta * 0.001;
+        this.ApplyFireDesc.pMaskTexture = this.MaskTexture;
+        this.ApplyFireDesc.Orientation.z = this.Orientation.roll;
+
         /* Set up blending */
         gl.enable(gl.BLEND);
         gl.blendEquation(gl.MAX);
         gl.blendFunc(gl.ONE, gl.ONE);
-        BurningSurface.ApplyFirePass.Execute(
-            gl,
-            { x: curInputPos.x, y: curInputPos.y },
-            GetVec2(this.VelocityCurrent.x * GTime.Delta * 0.001, this.VelocityCurrent.y * GTime.Delta * 0.001),
-            { x: sizeScale, y: sizeScale },
-            1000.0,
-            true,
-            true,
-            true,
-            true,
-        );
+        BurningSurface.ApplyFirePass.Execute(gl, this.ApplyFireDesc);
+
+        this.ApplyFireDesc.Size.x = sizeScale * 2.0;
+        this.ApplyFireDesc.Size.y = sizeScale * 2.0;
+        this.ApplyFireDesc.pMaskTexture = null;
+        this.ApplyFireDesc.bApplyFireUseNoise = true;
+        this.ApplyFireDesc.Strength = 3.0;
+
+        BurningSurface.ApplyFirePass.Execute(gl, this.ApplyFireDesc);
+
         gl.disable(gl.BLEND);
     }
 
@@ -1931,7 +1986,7 @@ export class FireballTool extends ToolBase {
         }
     }
 
-    RenderToFlameRT(gl: WebGL2RenderingContext): void {
+    RenderProjectile(gl: WebGL2RenderingContext) {
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
         gl.useProgram(this.ShaderProgram);
@@ -1969,21 +2024,28 @@ export class FireballTool extends ToolBase {
         gl.uniform1i(this.UniformParametersLocationList.CurrentState, this.GetCurrentControllerState());
 
         gl.activeTexture(gl.TEXTURE0 + 2);
-        gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
+        //gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
+        gl.bindTexture(gl.TEXTURE_2D, this.MaskTexture);
         gl.uniform1i(this.UniformParametersLocationList.NoiseTexture, 2);
 
-        gl.enable(gl.BLEND);
+        gl.disable(gl.BLEND);
+        /* gl.enable(gl.BLEND);
         gl.blendFunc(gl.ONE, gl.ONE);
-        gl.blendEquation(gl.FUNC_ADD);
+        gl.blendEquation(gl.MAX); */
 
         //Textures
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    RenderToFlameRT(gl: WebGL2RenderingContext): void {
+        this.RenderProjectile(gl);
+
         if (this.bActiveThisFrame || this.TimeSinceLastInteraction < this.SparksParticles.Desc.ParticleLife) {
             this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
         }
 
         if (this.bLaunched) {
-            this.TrailSparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+            this.TrailSparksParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
         }
     }
 

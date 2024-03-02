@@ -527,57 +527,46 @@ export function GetShaderSourceFireballRenderPS() {
 	{
 		vec3 color = Color;
 
-		/* if(CurrentState == 0)
-		{
-			color = vec3(1.0, 0.0, 0.0);
-		}
-		else if(CurrentState == 1)
-		{
-			color = vec3(0.0, 1.0, 0.0);
-		}
-		else if(CurrentState == 2)
-		{
-			color = vec3(0.0, 0.0, 1.0);
-		} */
+		float mask = textureLod(NoiseTexture, vsOutTexCoords.xy, 0.f).r;
+		color *= mask;
 
-		vec2 uv = (vsOutTexCoords * 0.03) + vec2(0.2);
-
-		vec2 speed = vec2(0.01, 0.04);
-
-		if(CurrentState == 0)
-		{
-			speed *= 0.2;
-		}
-		else if(CurrentState == 1)
-		{
-			speed *= 0.5;
-		}
-
+		#if 0
+			vec2 uv = (vsOutTexCoords * 0.03) + vec2(0.2);
 		
-
-		float angle = -Time * 0.01;
-
-		float rotatedX = uv.x * cos(angle) - uv.y * sin(angle);
-		float rotatedY = uv.x * sin(angle) + uv.y * cos(angle);
-
-		uv.x = rotatedX;
-		uv.y = rotatedY;
-
+			float angle = -Time * 0.01;
 		
-		uv.x -= Time * speed.x;
-		uv.y -= Time * speed.y;
-
-		float noise = textureLod(NoiseTexture, uv.xy, 0.f).r;
-		noise = max(0.0, MapToRange(noise, 0.2, 0.8, 0.0, 1.0));
-
-		float fadeScale = 2.0;
-
-		if(CurrentState == 0)
-		{
-			fadeScale = 2.0;
-		}
+			float rotatedX = uv.x * cos(angle) - uv.y * sin(angle);
+			float rotatedY = uv.x * sin(angle) + uv.y * cos(angle);
+		
+			uv.x = rotatedX;
+			uv.y = rotatedY;
+		
+			vec2 speed = vec2(0.01, 0.04);
+		
+			if(CurrentState == 0)
+			{
+				speed *= 0.2;
+			}
+			else if(CurrentState == 1)
+			{
+				speed *= 0.5;
+			}
+		
+			uv.x -= Time * speed.x;
+			uv.y -= Time * speed.y;
+		
+			float noise = textureLod(NoiseTexture, uv.xy, 0.f).r;
+			noise = max(0.0, MapToRange(noise, 0.2, 0.8, 0.0, 1.0));
+			//float a = max(0.0, 1.0 - length(vsOutTexCoords - vec2(0.5)) * 2.0);
+			float a = max(0.0, 1.0 - length(vsOutTexCoords - vec2(0.5)) * 2.0);
+			a *= a;
+			a /= noise * 0.1;
+			a *= 0.10;
+			color *= a;
+		#endif
 
 		vec3 colorScale = vec3(1.0);
+
 		if(CurrentState >= 2)
 		{
 			colorScale = vec3(1.9, 1.5, 1.7) * 1.9;
@@ -585,7 +574,7 @@ export function GetShaderSourceFireballRenderPS() {
 		else
 		{
 			float t =  (sin(Time * 3.14) + 1.0) * 0.5;
-			vec3 c = vec3(1.9, 1.5, 1.7) * 0.5 * (1.0 + t);
+			vec3 c = vec3(1.9, 1.5, 1.7) * (1.0 + t);
 			colorScale = mix(colorScale, c, t);
 		}
 
@@ -594,12 +583,6 @@ export function GetShaderSourceFireballRenderPS() {
 			colorScale *= 1.5;
 		}
 
-		//float a = max(0.0, 1.0 - length(vsOutTexCoords - vec2(0.5)) * 2.0);
-		float a = max(0.0, 1.0 - length(vsOutTexCoords - vec2(0.5)) * fadeScale);
-		a *= a;
-		a /= noise * 0.1;
-		a *= 0.10;
-
-		outColor = color * a * colorScale;
+		outColor = color * colorScale;
 	}`;
 }

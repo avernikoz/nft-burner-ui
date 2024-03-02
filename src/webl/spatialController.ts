@@ -15,7 +15,7 @@ export class SpatialControlPoint {
 
     PositionViewSpace;
 
-    PositionNDCSpace = GetVec2();
+    PositionNDCSpace = GetVec2(0, 0);
 
     bDragState;
 

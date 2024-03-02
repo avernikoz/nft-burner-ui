@@ -76,11 +76,12 @@ export class ParticleEmitterDesc {
     InitSpawnPosOffset = { x: 0.0, y: 0.0 };
     bOneShotParticle = false;
     bFreeFallParticle = false;
+    bUseGravity = false;
     b3DSpace = false;
     bAlwaysRespawn = false;
 
     Color = GetVec3(1, 1, 1);
-    InitialVelocityAddScale = GetVec2();
+    InitialVelocityAddScale = GetVec2(1, 1);
     MotionStretchScale = 1.0;
 }
 

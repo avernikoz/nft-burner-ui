@@ -277,13 +277,14 @@ export function GetShaderSourceFireVisualizerPS() {
 		
 		float curFire = texture(FireTexture, vsOutTexCoords.xy).r;
 		float curFuel = texture(FuelTexture, vsOutTexCoords.xy).r;
-		float curPaint = texture(PaintTexture, vsOutTexCoords.xy).r;
+		//curFuel = 0.0;
+		//float curPaint = texture(PaintTexture, vsOutTexCoords.xy).r;
 		bool bIsBurntSurface = curFuel < 0.01;
 		bool bIsPureUnBurntSurface = curFuel > 0.995;
 		
 		vec3 surfaceColor = vec3(0.0);
 
-		OutFirePlane = vec3(1.0, 0.5, 0.3) * curPaint * 20.0; return;
+		//OutFirePlane = vec3(1.0, 0.5, 0.05) * curPaint * 20.0; return;
 		//OutFirePlane = vec3(1.0, 0.5, 0.7) * 1.0; return;
 
 		//if(curFire < 4.0f || curFuel < 0.5)
@@ -428,13 +429,12 @@ export function GetShaderSourceFireVisualizerPS() {
 					float distanceToCurLight = length(vToCurLight);
 					vToCurLight = normalize(vToCurLight);
 					float lightScaleDiffuseFromNormal = max(0.0, dot(normal, vToCurLight));
-					float attenuation = clamp(1.f - (distanceToCurLight / ToolRadius), 0.f, 1.f);
+					float attenuation = clamp(1.f - pow(distanceToCurLight / ToolRadius, 2.0), 0.f, 1.f);
 					lightingDiffuseFinal += ToolColor * lightScaleDiffuseFromNormal * attenuation;
 					//specular
 					vec3 halfVecCur = normalize(vToCurLight + vToCam);
 					float specularCur = pow(max(0.f, dot(halfVecCur, normal)), specularPowerScaledCur);
-					const float specularIntensityCur = 1.0f;
-					lightingSpecFinal += ToolColor * specularCur * specularIntensityCur * attenuation * max(0.75,(1.f - roughness));
+					lightingSpecFinal += ToolColor * specularCur * max(0.25, curFuel) * SpecularIntensityAndPower.x * attenuation * max(0.5,(1.f - roughness));
 				}
 
 			}
@@ -537,7 +537,7 @@ export function GetShaderSourceFireVisualizerPS() {
         Math.random() +
         /* glsl */ `);
 				const float ashesTintScale = float(` +
-        Math.random() * 0.4 +
+        (0.1 + Math.random() * 0.4) +
         /* glsl */ `);
 				ashesColor += ashesTintScale * vec3(0., 0.725,  1.0) * MapToRange(textureLod(NoiseTextureLQ, ashesTintUV, 0.f).r, 0.4, 0.6, 0.0, 1.0);
 			}
@@ -633,6 +633,7 @@ export function GetShaderSourceFireVisualizerPS() {
 			float luminance = dot( edge.rgb, vec3( 0.299f, 0.587f, 0.114f ) );
 		#else//PREPROCESS
 			float luminance = firePlaneImageTexture.a;
+			//luminance += curPaint;
 		#endif//PREPROCESS
 			
 			burnedImageTexture = luminance * 10.0 * vec3(1, 0.2, 0.1);
@@ -652,6 +653,10 @@ export function GetShaderSourceFireVisualizerPS() {
 			//float curFireLOD = texture(FireTexture, vsOutTexCoords.xy).r;
 			vec3 finalAfterBurnColor = max(ashesColor.rgb, burnedImageTexture * 2.0f *emberScale);
 			ashesColor.rgb = mix(finalAfterBurnColor * (1.0 - AfterBurnEmbersParam) * (1.0 - AfterBurnEmbersParam), max(0.75, (1.0 - AfterBurnEmbersParam * 0.75)) * max(ashesColor.rgb, vec3(min(0.9, luminance * 10.0) * 1.0)), AfterBurnEmbersParam);
+
+			/* float gr = dot(vec3(0.3), ashesColor.rgb);
+			ashesColor.rgb = vec3(gr);
+			ashesColor.rgb = max(ashesColor.rgb, curPaint * vec3(0.1, 0.925,  0.8) * 15.0); */
 		#endif
 		#endif////BURNED IMAGE
 

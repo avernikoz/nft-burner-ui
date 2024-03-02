@@ -46,9 +46,15 @@ export class Vector3 {
     }
 }
 
-export function GetVec2(r = 1.0, g = 1.0): Vector2 {
+export function GetVec2(r: number, g: number): Vector2 {
     return { x: r, y: g };
 }
+
+export function SetVec2(vec: Vector2, x: number, y: number) {
+    vec.x = x;
+    vec.y = y;
+}
+
 export function GetVec3(r: number, g: number, b: number): Vector3 {
     return new Vector3(r, g, b);
 }

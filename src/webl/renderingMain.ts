@@ -445,7 +445,7 @@ export function RenderMain() {
     //======================
     // 		INIT TOOLS
     //======================
-    GTool.Current = new LaserTool(gl);
+    GTool.Current = new FireballTool(gl);
 
     //==============================
     // 		INIT PARTICLES
@@ -599,6 +599,11 @@ export function RenderMain() {
                 //GTool.Current = new FireballTool(gl);
                 //GSceneDesc.Camera.Position.y = -0.8;
                 BurningSurface.ClearPaint(gl);
+
+                BurningSurface.Reset(gl);
+                ResetParticleEmitters(gl);
+                GRenderingStateMachine.SetRenderingState(ERenderingState.Inventory, true);
+                GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady);
             }
         });
     }

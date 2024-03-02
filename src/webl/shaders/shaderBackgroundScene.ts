@@ -405,7 +405,8 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			
 			//Color
 			vec3 imageColor = texture(ColorTexture, materialSamplingUV.xy).rgb;
-			//imageColor.rgb = imageColor * vec3(0.01, 0.2, 0.13);
+			//imageColor.rgb *= 0.05;
+			//imageColor.rgb = imageColor * vec3(0.2, 0.01, 0.23);
 			
 			//imageColor = vec3(0.3);
 			//OutColor = vec4(imageColor, 1.0); return;
@@ -706,18 +707,20 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			float distanceToCurLight = length(vToCurLight);
 			vToCurLight = normalize(vToCurLight);
 			float lightScaleDiffuseFromNormal = max(0.0, dot(normal, vToCurLight));
-			float attenuation = clamp(1.f - (distanceToCurLight / ToolRadius), 0.f, 1.f);
+			float attenuation = clamp(1.f - pow(distanceToCurLight / ToolRadius, 2.0), 0.f, 1.f);
 			ToolLightColor = imageColor * ToolColor * toolColorBrightness * lightScaleDiffuseFromNormal * attenuation;
 			//specular
 			vec3 halfVecCur = normalize(vToCurLight + vToCam);
-			float specularPowerScaledCur = mix(2.0, 256.0, 1.f - roughness) * 8.f;
+			float specularPowerScaledCur = mix(2.0, 64.0, 1.f - roughness) * 8.f;
+			//float specularPowerScaledCur = 128.0;
 			float specularCur = pow(max(0.f, dot(halfVecCur, normal)), specularPowerScaledCur);
-			const float specularIntensityCur = 0.1f;
-			ToolLightColor += ToolColor * toolColorBrightness * specularCur * specularIntensityCur * max(0.75,(1.f - roughness));
+			const float specularIntensityCur = 2.1f;
+			ToolLightColor += ToolColor * toolColorBrightness * specularCur * attenuation * specularIntensityCur * max(0.75,(1.f - roughness));
 		}
 
 		#if 1 //PBR
-			normal = normalize(vec3(normal.x, normal.y, normal.z * -0.5));
+			//normal = normalize(vec3(normal.x, normal.y, normal.z * -0.5));
+			//normal = normalize(vec3(normal.x, normal.y * 0.5, normal.z));
 			const float roughnessMin = 0.05; 
 			colorFinal = CalculateLightPBR(normal, SpotlightPos, camPos, interpolatorWorldSpacePos, imageColor, clamp(roughness, roughnessMin, 1.0), 0.0);
 			//colorFinal *= 0.5f;
@@ -751,6 +754,7 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			}
 
 			colorFinal.rgb += max(vec3(0.25), imageColor) * reflectionColor * 2.f;
+			//colorFinal.rgb += reflectionColor;
 			vec3 virtualPointLightsColor = vec3(1.f, 0.5f, 0.1f);
 			colorFinal.rgb += imageColor * virtualPointLightsColor * virtualPointLightsIntensityFinal * 2.f;
 			colorFinal.rgb *= shadow;
@@ -823,7 +827,7 @@ export function GetLightsUpdateShaderVS() {
 			const float MipLevel = 7.f;
 			float curFire = textureLod(FireTextureDownsampled, fireUV.xy, MipLevel).r;
 			
-			curFire *= 0.01 * 2.0;
+			curFire *= 0.01 * 1.0;
 
 			float lightIntensity = 0.0f;
 

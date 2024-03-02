@@ -89,12 +89,12 @@ export function UserInputUpdatePerFrame() {
     GUserInputDesc.InputVelocityCurViewSpace.x = MathLerp(
         GUserInputDesc.InputPosCurViewSpace.x - GUserInputDesc.InputPosPrevViewSpace.x,
         GUserInputDesc.InputVelocityPrevViewSpace.x,
-        0.75,
+        0.85,
     );
     GUserInputDesc.InputVelocityCurViewSpace.y = MathLerp(
         GUserInputDesc.InputPosCurViewSpace.y - GUserInputDesc.InputPosPrevViewSpace.y,
         GUserInputDesc.InputVelocityPrevViewSpace.y,
-        0.75,
+        0.85,
     );
 }
 
