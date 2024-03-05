@@ -71,6 +71,7 @@ import {
     GetFlameParticlesDesc,
     GetSmokeParticlesDesc,
 } from "./particlesConfig";
+import { GLineRenderer, GPointRenderer } from "./helpers/debugRender";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -249,6 +250,7 @@ const GRenderTargets: {
     SpotlightTexture: WebGLTexture | null;
     SpotlightFramebuffer: WebGLFramebuffer | null;
     bUseHalfResRT: boolean;
+    DepthBuffer: WebGLRenderbuffer | null;
 } = {
     FirePlaneTexture: null,
     FirePlaneFramebuffer: null,
@@ -261,6 +263,7 @@ const GRenderTargets: {
     SpotlightTexture: null,
     SpotlightFramebuffer: null,
     bUseHalfResRT: false,
+    DepthBuffer: null,
 };
 
 function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
@@ -283,11 +286,23 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
     );
     GRenderTargets.FirePlaneFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.FirePlaneTexture!);
 
+    //Fire Plane Depth Buffer
+    // Create a renderbuffer for depth
+    GRenderTargets.DepthBuffer = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, GRenderTargets.DepthBuffer);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, size.x, size.y); // Adjust width and height
+    // Attach the renderbuffer to the framebuffer
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, GRenderTargets.DepthBuffer);
+
     //Flame
     GRenderTargets.FlameTexture = CreateTextureRT(gl, size, textureInternalFormat, textureFormat, textureType);
     GRenderTargets.FlameFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture!);
+    // Attach the renderbuffer to the framebuffer
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, GRenderTargets.DepthBuffer);
     GRenderTargets.FlameTexture2 = CreateTextureRT(gl, size, textureInternalFormat, textureFormat, textureType, true);
     GRenderTargets.FlameFramebuffer2 = CreateFramebufferWithAttachment(gl, GRenderTargets.FlameTexture2!);
+    // Attach the renderbuffer to the framebuffer
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, GRenderTargets.DepthBuffer);
 
     //Smoke
     GRenderTargets.SmokeTexture = CreateTextureRT(
@@ -298,6 +313,10 @@ function AllocateMainRenderTargets(gl: WebGL2RenderingContext) {
         gl.UNSIGNED_BYTE,
     );
     GRenderTargets.SmokeFramebuffer = CreateFramebufferWithAttachment(gl, GRenderTargets.SmokeTexture!);
+    // Attach the renderbuffer to the framebuffer
+    if (GScreenDesc.HalfResRenderTargetSize.x == size.x && GScreenDesc.HalfResRenderTargetSize.y == size.y) {
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, GRenderTargets.DepthBuffer);
+    }
 
     //Spotlight
     GRenderTargets.SpotlightTexture = CreateTextureRT(gl, GScreenDesc.RenderTargetSize, gl.R16F, gl.RED, gl.HALF_FLOAT);
@@ -395,7 +414,8 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const FirePlaneSizePixels = { x: 512, y: 512 };
     //const FirePlaneSizePixels = { x: 1024, y: 1024 };
-    const BurningSurface = new GBurningSurface(gl, FirePlaneSizePixels);
+    GBurningSurface.GInstance = new GBurningSurface(gl, FirePlaneSizePixels);
+    const BurningSurface = GBurningSurface.GInstance;
     //BurningSurface.SetToBurned(gl);
 
     const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
@@ -437,6 +457,9 @@ export function RenderMain() {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const GlowRender = new RRenderGlow(gl);
+
+    GPointRenderer.GInstance = new GPointRenderer(gl);
+    GLineRenderer.GInstance = new GLineRenderer(gl);
 
     SetupPostProcessPasses(gl);
 
@@ -709,6 +732,7 @@ export function RenderMain() {
             GSceneDescSubmitDebugUI(GDatGUI);
 
             BurningSurface.SubmitDebugUI(GDatGUI);
+            BurningSurface.RigidBody.SubmitDebugUI(GDatGUI);
             BackGroundRenderPass.SubmitDebugUI(GDatGUI);
             GTool.Current.SubmitDebugUI(GDatGUI);
             GTexturePool.SubmitDebugUI(GDatGUI);
@@ -982,6 +1006,7 @@ export function RenderMain() {
                 }
                 //Update Main
                 BurningSurface.UpdateFire(gl);
+                BurningSurface.RigidBody.OnUpdate(gl);
 
                 //=============================
                 // VIRTUAL POINT LIGHTS UPDATE
@@ -1062,7 +1087,13 @@ export function RenderMain() {
                 // 		BACKGROUND RENDER
                 //=============================
                 if (!bPreloaderState) {
-                    BindRenderTarget(gl, GRenderTargets.FirePlaneFramebuffer!, GScreenDesc.RenderTargetSize, true);
+                    BindRenderTarget(
+                        gl,
+                        GRenderTargets.FirePlaneFramebuffer!,
+                        GScreenDesc.RenderTargetSize,
+                        true,
+                        true,
+                    );
                     //Render Background floor
                     BackGroundRenderPass.RenderFloor(
                         gl,
@@ -1083,6 +1114,10 @@ export function RenderMain() {
                         BackGroundRenderPass.PointLights.LightsBufferTextureGPU!,
                         GRenderTargets.SpotlightTexture!,
                     );
+
+                    if (0 && DEBUG_ENV) {
+                        BurningSurface.RigidBody.DebugRenderMesh(gl);
+                    }
 
                     /* gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ONE, gl.ONE);
@@ -1205,24 +1240,6 @@ export function RenderMain() {
                         GPostProcessPasses.BloomNumBlurPasses,
                         GPostProcessPasses.Blur!,
                     );
-
-                    /* GPostProcessPasses.Bloom!.PrePass(
-                        gl,
-                        flameSourceTextureRef!,
-                        GRenderTargets.FirePlaneTexture,
-                        GRenderTargets.SpotlightTexture!,
-                        GPostProcessPasses.RenderTargetMIPForBloom,
-                    ); */
-
-                    /* gl.enable(gl.BLEND);
-                    gl.blendFunc(gl.ONE, gl.ONE);
-                    gl.blendEquation(gl.FUNC_ADD);
-                    GlowRender.Render(gl);
-                    gl.disable(gl.BLEND); */
-
-                    /* for (let i = 0; i < GPostProcessPasses.BloomNumBlurPasses; i++) {
-                        GPostProcessPasses.Bloom!.Blur(gl, GPostProcessPasses.Blur!);
-                    } */
                 }
 
                 //======================

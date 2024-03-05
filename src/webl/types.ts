@@ -1,3 +1,5 @@
+import { MathVector3Normalize } from "./utils";
+
 export type Vector2 = { x: number; y: number };
 export type Color = { r: number; g: number; b: number };
 
@@ -27,6 +29,12 @@ export class Vector3 {
         this.z = inVec3.z;
     }
 
+    Set3(a: number, b: number, c: number) {
+        this.x = a;
+        this.y = b;
+        this.z = c;
+    }
+
     Mul(scale: number) {
         this.x *= scale;
         this.y *= scale;
@@ -43,6 +51,17 @@ export class Vector3 {
         this.x += inVec.x;
         this.y += inVec.y;
         this.z += inVec.z;
+    }
+
+    Normalize() {
+        const length = Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+        if (length === 0) {
+            // Avoid division by zero
+        } else {
+            this.x = this.x / length;
+            this.y = this.y / length;
+            this.z = this.z / length;
+        }
     }
 }
 

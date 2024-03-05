@@ -63,6 +63,9 @@ export function Vec3Add(a: Vector3, b: Vector3) {
 export function Vec3Multiply(vec: Vector3, scale: number) {
     return new Vector3(vec.x * scale, vec.y * scale, vec.z * scale);
 }
+export function Vec3Dot(a: Vector3, b: Vector3) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
 
 export function MathMapToRange(t: number, t0: number, t1: number, newt0: number, newt1: number) {
     ///Translate to origin, scale by ranges ratio, translate to new position
@@ -101,6 +104,14 @@ export function MathIntersectionSphereSphere(pos1: Vector2, radius1: number, pos
     const distance = Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
 
     return distance <= radius1 + radius2;
+}
+
+export function MapSphericalToCartesian(theta: number, phi: number, r: number) {
+    const vec = new Vector3(0, 0, 0);
+    vec.x = Math.cos(phi) * Math.cos(theta) * r;
+    vec.y = Math.sin(phi) * r;
+    vec.z = Math.cos(phi) * Math.sin(theta) * r;
+    return vec;
 }
 
 export function MathIntersectionRayAABB(

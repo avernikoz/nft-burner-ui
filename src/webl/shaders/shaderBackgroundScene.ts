@@ -82,7 +82,7 @@ export function GetShaderSourceBackgroundFloorRenderPerspectiveVS() {
 			pos.z = pos.y;
 			pos.y = 0.0; 
 			
-			pos *= FloorScale;
+			pos *= FloorScale * 2.0;
 
 			pos.y += FloorOffset;
 			interpolatorWorldSpacePos = pos;
@@ -100,7 +100,7 @@ export function GetShaderSourceBackgroundFloorRenderPerspectiveVS() {
 			pos.x /= ScreenRatio;
 
 			float w = 1.0f + (pos.z);
-			gl_Position = vec4(pos.xy, 0.0, w);
+			gl_Position = vec4(pos.xy, w, w);
 
 			vec2 texcoord = (VertexBuffer.xy + 1.0) * 0.5;
 			vsOutTexCoords2 = texcoord;
@@ -132,6 +132,10 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 		uniform vec3 SpotlightDirection;
 		uniform vec3 SpotlightDesc;
 		uniform vec2 ProjectedLightSizeScale;
+		uniform vec3 BurningPlaneVertex0;
+		uniform vec3 BurningPlaneVertex1;
+		uniform vec3 BurningPlaneVertex2;
+		uniform vec3 BurningPlaneVertex3;
 		uniform float FloorBrightness;
 		uniform float Time;
 
@@ -553,10 +557,14 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			float shadow = 1.f; 
 		#if 1//SHADOW
 			//construct vertices
-			vec3 vLeftDown = vec3(planeCenterWS.x - planeExtentWS.x, planeCenterWS.y - planeExtentWS.y, 0.0);
+			/* vec3 vLeftDown = vec3(planeCenterWS.x - planeExtentWS.x, planeCenterWS.y - planeExtentWS.y, 0.0);
 			vec3 vLeftUp = vec3(planeCenterWS.x - planeExtentWS.x, planeCenterWS.y + planeExtentWS.y, 0.0);
 			vec3 vRightUp = vec3(planeCenterWS.x + planeExtentWS.x, planeCenterWS.y + planeExtentWS.y, 0.0);
-			vec3 vRightDown = vec3(planeCenterWS.x + planeExtentWS.x, planeCenterWS.y - planeExtentWS.y, 0.0);
+			vec3 vRightDown = vec3(planeCenterWS.x + planeExtentWS.x, planeCenterWS.y - planeExtentWS.y, 0.0); */
+			vec3 vLeftDown = BurningPlaneVertex0;
+			vec3 vLeftUp = BurningPlaneVertex1;
+			vec3 vRightUp = BurningPlaneVertex2;
+			vec3 vRightDown = BurningPlaneVertex3;
 			vec2 uvLeftDown = vec2(0.0, 0.0);
 			vec2 uvLeftUp = vec2(0.0, 1.0);
 			vec2 uvRightUp = vec2(1.0, 1.0);
@@ -684,8 +692,8 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 					vec3 vToCurLight = /* normalize */(lightPosWS - interpolatorWorldSpacePos);
 					float distance = length(vToCurLight);
 					vToCurLight = normalize(vToCurLight);
-					const float VirtualLightRadius = 3.0f;
-					float attenuation = clamp(1.f - (distance / VirtualLightRadius), 0.f, 1.f);
+					const float VirtualLightRadius = 5.0f;
+					float attenuation = clamp(1.f - pow(distance / VirtualLightRadius, 2.0), 0.f, 1.f);
 
 					float lightScaleDiffuseFromNormal = max(0.0, dot(normal, vToCurLight));
 
@@ -1446,8 +1454,114 @@ export function GetShaderSourceGenericSpriteRenderVS() {
 		pos.xy *= CameraDesc.w;
 		pos.x /= ScreenRatio;
 
-		gl_Position = vec4(pos.xy, 0.0, (1.f + pos.z));
+		gl_Position = vec4(pos.xy, pos.z / 20.0, (1.f + pos.z));
 		vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
+	}`;
+}
+
+export function GetShaderSourceGenericLineRenderVS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	
+	layout(location = 0) in vec2 VertexBuffer;
+
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	uniform vec3 Position;
+	uniform vec3 LineEnd;
+	uniform vec3 Orientation;
+	uniform float Scale;
+
+	out vec2 vsOutTexCoords;
+
+	vec3 rotateVectorWithEuler(vec3 v, float pitch, float yaw, float roll) {
+		// Rotation matrix for roll, pitch, and yaw
+		mat3 rotationMatrix = mat3(
+			cos(yaw)*cos(roll) - sin(pitch)*sin(yaw)*sin(roll), -cos(pitch)*sin(roll), cos(roll)*sin(yaw) + cos(yaw)*sin(pitch)*sin(roll),
+			cos(yaw)*sin(roll) + sin(pitch)*sin(yaw)*cos(roll),  cos(pitch)*cos(roll), sin(yaw)*sin(roll) - cos(yaw)*sin(pitch)*cos(roll),
+		   -cos(pitch)*sin(yaw), sin(pitch), cos(pitch)*cos(yaw)
+		);
+	
+		// Rotate the vector
+		vec3 rotatedVector = rotationMatrix * v;
+	
+		return rotatedVector;
+	}
+
+	void main()
+	{
+
+		vec3 dirVec = LineEnd - Position;
+
+		vec3 camPos = CameraDesc.xyz;
+
+		vec3 dirToCamFromStart = normalize(Position - camPos);
+		vec3 dirToCamFromEnd = normalize(LineEnd - camPos);
+
+		vec3 lineNormalStart = cross(dirVec, dirToCamFromStart);
+		vec3 lineNormalEnd = cross(dirVec, dirToCamFromEnd);
+
+		lineNormalStart = lineNormalEnd;
+		float LineThickness = Scale;
+		lineNormalStart = (normalize(lineNormalStart) * LineThickness);
+		lineNormalEnd = (normalize(lineNormalEnd) * LineThickness);
+
+
+		vec3 verts0 = Position - lineNormalStart;
+		vec3 verts1 = LineEnd - lineNormalEnd;
+		vec3 verts2 = LineEnd + lineNormalEnd;
+		vec3 verts3 = Position + lineNormalStart;
+
+		////Clockwise, starting from left down
+		vec2 uv0 = vec2(0.0, 0.0);
+		vec2 uv1 = vec2(0.0, 1.0);
+		vec2 uv2 = vec2(1.0, 1.0);
+		vec2 uv3 = vec2(1.0, 0.0);
+
+		uint vertId = uint(gl_VertexID);
+		vec3 pos = verts3;
+		vsOutTexCoords = uv3;
+		if(vertId == 0u || vertId == 3u)
+		{
+			pos = verts0;
+			vsOutTexCoords = uv0;
+		}
+		else if(vertId == 1u)
+		{
+			pos = verts1;
+			vsOutTexCoords = uv1;
+		}
+		else if(vertId == 2u || vertId == 4u)
+		{
+			pos = verts2;
+			vsOutTexCoords = uv2;
+		}
+
+
+		pos.xyz -= CameraDesc.xyz;
+		pos.xy *= CameraDesc.w;
+		pos.x /= ScreenRatio;
+
+		gl_Position = vec4(pos.xy, 0.0, (1.f + pos.z));
+	}`;
+}
+
+export function GetShaderSourceGenericSpriteRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outColor;
+
+	uniform vec3 Color;
+
+	in vec2 vsOutTexCoords;
+
+	void main()
+	{
+		outColor = Color;
 	}`;
 }
 
@@ -1482,7 +1596,7 @@ export function GetShaderSourceStampRenderPS() {
 	}`;
 }
 
-export function GetShaderSourceGenericSpriteRenderPS() {
+export function GetShaderSourceGenericSpriteRenderTexturedPS() {
     return /* glsl */ `#version 300 es
 	
 	precision highp float;

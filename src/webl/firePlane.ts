@@ -20,6 +20,7 @@ import { GTexturePool } from "./texturePool";
 import { GetVec2, GetVec3, SetVec2, Vector2 } from "./types";
 import { GTime, MathGetVec2Length } from "./utils";
 import { GUserInputDesc } from "./input";
+import { RectRigidBody } from "./physics";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -217,6 +218,8 @@ export class GBurningSurfaceExport {
 }
 
 export class GBurningSurface {
+    static GInstance: GBurningSurface | null = null;
+
     public RenderTargetSize;
 
     public FrameBuffer;
@@ -296,6 +299,9 @@ export class GBurningSurface {
     ShadingParams = { SpecularIntensity: 0.6, SpecularPower: 8.0, DiffuseIntensity: 1.05 };
 
     MaterialUVOffset = { x: 0.0, y: 0.0 };
+
+    //Physics
+    RigidBody: RectRigidBody;
 
     Reset(gl: WebGL2RenderingContext) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.FrameBuffer[0]);
@@ -593,6 +599,8 @@ export class GBurningSurface {
             gl,
             this.VisualizerExportShaderProgram,
         );
+
+        this.RigidBody = new RectRigidBody(gl);
     }
 
     SubmitDebugUI(datGui: dat.GUI) {
@@ -744,7 +752,11 @@ export class GBurningSurface {
     }
 
     VisualizeFirePlane(gl: WebGL2RenderingContext, pointLightsTexture: WebGLTexture, spotlightTexture: WebGLTexture) {
-        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+        //gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+        gl.bindVertexArray(this.RigidBody.PlaneShapeVAO);
+
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.ALWAYS);
 
         gl.useProgram(this.VisualizerShaderProgram);
 
@@ -885,6 +897,8 @@ export class GBurningSurface {
         gl.uniform1i(this.VisualizerUniformParametersLocationList.PaintTexture, 15);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        gl.disable(gl.DEPTH_TEST);
     }
 
     ExportFirePlane(gl: WebGL2RenderingContext, BurntStampSprite: RBurntStampVisualizer) {

@@ -374,7 +374,7 @@ export const ShaderSourceApplyFirePS =
 
 		if(bApplyFireUseMask > 0)
 		{	
-			s *= texture(MaskTexture, vsOutTexCoords.xy).r;
+			s *= texture(MaskTexture, texCoords.xy).r;
 		}
 
 		if(bApplyFireUseNoise > 0)

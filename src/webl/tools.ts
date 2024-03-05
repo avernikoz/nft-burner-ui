@@ -6,7 +6,12 @@ import { FirePaintDesc, GBurningSurface } from "./firePlane";
 import { GMeshGenerator } from "./helpers/meshGenerator";
 import { GUserInputDesc } from "./input";
 import { EParticleShadingMode, ParticlesEmitter } from "./particles";
-import { GetAfterBurnSmokeParticlesDesc, GetEmberParticlesDesc, GetSmokeParticlesDesc } from "./particlesConfig";
+import {
+    GetAfterBurnAshesParticlesDesc,
+    GetAfterBurnSmokeParticlesDesc,
+    GetEmberParticlesDesc,
+    GetSmokeParticlesDesc,
+} from "./particlesConfig";
 import { GSceneDesc, GSceneStateDescsArray, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import {
@@ -1526,109 +1531,119 @@ export class FireballTool extends ToolBase {
         this.AnimationComponent.FadeInSpeed = 10.0;
         this.AnimationComponent.FadeOutSpeed = 1.0;
 
+        //this.Orientation.pitch = -Math.PI * 0.3;
+
         //Audio
 
         //Particles
-        const SparksParticlesDesc = GetEmberParticlesDesc();
-        SparksParticlesDesc.NumSpawners2D = 32;
-        SparksParticlesDesc.ParticleLife = 2.0;
-        //SparksParticlesDesc.SizeRangeMinMax.y *= 1.25;
-        SparksParticlesDesc.DefaultSize.y *= 0.95;
-        SparksParticlesDesc.SizeRangeMinMax.x = 0.25;
-        SparksParticlesDesc.EInitialPositionMode = 2;
-        SparksParticlesDesc.InitialVelocityScale = 11.5;
-        //SparksParticlesDesc.RandomSpawnThres = 0.5;
-        SparksParticlesDesc.bOneShotParticle = true;
-        SparksParticlesDesc.bFreeFallParticle = true;
-        SparksParticlesDesc.bUseGravity = true;
-        //SparksParticlesDesc.bAlwaysRespawn = true;
-        SparksParticlesDesc.b3DSpace = true;
-        SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
+        {
+            const SparksParticlesDesc = GetEmberParticlesDesc();
+            SparksParticlesDesc.NumSpawners2D = 32;
+            SparksParticlesDesc.ParticleLife = 2.0;
+            //SparksParticlesDesc.SizeRangeMinMax.y *= 1.25;
+            SparksParticlesDesc.DefaultSize.y *= 0.95;
+            SparksParticlesDesc.SizeRangeMinMax.x = 0.25;
+            SparksParticlesDesc.EInitialPositionMode = 2;
+            SparksParticlesDesc.InitialVelocityScale = 11.5;
+            //SparksParticlesDesc.RandomSpawnThres = 0.5;
+            SparksParticlesDesc.bOneShotParticle = true;
+            SparksParticlesDesc.bFreeFallParticle = true;
+            SparksParticlesDesc.bUseGravity = true;
+            //SparksParticlesDesc.bAlwaysRespawn = true;
+            SparksParticlesDesc.b3DSpace = true;
+            SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
 
-        // eslint-disable-next-line prefer-const
-        let sparksBrightness = 0.75;
-        SparksParticlesDesc.Color = GetVec3(
-            this.ColorInitial.x * sparksBrightness,
-            this.ColorInitial.y * sparksBrightness,
-            this.ColorInitial.z * sparksBrightness,
-        );
-        SparksParticlesDesc.MotionStretchScale = 1.3;
-        SparksParticlesDesc.InitialVelocityAddScale = GetVec2(0.6, 1.5);
+            // eslint-disable-next-line prefer-const
+            let sparksBrightness = 0.75;
+            SparksParticlesDesc.Color = GetVec3(
+                this.ColorInitial.x * sparksBrightness,
+                this.ColorInitial.y * sparksBrightness,
+                this.ColorInitial.z * sparksBrightness,
+            );
+            SparksParticlesDesc.MotionStretchScale = 1.3;
+            SparksParticlesDesc.InitialVelocityAddScale = GetVec2(0.6, 1.5);
 
-        this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
+            this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
+        }
 
-        const SmokeParticlesDesc = GetSmokeParticlesDesc();
-        SmokeParticlesDesc.NumSpawners2D = 3;
-        SmokeParticlesDesc.ParticleLife = 1.8;
-        SmokeParticlesDesc.DefaultSize.x *= 1.0;
-        SmokeParticlesDesc.DefaultSize.y *= 1.4;
-        SmokeParticlesDesc.BuoyancyForceScale *= 0.1;
-        SmokeParticlesDesc.bOneShotParticle = true;
-        SmokeParticlesDesc.EInitialPositionMode = 2;
-        SmokeParticlesDesc.EAlphaFade = 1.0;
-        SmokeParticlesDesc.InitialVelocityScale = 15.0;
-        SmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
-        SmokeParticlesDesc.EFadeInOutMode = 1;
-        SmokeParticlesDesc.AlphaScale = 0.5 + Math.random() * 0.5;
-        SmokeParticlesDesc.InitialTranslate = { x: 0.0, y: 0.25 };
+        {
+            const SmokeParticlesDesc = GetSmokeParticlesDesc();
+            SmokeParticlesDesc.NumSpawners2D = 3;
+            SmokeParticlesDesc.ParticleLife = 1.8;
+            SmokeParticlesDesc.DefaultSize.x *= 1.0;
+            SmokeParticlesDesc.DefaultSize.y *= 1.4;
+            SmokeParticlesDesc.BuoyancyForceScale *= 0.1;
+            SmokeParticlesDesc.bOneShotParticle = true;
+            SmokeParticlesDesc.EInitialPositionMode = 2;
+            SmokeParticlesDesc.EAlphaFade = 1;
+            SmokeParticlesDesc.InitialVelocityScale = 15.0;
+            SmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
+            SmokeParticlesDesc.EFadeInOutMode = 1;
+            SmokeParticlesDesc.AlphaScale = 0.5 + Math.random() * 0.5;
+            SmokeParticlesDesc.InitialTranslate = { x: 0.0, y: 0.25 };
 
-        this.SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
+            this.SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
+        }
 
-        //Particles
-        const TrailSparksParticlesDesc = GetEmberParticlesDesc();
-        TrailSparksParticlesDesc.NumSpawners2D = 2;
-        TrailSparksParticlesDesc.NumParticlesPerSpawner = 32;
-        /* TrailSparksParticlesDesc.DefaultSize.y *= 0.75;
+        {
+            //Particles
+            const TrailSparksParticlesDesc = GetEmberParticlesDesc();
+            TrailSparksParticlesDesc.NumSpawners2D = 2;
+            TrailSparksParticlesDesc.NumParticlesPerSpawner = 32;
+            /* TrailSparksParticlesDesc.DefaultSize.y *= 0.75;
         TrailSparksParticlesDesc.DefaultSize.x *= 0.75; */
-        TrailSparksParticlesDesc.DefaultSize.y *= 0.5;
-        TrailSparksParticlesDesc.ParticleLife = 0.4;
-        TrailSparksParticlesDesc.SizeRangeMinMax.x = 0.25;
+            TrailSparksParticlesDesc.DefaultSize.y *= 0.5;
+            TrailSparksParticlesDesc.ParticleLife = 0.4;
+            TrailSparksParticlesDesc.SizeRangeMinMax.x = 0.25;
 
-        TrailSparksParticlesDesc.EInitialPositionMode = 2;
-        TrailSparksParticlesDesc.bOneShotParticle = true;
-        TrailSparksParticlesDesc.bAlwaysRespawn = true;
-        TrailSparksParticlesDesc.b3DSpace = true;
-        TrailSparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
-        /* TrailSparksParticlesDesc.InitialVelocityAddScale.y *= 0.75;
+            TrailSparksParticlesDesc.EInitialPositionMode = 2;
+            TrailSparksParticlesDesc.bOneShotParticle = true;
+            TrailSparksParticlesDesc.bAlwaysRespawn = true;
+            TrailSparksParticlesDesc.b3DSpace = true;
+            TrailSparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
+            /* TrailSparksParticlesDesc.InitialVelocityAddScale.y *= 0.75;
         TrailSparksParticlesDesc.InitialVelocityAddScale.x *= 0.75; */
 
-        TrailSparksParticlesDesc.bFreeFallParticle = true;
-        TrailSparksParticlesDesc.bUseGravity = false;
-        TrailSparksParticlesDesc.InitialVelocityScale = 6;
-        TrailSparksParticlesDesc.MotionStretchScale = 2.3;
-        TrailSparksParticlesDesc.VelocityFieldForceScale = 100.0;
+            TrailSparksParticlesDesc.bFreeFallParticle = true;
+            TrailSparksParticlesDesc.bUseGravity = false;
+            TrailSparksParticlesDesc.InitialVelocityScale = 6;
+            TrailSparksParticlesDesc.MotionStretchScale = 2.3;
+            TrailSparksParticlesDesc.VelocityFieldForceScale = 100.0;
 
-        //TrailSparksParticlesDesc.Color = GetVec3(1.0, 0.6, 0.1);
-        //sparksBrightness = 0.5;
-        TrailSparksParticlesDesc.Color = GetVec3(
-            this.ColorInitial.x * sparksBrightness,
-            this.ColorInitial.y * sparksBrightness,
-            this.ColorInitial.z * sparksBrightness,
-        );
+            //TrailSparksParticlesDesc.Color = GetVec3(1.0, 0.6, 0.1);
+            const sparksBrightness = 0.75;
+            TrailSparksParticlesDesc.Color = GetVec3(
+                this.ColorInitial.x * sparksBrightness,
+                this.ColorInitial.y * sparksBrightness,
+                this.ColorInitial.z * sparksBrightness,
+            );
 
-        this.TrailSparksParticles = new ParticlesEmitter(gl, TrailSparksParticlesDesc);
+            this.TrailSparksParticles = new ParticlesEmitter(gl, TrailSparksParticlesDesc);
+        }
 
-        const TrailSmokeParticlesDesc = GetSmokeParticlesDesc();
-        TrailSmokeParticlesDesc.NumSpawners2D = 1;
-        TrailSmokeParticlesDesc.NumParticlesPerSpawner = 64;
-        TrailSmokeParticlesDesc.ParticleLife = 1.2;
-        TrailSmokeParticlesDesc.DefaultSize.x *= 0.45;
-        TrailSmokeParticlesDesc.DefaultSize.y *= 0.45;
-        TrailSmokeParticlesDesc.BuoyancyForceScale *= 0.1;
+        {
+            const TrailSmokeParticlesDesc = GetSmokeParticlesDesc();
+            TrailSmokeParticlesDesc.NumSpawners2D = 1;
+            TrailSmokeParticlesDesc.NumParticlesPerSpawner = 64;
+            TrailSmokeParticlesDesc.ParticleLife = 1.2;
+            TrailSmokeParticlesDesc.DefaultSize.x *= 0.15;
+            TrailSmokeParticlesDesc.DefaultSize.y *= 0.15;
+            TrailSmokeParticlesDesc.BuoyancyForceScale *= 0.1;
 
-        TrailSmokeParticlesDesc.EInitialPositionMode = 2;
-        TrailSmokeParticlesDesc.EAlphaFade = 1.0;
-        TrailSmokeParticlesDesc.InitialVelocityScale = 0.0;
-        TrailSmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
-        TrailSmokeParticlesDesc.EFadeInOutMode = 0;
-        TrailSmokeParticlesDesc.AlphaScale = 0.25 + Math.random() * 0.5;
-        TrailSmokeParticlesDesc.InitialTranslate = { x: 0.0, y: 0.25 };
-        TrailSmokeParticlesDesc.bOneShotParticle = true;
-        TrailSmokeParticlesDesc.b3DSpace = true;
-        TrailSmokeParticlesDesc.bAlwaysRespawn = true;
-        TrailSmokeParticlesDesc.bFreeFallParticle = false;
+            TrailSmokeParticlesDesc.EInitialPositionMode = 2;
+            TrailSmokeParticlesDesc.EAlphaFade = 1.0;
+            TrailSmokeParticlesDesc.InitialVelocityScale = 10.0;
+            TrailSmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
+            TrailSmokeParticlesDesc.EFadeInOutMode = 0;
+            TrailSmokeParticlesDesc.AlphaScale = 0.1;
+            TrailSmokeParticlesDesc.InitialTranslate = { x: 0.0, y: 0.25 };
+            TrailSmokeParticlesDesc.bOneShotParticle = true;
+            TrailSmokeParticlesDesc.b3DSpace = true;
+            TrailSmokeParticlesDesc.bAlwaysRespawn = true;
+            TrailSmokeParticlesDesc.bFreeFallParticle = false;
 
-        this.TrailSmokeParticles = new ParticlesEmitter(gl, TrailSmokeParticlesDesc);
+            this.TrailSmokeParticles = new ParticlesEmitter(gl, TrailSmokeParticlesDesc);
+        }
 
         this.Reset();
 
@@ -1804,7 +1819,9 @@ export class FireballTool extends ToolBase {
 
         let velLengthScale = 0.75;
         if (this.SpatialController.bDragState) {
-            velLengthScale = velLengthScale + Math.min(1.0, MathGetVec3Length(this.VelocityCurrent) * 0.35);
+            velLengthScale = velLengthScale + Math.min(0.85, MathGetVec3Length(this.VelocityCurrent) * 0.3);
+        } else {
+            velLengthScale = velLengthScale + Math.min(0.25, MathGetVec3Length(this.VelocityCurrent) * 0.2);
         }
         /* this.ColorCurrent.Set(
             this.ColorInitial.x * velLengthScale,
@@ -1819,7 +1836,7 @@ export class FireballTool extends ToolBase {
         GSceneDesc.Tool.Position.y = this.PositionCurrent.y;
         GSceneDesc.Tool.Position.z = this.PositionCurrent.z;
 
-        const toolBright = 1.0;
+        const toolBright = 0.85;
         GSceneDesc.Tool.Color.r = this.ColorCurrent.x * toolBright;
         GSceneDesc.Tool.Color.g = this.ColorCurrent.y * toolBright;
         GSceneDesc.Tool.Color.b = this.ColorCurrent.z * toolBright;
@@ -1830,7 +1847,7 @@ export class FireballTool extends ToolBase {
         if (this.bLaunched || this.SpatialController.bDragState) {
             this.TrailSmokeParticles.Update(gl, BurningSurface.GetCurFireTexture()!, this.PositionCurrent);
 
-            GSceneDesc.Tool.Radius = 2.0;
+            GSceneDesc.Tool.Radius = 1.5;
         }
 
         if (this.bLaunched) {
@@ -1857,7 +1874,6 @@ export class FireballTool extends ToolBase {
                 this.AnimationComponent.Reset();
 
                 this.SparksParticles.Reset(gl);
-
                 this.SmokeParticles.Reset(gl);
 
                 //this.LastImpactStrength = MathGetVec3Length(this.VelocityCurrent);
@@ -1870,6 +1886,12 @@ export class FireballTool extends ToolBase {
                 GSpotlightShakeController.ShakeSpotlight(impactAmount);
                 const colorScale = MathClamp(MathMapToRange(this.LastImpactStrength, 0.0, 12.0, 0.0, 1.5), 0.0, 1.5);
                 this.SparksParticles.SetDynamicBrightness(colorScale);
+
+                GBurningSurface.GInstance?.RigidBody.ApplyForce(
+                    this.PositionCurrent,
+                    this.LastImpactStrength * 20.0,
+                    2.0,
+                );
 
                 this.RenderToFireSurface(gl, BurningSurface);
 
@@ -1914,11 +1936,11 @@ export class FireballTool extends ToolBase {
 
     IsOutOfBounds() {
         return (
-            this.PositionCurrent.z > 0.1 ||
+            this.PositionCurrent.z > 3.0 ||
             this.PositionCurrent.z < GSceneDesc.Camera.Position.z - 1.0 ||
             Math.abs(this.PositionCurrent.x) > 5.0 ||
             Math.abs(this.PositionCurrent.y) > 5.0 ||
-            this.PositionCurrent.y < GSceneDesc.Floor.Position.y
+            this.PositionCurrent.y < GSceneDesc.Floor.Position.y + this.Scale * 2.0
         );
     }
 
@@ -1946,7 +1968,7 @@ export class FireballTool extends ToolBase {
         SetVec2(this.ApplyFireDesc.PosCur, curInputPos.x, curInputPos.y);
         this.ApplyFireDesc.Size.x = sizeScale;
         this.ApplyFireDesc.Size.y = sizeScale;
-        this.ApplyFireDesc.Strength = 100.0;
+        this.ApplyFireDesc.Strength = this.LastImpactStrength * 5.0;
         this.ApplyFireDesc.bMotionBasedTransform = false;
         this.ApplyFireDesc.bApplyFireUseNoise = false;
         this.ApplyFireDesc.bSmoothOutEdges = false;
@@ -1965,7 +1987,7 @@ export class FireballTool extends ToolBase {
         this.ApplyFireDesc.Size.y = sizeScale * 2.0;
         this.ApplyFireDesc.pMaskTexture = null;
         this.ApplyFireDesc.bApplyFireUseNoise = true;
-        this.ApplyFireDesc.Strength = 3.0;
+        this.ApplyFireDesc.Strength = this.LastImpactStrength * 0.33;
 
         BurningSurface.ApplyFirePass.Execute(gl, this.ApplyFireDesc);
 
@@ -1981,9 +2003,14 @@ export class FireballTool extends ToolBase {
             this.TimeSinceLastInteraction < 0.4 &&
             this.bActiveThisFrame
         )  */
+
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LESS);
+        this.RenderProjectile(gl);
         {
             this.RenderFlare(gl);
         }
+        gl.disable(gl.DEPTH_TEST);
     }
 
     RenderProjectile(gl: WebGL2RenderingContext) {
@@ -2028,24 +2055,27 @@ export class FireballTool extends ToolBase {
         gl.bindTexture(gl.TEXTURE_2D, this.MaskTexture);
         gl.uniform1i(this.UniformParametersLocationList.NoiseTexture, 2);
 
-        gl.disable(gl.BLEND);
-        /* gl.enable(gl.BLEND);
+        //gl.disable(gl.BLEND);
+        gl.enable(gl.BLEND);
         gl.blendFunc(gl.ONE, gl.ONE);
-        gl.blendEquation(gl.MAX); */
+        gl.blendEquation(gl.MAX);
 
         //Textures
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
     RenderToFlameRT(gl: WebGL2RenderingContext): void {
-        this.RenderProjectile(gl);
+        //this.RenderProjectile(gl);
+
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LESS);
+        if (this.bLaunched) {
+            this.TrailSparksParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
+        }
+        gl.disable(gl.DEPTH_TEST);
 
         if (this.bActiveThisFrame || this.TimeSinceLastInteraction < this.SparksParticles.Desc.ParticleLife) {
             this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
-        }
-
-        if (this.bLaunched) {
-            this.TrailSparksParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
         }
     }
 
@@ -2073,19 +2103,18 @@ export class FireballTool extends ToolBase {
         gl.uniform1f(this.UniformParametersLocationListFlare.ScreenRatio, GScreenDesc.ScreenRatio);
 
         let t = 0.0;
-        const startThres = 0.05;
+        const startThres = 0.01;
         const sustainThres = 0.2;
         const endThres = sustainThres + 0.001;
-        if (this.TimeSinceLastInteraction < startThres) {
+        /* if (this.TimeSinceLastInteraction < startThres) {
             t = MathMapToRange(this.TimeSinceLastInteraction, 0.0, startThres, 0.0, 1.0);
-        } else if (this.TimeSinceLastInteraction < sustainThres) {
+        } else  */ if (this.TimeSinceLastInteraction < sustainThres) {
             t = 1.0;
-        }
-        /* else if (this.TimeSinceLastInteraction < endThres) {
+        } else if (this.TimeSinceLastInteraction < endThres) {
             t = MathMapToRange(this.TimeSinceLastInteraction, sustainThres, endThres, 1.0, 0.0);
-        } */
+        }
 
-        const sizeScale = 1.0 * MathClamp(t, 0.0, 1.0) * (0.55 + (Math.sin(GTime.Cur * 12.0) + 1.0) * 0.2);
+        const sizeScale = 1.0 * MathClamp(t, 0.0, 1.0) * (0.6 + (Math.sin(GTime.Cur * 12.0) + 1.0) * 0.2);
 
         /* if (this.AnimationComponent.AgeGlobal > 0.2) {
             sizeScale = 1.0 - (this.AnimationComponent.AgeGlobal - 0.2) * 10.0;
@@ -2093,7 +2122,7 @@ export class FireballTool extends ToolBase {
 
         const finalGlareSize = 2.0 * sizeScale;
 
-        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, finalGlareSize * 1.5, finalGlareSize);
+        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, finalGlareSize * 2.0, finalGlareSize);
 
         gl.uniform1f(this.UniformParametersLocationListFlare.Time, GTime.CurClamped);
 
@@ -2131,7 +2160,7 @@ export class FireballTool extends ToolBase {
     SubmitDebugUI(datGui: dat.GUI) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const folder = datGui.addFolder("Tool Params");
-        folder.open();
+        //folder.open();
 
         folder.add(this.PositionCurrent, "x", -2, 5).name("StartPosX").step(0.01).listen();
         folder.add(this.PositionCurrent, "y", -3, 10).name("StartPosY").step(0.01).listen();

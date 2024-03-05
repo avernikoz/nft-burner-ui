@@ -96,9 +96,9 @@ export function GetAfterBurnSmokeParticlesDesc() {
     desc.DownwardForceScale = 0.0;
     desc.bMotionBasedTransform = false;
     desc.EAlphaFade = 1;
-    desc.AlphaScale = 0.5;
+    desc.AlphaScale = Math.random();
     desc.Brightness = 0.0;
-    desc.RandomSpawnThres = 0.05;
+    desc.RandomSpawnThres = MathLerp(0.1, 0.75, Math.random());
     desc.EFadeInOutMode = 0;
     desc.ESpecificShadingMode = EParticleShadingMode.AfterBurnSmoke;
     desc.InitSpawnPosOffset = { x: 0.2, y: 0.0 };

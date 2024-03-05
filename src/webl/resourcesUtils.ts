@@ -45,12 +45,18 @@ export function BindRenderTarget(
     fbo: WebGLFramebuffer,
     viewportSize: Vector2,
     bClear = false,
+    bClearDepth = false,
 ) {
     gl.viewport(0.0, 0.0, viewportSize.x, viewportSize.y);
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
     if (bClear) {
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        if (bClearDepth) {
+            gl.clearDepth(1.0); // Set clear depth to maximum
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        } else {
+            gl.clear(gl.COLOR_BUFFER_BIT);
+        }
     }
 }
 

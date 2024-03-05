@@ -5,7 +5,8 @@ export function GetShaderSourceFireVisualizerVS() {
 	precision mediump float;
 	precision mediump sampler2D;
 	
-		layout(location = 0) in vec2 VertexBuffer;
+		layout(location = 0) in vec3 VertexBuffer;
+		layout(location = 1) in vec2 TexCoordsBuffer;
 
 		uniform vec4 CameraDesc;
 		uniform float ScreenRatio;
@@ -31,7 +32,7 @@ export function GetShaderSourceFireVisualizerVS() {
 	
 		void main()
 		{
-			vec3 pos = vec3(VertexBuffer.xy, 0.0f);
+			vec3 pos = VertexBuffer;
 			pos = rotateVectorWithEuler(pos, OrientationEuler.x, OrientationEuler.y, OrientationEuler.z);
 			pos += FirePlanePositionOffset;
 			interpolatorWorldSpacePos = pos;
@@ -45,8 +46,9 @@ export function GetShaderSourceFireVisualizerVS() {
 			/* pos.xy *= 0.5f;
 			pos.x += 0.5f; */
 
-			gl_Position = vec4(pos.xy, 0.0, (1.f + pos.z));
-			vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
+			gl_Position = vec4(pos.xy, pos.z / 20.0, (1.f + pos.z));
+			//vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
+			vsOutTexCoords = TexCoordsBuffer;
 		}`;
 }
 
@@ -272,9 +274,6 @@ export function GetShaderSourceFireVisualizerPS() {
         MathLerp(0.5, 1.0, Math.random()) +
         /* glsl */ `);
 
-		
-		ivec2 SampleCoord = ivec2(gl_FragCoord.xy);
-		
 		float curFire = texture(FireTexture, vsOutTexCoords.xy).r;
 		float curFuel = texture(FuelTexture, vsOutTexCoords.xy).r;
 		//curFuel = 0.0;
@@ -935,8 +934,6 @@ export function GetShaderSourceFireVisualizerExportPS() {
         MathLerp(0.5, 1.0, Math.random()) +
         /* glsl */ `);
 
-		
-		ivec2 SampleCoord = ivec2(gl_FragCoord.xy);
 		
 		vec3 surfaceColor = vec3(0.0);
 

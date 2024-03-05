@@ -785,7 +785,11 @@ export function GetParticleRenderInstancedVS(inDesc: ParticleEmitterDesc) {
 				pos.xy /= kSizeScale;
 				#endif
 				pos.x /= ScreenRatio;
+				#if THIRD_DIMENSION
+				gl_Position = vec4(pos.xy, translation.z / 20.0, 1.0);
+				#else
 				gl_Position = vec4(pos.xy, 0.0, 1.0);
+				#endif
 
 				
 			}

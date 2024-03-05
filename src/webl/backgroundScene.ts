@@ -1,4 +1,6 @@
 import { GCameraShakeController } from "./animationController";
+import { GBurningSurface } from "./firePlane";
+import { GLSetVec3 } from "./helpers/glHelper";
 import { GUserInputDesc } from "./input";
 import { CreateTextureRT } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
@@ -17,9 +19,9 @@ import {
     GetShaderSourceLightSourceSpriteRenderVS,
     GetShaderSourceLightSourceSpriteRenderPS,
     GetShaderSourceGenericSpriteRenderVS,
-    GetShaderSourceGenericSpriteRenderPS,
     GetShaderSourceGlowRenderPS,
     GetShaderSourceStampRenderPS,
+    GetShaderSourceGenericSpriteRenderTexturedPS,
 } from "./shaders/shaderBackgroundScene";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { GetShaderSourceUISpriteRenderVS } from "./shaders/shaderUI";
@@ -65,6 +67,11 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         ToolPosition: gl.getUniformLocation(shaderProgram, "ToolPosition"),
         ToolRadius: gl.getUniformLocation(shaderProgram, "ToolRadius"),
         ToolColor: gl.getUniformLocation(shaderProgram, "ToolColor"),
+
+        BurningPlaneVertex0: gl.getUniformLocation(shaderProgram, "BurningPlaneVertex0"),
+        BurningPlaneVertex1: gl.getUniformLocation(shaderProgram, "BurningPlaneVertex1"),
+        BurningPlaneVertex2: gl.getUniformLocation(shaderProgram, "BurningPlaneVertex2"),
+        BurningPlaneVertex3: gl.getUniformLocation(shaderProgram, "BurningPlaneVertex3"),
     };
     return params;
 }
@@ -328,7 +335,7 @@ export class RBurntStampVisualizer {
         this.ShaderProgramExport = CreateShaderProgramVSPS(
             gl,
             GetShaderSourceGenericSpriteRenderVS(),
-            GetShaderSourceGenericSpriteRenderPS(),
+            GetShaderSourceGenericSpriteRenderTexturedPS(),
         );
 
         //Shader Parameters
@@ -645,6 +652,13 @@ export class RBackgroundRenderPass {
             GSceneDesc.Tool.Color.g,
             GSceneDesc.Tool.Color.b,
         );
+
+        //For RayTracing
+        const verts = GBurningSurface.GInstance!.RigidBody.Points;
+        GLSetVec3(gl, this.UniformParametersLocationListFloor.BurningPlaneVertex0, verts[0].PositionCur);
+        GLSetVec3(gl, this.UniformParametersLocationListFloor.BurningPlaneVertex1, verts[1].PositionCur);
+        GLSetVec3(gl, this.UniformParametersLocationListFloor.BurningPlaneVertex2, verts[2].PositionCur);
+        GLSetVec3(gl, this.UniformParametersLocationListFloor.BurningPlaneVertex3, verts[3].PositionCur);
 
         //Textures
 

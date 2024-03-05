@@ -741,7 +741,7 @@ export function GetShaderSourceCombinerPassPS() {
 			//light *= light;
 			//light = Contrast(light, 1.05);
 			//light = light * 2.5f;
-			light = light * 5.0f;
+			light = light * float(`+(1.0 + Math.random() * 4.0)+`); //5.0f;
 			light += 0.05; 
 
 			//light = 0.0f;

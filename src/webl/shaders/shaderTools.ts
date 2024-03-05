@@ -526,8 +526,8 @@ export function GetShaderSourceFireballRenderPS() {
 	void main()
 	{
 		vec3 color = Color;
-
-		float mask = textureLod(NoiseTexture, vsOutTexCoords.xy, 0.f).r;
+		
+		float mask = textureLod(NoiseTexture, vec2(1.0) - vsOutTexCoords.xy, 0.f).r;
 		color *= mask;
 
 		#if 0
