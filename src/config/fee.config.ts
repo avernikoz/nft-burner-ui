@@ -9,7 +9,7 @@ export const BURNER_FEE_CONFIG =
           }
         : {
               percentageOfFloorPrice: 5,
-              lowerLimitUSD: 5,
+              lowerLimitUSD: 2,
               upperLimitUSD: 100,
           };
 
