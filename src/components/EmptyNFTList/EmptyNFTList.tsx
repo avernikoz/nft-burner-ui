@@ -70,7 +70,7 @@ export const EmptyNFTList = () => {
         <>
             <EmptyNFTInfoBoxMain>
                 <TextOUH>OUH!</TextOUH>
-                <TextExplanation>Seems like you don’t have any NFTs to burn, so time to buy a few</TextExplanation>
+                <TextExplanation>Seems like you don’t have any NFTs to burn, so time to buy a few:</TextExplanation>
                 <MarketReferencesContainer>
                     {/* <Market target="_blank" rel="noopener noreferrer" href="https://rarible.com">
                         <RaribleLogo />
