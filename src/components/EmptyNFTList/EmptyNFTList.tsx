@@ -1,7 +1,9 @@
 import { styled } from "styled-components";
-import { ReactComponent as RaribleLogo } from "../../assets/svg/rarible.svg";
-import { ReactComponent as OpenSeaLogo } from "../../assets/svg/openSea.svg";
-import { ReactComponent as MagicEdenLogo } from "../../assets/svg/magicEden.svg";
+// import { ReactComponent as RaribleLogo } from "../../assets/svg/rarible.svg";
+// import { ReactComponent as OpenSeaLogo } from "../../assets/svg/openSea.svg";
+// import { ReactComponent as MagicEdenLogo } from "../../assets/svg/magicEden.svg";
+import { ReactComponent as BlueMoveLogo } from "../../assets/svg/sui-marketplaces-logo/bluemove.svg";
+import { ReactComponent as ClutchyLogo } from "../../assets/svg/sui-marketplaces-logo/clutchy.svg";
 
 export const EmptyNFTInfoBoxMain = styled.div`
     width: 75%;
@@ -70,7 +72,7 @@ export const EmptyNFTList = () => {
                 <TextOUH>OUH!</TextOUH>
                 <TextExplanation>Seems like you don’t have any NFTs to burn, so...</TextExplanation>
                 <MarketReferencesContainer>
-                    <Market target="_blank" rel="noopener noreferrer" href="https://rarible.com">
+                    {/* <Market target="_blank" rel="noopener noreferrer" href="https://rarible.com">
                         <RaribleLogo />
                     </Market>
                     <Market target="_blank" rel="noopener noreferrer" href="https://magiceden.io">
@@ -78,6 +80,13 @@ export const EmptyNFTList = () => {
                     </Market>
                     <Market target="_blank" rel="noopener noreferrer" href="https://opensea.io">
                         <OpenSeaLogo />
+                    </Market> */}
+
+                    <Market target="_blank" rel="noopener noreferrer" href="https://sui.bluemove.net">
+                        <BlueMoveLogo />
+                    </Market>
+                    <Market target="_blank" rel="noopener noreferrer" href="https://clutchy.io">
+                        <ClutchyLogo />
                     </Market>
                 </MarketReferencesContainer>
             </EmptyNFTInfoBoxMain>
