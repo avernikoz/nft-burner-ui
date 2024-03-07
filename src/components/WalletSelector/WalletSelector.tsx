@@ -114,9 +114,10 @@ export const WalletSelector = ({
             try {
                 const isNetworkChange = activeIndex !== index;
                 if (isNetworkChange) {
-                    const isNetworkEvmAndConnected = activeIndex <= lastEvmIndex && activeRainbowConnector !== null;
+                    // const isNetworkEvmAndConnected = activeIndex <= lastEvmIndex && activeRainbowConnector !== null;
+                    const isNetworkEvmAndConnected = false;
                     if (isNetworkEvmAndConnected) {
-                        if (!activeRainbowConnector.switchChain) {
+                        if (!activeRainbowConnector?.switchChain) {
                             return;
                         }
                         await activeRainbowConnector?.switchChain(chainId);
@@ -162,7 +163,8 @@ export const WalletSelector = ({
     );
 
     //items for dialog tabs
-    const tabItems = useRef([items[0], items[4], items[5]]);
+    // const tabItems = useRef([items[0], items[4], items[5]]);
+    const tabItems = useRef([items[0]]);
 
     const menuItems: MenuItem[] = [
         {
