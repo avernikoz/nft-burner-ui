@@ -866,6 +866,9 @@ export function GetShaderSourceCombinerPassPS() {
 			//final.rgb = lensDirt.rgb;
 			//final = bloom.rgb;
 
+			//final.rgb = Tonemap(final.rgb, 3);
+			//final.rgb = pow(final.rgb, vec3(0.4545));
+
 			const float exposure = 1.f;
 			final.rgb *= exposure;
 

@@ -1,5 +1,5 @@
 import { RBackgroundRenderPass, RBurntStampVisualizer, RRenderGlow, RSpotlightRenderPass } from "./backgroundScene";
-import { GBurningSurface, GBurningSurfaceExport } from "./firePlane";
+import { FirePaintDesc, GBurningSurface, GBurningSurfaceExport } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUISingleton } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
@@ -28,10 +28,10 @@ import {
 import { CheckGL } from "./shaderUtils";
 import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
 
-import { InitUserInputEvents, UserInputUpdatePerFrame } from "./input";
+import { GUserInputDesc, InitUserInputEvents, UserInputUpdatePerFrame } from "./input";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { GetVec3, Vector2 } from "./types";
+import { GetVec3, Vector2, Vector3 } from "./types";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -59,7 +59,8 @@ import { ERenderingState, GRenderingStateMachine } from "./states";
 import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
 import { AnimationController, GCameraShakeController, GSpotlightShakeController } from "./animationController";
 import { GAudioEngine } from "./audioEngine";
-import { EBurningTool, FireballTool, LaserTool, LighterTool, ThunderTool, ToolBase } from "./tools";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { EBurningTool, FireballTool, LaserTool, LighterTool, ScorpionTool, ThunderTool, ToolBase } from "./tools/tools";
 import { GTexturePool } from "./texturePool";
 import { GReactGLBridgeFunctions } from "./reactglBridge";
 import { GTransitionAnimationsConstants } from "./transitionAnimations";
@@ -71,7 +72,10 @@ import {
     GetFlameParticlesDesc,
     GetSmokeParticlesDesc,
 } from "./particlesConfig";
-import { GLineRenderer, GPointRenderer } from "./helpers/debugRender";
+import { GSimpleShapesRenderer } from "./helpers/shapeRender";
+import { EConstraintMode, RopeBody } from "./physics";
+import { GRibbonsRenderer, RibbonBufferCPU } from "./ribbons";
+import { TransformFromNDCToWorld } from "./transform";
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -458,8 +462,8 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const GlowRender = new RRenderGlow(gl);
 
-    GPointRenderer.GInstance = new GPointRenderer(gl);
-    GLineRenderer.GInstance = new GLineRenderer(gl);
+    GSimpleShapesRenderer.GInstance = new GSimpleShapesRenderer(gl);
+    GRibbonsRenderer.GInstance = new GRibbonsRenderer(gl);
 
     SetupPostProcessPasses(gl);
 
@@ -468,7 +472,8 @@ export function RenderMain() {
     //======================
     // 		INIT TOOLS
     //======================
-    GTool.Current = new FireballTool(gl);
+    //GTool.Current = new FireballTool(gl);
+    GTool.Current = new ScorpionTool(gl);
 
     //==============================
     // 		INIT PARTICLES
@@ -1115,9 +1120,34 @@ export function RenderMain() {
                         GRenderTargets.SpotlightTexture!,
                     );
 
+                    if (BurningSurface.RigidBody.ConstraintMode == EConstraintMode.Hanging) {
+                        const ropeColor = GetVec3(0.05, 0.05, 0.05);
+                        const ropeSize = 0.01 * 0.75;
+                        const ropeOffset = 0.15;
+                        const verts = BurningSurface.RigidBody.Points;
+                        const ropeStart = new Vector3(0, 0, 0);
+                        ropeStart.Set(verts[1].PositionCur);
+                        ropeStart.x += ropeOffset;
+
+                        let ropeEnd = GetVec3(ropeStart.x, ropeStart.y + 2.0, ropeStart.z);
+                        GSimpleShapesRenderer.GInstance?.RenderLine(gl, ropeStart, ropeEnd, ropeSize, ropeColor);
+
+                        ropeStart.Set(verts[2].PositionCur);
+                        ropeStart.x -= ropeOffset;
+                        ropeEnd = GetVec3(ropeStart.x, ropeStart.y + 2.0, ropeStart.z);
+                        GSimpleShapesRenderer.GInstance?.RenderLine(gl, ropeStart, ropeEnd, ropeSize, ropeColor);
+                    }
+
                     if (0 && DEBUG_ENV) {
                         BurningSurface.RigidBody.DebugRenderMesh(gl);
                     }
+
+                    /* const posWSCur = TransformFromNDCToWorld(GUserInputDesc.InputPosCurNDC);
+                    GSceneDesc.Tool.Position.x = posWSCur.x;
+                    GSceneDesc.Tool.Position.y = posWSCur.y;
+                    GSceneDesc.Tool.Position.z = -0.2;
+                    GSceneDesc.Tool.Radius = 2.0;
+                    GSceneDesc.Tool.Color.r = GSceneDesc.Tool.Color.g = GSceneDesc.Tool.Color.b = 1.0; */
 
                     /* gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ONE, gl.ONE);

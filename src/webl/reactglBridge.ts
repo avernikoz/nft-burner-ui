@@ -3,7 +3,7 @@ import { GBurningSurfaceExport } from "./firePlane";
 import { GTool } from "./renderingMain";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { GTexturePool } from "./texturePool";
-import { EBurningTool } from "./tools";
+import { EBurningTool } from "./tools/tools";
 
 export class GReactGLBridgeFunctions {
     static OnStartButtonPressed() {

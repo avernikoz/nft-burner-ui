@@ -1,4 +1,4 @@
-import { Color, GetVec3, Vector2, Vector3 } from "./types";
+import { Color, GetVec3, Matrix4x4, Vector2, Vector3 } from "./types";
 
 export function showError(errorText: string) {
     console.log(errorText);
@@ -65,6 +65,16 @@ export function Vec3Multiply(vec: Vector3, scale: number) {
 }
 export function Vec3Dot(a: Vector3, b: Vector3) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+export function Vec3Cross(a: Vector3, b: Vector3): Vector3 {
+    return new Vector3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+}
+
+export function MathRotateRoll(vec: Vector3, angle: number) {
+    const cachedX = vec.x;
+    const cachedY = vec.y;
+    vec.x = cachedX * Math.cos(angle) + cachedY * -Math.sin(angle);
+    vec.y = cachedX * Math.sin(angle) + cachedY * Math.cos(angle);
 }
 
 export function MathMapToRange(t: number, t0: number, t1: number, newt0: number, newt1: number) {
@@ -262,4 +272,115 @@ export function UpdateTime() {
     GTime.CurClamped += GTime.Delta;
     GTime.DeltaMs = GTime.Delta * 1000.0;
     GTime.Last = GTime.Cur;
+}
+
+export function GetMatrixBasisTransform(
+    vertexA: Vector3,
+    vertexB: Vector3,
+    vertexC: Vector3,
+    vertexD: Vector3,
+): Matrix4x4 {
+    // Calculate basis vectors
+    const basisX = Vec3Negate(vertexD, vertexA);
+    basisX.Normalize();
+    const basisY = Vec3Negate(vertexB, vertexA);
+    basisY.Normalize();
+
+    const basisZ = Vec3Cross(basisY, basisX); // Change the order of basisX and basisY
+    basisZ.Normalize();
+
+    /* basisY.Set(MathVector3Cross(basisZ, basisX));
+    basisY.Normalize(); */
+
+    // Calculate center point
+    const centerPoint = GetVec3(0, 0, 0);
+    centerPoint.Add(vertexA);
+    centerPoint.Add(vertexB);
+    centerPoint.Add(vertexC);
+    centerPoint.Add(vertexD);
+    centerPoint.Mul(0.25);
+
+    // Create rotation matrix
+    const rotationMatrix = new Matrix4x4();
+    rotationMatrix.setBasisVectors(basisX, basisY, basisZ);
+
+    // Construct translation matrix
+    rotationMatrix.setTranslation(centerPoint);
+
+    return rotationMatrix;
+}
+
+export function GetMatrixInverse(mat: Matrix4x4) {
+    const det = mat.getDeterminant();
+    if (det === 0) return null; // Matrix is singular, cannot invert
+
+    const invDet = 1 / det;
+
+    const result = new Matrix4x4();
+    result.elements[0][0] =
+        invDet * (mat.elements[1][1] * mat.elements[2][2] - mat.elements[1][2] * mat.elements[2][1]);
+    result.elements[0][1] =
+        -invDet * (mat.elements[0][1] * mat.elements[2][2] - mat.elements[0][2] * mat.elements[2][1]);
+    result.elements[0][2] =
+        invDet * (mat.elements[0][1] * mat.elements[1][2] - mat.elements[0][2] * mat.elements[1][1]);
+    result.elements[1][0] =
+        -invDet * (mat.elements[1][0] * mat.elements[2][2] - mat.elements[1][2] * mat.elements[2][0]);
+    result.elements[1][1] =
+        invDet * (mat.elements[0][0] * mat.elements[2][2] - mat.elements[0][2] * mat.elements[2][0]);
+    result.elements[1][2] =
+        -invDet * (mat.elements[0][0] * mat.elements[1][2] - mat.elements[0][2] * mat.elements[1][0]);
+    result.elements[2][0] =
+        invDet * (mat.elements[1][0] * mat.elements[2][1] - mat.elements[1][1] * mat.elements[2][0]);
+    result.elements[2][1] =
+        -invDet * (mat.elements[0][0] * mat.elements[2][1] - mat.elements[0][1] * mat.elements[2][0]);
+    result.elements[2][2] =
+        invDet * (mat.elements[0][0] * mat.elements[1][1] - mat.elements[0][1] * mat.elements[1][0]);
+
+    result.elements[0][3] =
+        -result.elements[0][0] * mat.elements[0][3] -
+        result.elements[0][1] * mat.elements[1][3] -
+        result.elements[0][2] * mat.elements[2][3];
+    result.elements[1][3] =
+        -result.elements[1][0] * mat.elements[0][3] -
+        result.elements[1][1] * mat.elements[1][3] -
+        result.elements[1][2] * mat.elements[2][3];
+    result.elements[2][3] =
+        -result.elements[2][0] * mat.elements[0][3] -
+        result.elements[2][1] * mat.elements[1][3] -
+        result.elements[2][2] * mat.elements[2][3];
+
+    return result;
+}
+export function GetMatrixTranspose(m: Matrix4x4) {
+    const ret = new Matrix4x4();
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            ret.elements[c][r] = m.elements[r][c];
+        }
+    }
+    return ret;
+}
+
+export function Vec3MulMatrix(vec: Vector3, mat: Matrix4x4) {
+    const x = vec.x;
+    const y = vec.y;
+    const z = vec.z;
+
+    const resultX = mat.elements[0][0] * x + mat.elements[0][1] * y + mat.elements[0][2] * z + mat.elements[0][3];
+    const resultY = mat.elements[1][0] * x + mat.elements[1][1] * y + mat.elements[1][2] * z + mat.elements[1][3];
+    const resultZ = mat.elements[2][0] * x + mat.elements[2][1] * y + mat.elements[2][2] * z + mat.elements[2][3];
+
+    return new Vector3(resultX, resultY, resultZ);
+}
+
+export function Vec4MulMatrix(vec: Vector3, mat: Matrix4x4) {
+    const x = vec.x;
+    const y = vec.y;
+    const z = vec.z;
+
+    const resultX = mat.elements[0][0] * x + mat.elements[1][0] * y + mat.elements[2][0] * z + mat.elements[3][0];
+    const resultY = mat.elements[0][1] * x + mat.elements[1][1] * y + mat.elements[2][1] * z + mat.elements[3][1];
+    const resultZ = mat.elements[0][2] * x + mat.elements[1][2] * y + mat.elements[2][2] * z + mat.elements[3][2];
+
+    return new Vector3(resultX, resultY, resultZ);
 }

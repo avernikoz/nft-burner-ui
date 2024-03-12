@@ -78,7 +78,7 @@ export class GCameraShakeController {
 
     static ShakeCameraFast(strength = 1.0) {
         if (!GCameraShakeController.bShakeEventRunning) {
-            this.ShakeStrength = strength;
+            this.ShakeStrength = strength * 4.0;
 
             this.bShakeEventRunning = true;
             this.ShakeEventParam = 0.0;

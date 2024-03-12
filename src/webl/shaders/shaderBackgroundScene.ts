@@ -764,7 +764,7 @@ export function GetShaderSourceBackgroundFloorRenderPerspectivePS() {
 			colorFinal.rgb += max(vec3(0.25), imageColor) * reflectionColor * 2.f;
 			//colorFinal.rgb += reflectionColor;
 			vec3 virtualPointLightsColor = vec3(1.f, 0.5f, 0.1f);
-			colorFinal.rgb += imageColor * virtualPointLightsColor * virtualPointLightsIntensityFinal * 2.f;
+			colorFinal.rgb += imageColor * virtualPointLightsColor * virtualPointLightsIntensityFinal * 1.5f;
 			colorFinal.rgb *= shadow;
 			colorFinal.rgb += ToolLightColor * max(0.5, shadow) * 0.5;
 
@@ -1459,7 +1459,7 @@ export function GetShaderSourceGenericSpriteRenderVS() {
 	}`;
 }
 
-export function GetShaderSourceGenericLineRenderVS() {
+export function GetShaderSourceGenericSpriteParentSpaceRenderVS() {
     return /* glsl */ `#version 300 es
 	
 	precision highp float;
@@ -1469,9 +1469,9 @@ export function GetShaderSourceGenericLineRenderVS() {
 	uniform vec4 CameraDesc;
 	uniform float ScreenRatio;
 	uniform vec3 Position;
-	uniform vec3 LineEnd;
 	uniform vec3 Orientation;
 	uniform float Scale;
+	uniform mat3x3 OrientationParent;
 
 	out vec2 vsOutTexCoords;
 
@@ -1488,6 +1488,40 @@ export function GetShaderSourceGenericLineRenderVS() {
 	
 		return rotatedVector;
 	}
+
+	void main()
+	{
+		vec3 pos = vec3(VertexBuffer.xy, 0.0f);
+		pos = rotateVectorWithEuler(pos, Orientation.x, Orientation.y, Orientation.z);
+		pos.xy *= Scale;
+		pos = pos * OrientationParent;
+		pos += Position;
+		//pos += vec3(1.5, 0.0, 0.0);
+		pos.xyz -= CameraDesc.xyz;
+
+		pos.xy *= CameraDesc.w;
+		pos.x /= ScreenRatio;
+
+		gl_Position = vec4(pos.xy, pos.z / 20.0, (1.f + pos.z));
+		vsOutTexCoords = (VertexBuffer.xy + 1.0) * 0.5; // Convert to [0, 1] range
+	}`;
+}
+
+export function GetShaderSourceGenericLineRenderVS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	
+	layout(location = 0) in vec2 VertexBuffer;
+
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	uniform vec3 Position;
+	uniform vec3 LineEnd;
+	uniform vec3 Orientation;
+	uniform float Scale;
+
+	out vec2 vsOutTexCoords;
 
 	void main()
 	{
@@ -1543,11 +1577,84 @@ export function GetShaderSourceGenericLineRenderVS() {
 		pos.xy *= CameraDesc.w;
 		pos.x /= ScreenRatio;
 
-		gl_Position = vec4(pos.xy, 0.0, (1.f + pos.z));
+		gl_Position = vec4(pos.xy,  pos.z / 20.0, (1.f + pos.z));
 	}`;
 }
 
-export function GetShaderSourceGenericSpriteRenderPS() {
+export function GetShaderSourceGenericTriangleRenderVS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	
+	layout(location = 0) in vec2 VertexBuffer;
+
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	uniform vec3 Vertex1;
+	uniform vec3 Vertex2;
+	uniform vec3 Vertex3;
+
+	out vec2 vsOutTexCoords;
+
+	void main()
+	{
+		////Clockwise, starting from left down
+		vec2 uv0 = vec2(0.0, 0.0);
+		vec2 uv1 = vec2(0.0, 1.0);
+		vec2 uv2 = vec2(1.0, 1.0);
+
+		uint vertId = uint(gl_VertexID);
+		vec3 pos = Vertex1;
+		vsOutTexCoords = uv0;
+		if(vertId == 1u)
+		{
+			pos = Vertex2;
+			vsOutTexCoords = uv1;
+		}
+		else if(vertId == 2u)
+		{
+			pos = Vertex3;
+			vsOutTexCoords = uv2;
+		}
+
+
+		pos.xyz -= CameraDesc.xyz;
+		pos.xy *= CameraDesc.w;
+		pos.x /= ScreenRatio;
+
+		gl_Position = vec4(pos.xy,  pos.z / 20.0, (1.f + pos.z));
+	}`;
+}
+
+export function GetShaderSourceGenericRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outColor;
+
+	uniform vec3 Color;
+	uniform int bCircle;
+
+	in vec2 vsOutTexCoords;
+
+	void main()
+	{
+		float s = 1.0;
+		if(bCircle > 0)
+		{
+			float d = length(vsOutTexCoords - vec2(0.5));
+			if(d > 0.75)
+			{
+				s = 0.0;
+			}
+		}
+		outColor = Color * s;
+	}`;
+}
+
+export function GetShaderSourceTrailRibbonRenderPS() {
     return /* glsl */ `#version 300 es
 	
 	precision highp float;
@@ -1559,9 +1666,25 @@ export function GetShaderSourceGenericSpriteRenderPS() {
 
 	in vec2 vsOutTexCoords;
 
+	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	{
+		///Translate to origin, scale by ranges ratio, translate to new position
+		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
+
 	void main()
 	{
-		outColor = Color;
+		float s = 1.0;
+		const float thres = 0.4;
+		/* if(vsOutTexCoords.x > (1.0 - thres))
+		{
+			s *= MapToRange(vsOutTexCoords.x, 1.0 - thres, 1.0, 1.0, 0.0);
+		}
+		else if(vsOutTexCoords.x < thres)
+		{
+			s *= MapToRange(vsOutTexCoords.x, 0.0, thres, 0.0, 1.0);
+		} */
+		outColor = Color * s;
 	}`;
 }
 
@@ -1635,5 +1758,90 @@ export function GetShaderSourceGlowRenderPS() {
 		float s = 1.0 - min(1.0, 2.0 * length(flippedUVs - vec2(0.5)));
 		color *= s * s ;
 		outColor = vec4(color, 1.0);
+	}`;
+}
+
+
+
+
+
+export function GetShaderSourceRibbonRenderVS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	
+	layout(location = 0) in vec2 VertexBuffer;
+
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	uniform vec3 PosCur;
+	uniform vec3 PosPrev;
+	uniform vec3 VelocityCur;
+	uniform vec3 VelocityPrev;
+	uniform float LineThickness;
+
+	out vec2 vsOutTexCoords;
+
+	vec3 GetNormal(vec3 p, vec3 v)
+	{
+		vec3 camPos = CameraDesc.xyz;
+		vec3 dirToCam = normalize(camPos - p);
+		vec3 lineNormal = cross(v, dirToCam);
+
+		lineNormal *= LineThickness;
+
+		return lineNormal;
+	}
+
+	void main()
+	{
+		vec3 camPos = CameraDesc.xyz;
+
+		vec3 lineNormalp0 = GetNormal(PosPrev, VelocityPrev);
+		vec3 lineNormalp1 = GetNormal(PosCur, VelocityCur);
+
+		/* vec3 dir = normalize(PosCur - PosPrev);
+		vec3 lineNormalp0 = GetNormal(PosPrev, dir);
+		vec3 lineNormalp1 = GetNormal(PosCur, dir); */
+
+		/* lineNormalp0 = vec3(-1.0, 0.0, 0.0) * 0.2;
+		lineNormalp1 = vec3(-1.0, 0.0, 0.0) * 0.2; */
+		
+		vec3 verts0 = PosPrev - lineNormalp0;
+		vec3 verts1 = PosCur - lineNormalp1;
+		vec3 verts2 = PosCur + lineNormalp1;
+		vec3 verts3 = PosPrev + lineNormalp0;
+
+		////Clockwise, starting from left down
+		vec2 uv0 = vec2(0.0, 0.0);
+		vec2 uv1 = vec2(0.0, 1.0);
+		vec2 uv2 = vec2(1.0, 1.0);
+		vec2 uv3 = vec2(1.0, 0.0);
+
+		uint vertId = uint(gl_VertexID);
+		vec3 pos = verts3;
+		vsOutTexCoords = uv3;
+		if(vertId == 0u || vertId == 3u)
+		{
+			pos = verts0;
+			vsOutTexCoords = uv0;
+		}
+		else if(vertId == 1u)
+		{
+			pos = verts1;
+			vsOutTexCoords = uv1;
+		}
+		else if(vertId == 2u || vertId == 4u)
+		{
+			pos = verts2;
+			vsOutTexCoords = uv2;
+		}
+
+
+		pos.xyz -= CameraDesc.xyz;
+		pos.xy *= CameraDesc.w;
+		pos.x /= ScreenRatio;
+
+		gl_Position = vec4(pos.xy, pos.z / 20.0, (1.f + pos.z));
 	}`;
 }

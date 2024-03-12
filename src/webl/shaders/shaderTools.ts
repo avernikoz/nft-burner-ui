@@ -527,7 +527,7 @@ export function GetShaderSourceFireballRenderPS() {
 	{
 		vec3 color = Color;
 		
-		float mask = textureLod(NoiseTexture, vec2(1.0) - vsOutTexCoords.xy, 0.f).r;
+		float mask = textureLod(NoiseTexture, vec2(vsOutTexCoords.x, 1.0 - vsOutTexCoords.y), 0.f).r;
 		color *= mask;
 
 		#if 0
@@ -567,21 +567,38 @@ export function GetShaderSourceFireballRenderPS() {
 
 		vec3 colorScale = vec3(1.0);
 
-		if(CurrentState >= 2)
+		if(CurrentState > 2)
 		{
-			colorScale = vec3(1.9, 1.5, 1.7) * 1.9;
+			colorScale = vec3(1.9, 1.5, 1.7) * 1.5;
+		}
+		else if(CurrentState == 2)
+		{
+			colorScale = vec3(1.9, 1.5, 1.7) * 2.0;
+			
+		}
+		else if(CurrentState == 1) //Hovered
+		{
+			float t =  (sin(Time * 3.14) + 1.0) * 0.5;
+			vec3 c = vec3(1.9, 1.5, 1.7) * (1.0 + t) * 0.5;
+			colorScale = mix(colorScale, c, t);
+
+			float dx = abs(dFdx(mask));
+			float dy = abs(dFdy(mask));
+			color += (dx + dy) * 1.0f;
 		}
 		else
 		{
-			float t =  (sin(Time * 3.14) + 1.0) * 0.5;
-			vec3 c = vec3(1.9, 1.5, 1.7) * (1.0 + t);
-			colorScale = mix(colorScale, c, t);
+			vec3 c = vec3(1.0, 1.0, 1.0) * 0.5;
+			float sc = length(vsOutTexCoords - vec2(0.5));
+			if(sc < 0.05)
+			{
+				c = vec3(1.0);
+				color = vec3(1.0);
+			}
+			colorScale = c;
 		}
 
-		if(CurrentState == 2)
-		{
-			colorScale *= 1.5;
-		}
+		//colorScale = vec3(1.9, 1.5, 1.7) * 1.9 * 1.5;
 
 		outColor = color * colorScale;
 	}`;

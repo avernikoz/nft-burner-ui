@@ -314,7 +314,7 @@ export function GetShaderSourceFireVisualizerPS() {
 			normal = DecodeNormalTexture(normal, NormalHarshness);
 			normal = normalize(rotateVectorWithEuler(normal, OrientationEuler.x, OrientationEuler.y, OrientationEuler.z));
 
-			#if 1//Rect Heightmap
+			#if 0//Rect Heightmap
 			{
 				const highp float rectPow = 4.f;
 				highp float rectCircleLength = pow(abs(ndcSpace.x), rectPow) + pow(abs(ndcSpace.y), rectPow);

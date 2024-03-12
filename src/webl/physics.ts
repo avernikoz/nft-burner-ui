@@ -13,9 +13,12 @@ import {
     Vec3Negate,
 } from "./utils";
 import { CommonVertexAttributeLocationList } from "./shaders/shaderConfig";
-import { GLineRenderer, GPointRenderer } from "./helpers/debugRender";
+import { GSimpleShapesRenderer } from "./helpers/shapeRender";
 import { TransformFromNDCToWorld } from "./transform";
 import { GUserInputDesc } from "./input";
+import { GRibbonsRenderer, GenerateSplineTangents } from "./ribbons";
+import { GUI } from "dat.gui";
+import { GSceneDesc, GScreenDesc } from "./scene";
 
 class PhysPoint {
     PositionCur = GetVec3(0, 0, 0);
@@ -24,6 +27,7 @@ class PhysPoint {
     PrevVelocity = GetVec3(0, 0, 0); //Mostly to avoid heap alloc
     Acceleration = GetVec3(0, 0, 0);
     bIsPinned;
+    bHasMass = false;
 
     constructor(inbPinned = false) {
         this.bIsPinned = inbPinned;
@@ -100,18 +104,33 @@ class Constraint {
             const delta = curDist - this.RestLength;
             this.CurDirection.Normalize();
             this.CurDirection.Mul(delta * 0.5 * this.Stiffness);
-            this.pObjectA.Translate(this.CurDirection);
-            this.pObjectB.TranslateNegate(this.CurDirection);
+
+            //if both have the same mass - solve as usual
+            if (
+                (this.pObjectA.bHasMass && this.pObjectB.bHasMass) ||
+                (!this.pObjectA.bHasMass && !this.pObjectB.bHasMass)
+            ) {
+                this.pObjectA.Translate(this.CurDirection);
+                this.pObjectB.TranslateNegate(this.CurDirection);
+            } else {
+                //only point without mass is shifted
+                this.CurDirection.Mul(2.0);
+                if (!this.pObjectA.bHasMass) {
+                    this.pObjectA.Translate(this.CurDirection);
+                } else {
+                    this.pObjectB.TranslateNegate(this.CurDirection);
+                }
+            }
         }
     }
 }
 
-enum EConstraintMode {
+export enum EConstraintMode {
     Flowing = 0,
     Hanging,
 }
 
-export class RectRigidBody {
+export class PhysicsBody {
     Points: PhysPoint[];
     Constraints: Constraint[];
     ConstraintMode = EConstraintMode.Hanging;
@@ -121,111 +140,36 @@ export class RectRigidBody {
     ConstantForce = GetVec3(0, 0, 0);
 
     SimulationNumSubSteps = 1.0;
-    NumSolverIterations = 1.0;
+    NumSolverIterations = 2.0;
 
-    PlaneShapeVertexBufferGPU: null | WebGLBuffer = null;
-    PlaneShapeTexCoordsBufferGPU: null | WebGLBuffer = null;
-    PlaneShapeVAO: null | WebGLVertexArrayObject = null;
+    DeltaTime = 1 / 60; //Delta used in prev sim
 
-    constructor(gl: WebGL2RenderingContext) {
-        const width = 2.0;
-        const height = 2.0;
-        const center = GetVec3(0, 0, 0);
-
+    constructor() {
         this.Points = [];
         this.Constraints = [];
+    }
 
-        // Calculate half width and half height
-        const halfWidth = width / 2;
-        const halfHeight = height / 2;
+    Simulate(dt: number) {
+        for (const point of this.Points) {
+            //point.Acceleration.Set3(0, 0, 0);
+            if (!point.bIsPinned) {
+                point.Velocity.Mul(0.99);
+            }
 
-        // Create PhysObjects for each corner of the rectangle
-        const topLeft = new PhysPoint();
-        const topRight = new PhysPoint();
-        const bottomLeft = new PhysPoint();
-        const bottomRight = new PhysPoint();
-
-        // Set initial positions for the corners
-        topLeft.PositionCur.Set3(center.x - halfWidth, center.y + halfHeight, center.z);
-        topRight.PositionCur.Set3(center.x + halfWidth, center.y + halfHeight, center.z);
-        bottomLeft.PositionCur.Set3(center.x - halfWidth, center.y - halfHeight, center.z);
-        bottomRight.PositionCur.Set3(center.x + halfWidth, center.y - halfHeight, center.z);
-
-        //Clockwise
-        this.Points.push(bottomLeft, topLeft, topRight, bottomRight);
-
-        // Create constraints between adjacent corners to maintain the shape of the rectangle
-        // Top edge constraint
-        this.Constraints.push(new Constraint(topLeft, topRight, width));
-        // Bottom edge constraint
-        this.Constraints.push(new Constraint(bottomLeft, bottomRight, width));
-        // Left edge constraint
-        this.Constraints.push(new Constraint(topLeft, bottomLeft, height));
-        // Right edge constraint
-        this.Constraints.push(new Constraint(topRight, bottomRight, height));
-
-        //Cross Constraints
-        const diagonalDist = MathGetVec3Length(Vec3Negate(topRight.PositionCur, bottomLeft.PositionCur));
-        this.Constraints.push(new Constraint(topLeft, bottomRight, diagonalDist));
-        this.Constraints.push(new Constraint(topRight, bottomLeft, diagonalDist));
-
-        //Pinned Constaints
-        /* const centerPoint = new PhysPoint();
-        centerPoint.PositionCur.Set3(0, 0, 0);
-        centerPoint.bIsPinned = true;
-        this.Points.push(centerPoint); */
-        /* const distToCenter = MathGetVec3Length(topRight.PositionCur);
-        this.Constraints.push(new Constraint(topLeft, centerPoint, distToCenter));
-        this.Constraints.push(new Constraint(bottomLeft, centerPoint, distToCenter));
-        this.Constraints.push(new Constraint(topRight, centerPoint, distToCenter));
-        this.Constraints.push(new Constraint(bottomRight, centerPoint, distToCenter)); */
-
-        if (this.ConstraintMode == EConstraintMode.Flowing) {
-            const pinnedConstraintStiffness = 0.01;
-            const pinnedConstraintStiffnessBottom = pinnedConstraintStiffness;
-            const topLeftPinned = new PhysPoint(true);
-            topLeftPinned.PositionCur.Set(topLeft.PositionCur);
-            this.Constraints.push(new Constraint(topLeftPinned, topLeft, 0, pinnedConstraintStiffness));
-
-            const topRightPinned = new PhysPoint(true);
-            topRightPinned.PositionCur.Set(topRight.PositionCur);
-            this.Constraints.push(new Constraint(topRightPinned, topRight, 0, pinnedConstraintStiffness));
-
-            const bottomLeftPinned = new PhysPoint(true);
-            bottomLeftPinned.PositionCur.Set(bottomLeft.PositionCur);
-            this.Constraints.push(new Constraint(bottomLeftPinned, bottomLeft, 0, pinnedConstraintStiffnessBottom));
-
-            const bottomRightPinned = new PhysPoint(true);
-            bottomRightPinned.PositionCur.Set(bottomRight.PositionCur);
-            this.Constraints.push(new Constraint(bottomRightPinned, bottomRight, 0, pinnedConstraintStiffnessBottom));
-        } else if (this.ConstraintMode == EConstraintMode.Hanging) {
-            //Ropes
-            const ropesStiffness = 1.0;
-            const ropesLength = height * 0.75;
-
-            const topLeftPinnedRope = new PhysPoint(true);
-            this.Points.push(topLeftPinnedRope);
-            topLeftPinnedRope.PositionCur.Set(topLeft.PositionCur);
-            topLeftPinnedRope.PositionCur.y += ropesLength;
-            this.Constraints.push(new Constraint(topLeftPinnedRope, topLeft, ropesLength, ropesStiffness));
-
-            const topRightPinnedRope = new PhysPoint(true);
-            this.Points.push(topRightPinnedRope);
-            topRightPinnedRope.PositionCur.Set(topRight.PositionCur);
-            topRightPinnedRope.PositionCur.y += ropesLength;
-            this.Constraints.push(new Constraint(topRightPinnedRope, topRight, ropesLength, ropesStiffness));
-
-            this.ConstantForce.y = -50.0;
-        } else {
-            //error
+            PhysicsBody.IntergratePosVel(point, dt);
         }
 
-        //Resources
-        this.PlaneShapeVertexBufferGPU = gl.createBuffer();
-        this.PlaneShapeTexCoordsBufferGPU = gl.createBuffer();
-        this.PlaneShapeVAO = gl.createVertexArray();
+        for (let i = 0; i < this.NumSolverIterations; i++) {
+            // Iterate over each constraint and resolve it
+            for (const constraint of this.Constraints) {
+                constraint.ResolveConnection();
+            }
+        }
 
-        this.GenerateMesh(gl);
+        for (const point of this.Points) {
+            point.Acceleration.Set3(0, 0, 0);
+            point.Acceleration.Add(this.ConstantForce);
+        }
     }
 
     static IntergratePosVel(pPoint: PhysPoint, dt: number) {
@@ -251,6 +195,14 @@ export class RectRigidBody {
             }
         } else {
             pPoint.PositionPrev.Set(pPoint.PositionCur);
+        }
+    }
+
+    OnUpdateBase() {
+        this.DeltaTime = 1 / 60;
+        const dt = this.DeltaTime / this.SimulationNumSubSteps;
+        for (let i = 0; i < this.SimulationNumSubSteps; i++) {
+            this.Simulate(dt);
         }
     }
 
@@ -285,13 +237,218 @@ export class RectRigidBody {
 
         this.CurWindForce.Mul(this.WindStrength * freq);
     }
+}
+
+export class RopeBody extends PhysicsBody {
+    //Point that is initially pinned
+    ControlPoint: PhysPoint | null = null;
+
+    //Specific Points
+    LastPoint;
+    PrevLastPoint;
+
+    constructor(numPoints = 32, length = 3.5, bladeLength = 0.4, gravityForce = 5) {
+        super();
+
+        const lengthX = length;
+        const segmentLength = lengthX / numPoints;
+
+        const stiffness = 0.05;
+
+        //const controlPointIndex = numPoints - 5;
+        const controlPointIndex = numPoints - 5;
+
+        const sourcePos = GetVec3(
+            GSceneDesc.Camera.Position.x + 0.2,
+            GSceneDesc.Camera.Position.y - 0.55,
+            GSceneDesc.Camera.Position.z,
+        );
+
+        const posCur = GetVec3(-1.0, -0.5, -3.0);
+
+        //Create points
+        for (let i = 0; i < numPoints; i++) {
+            const newPoint = new PhysPoint();
+
+            if (i == controlPointIndex) {
+                newPoint.bIsPinned = true;
+                this.ControlPoint = newPoint;
+            }
+
+            if (i == numPoints - 2) {
+                this.PrevLastPoint = newPoint;
+            } else if (i == numPoints - 1) {
+                this.LastPoint = newPoint;
+            }
+
+            newPoint.PositionCur.Set(posCur);
+            this.Points.push(newPoint);
+
+            if (i == 0) {
+                newPoint.PositionCur.x = sourcePos.x;
+                newPoint.PositionCur.y = sourcePos.y;
+                newPoint.PositionCur.z = sourcePos.z;
+                newPoint.bIsPinned = true;
+            }
+
+            posCur.x += segmentLength;
+        }
+
+        //Create constraints
+        for (let c = 0; c < numPoints - 1; c++) {
+            const start = this.Points[c];
+            const end = this.Points[c + 1];
+
+            //last constraint is mass
+            if (c == numPoints - 2) {
+                this.Constraints.push(new Constraint(start, end, bladeLength, 1.0));
+            } else {
+                this.Constraints.push(new Constraint(start, end, segmentLength, stiffness));
+            }
+        }
+
+        this.ConstantForce.y = -gravityForce;
+    }
+
+    Render(gl: WebGL2RenderingContext) {
+        //Generate positions arr
+        const posArr: Vector3[] = [];
+        const velArr: Vector3[] = [];
+
+        for (let i = 0; i < this.Points.length; i++) {
+            posArr.push(this.Points[i].PositionCur);
+            velArr.push(new Vector3(0, 0, 0));
+        }
+
+        GenerateSplineTangents(posArr, velArr);
+
+        GRibbonsRenderer.GInstance?.Render(gl, posArr, velArr, GetVec3(0.5, 0.5, 0.5));
+    }
+
+    SubmitDebugUI(folder: GUI) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        //const folder = datGui.addFolder("Rope");
+        folder.open();
+
+        folder.add(this, "SimulationNumSubSteps", 1, 5).name("Num Sub Steps").step(1);
+        folder.add(this, "NumSolverIterations", 1, 5).name("Num Solver Iters").step(1);
+
+        if (this.LastPoint) {
+            folder.add(this.LastPoint.PositionCur, "x", -2, 5).name("StartPosX").step(0.01).listen();
+            folder.add(this.LastPoint.PositionCur, "y", -3, 10).name("StartPosY").step(0.01).listen();
+            folder.add(this.LastPoint.PositionCur, "z", -10, 2).name("StartPosZ").step(0.01).listen();
+        }
+    }
+}
+
+export class RectRigidBody extends PhysicsBody {
+    PlaneShapeVertexBufferGPU: null | WebGLBuffer = null;
+    PlaneShapeTexCoordsBufferGPU: null | WebGLBuffer = null;
+    PlaneShapeVAO: null | WebGLVertexArrayObject = null;
+
+    constructor(gl: WebGL2RenderingContext, constraintMode = EConstraintMode.Hanging) {
+        super();
+        const width = 2.0;
+        const height = 2.0;
+        const center = GetVec3(0, 0, 0);
+
+        this.ConstraintMode = constraintMode;
+
+        // Calculate half width and half height
+        const halfWidth = width / 2;
+        const halfHeight = height / 2;
+
+        // Create PhysObjects for each corner of the rectangle
+        const topLeft = new PhysPoint();
+        const topRight = new PhysPoint();
+        const bottomLeft = new PhysPoint();
+        const bottomRight = new PhysPoint();
+
+        // Set initial positions for the corners
+        topLeft.PositionCur.Set3(center.x - halfWidth, center.y + halfHeight, center.z);
+        topRight.PositionCur.Set3(center.x + halfWidth, center.y + halfHeight, center.z);
+        bottomLeft.PositionCur.Set3(center.x - halfWidth, center.y - halfHeight, center.z);
+        bottomRight.PositionCur.Set3(center.x + halfWidth, center.y - halfHeight, center.z);
+
+        //Clockwise
+        this.Points.push(bottomLeft, topLeft, topRight, bottomRight);
+
+        // Create constraints between adjacent corners to maintain the shape of the rectangle
+        // Top edge constraint
+        this.Constraints.push(new Constraint(topLeft, topRight, width));
+        // Bottom edge constraint
+        this.Constraints.push(new Constraint(bottomLeft, bottomRight, width));
+        // Left edge constraint
+        this.Constraints.push(new Constraint(topLeft, bottomLeft, height));
+        // Right edge constraint
+        this.Constraints.push(new Constraint(topRight, bottomRight, height));
+
+        //Cross Constraints
+        const diagonalDist = MathGetVec3Length(Vec3Negate(topRight.PositionCur, bottomLeft.PositionCur));
+        this.Constraints.push(new Constraint(topLeft, bottomRight, diagonalDist + 0.05));
+        this.Constraints.push(new Constraint(topRight, bottomLeft, diagonalDist + 0.05));
+
+        //Pinned Constaints
+        /* const centerPoint = new PhysPoint();
+        centerPoint.PositionCur.Set3(0, 0, 0);
+        centerPoint.bIsPinned = true;
+        this.Points.push(centerPoint);
+        const distToCenter = MathGetVec3Length(topRight.PositionCur);
+        this.Constraints.push(new Constraint(topLeft, centerPoint, distToCenter));
+        this.Constraints.push(new Constraint(bottomLeft, centerPoint, distToCenter));
+        this.Constraints.push(new Constraint(topRight, centerPoint, distToCenter));
+        this.Constraints.push(new Constraint(bottomRight, centerPoint, distToCenter)); */
+
+        if (this.ConstraintMode == EConstraintMode.Flowing) {
+            const pinnedConstraintStiffness = 0.001;
+            const pinnedConstraintStiffnessBottom = pinnedConstraintStiffness;
+            const topLeftPinned = new PhysPoint(true);
+            topLeftPinned.PositionCur.Set(topLeft.PositionCur);
+            this.Constraints.push(new Constraint(topLeftPinned, topLeft, 0, pinnedConstraintStiffness));
+
+            const topRightPinned = new PhysPoint(true);
+            topRightPinned.PositionCur.Set(topRight.PositionCur);
+            this.Constraints.push(new Constraint(topRightPinned, topRight, 0, pinnedConstraintStiffness));
+
+            const bottomLeftPinned = new PhysPoint(true);
+            bottomLeftPinned.PositionCur.Set(bottomLeft.PositionCur);
+            this.Constraints.push(new Constraint(bottomLeftPinned, bottomLeft, 0, pinnedConstraintStiffnessBottom));
+
+            const bottomRightPinned = new PhysPoint(true);
+            bottomRightPinned.PositionCur.Set(bottomRight.PositionCur);
+            this.Constraints.push(new Constraint(bottomRightPinned, bottomRight, 0, pinnedConstraintStiffnessBottom));
+        } else if (this.ConstraintMode == EConstraintMode.Hanging) {
+            //Ropes
+            const ropesStiffness = 1.0;
+            const ropesLength = height * 0.75;
+
+            const topLeftPinnedRope = new PhysPoint(true);
+            //this.Points.push(topLeftPinnedRope);
+            topLeftPinnedRope.PositionCur.Set(topLeft.PositionCur);
+            topLeftPinnedRope.PositionCur.y += ropesLength;
+            this.Constraints.push(new Constraint(topLeftPinnedRope, topLeft, ropesLength, ropesStiffness));
+
+            const topRightPinnedRope = new PhysPoint(true);
+            //this.Points.push(topRightPinnedRope);
+            topRightPinnedRope.PositionCur.Set(topRight.PositionCur);
+            topRightPinnedRope.PositionCur.y += ropesLength;
+            this.Constraints.push(new Constraint(topRightPinnedRope, topRight, ropesLength, ropesStiffness));
+
+            this.ConstantForce.y = -30.0;
+        } else {
+            //error
+        }
+
+        //Resources
+        this.PlaneShapeVertexBufferGPU = gl.createBuffer();
+        this.PlaneShapeTexCoordsBufferGPU = gl.createBuffer();
+        this.PlaneShapeVAO = gl.createVertexArray();
+
+        this.GenerateMesh(gl);
+    }
 
     OnUpdate(gl: WebGL2RenderingContext) {
-        //const dt = GTime.Delta / this.SimulationNumSubSteps;
-        const dt = 1 / 60 / this.SimulationNumSubSteps;
-        for (let i = 0; i < this.SimulationNumSubSteps; i++) {
-            this.Simulate(dt);
-        }
+        super.OnUpdateBase();
 
         this.GenerateMesh(gl);
 
@@ -301,7 +458,7 @@ export class RectRigidBody {
         } */
         //Apply force if mouse movement
         const posWSCur = TransformFromNDCToWorld(GUserInputDesc.InputPosCurNDC);
-        if (Math.abs(posWSCur.x) < 1.0 && Math.abs(posWSCur.y) < 1.0) {
+        if (Math.abs(posWSCur.x) < 1.0 /* && Math.abs(posWSCur.y) < 1.0 */) {
             const strngth = MathGetVec2Length(GUserInputDesc.InputVelocityCurViewSpace);
             for (const point of this.Points) {
                 if (!point.bIsPinned) {
@@ -309,29 +466,12 @@ export class RectRigidBody {
                     point.Acceleration.y += GUserInputDesc.InputVelocityCurViewSpace.y * 10.0;
                 }
             }
-        }
-    }
-
-    Simulate(dt: number) {
-        for (const point of this.Points) {
-            //point.Acceleration.Set3(0, 0, 0);
-            if (!point.bIsPinned) {
-                point.Velocity.Mul(0.99);
+            if (this.ConstraintMode == EConstraintMode.Hanging) {
+                this.Points[0].Acceleration.z += strngth * 10.0;
+                this.Points[3].Acceleration.z += strngth * 10.0;
+            } else if (this.ConstraintMode == EConstraintMode.Flowing) {
+                this.ApplyForce(posWSCur, 1.0, 2.0);
             }
-
-            RectRigidBody.IntergratePosVel(point, dt);
-        }
-
-        for (let i = 0; i < this.NumSolverIterations; i++) {
-            // Iterate over each constraint and resolve it
-            for (const constraint of this.Constraints) {
-                constraint.ResolveConnection();
-            }
-        }
-
-        for (const point of this.Points) {
-            point.Acceleration.Set3(0, 0, 0);
-            point.Acceleration.Add(this.ConstantForce);
         }
     }
 
@@ -405,19 +545,29 @@ export class RectRigidBody {
 
     DebugRenderMesh(gl: WebGL2RenderingContext) {
         for (const point of this.Points) {
-            GPointRenderer.GInstance!.Render(gl, point.PositionCur, 0.1);
+            GSimpleShapesRenderer.GInstance!.RenderPoint(gl, point.PositionCur, 0.1);
         }
         for (const constraint of this.Constraints) {
-            GLineRenderer.GInstance!.Render(gl, constraint.pObjectA.PositionCur, constraint.pObjectB.PositionCur);
+            GSimpleShapesRenderer.GInstance!.RenderLine(
+                gl,
+                constraint.pObjectA.PositionCur,
+                constraint.pObjectB.PositionCur,
+            );
         }
     }
 
     ApplyForce(forceSourcePos: Vector3, strength: number, radius = 1.0) {
         //proportional to the distance to each point
+        if (this.ConstraintMode == EConstraintMode.Flowing) {
+            strength *= 0.2;
+        } else {
+            strength *= 0.75;
+        }
         for (let i = 0; i < 4; i++) {
             const point = this.Points[i];
             const dist = MathGetVec3Length(Vec3Negate(forceSourcePos, point.PositionCur));
             const forceScale = MathClamp(1.0 - dist / radius, 0, 1);
+
             point.Acceleration.z += strength * 10 * forceScale;
         }
     }
@@ -425,7 +575,7 @@ export class RectRigidBody {
     SubmitDebugUI(datGui: dat.GUI) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const folder = datGui.addFolder("Rigid Body");
-        folder.open();
+        //folder.open();
 
         folder.add(this, "SimulationNumSubSteps", 1, 5).name("Num Sub Steps").step(1);
         folder.add(this, "NumSolverIterations", 1, 5).name("Num Solver Iters").step(1);

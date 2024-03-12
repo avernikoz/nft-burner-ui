@@ -33,7 +33,7 @@ export class SpatialControlPoint {
 
     private bDraggable: boolean;
 
-    constructor(gl: WebGL2RenderingContext, initialPosition: Vector2, inRadius: number, inbIsDraggable: boolean) {
+    constructor(initialPosition: Vector2, inRadius: number, inbIsDraggable: boolean) {
         this.Radius = inRadius;
         this.PositionViewSpace = initialPosition;
         this.PositionNDCSpace.x = this.PositionViewSpace.x / GScreenDesc.ScreenRatio;
@@ -134,7 +134,7 @@ export class SpatialControlPointWithTexture extends SpatialControlPoint {
         defaultTextureLocation: string,
         activeTextureLocation: string,
     ) {
-        super(gl, initialPosition, inRadius, inbIsDraggable);
+        super(initialPosition, inRadius, inbIsDraggable);
         this.ColorTexture0 = GTexturePool.CreateTexture(gl, false, defaultTextureLocation);
         this.ColorTexture1 = GTexturePool.CreateTexture(gl, false, activeTextureLocation);
     }

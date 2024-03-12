@@ -901,6 +901,9 @@ function scFlameSpecificShading(bUsesTexture: boolean) {
 
 		//colorFinal.rgb = max(vec3(0.0), Contrast(colorFinal.rgb, 1.5));
 
+		//colorFinal.rgb = pow(colorFinal.rgb, vec3(2.0));
+		colorFinal.rgb *= 1.3;
+
 		//colorFinal.rgb *= CircularFadeOut(interpolatorTexCoords.y);
 
 	  #endif

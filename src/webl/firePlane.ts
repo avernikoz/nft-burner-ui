@@ -294,7 +294,7 @@ export class GBurningSurface {
 
     //Paper
 
-    RoughnessParams = { Scale: 1.0, Add: 0.0, Contrast: 1.0, Min: 0.0 }; //Use variadic contrast [from 1 to 2]
+    RoughnessParams = { Scale: 0.25 + Math.random() * 1.25, Add: 0.0, Contrast: 1.0, Min: 0.0 }; //Use variadic contrast [from 1 to 2]
 
     ShadingParams = { SpecularIntensity: 0.6, SpecularPower: 8.0, DiffuseIntensity: 1.05 };
 
@@ -493,8 +493,9 @@ export class GBurningSurface {
 
         this.VisualizerFlameColorLUT = GTexturePool.CreateTexture(gl, false, "flameColorLUT5");
         //this.CurrentImageTextureSrc = "assets/example.jpg";
-        this.CurrentImageTextureSrc = "apeBlue";
+        //this.CurrentImageTextureSrc = "apeBlue";
         //this.CurrentImageTextureSrc = "punkBlue";
+        this.CurrentImageTextureSrc = "ryhew";
         //this.CurrentImageTextureSrc = "assets/example2.png";
         this.VisualizerImageTexture = GTexturePool.CreateTexture(
             gl,
@@ -561,7 +562,7 @@ export class GBurningSurface {
             true,
             true,
         );
-        this.RoughnessParams.Contrast = 1.0 + Math.random();
+        this.RoughnessParams.Contrast = 1.0 + Math.random() * 5.0;
 
         //this.SurfaceMaterialColorTexture = GTexturePool.CreateTexture(gl, false, "oxidCopperRGH", true);
         //this.SurfaceMaterialColorTexture = CreateTexture(gl, 7, "assets/background/paperRGH.png");

@@ -18,7 +18,7 @@ function scTransformBasedOnMotion(condition: boolean) {
 		float velLength = length(Velocity) * 100.0 /* * 0.10 */;
 		if(velLength > 0.f)
 		{
-			velLength = min(1.0, velLength);
+			velLength = min(15.0, velLength);
 			pos.y *= clamp(1.f - velLength * 0.5, 0.75f, 1.f);
 			pos.x *= (1.f + velLength * 2.0);
 
