@@ -1222,14 +1222,13 @@ export class ThunderTool extends ToolBase {
         this.SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
     }
 
-    ProjectileStuck = false;
     StuckPosTangentSpace = GetVec3(0, 0, 0);
     StuckCounter = 0.0;
 
     //Executes regardless of state
     UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
         if (this.IsAllowedToRender()) {
-            if (!this.ProjectileStuck) {
+            if (!this.Projectile.bStuck) {
                 this.Projectile.OnUpdate(gl);
             } else {
                 //from tangent to world
@@ -1264,13 +1263,13 @@ export class ThunderTool extends ToolBase {
             GetVec3(1.0, 1.0, 0.0),
         );
 
-        if (this.Projectile.bLaunched || this.ProjectileStuck) {
+        if (this.Projectile.bLaunched || this.Projectile.bStuck) {
             let bInteracted = false;
-            if (!this.ProjectileStuck) {
+            if (!this.Projectile.bStuck) {
                 bInteracted = this.IsAllowedToRender() && this.bIntersection;
 
                 if (bInteracted) {
-                    this.ProjectileStuck = true;
+                    this.Projectile.bStuck = true;
                     this.StuckCounter = 0.0;
                     //cache local space pos
                     const verts = BurningSurface.RigidBody.Points;
@@ -1309,7 +1308,7 @@ export class ThunderTool extends ToolBase {
             }
 
             if (bInteracted) {
-                this.ProjectileStuck = false;
+                this.Projectile.bStuck = false;
                 this.bActiveThisFrame = true;
 
                 const hitPos = this.Projectile.PositionCurrent;
@@ -1455,14 +1454,14 @@ export class ThunderTool extends ToolBase {
         } */
 
         if (this.IsAllowedToRender()) {
-            if (!this.ProjectileStuck) {
+            if (!this.Projectile.bStuck) {
                 gl.enable(gl.DEPTH_TEST);
                 gl.depthFunc(gl.LESS);
             }
 
             this.Projectile.Render(gl);
 
-            if (!this.ProjectileStuck) {
+            if (!this.Projectile.bStuck) {
                 gl.disable(gl.DEPTH_TEST);
             }
         }

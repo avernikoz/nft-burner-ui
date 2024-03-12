@@ -69,6 +69,7 @@ export class CProjectileComponent {
     TargetConstraintStrength = 5.0;
     LaunchVelocityX = 0.0;
     bLaunched = false;
+    bStuck = false;
 
     //Particles
     TrailSparksParticles: ParticlesEmitter;
@@ -360,7 +361,9 @@ export class CProjectileComponent {
     }
 
     GetCurrentControllerState() {
-        if (this.bLaunched) {
+        if (this.bStuck) {
+            return 4;
+        } else if (this.bLaunched) {
             return 3;
         } else if (this.SpatialController.bDragState) {
             return 2;
