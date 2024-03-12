@@ -400,11 +400,11 @@ export function GetShaderSourceFireVisualizerPS() {
 				{
 					//Mask
 					ivec2 texelPos = ivec2(gl_FragCoord.xy);
-					spotlightMask = texelFetch(SpotlightTexture, texelPos, 0).r;
+					//spotlightMask = texelFetch(SpotlightTexture, texelPos, 0).r;
 
 					const float spotLightMaskScale = 5.0f;
 					const float spotlightAmbientLight = 0.15f;
-					spotlightMask = clamp(spotlightMask * spotLightMaskScale, spotlightAmbientLight, 1.0);
+					//spotlightMask = clamp(spotlightMask * spotLightMaskScale, spotlightAmbientLight, 1.0);
 
 					//spotlightMask = 2.0f;
 					float nDotL = dot(normal, vToLight);
@@ -549,7 +549,7 @@ export function GetShaderSourceFireVisualizerPS() {
 			//afterBurnEmbers = 1.f - afterBurnEmbers;
 		#endif
 			
-			vec3 embersColor = vec3(afterBurnEmbers, afterBurnEmbers * 0.2, afterBurnEmbers * 0.1);
+			vec3 embersColor = vec3(0.2, 0.2, 1.0) * afterBurnEmbers;
 			float emberScale = 1.f;
 		#if 1 //NOISE EMBERS SCALE
 			//float noiseConst = textureLod(NoiseTextureLQ, 0.5 * (vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0043)), 0.f).r;
@@ -635,9 +635,9 @@ export function GetShaderSourceFireVisualizerPS() {
 			//luminance += curPaint;
 		#endif//PREPROCESS
 			
-			burnedImageTexture = luminance * 10.0 * vec3(1, 0.2, 0.1);
+			//burnedImageTexture = luminance * 10.0 * vec3(1, 0.2, 0.1);
 			//burnedImageTexture = luminance * 10.0 * vec3(0.5, 0.2, 0.7);
-			//burnedImageTexture = luminance * 10.0 * vec3(0.2, 0.2, 1.0);
+			burnedImageTexture = luminance * 10.0 * vec3(0.2, 0.2, 1.0);
 			//ashesColor.rgb += burnedImageTexture * emberScale;
 		#if PAPER
 			ashesColor.rgb += luminance * min(0.5, Contrast(surfaceMaterialColor.r * 0.5f, 5.f));

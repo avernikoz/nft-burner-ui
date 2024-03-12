@@ -472,8 +472,8 @@ export function RenderMain() {
     //======================
     // 		INIT TOOLS
     //======================
-    //GTool.Current = new FireballTool(gl);
-    GTool.Current = new ScorpionTool(gl);
+    GTool.Current = new FireballTool(gl);
+    //GTool.Current = new ScorpionTool(gl);
 
     //==============================
     // 		INIT PARTICLES
