@@ -176,9 +176,6 @@ export const Airdrop = () => {
                         >
                             <input type="hidden" name="form-name" value="contact" />
 
-                            <div style={{ textAlign: "center" }}>
-                                Plase provide the necessary URLs by pasting them into designated areas
-                            </div>
                             <StyledInfoSection>
                                 Plase provide the necessary URLs by pasting them into designated areas
                             </StyledInfoSection>
