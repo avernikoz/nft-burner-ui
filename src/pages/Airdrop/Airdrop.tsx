@@ -6,7 +6,7 @@ import BurnerLogoDesktopIcon from "../../assets/svg/burnerLogoDesktop.svg";
 import BurnerLogoMobileIcon from "../../assets/svg/burnerLogoMobile.svg";
 import { ChangeEvent, FormEvent, useContext, useEffect, useState } from "react";
 import { NftBurnDialogContainer } from "../../components/Control/components/NftBurnDialog/NftBurnDialog.styled";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { ToastContext } from "../../components/ToastProvider/ToastProvider";
 import { ConfirmBurningButton, StyledDialog, SubmitContainer } from "./Airdrop.styled";
 import { ReactComponent as SuccessCheckmark } from "../../assets/svg/successCheckmark.svg";
@@ -101,7 +101,6 @@ export const GlowingInput = styled.input`
 export const Airdrop = () => {
     const suietWallet = suietUseWallet();
     const [walletSelectPopupVisible, setWalletSelectPopupVisible] = useState<boolean>(false);
-    const [showUI, setShowUI] = useState<boolean>(false);
 
     const [formData, setFormData] = useState<FormData>({
         walletAdress: "",
@@ -149,9 +148,7 @@ export const Airdrop = () => {
                 <WalletSelector
                     walletSelectPopupVisible={walletSelectPopupVisible}
                     setWalletSelectPopupVisible={setWalletSelectPopupVisible}
-                    hideUI={() => {
-                        setShowUI(false);
-                    }}
+                    hideUI={() => {}}
                 />
             </HeaderAppContainer>
             <div>

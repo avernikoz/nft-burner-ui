@@ -1,5 +1,5 @@
 import { Dialog } from "primereact/dialog";
-import styled from "styled-components";
+import { styled } from "styled-components";
 
 export const StyledDialog = styled(Dialog)`
     .p-dialog-header {
