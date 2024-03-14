@@ -115,7 +115,7 @@ export const ShaderSourceBlurPassVerticalPS = /* glsl */ `#version 300 es
 		OutColor = result;
 	}`;
 
-export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
+/* export const ShaderSourceBloomPrePassPS =  `#version 300 es
 	
 	precision mediump float;
 	precision mediump sampler2D;
@@ -140,7 +140,6 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 		float brightness = dot(Color.rgb, vec3( 0.33f, 0.33f, 0.33f ));
 		if(brightness > Threshold)
 		{
-			//Color.r *= 1.5f;
 			OutColor = Color;
 		}
 		else
@@ -148,7 +147,7 @@ export const ShaderSourceBloomPrePassPS = /* glsl */ `#version 300 es
 			OutColor = vec3(0.f, 0.f, 0.f);
 		}
 		
-	}`;
+	}`; */
 
 export const ShaderSourceBloomDownsampleFirstPassPS =
     /* glsl */ `#version 300 es
@@ -163,6 +162,12 @@ export const ShaderSourceBloomDownsampleFirstPassPS =
 	uniform vec2 DestTexelSize;
 
 	in vec2 vsOutTexCoords;
+
+	float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	{
+		///Translate to origin, scale by ranges ratio, translate to new position
+		return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	}
 
 	void main()
 	{
@@ -215,7 +220,9 @@ export const ShaderSourceBloomDownsampleFirstPassPS =
 		float s = 1.0f;
 		if(brightness < Threshold)
 		{
-			s = 0.0;
+			//s = 0.0;
+			s = clamp(MapToRange(brightness, 0.0, Threshold, 0.0, 1.0), 0.0, 1.0);
+			s *= s;
 		}
 
 		flame.rgb *= float(` +
@@ -793,7 +800,7 @@ export function GetShaderSourceCombinerPassPS() {
 
 
 			vec3 bloom = textureLod(BloomTexture, texCoords.xy, 0.f).rgb;
-			//bloom *= 0.5;
+			//bloom *= 0.0;
 
 			//OutColor = vec4(bloom.rgb, 1); return;
 

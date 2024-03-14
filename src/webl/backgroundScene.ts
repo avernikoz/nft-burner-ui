@@ -21,7 +21,7 @@ import {
     GetShaderSourceGenericSpriteRenderVS,
     GetShaderSourceGlowRenderPS,
     GetShaderSourceStampRenderPS,
-    GetShaderSourceGenericSpriteRenderTexturedPS,
+    GetShaderSourceGenericSpriteRenderExportPS,
 } from "./shaders/shaderBackgroundScene";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { GetShaderSourceUISpriteRenderVS } from "./shaders/shaderUI";
@@ -335,7 +335,7 @@ export class RBurntStampVisualizer {
         this.ShaderProgramExport = CreateShaderProgramVSPS(
             gl,
             GetShaderSourceGenericSpriteRenderVS(),
-            GetShaderSourceGenericSpriteRenderTexturedPS(),
+            GetShaderSourceGenericSpriteRenderExportPS(),
         );
 
         //Shader Parameters

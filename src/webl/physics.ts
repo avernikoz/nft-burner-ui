@@ -135,7 +135,7 @@ export class PhysicsBody {
     Constraints: Constraint[];
     ConstraintMode = EConstraintMode.Hanging;
 
-    static VelocityDampingScale = 0.99;
+    VelocityDampingScale = GetVec3(0.99, 0.99, 0.99);
 
     ConstantForce = GetVec3(0, 0, 0);
 
@@ -156,7 +156,7 @@ export class PhysicsBody {
                 point.Velocity.Mul(0.99);
             }
 
-            PhysicsBody.IntergratePosVel(point, dt);
+            PhysicsBody.IntergratePosVel(point, dt, this.VelocityDampingScale);
         }
 
         for (let i = 0; i < this.NumSolverIterations; i++) {
@@ -172,7 +172,7 @@ export class PhysicsBody {
         }
     }
 
-    static IntergratePosVel(pPoint: PhysPoint, dt: number) {
+    static IntergratePosVel(pPoint: PhysPoint, dt: number, dampingScale: Vector3) {
         if (!pPoint.bIsPinned) {
             if (false) {
                 //Euler
@@ -188,7 +188,11 @@ export class PhysicsBody {
                     pPoint.PositionCur.z - pPoint.PositionPrev.z,
                 );
                 pPoint.PositionPrev.Set(pPoint.PositionCur);
-                pPoint.PrevVelocity.Mul(this.VelocityDampingScale);
+                //pPoint.PrevVelocity.Mul(dampingScale);
+                pPoint.PrevVelocity.x *= dampingScale.x;
+                pPoint.PrevVelocity.y *= dampingScale.y;
+                pPoint.PrevVelocity.z *= dampingScale.z;
+
                 pPoint.Acceleration.Mul(dt * dt);
                 pPoint.PrevVelocity.Add(pPoint.Acceleration);
                 pPoint.PositionCur.Add(pPoint.PrevVelocity);
@@ -236,6 +240,22 @@ export class PhysicsBody {
         this.CurWindForce.Set(MapSphericalToCartesian(yawAngleCur, pitchAngleCur, 1));
 
         this.CurWindForce.Mul(this.WindStrength * freq);
+    }
+
+    SubmitDebugUI(folder: GUI) {
+        folder.open();
+
+        folder.add(this, "SimulationNumSubSteps", 1, 5).name("Num Sub Steps").step(1);
+        folder.add(this, "NumSolverIterations", 1, 5).name("Num Solver Iters").step(1);
+        folder.add(this.VelocityDampingScale, "x", 0, 1).name("DampingX").step(0.01);
+        folder.add(this.VelocityDampingScale, "y", 0, 1).name("DampingY").step(0.01);
+        folder.add(this.VelocityDampingScale, "z", 0, 1).name("DampingZ").step(0.01);
+
+        /* if (this.LastPoint) {
+            folder.add(this.LastPoint.PositionCur, "x", -2, 5).name("StartPosX").step(0.01).listen();
+            folder.add(this.LastPoint.PositionCur, "y", -3, 10).name("StartPosY").step(0.01).listen();
+            folder.add(this.LastPoint.PositionCur, "z", -10, 2).name("StartPosZ").step(0.01).listen();
+        } */
     }
 }
 
@@ -324,20 +344,42 @@ export class RopeBody extends PhysicsBody {
 
         GRibbonsRenderer.GInstance?.Render(gl, posArr, velArr, GetVec3(0.5, 0.5, 0.5));
     }
+}
 
-    SubmitDebugUI(folder: GUI) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        //const folder = datGui.addFolder("Rope");
-        folder.open();
+export class Stickbody extends PhysicsBody {
+    //Point that is initially pinned
+    ControlPoint: PhysPoint | null = null;
 
-        folder.add(this, "SimulationNumSubSteps", 1, 5).name("Num Sub Steps").step(1);
-        folder.add(this, "NumSolverIterations", 1, 5).name("Num Solver Iters").step(1);
+    //Specific Points
 
-        if (this.LastPoint) {
-            folder.add(this.LastPoint.PositionCur, "x", -2, 5).name("StartPosX").step(0.01).listen();
-            folder.add(this.LastPoint.PositionCur, "y", -3, 10).name("StartPosY").step(0.01).listen();
-            folder.add(this.LastPoint.PositionCur, "z", -10, 2).name("StartPosZ").step(0.01).listen();
+    constructor(length = 1.5, gravityForce = 5) {
+        super();
+
+        const posCur = GetVec3(-1.0, -0.5, -3.0);
+
+        {
+            const start = new PhysPoint();
+            start.bIsPinned = true;
+            this.ControlPoint = start;
+            start.PositionCur.Set(posCur);
+            this.Points.push(start);
+            posCur.x += length;
         }
+
+        {
+            const end = new PhysPoint();
+            end.PositionCur.Set(posCur);
+            this.Points.push(end);
+            posCur.x += length;
+        }
+
+        //Constraint
+        const start = this.Points[0];
+        const end = this.Points[1];
+
+        this.Constraints.push(new Constraint(start, end, length, 1.0));
+
+        this.ConstantForce.z = -gravityForce;
     }
 }
 
@@ -570,31 +612,5 @@ export class RectRigidBody extends PhysicsBody {
 
             point.Acceleration.z += strength * 10 * forceScale;
         }
-    }
-
-    SubmitDebugUI(datGui: dat.GUI) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const folder = datGui.addFolder("Rigid Body");
-        //folder.open();
-
-        folder.add(this, "SimulationNumSubSteps", 1, 5).name("Num Sub Steps").step(1);
-        folder.add(this, "NumSolverIterations", 1, 5).name("Num Solver Iters").step(1);
-
-        /* folder.add(this.Points[4].PositionCur, "x", -2, 5).name("StartPosX").step(0.01).listen();
-        folder.add(this.Points[4].PositionCur, "y", -3, 10).name("StartPosY").step(0.01).listen();
-        folder.add(this.Points[4].PositionCur, "z", -10, 2).name("StartPosZ").step(0.01).listen(); */
-
-        /* folder.add(this.AnimationComponent, "FadeInParameter", 0, 1).step(0.01).listen();
-        folder.add(this.AnimationComponent, "FadeOutParameter", 0, 1).step(0.01).listen();
-        folder.add(this, "bActiveThisFrame", 0, 1).listen();
-        folder.add(this, "bIntersection", 0, 1).listen(); */
-
-        const shakeParam = {
-            buttonText: "Push",
-            handleClick: () => {
-                //this.GenerateMesh();
-            },
-        };
-        folder.add(shakeParam, "handleClick").name(shakeParam.buttonText);
     }
 }

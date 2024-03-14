@@ -60,7 +60,16 @@ import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/confi
 import { AnimationController, GCameraShakeController, GSpotlightShakeController } from "./animationController";
 import { GAudioEngine } from "./audioEngine";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { EBurningTool, FireballTool, LaserTool, LighterTool, ScorpionTool, ThunderTool, ToolBase } from "./tools/tools";
+import {
+    EBurningTool,
+    FireballTool,
+    LaserTool,
+    LighterTool,
+    LightsaberTool,
+    ScorpionTool,
+    ThunderTool,
+    ToolBase,
+} from "./tools/tools";
 import { GTexturePool } from "./texturePool";
 import { GReactGLBridgeFunctions } from "./reactglBridge";
 import { GTransitionAnimationsConstants } from "./transitionAnimations";
@@ -472,7 +481,7 @@ export function RenderMain() {
     //======================
     // 		INIT TOOLS
     //======================
-    GTool.Current = new FireballTool(gl);
+    GTool.Current = new LightsaberTool(gl);
     //GTool.Current = new ScorpionTool(gl);
 
     //==============================
@@ -737,7 +746,6 @@ export function RenderMain() {
             GSceneDescSubmitDebugUI(GDatGUI);
 
             BurningSurface.SubmitDebugUI(GDatGUI);
-            BurningSurface.RigidBody.SubmitDebugUI(GDatGUI);
             BackGroundRenderPass.SubmitDebugUI(GDatGUI);
             GTool.Current.SubmitDebugUI(GDatGUI);
             GTexturePool.SubmitDebugUI(GDatGUI);

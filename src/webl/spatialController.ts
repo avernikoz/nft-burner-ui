@@ -15,6 +15,8 @@ export class SpatialControlPoint {
 
     PositionViewSpace;
 
+    PositionViewSpacePrev;
+
     PositionNDCSpace = GetVec2(0, 0);
 
     bDragState;
@@ -36,6 +38,7 @@ export class SpatialControlPoint {
     constructor(initialPosition: Vector2, inRadius: number, inbIsDraggable: boolean) {
         this.Radius = inRadius;
         this.PositionViewSpace = initialPosition;
+        this.PositionViewSpacePrev = initialPosition;
         this.PositionNDCSpace.x = this.PositionViewSpace.x / GScreenDesc.ScreenRatio;
         this.PositionNDCSpace.y = this.PositionViewSpace.y;
 
@@ -80,6 +83,9 @@ export class SpatialControlPoint {
         } //drag state
         else {
             this.bIntersectionThisFrame = true;
+            this.PositionViewSpacePrev.x = this.PositionViewSpace.x;
+            this.PositionViewSpacePrev.y = this.PositionViewSpace.y;
+
             this.PositionViewSpace = clientSpherePosViewSpace;
 
             this.PositionViewSpace.x = MathClamp(

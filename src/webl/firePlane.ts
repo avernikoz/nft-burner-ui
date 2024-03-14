@@ -5,6 +5,7 @@ import { GSceneDesc, GScreenDesc } from "./scene";
 import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import {
+    GetShaderSourceApplyFirePaintVS,
     GetShaderSourceApplyFireVS,
     ShaderSourceApplyFirePS,
     ShaderSourceFireUpdatePS,
@@ -18,9 +19,10 @@ import {
 import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
 import { GTexturePool } from "./texturePool";
 import { GetVec2, GetVec3, SetVec2, Vector2 } from "./types";
-import { GTime, MathGetVec2Length } from "./utils";
+import { GTime, MathGetVec2Length, Vec3Cross, Vec3Negate } from "./utils";
 import { GUserInputDesc } from "./input";
 import { RectRigidBody } from "./physics";
+import { GLSetVec3 } from "./helpers/glHelper";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -68,6 +70,8 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         bSmoothOutEdges: gl.getUniformLocation(shaderProgram, "bSmoothOutEdges"),
         bApplyFireUseNoise: gl.getUniformLocation(shaderProgram, "bApplyFireUseNoise"),
         bApplyFireUseMask: gl.getUniformLocation(shaderProgram, "bApplyFireUseMask"),
+        TBNNormal: gl.getUniformLocation(shaderProgram, "TBNNormal"),
+        TBNTangent: gl.getUniformLocation(shaderProgram, "TBNTangent"),
     };
     return params;
 }
@@ -110,6 +114,7 @@ export class RApplyFireRenderPass {
         this.ShaderProgramMotion = CreateShaderProgramVSPS(
             gl,
             GetShaderSourceApplyFireVS(true),
+            //GetShaderSourceApplyFirePaintVS(),
             ShaderSourceApplyFirePS,
         );
         this.ShaderProgram = CreateShaderProgramVSPS(gl, GetShaderSourceApplyFireVS(false), ShaderSourceApplyFirePS);
@@ -186,6 +191,7 @@ export class RApplyFireRenderPass {
             MathGetVec2Length(this.VelocityLastInteraction),
         );
         gl.uniform2f(ParametersLocationListRef.Velocity, inDesc.Velocity.x, inDesc.Velocity.y);
+        gl.uniform2f(ParametersLocationListRef.PosPrev, inDesc.PosPrev.x, inDesc.PosPrev.y);
 
         //Textures
         gl.activeTexture(gl.TEXTURE0 + 4);
@@ -607,7 +613,7 @@ export class GBurningSurface {
 
     SubmitDebugUI(datGui: dat.GUI) {
         {
-            const folder = datGui.addFolder("Fire Surface Shading");
+            const folder = datGui.addFolder("Fire Surface");
             //folder.open();
 
             folder.add(this.RoughnessParams, "Scale", 0, 20).name("RGHScale").step(0.01);
@@ -618,6 +624,8 @@ export class GBurningSurface {
             folder.add(this.ShadingParams, "DiffuseIntensity", 0.75, 3).name("DFSIntensity").step(0.01);
             folder.add(this.ShadingParams, "SpecularIntensity", 0, 2).name("SPCIntensity").step(0.01);
             folder.add(this.ShadingParams, "SpecularPower", 0, 64).name("SPCPower").step(2.0);
+
+            this.RigidBody.SubmitDebugUI(folder);
         }
     }
 
@@ -820,6 +828,21 @@ export class GBurningSurface {
             GSceneDesc.Tool.Color.g,
             GSceneDesc.Tool.Color.b,
         );
+
+        //Compute TBN
+        const verts = this.RigidBody.Points;
+        const vertexA = verts[0].PositionCur;
+        const vertexB = verts[1].PositionCur;
+        const vertexD = verts[3].PositionCur;
+        const basisX = Vec3Negate(vertexD, vertexA);
+        basisX.Normalize();
+        const basisY = Vec3Negate(vertexB, vertexA);
+        basisY.Normalize();
+        const basisZ = Vec3Cross(basisY, basisX); // Change the order of basisX and basisY
+        basisZ.Normalize();
+
+        GLSetVec3(gl, this.VisualizerUniformParametersLocationList.TBNNormal, basisZ);
+        GLSetVec3(gl, this.VisualizerUniformParametersLocationList.TBNTangent, basisX);
 
         gl.uniform2f(
             this.VisualizerUniformParametersLocationList.SpecularIntensityAndPower,

@@ -1414,18 +1414,20 @@ export function GetShaderSourceLightSourceSpriteRenderPS() {
     );
 }
 
-export function GetShaderSourceGenericSpriteRenderVS() {
+export function GetShaderSourceGenericSpriteRenderVS(bUniformScale = true) {
     return /* glsl */ `#version 300 es
 	
 	precision highp float;
 	
 	layout(location = 0) in vec2 VertexBuffer;
 
+	`+(bUniformScale ? `#define SCALE_TYPE float` : `#define SCALE_TYPE vec2`)+/* glsl */`
+
 	uniform vec4 CameraDesc;
 	uniform float ScreenRatio;
 	uniform vec3 Position;
 	uniform vec3 Orientation;
-	uniform float Scale;
+	uniform SCALE_TYPE Scale;
 
 	out vec2 vsOutTexCoords;
 
@@ -1447,6 +1449,7 @@ export function GetShaderSourceGenericSpriteRenderVS() {
 	{
 		vec3 pos = vec3(VertexBuffer.xy, 0.0f);
 		pos = rotateVectorWithEuler(pos, Orientation.x, Orientation.y, Orientation.z);
+
 		pos.xy *= Scale;
 		pos += Position;
 		pos.xyz -= CameraDesc.xyz;
@@ -1654,6 +1657,40 @@ export function GetShaderSourceGenericRenderPS() {
 	}`;
 }
 
+export function GetShaderSourceGenericTexturedRenderPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outColor;
+
+	uniform vec3 Color;
+	uniform int bCircle;
+
+	uniform sampler2D ColorTexture;
+
+	in vec2 vsOutTexCoords;
+
+	void main()
+	{
+		float s = 1.0;
+		if(bCircle > 0)
+		{
+			float d = length(vsOutTexCoords - vec2(0.5));
+			if(d > 0.75)
+			{
+				s = 0.0;
+			}
+		}
+
+		vec2 flippedUVs = vec2(vsOutTexCoords.x, 1.f - vsOutTexCoords.y);
+		vec3 textureMask = texture(ColorTexture, flippedUVs.xy).rgb;
+
+		outColor = Color * s * textureMask;
+	}`;
+}
+
 export function GetShaderSourceTrailRibbonRenderPS() {
     return /* glsl */ `#version 300 es
 	
@@ -1719,7 +1756,7 @@ export function GetShaderSourceStampRenderPS() {
 	}`;
 }
 
-export function GetShaderSourceGenericSpriteRenderTexturedPS() {
+export function GetShaderSourceGenericSpriteRenderExportPS() {
     return /* glsl */ `#version 300 es
 	
 	precision highp float;

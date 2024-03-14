@@ -12,6 +12,8 @@ export function GetShaderSourceFireVisualizerVS() {
 		uniform float ScreenRatio;
 		uniform vec3 FirePlanePositionOffset;
 		uniform vec3 OrientationEuler;
+		uniform vec3 TBNNormal;
+		uniform vec3 TBNTangent;
 	
 		out vec2 vsOutTexCoords;
 		out vec3 interpolatorWorldSpacePos;
@@ -33,7 +35,7 @@ export function GetShaderSourceFireVisualizerVS() {
 		void main()
 		{
 			vec3 pos = VertexBuffer;
-			pos = rotateVectorWithEuler(pos, OrientationEuler.x, OrientationEuler.y, OrientationEuler.z);
+			//pos = rotateVectorWithEuler(pos, OrientationEuler.x, OrientationEuler.y, OrientationEuler.z);
 			pos += FirePlanePositionOffset;
 			interpolatorWorldSpacePos = pos;
 			pos.xyz -= CameraDesc.xyz;
@@ -116,6 +118,9 @@ export function GetShaderSourceFireVisualizerPS() {
 
 	uniform float NoiseTextureInterpolator;
 	uniform float Time;
+
+	uniform vec3 TBNNormal;
+	uniform vec3 TBNTangent;
 
 	//Shading Constants
 	uniform vec4 RoughnessScaleAddContrastMin;
@@ -277,7 +282,7 @@ export function GetShaderSourceFireVisualizerPS() {
 		float curFire = texture(FireTexture, vsOutTexCoords.xy).r;
 		float curFuel = texture(FuelTexture, vsOutTexCoords.xy).r;
 		//curFuel = 0.0;
-		//float curPaint = texture(PaintTexture, vsOutTexCoords.xy).r;
+		float curPaint = texture(PaintTexture, vsOutTexCoords.xy).r;
 		bool bIsBurntSurface = curFuel < 0.01;
 		bool bIsPureUnBurntSurface = curFuel > 0.995;
 		
@@ -312,7 +317,20 @@ export function GetShaderSourceFireVisualizerPS() {
 			//===================
 			vec3 normal = texture(NormalsTexture, (3.f - RoughnessScaleAddContrastMin.z) * materialSamplingUV.xy).rgb;
 			normal = DecodeNormalTexture(normal, NormalHarshness);
-			normal = normalize(rotateVectorWithEuler(normal, OrientationEuler.x, OrientationEuler.y, OrientationEuler.z));
+			vec3 normalNotRotated = normal;
+
+			#if 1//transform normal to world space
+			{
+				vec3 BiTangent = cross(TBNNormal, TBNTangent);
+				mat3 TangentToWorldMatrix = mat3(
+				normalize(TBNTangent),
+				normalize(BiTangent),
+				normalize(TBNNormal)
+				);
+				normal = normalize(TangentToWorldMatrix * normal );
+				normal.z *= -1.0;
+			}
+			#endif
 
 			#if 0//Rect Heightmap
 			{
@@ -334,6 +352,7 @@ export function GetShaderSourceFireVisualizerPS() {
 			}
 			#endif
 
+			#if 1 // EDGE SPECULAR 
 			const float specFadeThres = 0.9975;
 			if(vsOutTexCoords.y > specFadeThres)
 			{
@@ -350,6 +369,7 @@ export function GetShaderSourceFireVisualizerPS() {
 				normal.xz = vec2(ndcSpace.x > 0.f ? 0.75 : -0.75, 0.0);
 				normal = normalize(normal);
 			}
+			#endif
 
 			//===================
 			//	   ROUGHNESS
@@ -400,11 +420,11 @@ export function GetShaderSourceFireVisualizerPS() {
 				{
 					//Mask
 					ivec2 texelPos = ivec2(gl_FragCoord.xy);
-					//spotlightMask = texelFetch(SpotlightTexture, texelPos, 0).r;
+					spotlightMask = texelFetch(SpotlightTexture, texelPos, 0).r;
 
 					const float spotLightMaskScale = 5.0f;
 					const float spotlightAmbientLight = 0.15f;
-					//spotlightMask = clamp(spotlightMask * spotLightMaskScale, spotlightAmbientLight, 1.0);
+					spotlightMask = clamp(spotlightMask * spotLightMaskScale, spotlightAmbientLight, 1.0);
 
 					//spotlightMask = 2.0f;
 					float nDotL = dot(normal, vToLight);
@@ -452,7 +472,7 @@ export function GetShaderSourceFireVisualizerPS() {
 				vec3 virtualPointLightsColor = vec3(1.f, 0.5f, 0.1f);
 
 				//Make normals harsher
-				vec3 normalHarsh = normalize(vec3(normal.xy, normal.z * 0.25));
+				vec3 normalHarsh = normalize(vec3(normalNotRotated.xy, normalNotRotated.z * 0.25));
 
 				vec3 vToCam = normalize(CameraDesc.xyz - interpolatorWorldSpacePos);
 
@@ -549,7 +569,8 @@ export function GetShaderSourceFireVisualizerPS() {
 			//afterBurnEmbers = 1.f - afterBurnEmbers;
 		#endif
 			
-			vec3 embersColor = vec3(0.2, 0.2, 1.0) * afterBurnEmbers;
+			//vec3 embersColor = vec3(0.2, 0.2, 1.0) * afterBurnEmbers;
+			vec3 embersColor = vec3(1, 0.2, 0.1) * afterBurnEmbers;
 			float emberScale = 1.f;
 		#if 1 //NOISE EMBERS SCALE
 			//float noiseConst = textureLod(NoiseTextureLQ, 0.5 * (vsOutTexCoords.xy - vec2(Time * 0.0013, Time * 0.0043)), 0.f).r;
@@ -635,9 +656,9 @@ export function GetShaderSourceFireVisualizerPS() {
 			//luminance += curPaint;
 		#endif//PREPROCESS
 			
-			//burnedImageTexture = luminance * 10.0 * vec3(1, 0.2, 0.1);
+			burnedImageTexture = luminance * 10.0 * vec3(1, 0.2, 0.1);
 			//burnedImageTexture = luminance * 10.0 * vec3(0.5, 0.2, 0.7);
-			burnedImageTexture = luminance * 10.0 * vec3(0.2, 0.2, 1.0);
+			//burnedImageTexture = luminance * 10.0 * vec3(0.2, 0.2, 1.0);
 			//ashesColor.rgb += burnedImageTexture * emberScale;
 		#if PAPER
 			ashesColor.rgb += luminance * min(0.5, Contrast(surfaceMaterialColor.r * 0.5f, 5.f));
@@ -654,14 +675,15 @@ export function GetShaderSourceFireVisualizerPS() {
 			ashesColor.rgb = mix(finalAfterBurnColor * (1.0 - AfterBurnEmbersParam) * (1.0 - AfterBurnEmbersParam), max(0.75, (1.0 - AfterBurnEmbersParam * 0.75)) * max(ashesColor.rgb, vec3(min(0.9, luminance * 10.0) * 1.0)), AfterBurnEmbersParam);
 
 			/* float gr = dot(vec3(0.3), ashesColor.rgb);
-			ashesColor.rgb = vec3(gr);
-			ashesColor.rgb = max(ashesColor.rgb, curPaint * vec3(0.1, 0.925,  0.8) * 15.0); */
+			ashesColor.rgb = vec3(gr * 0.5); */
+			//ashesColor.rgb = max(ashesColor.rgb, curPaint * vec3(0.1, 0.925,  0.8) * 15.0);
+			//ashesColor.rgb = max(ashesColor.rgb * 0.7, curPaint * vec3(1.0, 0.025,  0.8) * 15.0);
 		#endif
 		#endif////BURNED IMAGE
 
 		#if PAPER
-			ashesColor = vec3(0.0);
 		#endif
+		ashesColor = vec3(0.0);
 
 			surfaceColor = mix(ashesColor, surfaceColor, /* saturate */(curFuel));
 
@@ -671,6 +693,8 @@ export function GetShaderSourceFireVisualizerPS() {
 			{
 
 			#if 1 //!PBR
+				//surfaceColor = surfaceColor * 0.5;
+				//surfaceColor = surfaceColor * vec3(vsOutTexCoords.x);
 				surfaceColor = surfaceColor * lightingDiffuseFinal;
 				surfaceColor += lightingSpecFinal;
 			#else

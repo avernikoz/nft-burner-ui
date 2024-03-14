@@ -104,7 +104,7 @@ export function InitializeSceneStateDescsArr() {
     //Burn
     GSceneStateDescsArray[ERenderingState.BurningReady] = {
         CameraPosition: GetVec3(0, 0.0, -4.0),
-        SpotlightPosition: GetVec3(0.0, MathLerp(1.75, 3, Math.random()), MathLerp(-0.75, -1.75, Math.random())),
+        SpotlightPosition: GetVec3(0.0, MathLerp(1.75, 2.75, Math.random()), MathLerp(-0.75, -1.75, Math.random())),
         SpotlightFocusPosition: GetVec3(0.0, 0.0, 1.5),
         SpotlightSize: { x: GSceneDesc.Spotlight.SizeScale.x, y: GSceneDesc.Spotlight.SizeScale.y },
         FloorHeight: -1.75,

@@ -569,7 +569,7 @@ export function GetShaderSourceFireballRenderPS() {
 
 		if(CurrentState > 2)
 		{
-			colorScale = vec3(1.9, 1.5, 1.7) * 1.5;
+			colorScale = vec3(1.9, 1.5, 1.7) * 1.0;
 		}
 		else if(CurrentState == 2)
 		{

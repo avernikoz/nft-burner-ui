@@ -9,7 +9,6 @@ import {
     GetShaderSourceFlamePostProcessPS,
     ShaderSourceBloomDownsampleFirstPassPS,
     ShaderSourceBloomDownsamplePS,
-    ShaderSourceBloomPrePassPS,
     ShaderSourceBloomUpsamplePS,
     ShaderSourceBlurPassHorizontalPS,
     ShaderSourceBlurPassVerticalPS,
@@ -180,9 +179,9 @@ export class RBlurPass {
 }
 
 export class RBloomPass {
-    public ShaderProgramBloomPrePass;
+    /* public ShaderProgramBloomPrePass;
 
-    public UniformParametersLocationListBloomPrePass;
+    public UniformParametersLocationListBloomPrePass; */
 
     public ShaderProgramBloomDownsampleFirstPass;
 
@@ -218,12 +217,12 @@ export class RBloomPass {
 
     constructor(gl: WebGL2RenderingContext, bloomTextureSize: Vector2, bloomMipIndex: number) {
         //Create Shader Program
-        this.ShaderProgramBloomPrePass = CreateShaderProgramVSPS(
+        /* this.ShaderProgramBloomPrePass = CreateShaderProgramVSPS(
             gl,
             ShaderSourceFullscreenPassVS,
             ShaderSourceBloomPrePassPS,
         );
-        this.UniformParametersLocationListBloomPrePass = GetUniformParametersList(gl, this.ShaderProgramBloomPrePass);
+        this.UniformParametersLocationListBloomPrePass = GetUniformParametersList(gl, this.ShaderProgramBloomPrePass); */
 
         //Create Shader Program for first pass Downsample
         this.ShaderProgramBloomDownsampleFirstPass = CreateShaderProgramVSPS(
@@ -458,7 +457,7 @@ export class RBloomPass {
         return this.DownsampleRTMipArr[MathClamp(mipIndex, this.IndexOfMipReturned, this.IndexOfMipUsedForBloom)];
     }
 
-    PrePass(
+    /* PrePass(
         gl: WebGL2RenderingContext,
         flameTexture: WebGLTexture,
         firePlaneTexture: WebGLTexture,
@@ -490,7 +489,7 @@ export class RBloomPass {
         gl.uniform1i(this.UniformParametersLocationListBloomPrePass.SpotlightTexture, 3);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
+    } */
 
     Blur(gl: WebGL2RenderingContext, BlurPass: RBlurPass) {
         if (

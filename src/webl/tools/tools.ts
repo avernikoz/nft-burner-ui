@@ -16,6 +16,7 @@ import { GSceneDesc, GSceneStateDescsArray, GScreenDesc } from "../scene";
 import { CreateShaderProgramVSPS } from "../shaderUtils";
 import {
     GetShaderSourceGenericSpriteRenderVS,
+    GetShaderSourceGenericTexturedRenderPS,
     GetShaderSourceImpactFlareRenderPS,
     GetShaderSourceLaserFlareRenderPS,
     GetShaderSourceLightFlareRenderVS,
@@ -70,8 +71,9 @@ import { TransformFromNDCToWorld } from "../transform";
 import { CProjectileComponent } from "./components";
 import { GUI } from "dat.gui";
 import { GRibbonsRenderer, RRibbonMesh } from "../ribbons";
-import { RopeBody } from "../physics";
+import { RopeBody, Stickbody } from "../physics";
 import { GSimpleShapesRenderer } from "../helpers/shapeRender";
+import { GLSetVec3 } from "../helpers/glHelper";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -277,6 +279,10 @@ export abstract class ToolBase {
     LastHitPositionWS = new Vector3(0, 0, 0);
     LastImpactStrength = 0.0;
 
+    ColorInitial = GetVec3(1.0, 1.0, 1.0);
+
+    RandNumberOnInteraction = 0.0;
+
     // Methods
     constructor(bOneShot: boolean) {
         this.LifetimeComponent = new CLifetimeComponent(bOneShot);
@@ -310,8 +316,9 @@ export abstract class ToolBase {
 
     BaseUpdate() {}
 
-    BaseReset(hitPosWS: Vector3) {
+    BaseOnInteraction(hitPosWS: Vector3) {
         this.LastHitPositionWS.Set(hitPosWS);
+        this.RandNumberOnInteraction = Math.random();
     }
 
     RenderToFirePlaneRT(gl: WebGL2RenderingContext): void {}
@@ -334,6 +341,209 @@ export abstract class ToolBase {
         folder.add(this, "LastImpactStrength", 0, 100).name("Impact Strngth").step(0.01).listen();
 
         return folder;
+    }
+}
+
+class CImpactComponent {
+    //Particles
+    SparksParticles: ParticlesEmitter;
+    SmokeParticles: ParticlesEmitter;
+
+    //Resources
+    LightFlareTexture;
+    LightFlareTexture1;
+    LightFlareTexture2;
+    LightFlareTexture3;
+
+    constructor(gl: WebGL2RenderingContext, color: Vector3, brightness = 1.0) {
+        //Shader Parameters
+
+        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `flareLight`);
+        this.LightFlareTexture1 = GTexturePool.CreateTexture(gl, false, `flareHalo1`);
+        this.LightFlareTexture2 = GTexturePool.CreateTexture(gl, false, `flareDispers0`);
+        this.LightFlareTexture3 = GTexturePool.CreateTexture(gl, false, `flareFlash0`);
+
+        //Particles
+        {
+            const SparksParticlesDesc = GetEmberParticlesDesc();
+            SparksParticlesDesc.NumSpawners2D = 32;
+            SparksParticlesDesc.ParticleLife = 2.0;
+            //SparksParticlesDesc.SizeRangeMinMax.y *= 1.25;
+            SparksParticlesDesc.DefaultSize.y *= 0.95;
+            SparksParticlesDesc.SizeRangeMinMax.x = 0.25;
+            SparksParticlesDesc.EInitialPositionMode = 2;
+            SparksParticlesDesc.InitialVelocityScale = 11.5;
+            //SparksParticlesDesc.RandomSpawnThres = 0.5;
+            SparksParticlesDesc.bOneShotParticle = true;
+            SparksParticlesDesc.bFreeFallParticle = true;
+            SparksParticlesDesc.bUseGravity = true;
+            //SparksParticlesDesc.bAlwaysRespawn = true;
+            SparksParticlesDesc.b3DSpace = true;
+            SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
+
+            // eslint-disable-next-line prefer-const
+            let sparksBrightness = brightness;
+            SparksParticlesDesc.Color = GetVec3(
+                color.x * sparksBrightness,
+                color.y * sparksBrightness,
+                color.z * sparksBrightness,
+            );
+            SparksParticlesDesc.MotionStretchScale = 1.3;
+            SparksParticlesDesc.InitialVelocityAddScale = GetVec2(0.6, 1.5);
+
+            this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
+        }
+
+        {
+            const SmokeParticlesDesc = GetSmokeParticlesDesc();
+            SmokeParticlesDesc.NumSpawners2D = 2;
+            SmokeParticlesDesc.ParticleLife = 1.2;
+            SmokeParticlesDesc.DefaultSize.x *= 2.0;
+            SmokeParticlesDesc.DefaultSize.y *= 2.0;
+            SmokeParticlesDesc.BuoyancyForceScale *= 0.1;
+            SmokeParticlesDesc.bOneShotParticle = true;
+            SmokeParticlesDesc.EInitialPositionMode = 2;
+            SmokeParticlesDesc.EAlphaFade = 1;
+            SmokeParticlesDesc.InitialVelocityScale = 15.0;
+            SmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
+            SmokeParticlesDesc.EFadeInOutMode = 1;
+            SmokeParticlesDesc.AlphaScale = 0.5 + Math.random() * 0.5;
+            SmokeParticlesDesc.InitialTranslate = { x: 0.0, y: 0.25 };
+
+            this.SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
+        }
+    }
+
+    OnInteraction(gl: WebGL2RenderingContext) {
+        this.SparksParticles.Reset(gl);
+        this.SmokeParticles.Reset(gl);
+    }
+
+    UpdateParticles(gl: WebGL2RenderingContext) {
+        this.SparksParticles.Update(
+            gl,
+            GBurningSurface.GInstance!.GetCurFireTexture()!,
+            GetVec3(GSceneDesc.Tool.Position.x, GSceneDesc.Tool.Position.y, 0.0),
+        );
+        this.SmokeParticles.Update(
+            gl,
+            GBurningSurface.GInstance!.GetCurFireTexture()!,
+            GetVec3(GSceneDesc.Tool.Position.x, GSceneDesc.Tool.Position.y, 0.0),
+        );
+    }
+
+    RenderSmoke(gl: WebGL2RenderingContext) {
+        this.SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    }
+
+    RenderFlare(gl: WebGL2RenderingContext, owner: ToolBase, color: Vector3) {
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.FUNC_ADD);
+        gl.blendFunc(gl.ONE, gl.ONE);
+
+        {
+            let t = 0.0;
+            const startThres = 0.01;
+            const sustainThres = 0.25;
+            const endThres = sustainThres + 0.4;
+            if (owner.LifetimeComponent.TimeSinceStart < sustainThres) {
+                t = 1.0;
+            } else if (owner.LifetimeComponent.TimeSinceStart < endThres) {
+                t = MathMapToRange(owner.LifetimeComponent.TimeSinceStart, sustainThres, endThres, 1.0, 0.0);
+            }
+
+            const sizeScale = 1.0 * MathClamp(t, 0.0, 1.0) * (0.8 + (Math.sin(GTime.Cur * 12.0) + 1.0) * 0.1);
+
+            const finalGlareSize = 2.25 * sizeScale;
+
+            //Lens Flare
+            {
+                const colorCur = GetVec3(0, 0, 0);
+                colorCur.Set(color);
+                colorCur.Mul(2.0 * Math.max(0.5, t));
+
+                GSimpleShapesRenderer.GInstance!.RenderPoint(
+                    gl,
+                    owner.LastHitPositionWS,
+                    GetVec3(finalGlareSize * 2.0, finalGlareSize, 0.0),
+                    colorCur,
+                    false,
+                    0.0,
+                    this.LightFlareTexture,
+                );
+            }
+        }
+
+        //Halo rainbow
+        {
+            let t = 0.0;
+            const startThres = 0.5;
+            if (owner.LifetimeComponent.TimeSinceStart < startThres) {
+                t = MathMapToRange(owner.LifetimeComponent.TimeSinceStart, 0.0, startThres, 0.5, 1.0);
+            }
+
+            const colorCur = GetVec3(0, 0, 0);
+            colorCur.Set(color);
+            colorCur.Mul(2.0 - t * 1.5);
+
+            GSimpleShapesRenderer.GInstance!.RenderPoint(
+                gl,
+                owner.LastHitPositionWS,
+                t * 1.85,
+                colorCur,
+                false,
+                Math.PI * owner.RandNumberOnInteraction * 2.0,
+                this.LightFlareTexture2,
+            );
+        }
+
+        //Halo fast
+        {
+            let t = 0.0;
+            const startThres = 0.2;
+            if (owner.LifetimeComponent.TimeSinceStart < startThres) {
+                t = MathMapToRange(owner.LifetimeComponent.TimeSinceStart, 0.0, startThres, 0.2, 1.0);
+            }
+
+            const colorCur = GetVec3(0, 0, 0);
+            colorCur.Set(color);
+            colorCur.Mul(2.0 - t * 1.5);
+
+            GSimpleShapesRenderer.GInstance!.RenderPoint(
+                gl,
+                owner.LastHitPositionWS,
+                t * 1.25,
+                colorCur,
+                false,
+                0.0,
+                this.LightFlareTexture1,
+            );
+        }
+
+        //Flash
+        {
+            let t = 0.0;
+            const startThres = 0.1;
+            if (owner.bActiveThisFrame && owner.LifetimeComponent.TimeSinceStart < startThres) {
+                t = 1.0;
+            }
+
+            const colorCur = GetVec3(0, 0, 0);
+            colorCur.Set(color);
+            colorCur.Mul(2.0 * t);
+
+            GSimpleShapesRenderer.GInstance!.RenderPoint(
+                gl,
+                owner.LastHitPositionWS,
+                0.8,
+                colorCur,
+                false,
+                0.0,
+                this.LightFlareTexture3,
+            );
+        }
+
+        //gl.disable(gl.BLEND);
     }
 }
 
@@ -748,9 +958,7 @@ export class LaserTool extends ToolBase {
 
     LaserStrength = 5.0 + Math.random() * 10.0;
 
-    LaserBrightness = 4.0;
-
-    LaserColor = { r: 1.0 * this.LaserBrightness, g: 0.4 * this.LaserBrightness, b: 0.2 * this.LaserBrightness };
+    LaserBrightness = 1.0;
 
     LaserGlowZPos = -0.3;
 
@@ -768,6 +976,9 @@ export class LaserTool extends ToolBase {
 
     constructor(gl: WebGL2RenderingContext) {
         super(false);
+
+        this.ColorInitial.Set3(1.0 * this.LaserBrightness, 0.4 * this.LaserBrightness, 0.2 * this.LaserBrightness);
+
         //Create Shader Program
         this.ShaderProgram = CreateShaderProgramVSPS(gl, GetShaderSourceLaserVS(), GetShaderSourceLaserPS());
 
@@ -784,8 +995,8 @@ export class LaserTool extends ToolBase {
         this.LaserTexture = GTexturePool.CreateTexture(gl, false, "FlamesTexture", false);
         this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
 
-        this.LifetimeComponent.AttackDuration = 1.0;
-        this.LifetimeComponent.ReleaseDuration = 1.0;
+        this.LifetimeComponent.AttackDuration = 0.1;
+        this.LifetimeComponent.ReleaseDuration = 0.1;
 
         //Audio
 
@@ -835,7 +1046,7 @@ export class LaserTool extends ToolBase {
         const posWSCur = TransformFromNDCToWorld(GUserInputDesc.InputPosCurNDC);
         this.PositionCurrent.Set(posWSCur);
 
-        BurningSurface.RigidBody.ApplyForce(posWSCur, 3.0);
+        BurningSurface.RigidBody.ApplyForce(posWSCur, 5.0);
 
         //Interactivity check
         this.LaserDir = MathVector3Normalize(
@@ -901,9 +1112,16 @@ export class LaserTool extends ToolBase {
                     this.bActiveThisFrame = false;
                 }
             } */
+            this.bActiveThisFrame = false;
         }
 
         this.LifetimeComponent.Update(this.bActiveThisFrame);
+
+        /* if (this.LifetimeComponent.GetCurStateAndValue().state !== ELifetimeState.Inactive) {
+            this.bActiveThisFrame = true;
+        } else {
+            this.bActiveThisFrame = false;
+        } */
 
         if (this.bActiveThisFrame) {
             //Animation
@@ -911,8 +1129,10 @@ export class LaserTool extends ToolBase {
             this.AnimationComponent.FadeInUpdate(); */
 
             //Color
-            GSceneDesc.Tool.Color = this.LaserColor;
-            GSceneDesc.Tool.Radius = 2.0 * this.LifetimeComponent.ValueCurrent;
+            GSceneDesc.Tool.Color.r = this.ColorInitial.x;
+            GSceneDesc.Tool.Color.g = this.ColorInitial.y;
+            GSceneDesc.Tool.Color.b = this.ColorInitial.z;
+            GSceneDesc.Tool.Radius = 1.0 * this.LifetimeComponent.ValueCurrent;
 
             this.SparksParticles.Update(
                 gl,
@@ -924,6 +1144,7 @@ export class LaserTool extends ToolBase {
             /* if (this.AnimationComponent.IsFadeInFinished()) {
                 this.RenderToFireSurface(gl, BurningSurface);
             } */
+            this.RenderToFireSurface(gl, BurningSurface);
         } else {
             GSceneDesc.Tool.Radius = 0.0;
         }
@@ -954,6 +1175,7 @@ export class LaserTool extends ToolBase {
         BurningSurface.BindFireRT(gl);
 
         SetVec2(this.ApplyFireDesc.PosCur, this.PositionCurrent.x, this.PositionCurrent.y);
+        SetVec2(this.ApplyFireDesc.PosPrev, this.PositionPrev.x, this.PositionPrev.y);
         this.ApplyFireDesc.Size.x = sizeScale;
         this.ApplyFireDesc.Size.y = sizeScale;
         this.ApplyFireDesc.Strength = this.LaserStrength;
@@ -970,7 +1192,7 @@ export class LaserTool extends ToolBase {
     }
 
     RenderToFirePlaneRT(gl: WebGL2RenderingContext) {
-        return;
+        //return;
         if (!this.bActiveThisFrame) {
             return;
         }
@@ -1100,6 +1322,8 @@ export class ThunderTool extends ToolBase {
     NoiseTexture;
     LightFlareTexture;
 
+    ImpactComponent: CImpactComponent;
+
     //Audio
     SoundThunder: SoundSample = new SoundSample();
     SoundThunder2: SoundSample = new SoundSample();
@@ -1114,7 +1338,6 @@ export class ThunderTool extends ToolBase {
     AppliedFireStrength = 25.0;
     Brightness = 10.0;
     Thickness = 1.5;
-    Color = GetVec3(0.2, 0.2, 1.0);
 
     GlowZPos = -0.3;
 
@@ -1135,12 +1358,17 @@ export class ThunderTool extends ToolBase {
 
     constructor(gl: WebGL2RenderingContext) {
         super(true);
+
+        this.ColorInitial = GetVec3(0.2, 0.2, 1.0);
+
+        this.ImpactComponent = new CImpactComponent(gl, GetVec3(0.8, 0.7, 1.0), 1.0);
+
         this.LifetimeComponent.AttackDuration = 0.1;
         this.LifetimeComponent.SustainDuration = 0.5;
         this.LifetimeComponent.ReleaseDuration = 0.1;
 
         const projectilePos = GetVec3(0.0, this.CamHeightOffset - 0.33, 0.0);
-        this.Projectile = new CProjectileComponent(gl, this.Color, projectilePos, 0.125);
+        this.Projectile = new CProjectileComponent(gl, this.ColorInitial, projectilePos, 0.125);
 
         //Create Shader Program
         this.ShaderProgram = CreateShaderProgramVSPS(gl, GetShaderSourceLaserVS(), GetShaderSourceThunderPS());
@@ -1207,8 +1435,8 @@ export class ThunderTool extends ToolBase {
         const SmokeParticlesDesc = GetSmokeParticlesDesc();
         SmokeParticlesDesc.NumSpawners2D = 1;
         SmokeParticlesDesc.ParticleLife = 1.0;
-        SmokeParticlesDesc.DefaultSize.x *= 1.5;
-        SmokeParticlesDesc.DefaultSize.y *= 1.5;
+        SmokeParticlesDesc.DefaultSize.x *= 2.0;
+        SmokeParticlesDesc.DefaultSize.y *= 2.0;
         SmokeParticlesDesc.BuoyancyForceScale *= 0.1;
         SmokeParticlesDesc.bOneShotParticle = true;
         SmokeParticlesDesc.EInitialPositionMode = 2;
@@ -1312,7 +1540,7 @@ export class ThunderTool extends ToolBase {
                 this.bActiveThisFrame = true;
 
                 const hitPos = this.Projectile.PositionCurrent;
-                this.BaseReset(hitPos);
+                this.BaseOnInteraction(hitPos);
                 this.LifetimeComponent.Reset();
 
                 this.SparksParticles.Reset(gl);
@@ -1494,9 +1722,9 @@ export class ThunderTool extends ToolBase {
                 const colorScaleAdd = 1.0;
 
                 const colorBright = {
-                    r: this.Color.x * Math.max(1.0, this.Brightness),
-                    g: this.Color.y * Math.max(1.0, this.Brightness),
-                    b: this.Color.z * Math.max(this.Brightness),
+                    r: this.ColorInitial.x * Math.max(1.0, this.Brightness),
+                    g: this.ColorInitial.y * Math.max(1.0, this.Brightness),
+                    b: this.ColorInitial.z * Math.max(this.Brightness),
                 };
 
                 const colorNew = MathLerpColor(
@@ -1547,9 +1775,9 @@ export class ThunderTool extends ToolBase {
                 const colorScaleAdd = 0.5 * (1 - asrValue) * (1 - asrValue);
 
                 const colorBright = {
-                    r: this.Color.x * Math.max(1.0, this.Brightness * 0.1),
-                    g: this.Color.y * Math.max(this.Brightness * 0.1),
-                    b: this.Color.z * Math.max(this.Brightness * 0.1),
+                    r: this.ColorInitial.x * Math.max(1.0, this.Brightness * 0.1),
+                    g: this.ColorInitial.y * Math.max(this.Brightness * 0.1),
+                    b: this.ColorInitial.z * Math.max(this.Brightness * 0.1),
                 };
 
                 const colorNew = MathLerpColor(
@@ -1579,6 +1807,9 @@ export class ThunderTool extends ToolBase {
     GlareSizeDefault = 2.0;
 
     RenderFlare(gl: WebGL2RenderingContext) {
+        this.ImpactComponent.RenderFlare(gl, this, GetVec3(0.7, 0.8, 1.0));
+        //return;
+
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
         gl.useProgram(this.ShaderProgramFlare);
@@ -1646,20 +1877,9 @@ export class ThunderTool extends ToolBase {
 //=============================================================================================================================
 
 export class FireballTool extends ToolBase {
-    ShaderProgramFlare;
-    UniformParametersLocationListFlare;
-
-    //Resources
-    LightFlareTexture;
-
-    //Audio
-
-    //Particles
-    SparksParticles: ParticlesEmitter;
-    SmokeParticles: ParticlesEmitter;
+    ImpactComponent: CImpactComponent;
 
     //Desc
-    ColorInitial = GetVec3(1.0, 0.7, 0.35);
 
     CamHeightOffset = -0.8;
 
@@ -1686,70 +1906,10 @@ export class FireballTool extends ToolBase {
 
     constructor(gl: WebGL2RenderingContext) {
         super(true);
-        //Create Shader Program
 
-        this.ShaderProgramFlare = CreateShaderProgramVSPS(
-            gl,
-            GetShaderSourceLightFlareRenderVS(),
-            GetShaderSourceImpactFlareRenderPS(),
-        );
-        this.UniformParametersLocationListFlare = GetUniformParametersList(gl, this.ShaderProgramFlare);
+        this.ColorInitial = GetVec3(1.0, 0.7, 0.35);
 
-        //Shader Parameters
-
-        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `lightGlare2`);
-
-        //Audio
-
-        //Particles
-        {
-            const SparksParticlesDesc = GetEmberParticlesDesc();
-            SparksParticlesDesc.NumSpawners2D = 32;
-            SparksParticlesDesc.ParticleLife = 2.0;
-            //SparksParticlesDesc.SizeRangeMinMax.y *= 1.25;
-            SparksParticlesDesc.DefaultSize.y *= 0.95;
-            SparksParticlesDesc.SizeRangeMinMax.x = 0.25;
-            SparksParticlesDesc.EInitialPositionMode = 2;
-            SparksParticlesDesc.InitialVelocityScale = 11.5;
-            //SparksParticlesDesc.RandomSpawnThres = 0.5;
-            SparksParticlesDesc.bOneShotParticle = true;
-            SparksParticlesDesc.bFreeFallParticle = true;
-            SparksParticlesDesc.bUseGravity = true;
-            //SparksParticlesDesc.bAlwaysRespawn = true;
-            SparksParticlesDesc.b3DSpace = true;
-            SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
-
-            // eslint-disable-next-line prefer-const
-            let sparksBrightness = 0.75;
-            SparksParticlesDesc.Color = GetVec3(
-                this.ColorInitial.x * sparksBrightness,
-                this.ColorInitial.y * sparksBrightness,
-                this.ColorInitial.z * sparksBrightness,
-            );
-            SparksParticlesDesc.MotionStretchScale = 1.3;
-            SparksParticlesDesc.InitialVelocityAddScale = GetVec2(0.6, 1.5);
-
-            this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
-        }
-
-        {
-            const SmokeParticlesDesc = GetSmokeParticlesDesc();
-            SmokeParticlesDesc.NumSpawners2D = 3;
-            SmokeParticlesDesc.ParticleLife = 1.8;
-            SmokeParticlesDesc.DefaultSize.x *= 1.0;
-            SmokeParticlesDesc.DefaultSize.y *= 1.4;
-            SmokeParticlesDesc.BuoyancyForceScale *= 0.1;
-            SmokeParticlesDesc.bOneShotParticle = true;
-            SmokeParticlesDesc.EInitialPositionMode = 2;
-            SmokeParticlesDesc.EAlphaFade = 1;
-            SmokeParticlesDesc.InitialVelocityScale = 15.0;
-            SmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
-            SmokeParticlesDesc.EFadeInOutMode = 1;
-            SmokeParticlesDesc.AlphaScale = 0.5 + Math.random() * 0.5;
-            SmokeParticlesDesc.InitialTranslate = { x: 0.0, y: 0.25 };
-
-            this.SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
-        }
+        this.ImpactComponent = new CImpactComponent(gl, this.ColorInitial, 0.75);
 
         const projectilePos = GetVec3(0.0, this.CamHeightOffset - 0.33, 0.0);
         this.Projectile = new CProjectileComponent(gl, this.ColorInitial, projectilePos, 0.15);
@@ -1796,11 +1956,10 @@ export class FireballTool extends ToolBase {
             if (bInteracted) {
                 this.bActiveThisFrame = true;
 
-                this.BaseReset(this.Projectile.PositionCurrent);
+                this.BaseOnInteraction(this.Projectile.PositionCurrent);
                 this.LifetimeComponent.Reset();
 
-                this.SparksParticles.Reset(gl);
-                this.SmokeParticles.Reset(gl);
+                this.ImpactComponent.OnInteraction(gl);
 
                 this.LastImpactStrength =
                     this.Projectile.VelocityCurrent.z +
@@ -1810,8 +1969,10 @@ export class FireballTool extends ToolBase {
                 const camShakeScale = MathClamp(MathMapToRange(this.LastImpactStrength, 4.0, 12.0, 0.0, 1.0), 0.0, 1.0);
                 GCameraShakeController.ShakeCameraFast(camShakeScale);
                 GSpotlightShakeController.ShakeSpotlight(impactAmount);
-                const colorScale = MathClamp(MathMapToRange(this.LastImpactStrength, 0.0, 12.0, 0.0, 1.5), 0.0, 1.5);
-                this.SparksParticles.SetDynamicBrightness(colorScale);
+                const colorScale = MathClamp(MathMapToRange(this.LastImpactStrength, 0.0, 12.0, 0.0, 1.25), 0.0, 1.25);
+
+                //this.SparksParticles.SetDynamicBrightness(colorScale);
+                this.ImpactComponent.SparksParticles.SetDynamicBrightness(colorScale);
 
                 GBurningSurface.GInstance?.RigidBody.ApplyForce(
                     this.Projectile.PositionCurrent,
@@ -1830,17 +1991,8 @@ export class FireballTool extends ToolBase {
 
         this.LifetimeComponent.Update(this.bActiveThisFrame);
 
-        if (this.LifetimeComponent.TimeSinceStart < this.SparksParticles.Desc.ParticleLife + 0.1) {
-            this.SparksParticles.Update(
-                gl,
-                BurningSurface.GetCurFireTexture()!,
-                GetVec3(GSceneDesc.Tool.Position.x, GSceneDesc.Tool.Position.y, 0.0),
-            );
-            this.SmokeParticles.Update(
-                gl,
-                BurningSurface.GetCurFireTexture()!,
-                GetVec3(GSceneDesc.Tool.Position.x, GSceneDesc.Tool.Position.y, 0.0),
-            );
+        if (this.LifetimeComponent.TimeSinceStart < this.ImpactComponent.SparksParticles.Desc.ParticleLife + 0.1) {
+            this.ImpactComponent.UpdateParticles(gl);
         }
     }
 
@@ -1919,7 +2071,7 @@ export class FireballTool extends ToolBase {
         }
 
         {
-            this.RenderFlare(gl);
+            this.ImpactComponent.RenderFlare(gl, this, this.ColorInitial);
         }
 
         if (this.Projectile.bLaunched) {
@@ -1937,82 +2089,18 @@ export class FireballTool extends ToolBase {
             gl.disable(gl.DEPTH_TEST);
         }
 
-        if (this.bActiveThisFrame || this.LifetimeComponent.TimeSinceStart < this.SparksParticles.Desc.ParticleLife) {
-            this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+        if (
+            this.bActiveThisFrame ||
+            this.LifetimeComponent.TimeSinceStart < this.ImpactComponent.SparksParticles.Desc.ParticleLife
+        ) {
+            this.ImpactComponent.SparksParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
         }
-    }
-
-    RenderFlare(gl: WebGL2RenderingContext) {
-        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
-
-        gl.useProgram(this.ShaderProgramFlare);
-
-        //Constants
-        gl.uniform4f(
-            this.UniformParametersLocationListFlare.CameraDesc,
-            GSceneDesc.Camera.Position.x,
-            GSceneDesc.Camera.Position.y,
-            GSceneDesc.Camera.Position.z,
-            GSceneDesc.Camera.ZoomScale,
-        );
-
-        gl.uniform3f(
-            this.UniformParametersLocationListFlare.Color,
-            this.ColorInitial.x,
-            this.ColorInitial.y,
-            this.ColorInitial.z,
-        );
-
-        gl.uniform1f(this.UniformParametersLocationListFlare.ScreenRatio, GScreenDesc.ScreenRatio);
-
-        let t = 0.0;
-        const startThres = 0.01;
-        const sustainThres = 0.2;
-        const endThres = sustainThres + 0.001;
-        /* if (this.TimeSinceLastInteraction < startThres) {
-            t = MathMapToRange(this.TimeSinceLastInteraction, 0.0, startThres, 0.0, 1.0);
-        } else  */ if (this.LifetimeComponent.TimeSinceStart < sustainThres) {
-            t = 1.0;
-        } else if (this.LifetimeComponent.TimeSinceStart < endThres) {
-            t = MathMapToRange(this.LifetimeComponent.TimeSinceStart, sustainThres, endThres, 1.0, 0.0);
-        }
-
-        const sizeScale = 1.0 * MathClamp(t, 0.0, 1.0) * (0.6 + (Math.sin(GTime.Cur * 12.0) + 1.0) * 0.2);
-
-        /* if (this.AnimationComponent.AgeGlobal > 0.2) {
-            sizeScale = 1.0 - (this.AnimationComponent.AgeGlobal - 0.2) * 10.0;
-        } */
-
-        const finalGlareSize = 2.0 * sizeScale;
-
-        gl.uniform2f(this.UniformParametersLocationListFlare.SpotlightScale, finalGlareSize * 2.0, finalGlareSize);
-
-        gl.uniform1f(this.UniformParametersLocationListFlare.Time, GTime.CurClamped);
-
-        gl.uniform3f(
-            this.UniformParametersLocationListFlare.SpotlightPos,
-            this.LastHitPositionWS.x,
-            this.LastHitPositionWS.y,
-            -0.1,
-        );
-
-        //Textures
-        gl.activeTexture(gl.TEXTURE0 + 1);
-        gl.bindTexture(gl.TEXTURE_2D, this.LightFlareTexture);
-        gl.uniform1i(this.UniformParametersLocationListFlare.SpotlightTexture, 1);
-
-        gl.enable(gl.BLEND);
-        gl.blendEquation(gl.FUNC_ADD);
-        gl.blendFunc(gl.ONE, gl.ONE);
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        gl.disable(gl.BLEND);
     }
 
     RenderToSmokeRT(gl: WebGL2RenderingContext): void {
         if (this.bActiveThisFrame) {
-            this.SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            //this.SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            this.ImpactComponent.RenderSmoke(gl);
         }
 
         if (this.Projectile.bLaunched) {
@@ -2568,81 +2656,166 @@ export class ScorpionTool extends ToolBase {
     }
 }
 
-class CImpactComponent {
-    ShaderProgramFlare;
-    UniformParametersLocationListFlare;
-
-    //Particles
-    SparksParticles: ParticlesEmitter;
-    SmokeParticles: ParticlesEmitter;
-
-    //Resources
-    LightFlareTexture;
-
-    constructor(gl: WebGL2RenderingContext, color: Vector3, brightness = 1.0) {
-        this.ShaderProgramFlare = CreateShaderProgramVSPS(
-            gl,
-            GetShaderSourceLightFlareRenderVS(),
-            GetShaderSourceImpactFlareRenderPS(),
-        );
-        this.UniformParametersLocationListFlare = GetUniformParametersList(gl, this.ShaderProgramFlare);
-
-        //Shader Parameters
-
-        this.LightFlareTexture = GTexturePool.CreateTexture(gl, false, `lightGlare2`);
-
-        //Particles
-        {
-            const SparksParticlesDesc = GetEmberParticlesDesc();
-            SparksParticlesDesc.NumSpawners2D = 32;
-            SparksParticlesDesc.ParticleLife = 2.0;
-            //SparksParticlesDesc.SizeRangeMinMax.y *= 1.25;
-            SparksParticlesDesc.DefaultSize.y *= 0.95;
-            SparksParticlesDesc.SizeRangeMinMax.x = 0.25;
-            SparksParticlesDesc.EInitialPositionMode = 2;
-            SparksParticlesDesc.InitialVelocityScale = 11.5;
-            //SparksParticlesDesc.RandomSpawnThres = 0.5;
-            SparksParticlesDesc.bOneShotParticle = true;
-            SparksParticlesDesc.bFreeFallParticle = true;
-            SparksParticlesDesc.bUseGravity = true;
-            //SparksParticlesDesc.bAlwaysRespawn = true;
-            SparksParticlesDesc.b3DSpace = true;
-            SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
-
-            // eslint-disable-next-line prefer-const
-            let sparksBrightness = brightness;
-            SparksParticlesDesc.Color = GetVec3(
-                color.x * sparksBrightness,
-                color.y * sparksBrightness,
-                color.z * sparksBrightness,
-            );
-            SparksParticlesDesc.MotionStretchScale = 1.3;
-            SparksParticlesDesc.InitialVelocityAddScale = GetVec2(0.6, 1.5);
-
-            this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
-        }
-
-        {
-            const SmokeParticlesDesc = GetSmokeParticlesDesc();
-            SmokeParticlesDesc.NumSpawners2D = 3;
-            SmokeParticlesDesc.ParticleLife = 1.8;
-            SmokeParticlesDesc.DefaultSize.x *= 1.0;
-            SmokeParticlesDesc.DefaultSize.y *= 1.4;
-            SmokeParticlesDesc.BuoyancyForceScale *= 0.1;
-            SmokeParticlesDesc.bOneShotParticle = true;
-            SmokeParticlesDesc.EInitialPositionMode = 2;
-            SmokeParticlesDesc.EAlphaFade = 1;
-            SmokeParticlesDesc.InitialVelocityScale = 15.0;
-            SmokeParticlesDesc.VelocityFieldForceScale *= 0.5;
-            SmokeParticlesDesc.EFadeInOutMode = 1;
-            SmokeParticlesDesc.AlphaScale = 0.5 + Math.random() * 0.5;
-            SmokeParticlesDesc.InitialTranslate = { x: 0.0, y: 0.25 };
-
-            this.SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
-        }
-    }
-}
-
-export class FireworkTool {
+/* export class FireworkTool extends ToolBase {
     //Multiple trail projectiles
+} */
+
+export class LightsaberTool extends ToolBase {
+    Sword = new Stickbody(1.5, 40);
+    SwordStart;
+    SwordEnd;
+    SwordDir = GetVec3(0, 0, 0);
+
+    //Controller
+    ControllerInitialPos = GetVec2(0.0, -0.8);
+    SpatialController = new SpatialControlPoint(this.ControllerInitialPos, 0.075, true);
+
+    //Painter
+    bSurfacePaintedPrevFrame = false;
+    SurfacePaintPrevFramePos = GetVec3(0, 0, 0);
+
+    constructor(gl: WebGL2RenderingContext) {
+        super(true);
+        this.SwordStart = this.Sword.Points[0];
+        this.SwordEnd = this.Sword.Points[1];
+        this.Sword.VelocityDampingScale.x = 0.95;
+    }
+
+    RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
+        const sizeScale = 0.01;
+
+        BurningSurface.BindFireRT(gl);
+
+        //BurningSurface.Reset(gl);
+
+        const p = this.Sword.Points[1]!.PositionCur;
+        const v = this.Sword.Points[1]!.PrevVelocity;
+
+        const vBoost = 1.0;
+
+        SetVec2(this.ApplyFireDesc.PosCur, p.x, p.y);
+        this.ApplyFireDesc.Size.x = sizeScale;
+        this.ApplyFireDesc.Size.y = sizeScale;
+        this.ApplyFireDesc.Strength = 1.0;
+        this.ApplyFireDesc.bMotionBasedTransform = true;
+        this.ApplyFireDesc.Velocity.x = v.x * vBoost;
+        this.ApplyFireDesc.Velocity.y = v.y * vBoost;
+
+        /* Set up blending */
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.MAX);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        BurningSurface.ApplyFirePass.Execute(gl, this.ApplyFireDesc);
+        gl.disable(gl.BLEND);
+    }
+
+    ControllerTraction(bInstant = false) {
+        /* const vsPos = GetVec3(0, 0, 0);
+        vsPos.Set3(
+            this.SpatialController.PositionViewSpace.x,
+            MathMapToRange(
+                this.SpatialController.PositionNDCSpace.y,
+                this.ControllerInitialPos.y,
+                1.0,
+                this.ControllerInitialPos.y + 0.2 + Math.abs(this.SpatialController.PositionNDCSpace.x),
+                0.0,
+            ),
+            MathMapToRange(this.SpatialController.PositionNDCSpace.y, this.ControllerInitialPos.y, 1.0, 2.0, 4.0),
+        );
+
+        vsPos.y += 0.2 * (1.0 - Math.min(1.0, this.SpatialController.PositionViewSpace.x));
+
+        const worldPos = GetVec3(
+            GSceneDesc.Camera.Position.x + vsPos.x,
+            GSceneDesc.Camera.Position.y + vsPos.y,
+            GSceneDesc.Camera.Position.z + vsPos.z,
+        ); */
+
+        const posWS = TransformFromNDCToWorld(this.SpatialController.PositionNDCSpace, 3.0);
+
+        const cp = this.SwordStart!.PositionCur;
+
+        cp.Set(posWS);
+    }
+
+    UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface): void {
+        this.SpatialController.OnUpdate();
+        this.ControllerTraction(true);
+
+        //Apply Z force when sword is moving
+        const pointerVel = GetVec2(
+            this.SpatialController.PositionViewSpace.x - this.SpatialController.PositionViewSpacePrev.x,
+            this.SpatialController.PositionViewSpace.y - this.SpatialController.PositionViewSpacePrev.y,
+        );
+        const length = MathGetVec2Length(pointerVel);
+        this.SwordEnd.Acceleration.z += length * 1000.0;
+
+        this.SwordDir.Set(this.SwordEnd.PositionCur);
+        this.SwordDir.Negate(this.SwordStart!.PositionCur);
+        this.SwordDir.Normalize();
+
+        //Painter
+        if (this.SpatialController.bDragState) {
+            //make sure it looks forward
+            if (this.SwordEnd!.PositionCur.z > this.SwordStart!.PositionCur.z) {
+                const rayOrigin = this.SwordEnd!.PositionCur;
+                const rayDir = GetVec3(-this.SwordDir.x, -this.SwordDir.y, -this.SwordDir.z);
+                /* this.bIntersection = MathIntersectionAABBSphere(
+                this.Rope.LastPoint!.PositionCur,
+                0.5,
+                GSceneDesc.FirePlane.PositionOffset,
+                GetVec3(1.0, 1.0, 0.0),
+            ); */
+
+                const bPaintIntersection = MathIntersectionRayAABB(
+                    rayOrigin,
+                    rayDir,
+                    GSceneDesc.FirePlane.PositionOffset,
+                    GetVec3(1.0, 1.0, 0.0),
+                );
+
+                if (bPaintIntersection) {
+                    this.RenderToFireSurface(gl, BurningSurface);
+
+                    GCameraShakeController.ShakeCameraFast(0.5);
+                }
+
+                this.bSurfacePaintedPrevFrame = bPaintIntersection;
+            }
+        }
+
+        this.Sword.OnUpdateBase();
+    }
+
+    RenderToFirePlaneRT(gl: WebGL2RenderingContext): void {
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LESS);
+        gl.depthMask(false);
+
+        GSimpleShapesRenderer.GInstance!.RenderLine(
+            gl,
+            this.SwordStart.PositionCur,
+            this.SwordEnd.PositionCur,
+            0.05,
+            GetVec3(0.4, 0.5, 2.0),
+        );
+
+        const posWS = TransformFromNDCToWorld(this.SpatialController.PositionNDCSpace, 3.0);
+        GSimpleShapesRenderer.GInstance!.RenderPoint(gl, posWS, 0.05);
+
+        gl.depthMask(true);
+        gl.disable(gl.DEPTH_TEST);
+    }
+
+    RenderToFlameRT(gl: WebGL2RenderingContext): void {}
+
+    RenderToSmokeRT(gl: WebGL2RenderingContext): void {}
+
+    SubmitDebugUI(datGui: GUI): GUI {
+        const folder = super.SubmitDebugUI(datGui);
+
+        this.Sword.SubmitDebugUI(datGui);
+
+        return folder;
+    }
 }
