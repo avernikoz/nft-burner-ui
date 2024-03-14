@@ -8,6 +8,7 @@ import { InternalApp } from "./InternalApp";
 import { Canvas } from "../../components/Canvas/Canvas";
 import { RenderMain } from "../../webl/renderingMain";
 import { FPSMeter } from "../../components/FPSMeter/FPSMeter";
+import { Airdrop } from "../Airdrop/Airdrop";
 
 function App() {
     useEffect(() => {
@@ -19,14 +20,15 @@ function App() {
     }, []);
 
     const [isAboutPageActive, setAboutPageActive] = useState(true);
-    const AppComponent = isAboutPageActive ? About : InternalApp;
+    // const AppComponent = isAboutPageActive ? About : InternalApp;
+    const AppComponent = Airdrop;
 
     return (
         <>
             <GlobalStyles />
             <FPSMeter />
             <Canvas />
-            <AppComponent setAboutPageActive={setAboutPageActive} />
+            <AppComponent />
         </>
     );
 }
