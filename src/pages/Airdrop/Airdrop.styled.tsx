@@ -82,4 +82,9 @@ export const ConfirmBurningButton = styled.button`
         border-radius: 4px;
         background: var(--Orange-act--02, #ff852d);
     }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 `;

@@ -9,12 +9,14 @@ import { NftBurnDialogContainer } from "../../components/Control/components/NftB
 import { styled } from "styled-components";
 import { ToastContext } from "../../components/ToastProvider/ToastProvider";
 import { ConfirmBurningButton, StyledDialog, SubmitContainer } from "./Airdrop.styled";
-import { ReactComponent as SuccessCheckmark } from "../../assets/svg/successCheckmark.svg";
 
 export interface FormData {
-    walletAdress: string;
-    userName: string;
-    repost: string;
+    walletAdress: string | null;
+    userName: string | null;
+    repost: string | null;
+    userNameCorrect: boolean;
+    fieldsValid: boolean;
+    touched: boolean;
 }
 
 export const StyledForm = styled.form`
@@ -30,6 +32,11 @@ export const StyledLabel = styled.label`
     flex-direction: column;
     gap: 5px;
     width: 100%;
+`;
+
+export const StyledError = styled.label`
+    color: #b53b00;
+    font-size: 10px;
 `;
 
 export const StyledInfoSection = styled.div`
@@ -103,9 +110,12 @@ export const Airdrop = () => {
     const [walletSelectPopupVisible, setWalletSelectPopupVisible] = useState<boolean>(false);
 
     const [formData, setFormData] = useState<FormData>({
-        walletAdress: "",
-        userName: "",
-        repost: "",
+        walletAdress: null,
+        userName: null,
+        repost: null,
+        userNameCorrect: false,
+        fieldsValid: false,
+        touched: false,
     });
 
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -116,15 +126,41 @@ export const Airdrop = () => {
     }, [suietWallet.account?.address]);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        let fieldsRequired = false;
+        let userNameCorrect = false;
+
+        const form = { ...formData, [e.target.name]: e.target.value };
+        const regex = /@[a-zA-Z0-9_]+/;
+        if (form.userName !== null && regex.test(form.userName)) {
+            userNameCorrect = true;
+        }
+        if (form.repost?.length && form.userName?.length && form.walletAdress?.length && userNameCorrect) {
+            fieldsRequired = true;
+        }
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value,
+            fieldsValid: fieldsRequired,
+            userNameCorrect,
+            touched: true,
+        });
     };
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         try {
-            setIsSubmitted(formData.walletAdress.length > 0);
-            setFormData({ walletAdress: "", userName: "", repost: "" });
+            setIsSubmitted((formData.walletAdress ?? "").length > 0);
+            setFormData({
+                walletAdress: null,
+                userName: null,
+                repost: null,
+                fieldsValid: false,
+                userNameCorrect: false,
+                touched: false,
+            });
+            console.log(isSubmitted);
+            toastController?.showSuccess("Success");
         } catch (error) {
             if (error instanceof Error) {
                 toastController?.showError("Failed to send contact message: " + error.message);
@@ -182,44 +218,49 @@ export const Airdrop = () => {
                                     type="text"
                                     name="walletAdress"
                                     placeholder="WALLET ADDRESS"
-                                    value={formData.walletAdress}
+                                    value={formData.walletAdress ?? ""}
                                     onChange={handleChange}
                                 />
+                                {formData.touched &&
+                                    formData.walletAdress !== null &&
+                                    !formData.walletAdress.length && <StyledError>Please provide Adress</StyledError>}
                             </StyledLabel>
 
                             <StyledLabel>
                                 <GlowingInput
-                                    type="email"
+                                    type="text"
                                     name="userName"
                                     placeholder="X USERNAME"
-                                    value={formData.userName}
+                                    value={formData.userName ?? ""}
                                     onChange={handleChange}
                                     required
                                 />
+                                {formData.touched && formData.userName !== null && !formData.userNameCorrect && (
+                                    <StyledError>Please provide a valid username: @yourName</StyledError>
+                                )}
                             </StyledLabel>
 
                             <StyledLabel>
                                 <GlowingInput
                                     name="repost"
                                     placeholder="X REPOST"
-                                    value={formData.repost}
+                                    value={formData.repost ?? ""}
                                     onChange={handleChange}
                                     required
                                 />
+                                {formData.touched && formData.repost !== null && !formData.repost.length && (
+                                    <StyledError>Please provide repost</StyledError>
+                                )}
                             </StyledLabel>
 
                             <SubmitContainer>
-                                <ConfirmBurningButton type="submit" style={{ width: "150px", height: "44px" }}>
+                                <ConfirmBurningButton
+                                    type="submit"
+                                    style={{ width: "150px", height: "44px" }}
+                                    disabled={!formData.fieldsValid}
+                                >
                                     Submit
                                 </ConfirmBurningButton>
-                                {isSubmitted && (
-                                    <>
-                                        <div className="icon">
-                                            <SuccessCheckmark />
-                                        </div>
-                                        <span>Submit success</span>
-                                    </>
-                                )}
                             </SubmitContainer>
                         </StyledForm>
                     </NftBurnDialogContainer>
