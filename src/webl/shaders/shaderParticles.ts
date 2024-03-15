@@ -109,20 +109,20 @@ function scGetVectorFieldForce(scale: number) {
             scale +
             /* glsl */ `);
 			//randVel = normalize(randVel);
-			randVel = (randVel) * RandVelocityScale * 2.0 /* * 0.5 */;
+			//randVel = (randVel) * RandVelocityScale * 2.0 /* * 0.5 */;
 
 
 			//LQ Noise
 			uv = (inPosition + 1.f) * 0.5f;
-			uv *= 0.01f;
+			uv *= 0.08f;
 			uv.y -= CurTime * 0.00025f;
 			uv.x += CurTime * 0.0025f;
-			randVelNoise = texture(NoiseTexture, uv.xy).rgb;
+			randVelNoise = texture(NoiseTexture, uv.xy + vec2(0.07)).rgb;
 			vec2 randVelLQ;
 			randVelLQ.x = randVelNoise.r;
 			randVelLQ.y = randVelNoise.g;
 			randVelLQ = randVelLQ * 2.f - 1.f;
-			randVel += (randVelLQ) * RandVelocityScale * 2.5;
+			randVel += randVelLQ * RandVelocityScale * 2.5;
 
 			//const float clampValue = 10.f;
 			const float clampValue = 50.f;
@@ -791,11 +791,11 @@ function scEmbersSpecificShading() {
 		uv.y += instanceId * 0.177f;
 		uv.y += interpolatorFrameIndex * 0.0037f;
 		uv.x += interpolatorFrameIndex * 0.0053f;
-		float noise = texture(ColorTexture, interpolatorTexCoords).r;
+		vec3 color = texture(ColorTexture, interpolatorTexCoords).rgb;
 		//noise = clamp(MapToRange(noise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
 
-		colorFinal.rgb = vec3(1.0, 0.05, 1.0) * noise * 2.0;
-		colorFinal.rgb *= 20.0 * (1.0 - interpolatorAge);
+		colorFinal.rgb = color * 2.0;
+		colorFinal.rgb *= 3.0 * (1.0 - interpolatorAge);
 		//colorFinal.a = noise > 0.5 ? 1.0 : 0.0;
 
 		float t = interpolatorAge;
@@ -885,8 +885,8 @@ function scAshesSpecificShading() {
 		float noise = texture(ColorTexture, interpolatorTexCoords).r;
 		//noise = clamp(MapToRange(noise, 0.4, 0.6, 1.0, 0.0), 0.f, 1.f);
 
-		colorFinal.rgb = vec3(1.0, 0.0, 1.0) * noise * 2.0;
-		colorFinal.a = noise > 0.5 ? 1.0 : 0.0;
+		colorFinal.rgb = vec3(1.0, 1.0, 0.0) * noise * 10.0;
+		colorFinal.a = noise > 0.5 ? 0.25 : 0.0;
 		
 		const vec3 colorEmber = vec3(0.5, 0.4, 0.4);
 		const vec3 colorEmber2 = vec3(0.9, 0.4, 0.1f) * 10.f;

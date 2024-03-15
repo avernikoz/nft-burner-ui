@@ -409,11 +409,11 @@ export class GBurningSurface {
 
         this.VisualizerFlameColorLUT = GTexturePool.CreateTexture(gl, false, "flameColorLUT5");
         //this.CurrentImageTextureSrc = "assets/example.jpg";
-        this.CurrentImageTextureSrc = "apeBlue";
+        this.CurrentImageTextureSrc = "peng";
         //this.CurrentImageTextureSrc = "punkBlue";
         //this.CurrentImageTextureSrc = "assets/example2.png";
         this.VisualizerImageTexture = GTexturePool.CreateTexture(gl, false, this.CurrentImageTextureSrc, true, true);
-        this.VisualizerImageTexture2 = GTexturePool.CreateTexture(gl, false, "heart", true, true);
+        this.VisualizerImageTexture2 = GTexturePool.CreateTexture(gl, false, "heat1", true, true);
         this.FirePlaneImagePreProcess(gl);
         this.VisualizerAshTexture = GTexturePool.CreateTexture(gl, false, "ashTexture_R8", true);
 
@@ -753,7 +753,7 @@ export class GBurningSurface {
         gl.uniform1i(this.VisualizerUniformParametersLocationList.ImageTexture, 5);
 
         gl.activeTexture(gl.TEXTURE0 + 6);
-        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerAshTexture);
+        gl.bindTexture(gl.TEXTURE_2D, this.VisualizerImageTexture2);
         gl.uniform1i(this.VisualizerUniformParametersLocationList.AshTexture, 6);
 
         gl.activeTexture(gl.TEXTURE0 + 7);

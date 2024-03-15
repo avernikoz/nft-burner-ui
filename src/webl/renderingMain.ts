@@ -427,7 +427,7 @@ export function RenderMain() {
 
     const EmberParticlesDesc = GetEmberParticlesDesc();
     const AfterBurnEmberParticlesDesc = GetEmberParticlesDesc();
-    AfterBurnEmberParticlesDesc.inSpawnRange.x = 0.001;
+    AfterBurnEmberParticlesDesc.inSpawnRange.x = 1.001;
     AfterBurnEmberParticlesDesc.inSpawnRange.y = 1000.0;
     AfterBurnEmberParticlesDesc.inNumSpawners2D = 4;
     AfterBurnEmberParticlesDesc.inRandomSpawnThres = 0.5;
@@ -473,7 +473,7 @@ export function RenderMain() {
 
     /* AfterBurnAshesParticlesDesc.inSpawnRange.x = 0.05;
     AfterBurnAshesParticlesDesc.inSpawnRange.y = 10.05; */
-    AfterBurnAshesParticlesDesc.inNumSpawners2D = 32;
+    //AfterBurnAshesParticlesDesc.inNumSpawners2D = 32;
     AfterBurnAshesParticlesDesc.inInitialVelocityScale = 1.0;
 
     const DynamicParticlesArr: ParticlesEmitter[] = [];
@@ -493,8 +493,8 @@ export function RenderMain() {
     const AfterBurnEmberParticles = new ParticlesEmitter(gl, AfterBurnEmberParticlesDesc);
     DynamicParticlesArr.push(AfterBurnEmberParticles);
     //
-    SmokeParticlesDesc.inAlphaScale = 0.2 + Math.random() * 0.8;
-    SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
+    // SmokeParticlesDesc.inAlphaScale = 0.2 + Math.random() * 0.8;
+    //SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
     DynamicParticlesArr.push(SmokeParticles);
@@ -1165,7 +1165,7 @@ export function RenderMain() {
                 if (RenderStateMachine.currentState !== ERenderingState.Preloading) {
                     AfterBurnSmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 }
-                //SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                SmokeParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 if (!bAshesInEmbersPass) {
                     AshesParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                 }

@@ -872,7 +872,7 @@ export function GetShaderSourceCombinerPassPS() {
         MathLerp(0.25, 0.75, Math.random()) +
         /* glsl */ `);
 
-			vec3 colorFilter1 = vec3(0.7, 0.2, 1.0);
+			vec3 colorFilter1 = vec3(0.0, 0.5, 1.0);
 			float luma = clamp(dot(final.rgb, vec3(0.33)), 0.0, 1.0);
 			//float luma = dot(final.rgb, vec3(0.2126, 0.7152, 0.0722)); // Using proper luminance values
 			vec3 colorFilter2 = vec3(1.0, 1.0, 0.75);

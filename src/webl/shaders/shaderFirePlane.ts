@@ -216,12 +216,10 @@ export const ShaderSourceFireUpdatePS =
 		float curFuel = texelFetch(FuelTexture, SampleCoord, 0).r;
 		//curFuel = 0.001f;
 		
-		const float kMutualScale = 1.0 + float(` +
-    Math.random() * 1.5 +
-    /* glsl */ `);
+		const float kMutualScale = 3.0;
 		const float GFireSpreadSpeed = 3.0 * kMutualScale;
 		const float NoiseAdvectedSpreadStrength = 0.45f;
-		const float GFuelConsumeSpeed = 0.45f * kMutualScale;
+		const float GFuelConsumeSpeed = 0.5f * kMutualScale;
 		const float GFireDissipationSpeed = 0.5f * kMutualScale; //How fast fire fades when no more fuel is left. Try 0.05
 		const float kIgnitionThreshold = 0.75; //When pixel becomes a source of fire
 		const float kHeatRaiseSpeedDuringCombustion = 1.0;
@@ -739,9 +737,7 @@ export function GetShaderSourceFireVisualizerPS() {
 		const float ImageMixRoughnessScale = 0.75f;
 		const bool bInverseRoughness = false;
 		const float TopSpecFadeScale = 2.0;
-		const float NormalHarshness = float(` +
-        MathLerp(0.5, 1.0, Math.random()) +
-        /* glsl */ `);
+		const float NormalHarshness = 1.0;
 
 		
 		ivec2 SampleCoord = ivec2(gl_FragCoord.xy);
@@ -982,7 +978,7 @@ export function GetShaderSourceFireVisualizerPS() {
 
 			if(curFuel < 0.5)
 			{
-				#if PAPER
+				#if 1
 			vec3 ashesColor = vec3(0.1);
 			float afterBurnEmbers = 0.0;
 		#elif WOOD
@@ -1122,9 +1118,10 @@ export function GetShaderSourceFireVisualizerPS() {
 			#if PAPER
 			#endif
 			ashesColor = vec3(0.0);
+			ashesColor = texture(AshTexture, vec2(vsOutTexCoords.x, 1.0 - vsOutTexCoords.y)).rgb * 2.0;
 			//here disable
 			//ashesColor = vec3(0.1, 0.2, 1.0) * luminance * noiseConst * 15.0;
-			ashesColor = vec3(1.0, 0.05, 0.0) * luminance * noiseConst * 15.0;
+			//ashesColor = vec3(1.0, 0.05, 0.0) * luminance * noiseConst * 15.0;
 			//ashesColor = vec3(0.1, 0.9, 0.8) * luminance * noiseConst * 15.0;
 
 			surfaceColor = mix(ashesColor, surfaceColor, /* saturate */(curFuel));
