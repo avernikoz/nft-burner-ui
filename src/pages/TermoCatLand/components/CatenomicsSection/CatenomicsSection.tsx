@@ -92,11 +92,6 @@ export function CatenomicsSection() {
 
         setChartDataCircle(data);
         setChartOptionsCircle(options);
-
-        const documentStyleHor = getComputedStyle(document.documentElement);
-        const textColor = documentStyleHor.getPropertyValue("--text-color");
-        const textColorSecondary = documentStyleHor.getPropertyValue("--text-color-secondary");
-        const surfaceBorder = documentStyleHor.getPropertyValue("--surface-border");
     }, []);
 
     return (
