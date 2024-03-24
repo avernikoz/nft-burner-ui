@@ -1,6 +1,4 @@
-import {styled} from "styled-components";
-import { ReactComponent as Logo } from '../../../../assets/termo-cat-land/catLogo.svg';
-
+import { styled } from "styled-components";
 
 export const HeaderContainer = styled.header`
     display: flex;
@@ -8,14 +6,13 @@ export const HeaderContainer = styled.header`
     align-items: center;
     width: 100%;
     position: static;
-    top:0;
+    top: 0;
     padding: 1rem 2rem;
     background-color: transparent;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 `;
 
-export const StyledLogo = styled(Logo)`
-    width: 150px; 
+export const StyledLogo = styled.div`
+    width: 150px;
     height: auto;
 `;
 
@@ -24,6 +21,3 @@ export const NavLinks = styled.nav`
     align-items: center;
     gap: 3rem;
 `;
-
-
-
