@@ -75,7 +75,6 @@ export function CatenomicsSection() {
     const [chartOptionsCircle, setChartOptionsCircle] = useState({});
 
     useEffect(() => {
-        const documentStyle = getComputedStyle(document.documentElement);
         const data = {
             datasets: [
                 {
