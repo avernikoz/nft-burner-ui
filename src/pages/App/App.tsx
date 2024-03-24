@@ -21,7 +21,7 @@ function App() {
         <>
             <GlobalStyles />
             <FPSMeter />
-            <div style={{ display:"none" }}>
+            <div style={{ display: "none" }}>
                 <Canvas />
             </div>
             {/*<AppComponent setAboutPageActive={setAboutPageActive} />*/}
