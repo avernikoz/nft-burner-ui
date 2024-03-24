@@ -11,12 +11,13 @@ import {
     NavLink,
     PreviewBody,
     PreviewContainer,
+    ReadMoreButton,
     StyledHeadingLogo,
     StyledInput,
     TermoCatCoinLine,
     TextWrapper,
 } from "./TermoCatLand.styled";
-import React from "react";
+import React, { useState } from "react";
 import { HowToByContainer } from "./components/HowToByContainer/HowToByContainer";
 import { CatenomicsSection } from "./components/CatenomicsSection/CatenomicsSection";
 
@@ -26,6 +27,8 @@ import { ReactComponent as XWitterSVG } from "../../assets/termo-cat-land/Xwitte
 import { ReactComponent as YouTubeSVG } from "../../assets/termo-cat-land/tube.svg";
 
 export const TermoCatLand = () => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
     return (
         <>
             <LandWrapper>
@@ -48,9 +51,9 @@ export const TermoCatLand = () => {
                 </TermoCatCoinLine>
                 <AboutContainer>
                     <AboutCard>
-                        <TextWrapper>
+                        <TextWrapper className={isExpanded ? "expanded" : "collapsed"}>
                             <h1>About</h1>
-                            <p>
+                            <div className="text-content">
                                 Thermo Cat was a frequent visitor of the NFT Burner Chambers, captivated by the sight of
                                 transcended pixels as he watched old digital art disintegrate into something new.
                                 <p>
@@ -71,8 +74,16 @@ export const TermoCatLand = () => {
                                     presence in the NFT Burning Chamber was regarded as a symbol of experimentation and
                                     discovery in the digital age.
                                 </p>
-                            </p>
+                            </div>
                         </TextWrapper>
+                        <ReadMoreButton onClick={() => setIsExpanded(!isExpanded)}>
+                            Read more
+                            {isExpanded ? (
+                                <i className="pi pi-arrow-up ms-2"></i>
+                            ) : (
+                                <i className="pi pi-arrow-down ms-2"></i>
+                            )}
+                        </ReadMoreButton>
                         <ImageWrapper src={require("../../assets/termo-cat-land/aboutCat.png")}></ImageWrapper>
                     </AboutCard>
                     <h1 style={{ textAlign: "center" }}>Thermo Cat's Origin Story</h1>
@@ -94,12 +105,14 @@ export const TermoCatLand = () => {
                         <NavLink>Catemonics</NavLink>
                         <NavLink>How to Buy</NavLink>
                     </div>
-                    <p>Join us</p>
                     <div className="joinUs">
-                        <DiscordSVG></DiscordSVG>
-                        <TicTokSVG></TicTokSVG>
-                        <XWitterSVG></XWitterSVG>
-                        <YouTubeSVG></YouTubeSVG>
+                        <span>Join us</span>
+                        <div className="joinUsList">
+                            <DiscordSVG></DiscordSVG>
+                            <TicTokSVG></TicTokSVG>
+                            <XWitterSVG></XWitterSVG>
+                            <YouTubeSVG></YouTubeSVG>
+                        </div>
                     </div>
                 </LinksSection>
             </LandWrapper>

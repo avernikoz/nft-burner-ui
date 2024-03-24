@@ -14,15 +14,23 @@ const CatenomicsContainer = styled.div`
         justify-content: space-around;
         align-items: center;
         width: 100%;
+
+        @media screen and (max-width: 1000px) {
+            flex-direction: column;
+        }
     }
 
     .card {
         width: 40%;
         text-align: start;
+
+        @media screen and (max-width: 1000px) {
+            width: 100%;
+        }
     }
 
     .count {
-        font-size: 5rem;
+        font-size: clamp(2rem, 19vw, 5rem);
         margin: 0rem 0rem 1rem;
     }
 
@@ -31,6 +39,7 @@ const CatenomicsContainer = styled.div`
         display: flex;
         justify-content: center;
         align-items: center;
+        width: auto;
 
         .chart {
             z-index: 2;
@@ -40,14 +49,21 @@ const CatenomicsContainer = styled.div`
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -40%);
+            width: 100%;
+            height: 100%;
+            transform: translate(-50%, -50%);
             z-index: 1;
             display: flex;
 
             img {
-                width: 100%;
-                height: 100%;
+                width: 80%;
+                height: 80%;
                 margin: auto;
+
+                @media screen and (max-width: 100px) {
+                    width: 90%;
+                    height: 90%;
+                }
             }
         }
     }

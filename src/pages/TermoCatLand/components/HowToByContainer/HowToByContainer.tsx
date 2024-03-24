@@ -1,5 +1,4 @@
 import { styled } from "styled-components";
-import { BuyNowButton } from "../../TermoCatLand.styled";
 import React from "react";
 
 export const BuyList = styled.ul`
@@ -24,6 +23,11 @@ export const ListItem = styled.li<{ $primary?: string }>`
     .text-section {
         text-align: start;
     }
+
+    @media screen and (max-width: 1000px) {
+        flex-direction: column;
+        align-items: center;
+    }
 `;
 
 export const HowToByWrapper = styled.div<{ $primary?: string }>`
@@ -33,6 +37,42 @@ export const HowToByWrapper = styled.div<{ $primary?: string }>`
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 2rem;
+
+    @media screen and (max-width: 1000px) {
+        width: 100%;
+    }
+`;
+
+export const BuyNowButton = styled.button`
+    color: #fff;
+    padding: 0.7rem 1.2rem;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10%;
+    border: 3px solid #fff;
+    background-color: rgba(0, 0, 0, 0);
+    width: 9em;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
+
+    &:hover {
+        background-color: #ffffff;
+        color: rgba(0, 0, 0, 1);
+        cursor: pointer;
+
+        svg {
+            color: rgba(0, 0, 0, 1);
+        }
+    }
+
+    &:disabled {
+        &:hover {
+            background-color: rgba(0, 0, 0, 0);
+        }
+    }
 `;
 
 export function HowToByContainer() {
