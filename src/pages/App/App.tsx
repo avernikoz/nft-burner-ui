@@ -6,6 +6,7 @@ import "./App.css";
 import { RenderMain } from "../../webl/renderingMain";
 import { FPSMeter } from "../../components/FPSMeter/FPSMeter";
 import { TermoCatLand } from "../TermoCatLand/TermoCatLand";
+import { Canvas } from "../../components/Canvas/Canvas";
 
 function App() {
     useEffect(() => {
@@ -20,7 +21,9 @@ function App() {
         <>
             <GlobalStyles />
             <FPSMeter />
-            {/*<Canvas />*/}
+            <div style={{ display:"none" }}>
+                <Canvas />
+            </div>
             {/*<AppComponent setAboutPageActive={setAboutPageActive} />*/}
             <TermoCatLand></TermoCatLand>
         </>
