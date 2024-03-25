@@ -42,6 +42,8 @@ const CatenomicsContainer = styled.div`
         width: auto;
 
         .chart {
+            height: 400px;
+            width: 400px;
             z-index: 2;
         }
 
@@ -83,6 +85,7 @@ export const ListItem = styled.li<{ $primary?: string }>`
     flex-direction: row;
     justify-content: space-between;
     padding: 1rem;
+    font-size: 1.5rem;
     width: 100%;
 `;
 
@@ -110,7 +113,7 @@ export function CatenomicsSection() {
     }, []);
 
     return (
-        <CatenomicsContainer>
+        <CatenomicsContainer id="section3">
             <h1>Сatenomics</h1>
             <div className="content">
                 <div className="card">
@@ -137,7 +140,7 @@ export function CatenomicsSection() {
                         type="doughnut"
                         data={chartDataCircle}
                         options={chartOptionsCircle}
-                        className="chart w-full md:w-30rem"
+                        className="chart w-full md:w-40rem"
                     />
                     <div className="center-image">
                         <img src={require("assets/termo-cat-land/EllipseCat.png")} alt="Center Image" />

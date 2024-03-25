@@ -13,10 +13,10 @@ export function CatHeader() {
                 <Logo></Logo>
             </StyledLogo>
             <NavLinks>
-                <NavLink>About</NavLink>
-                <NavLink>Story</NavLink>
-                <NavLink>Catemonics</NavLink>
-                <NavLink>How to Buy</NavLink>
+                <NavLink href="#section1">About</NavLink>
+                <NavLink href="#section2">Story</NavLink>
+                <NavLink href="#section3">Catemonics</NavLink>
+                <NavLink href="#section4">How to Buy</NavLink>
                 <BuyNowButton>
                     Buy Now
                     <i className="pi pi-wallet" style={{ fontSize: "1rem" }}></i>
@@ -25,10 +25,18 @@ export function CatHeader() {
             <MobileNav>
                 <Sidebar position="right" visible={visible} onHide={() => setVisible(false)}>
                     <SideBarContent>
-                        <NavLink>About</NavLink>
-                        <NavLink>Story</NavLink>
-                        <NavLink>Catemonics</NavLink>
-                        <NavLink>How to Buy</NavLink>
+                        <NavLink href="#section1" onClick={() => setVisible(false)}>
+                            About
+                        </NavLink>
+                        <NavLink href="#section2" onClick={() => setVisible(false)}>
+                            Story
+                        </NavLink>
+                        <NavLink href="#section3" onClick={() => setVisible(false)}>
+                            Catemonics
+                        </NavLink>
+                        <NavLink href="#section4" onClick={() => setVisible(false)}>
+                            How to Buy
+                        </NavLink>
                         <BuyNowButton>
                             Buy Now
                             <i className="pi pi-wallet" style={{ fontSize: "1rem" }}></i>

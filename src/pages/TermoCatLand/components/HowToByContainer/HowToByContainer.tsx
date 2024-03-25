@@ -53,13 +53,14 @@ export const BuyNowButton = styled.button`
     gap: 10%;
     border: 3px solid #fff;
     background-color: rgba(0, 0, 0, 0);
-    width: 9em;
+    width: 10em;
     transition:
         background-color 0.3s ease,
         color 0.3s ease;
 
     &:hover {
-        background-color: #ffffff;
+        background-color: #fd9e1b;
+        border-color: #fd9e1b;
         color: rgba(0, 0, 0, 1);
         cursor: pointer;
 
@@ -77,7 +78,7 @@ export const BuyNowButton = styled.button`
 
 export function HowToByContainer() {
     return (
-        <HowToByWrapper>
+        <HowToByWrapper id="section4">
             <h1>How to buy</h1>
             <BuyList>
                 <ListItem $primary={"#F1552E"}>

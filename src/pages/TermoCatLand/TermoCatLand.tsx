@@ -49,7 +49,7 @@ export const TermoCatLand = () => {
                     <div className="text">TERMOCAT COIN</div>
                     <div className="text">TERMOCAT COIN</div>
                 </TermoCatCoinLine>
-                <AboutContainer>
+                <AboutContainer id="section1">
                     <AboutCard>
                         <TextWrapper className={isExpanded ? "expanded" : "collapsed"}>
                             <h1>About</h1>
@@ -87,7 +87,7 @@ export const TermoCatLand = () => {
                         <ImageWrapper src={require("../../assets/termo-cat-land/aboutCat.png")}></ImageWrapper>
                     </AboutCard>
                     <h1 style={{ textAlign: "center" }}>Thermo Cat's Origin Story</h1>
-                    <ComicsContainer src={require("assets/termo-cat-land/comics_1.png")} />
+                    <ComicsContainer id="section2" src={require("assets/termo-cat-land/comics_1.png")} />
                     <ComicsText>
                         When the blaze subsided and the embers cooled,<span>Thermo Cat</span> emerged, forever changed.
                         No longer an ordinary house cat, absorbing all the digital <span>HEAT</span>, it now became a
@@ -100,10 +100,10 @@ export const TermoCatLand = () => {
                 <HowToByContainer></HowToByContainer>
                 <LinksSection>
                     <div className="links">
-                        <NavLink>About</NavLink>
-                        <NavLink>Story</NavLink>
-                        <NavLink>Catemonics</NavLink>
-                        <NavLink>How to Buy</NavLink>
+                        <NavLink href="#section1">About</NavLink>
+                        <NavLink href="#section2">Story</NavLink>
+                        <NavLink href="#section3">Catemonics</NavLink>
+                        <NavLink href="#section4">How to Buy</NavLink>
                     </div>
                     <div className="joinUs">
                         <span>Join us</span>

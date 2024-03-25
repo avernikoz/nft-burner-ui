@@ -46,6 +46,11 @@ export const NavLink = styled.a`
     text-decoration: none;
     color: #ffffff;
 
+    &:hover {
+        color: #fd9e1b;
+        cursor: pointer;
+    }
+
     @media screen and (max-width: 1000px) {
         color: black;
     }

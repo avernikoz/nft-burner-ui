@@ -50,9 +50,14 @@ export const CopyButton = styled.button`
     gap: 10%;
     border: 1px solid #fff;
     width: 9em;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 
     &:hover {
         cursor: pointer;
+        border-color: #fd9e1b;
+        background-color: #fd9e1b;
 
         svg {
             color: rgba(0, 0, 0, 1);
@@ -60,7 +65,8 @@ export const CopyButton = styled.button`
     }
 
     &:active {
-        background-color: #d5d5d5;
+        border-color: #f1552e;
+        background-color: #f1552e;
     }
 
     &:disabled {
@@ -118,7 +124,7 @@ export const AboutCard = styled.div`
     align-items: center;
     border: 4px solid #ccc;
     overflow: visible;
-    max-height: 580px;
+    max-height: 660px;
     background-color: #2d1622;
 
     @media screen and (max-width: 1000px) {
@@ -145,7 +151,7 @@ export const TextWrapper = styled.div`
     transition: height 0.5s linear;
 
     div {
-        font-size: 1.1rem;
+        font-size: clamp(0.6rem, 2vw, 1.1rem);
     }
 
     @media screen and (max-width: 1000px) {
@@ -188,10 +194,11 @@ export const ImageWrapper = styled.img`
     height: 110%;
     width: 40%;
     object-fit: contain;
-    transform: translateY(-12px);
+    align-self: end;
 
     @media screen and (max-width: 1000px) {
-        transform: translateY(0);
+        align-self: center;
+        transform: scaleX(-1);
     }
 `;
 
@@ -210,7 +217,8 @@ export const BuyNowButton = styled.button`
         color 0.3s ease;
 
     &:hover {
-        background-color: #ffffff;
+        background-color: #fd9e1b;
+        border-color: #fd9e1b;
         color: rgba(0, 0, 0, 1);
         cursor: pointer;
 
@@ -245,7 +253,7 @@ export const ComicsContainer = styled.img`
     flex: 1;
     width: 100%;
     object-fit: contain;
-    margin-top: 1rem;
+    margin-top: 1rem 1rem;
 `;
 
 export const ComicsText = styled.div`
@@ -253,7 +261,7 @@ export const ComicsText = styled.div`
     font-size: 1.5rem;
     color: #fff;
     max-width: 700px;
-    margin: 1rem auto;
+    margin: 2rem auto;
     padding: 1rem;
 
     font-family: "Comic Neue", cursive;
@@ -331,6 +339,11 @@ export const LinksSection = styled.div`
 export const NavLink = styled.a`
     text-decoration: none;
     color: #ffffff;
+
+    &:hover {
+        color: #fd9e1b;
+        cursor: pointer;
+    }
 `;
 
 export const SideBarContent = styled.a`
