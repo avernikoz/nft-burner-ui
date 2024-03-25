@@ -261,7 +261,7 @@ export const ComicsText = styled.div`
     font-size: 1.5rem;
     color: #fff;
     max-width: 700px;
-    margin: 2rem auto;
+    margin: 3.7rem auto;
     padding: 1rem;
 
     font-family: "Comic Neue", cursive;
