@@ -6,7 +6,7 @@ const CatenomicsContainer = styled.div`
     color: #fff;
     text-align: center;
     width: 80vw;
-    margin: auto;
+    margin: 3rem auto;
 
     .content {
         display: flex;

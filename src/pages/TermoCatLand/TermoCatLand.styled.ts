@@ -114,17 +114,18 @@ export const TermoCatCoinLine = styled.div`
 export const AboutContainer = styled.div`
     width: 80vw;
     margin: auto;
-    padding-top: 3rem;
+    padding-top: 5.8rem;
     color: #fff;
 `;
 
 export const AboutCard = styled.div`
-    margin: 1rem 1rem 2rem;
+    margin: 1rem 1rem 3rem;
     display: flex;
     align-items: center;
     border: 4px solid #ccc;
     overflow: visible;
-    max-height: 660px;
+    height: min-content;
+    max-height: 500px;
     background-color: #2d1622;
 
     @media screen and (max-width: 1000px) {
@@ -145,23 +146,31 @@ export const AboutCard = styled.div`
 `;
 
 export const TextWrapper = styled.div`
-    width: 55%;
+    width: 63%;
     padding: 2rem;
     color: #fff;
     transition: height 0.5s linear;
 
+    h1 {
+        margin: 0 0 1rem;
+    }
+
     div {
-        font-size: clamp(0.6rem, 2vw, 1.1rem);
+        font-size: 1.1rem;
+
+        @media screen and (max-width: 1200px) {
+            font-size: 0.8rem;
+        }
+
+        @media screen and (max-width: 1000px) {
+            font-size: 1.1rem;
+        }
     }
 
     @media screen and (max-width: 1000px) {
         padding: 1rem;
         width: 100%;
         max-height: fit-content;
-
-        h1 {
-            margin: 0;
-        }
 
         .text-content {
             text-overflow: ellipsis;
@@ -192,8 +201,10 @@ export const ReadMoreButton = styled.button`
 export const ImageWrapper = styled.img`
     flex: 1;
     height: 110%;
+    max-height: 600px;
     width: 40%;
     object-fit: contain;
+    object-position: right;
     align-self: end;
 
     @media screen and (max-width: 1000px) {
