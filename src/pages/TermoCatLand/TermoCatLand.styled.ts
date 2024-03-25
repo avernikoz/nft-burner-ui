@@ -6,6 +6,7 @@ import { InputText } from "primereact/inputtext";
 export const StyledHeadingLogo = styled(Logo)`
     height: auto;
     width: 100%;
+    min-width: 360px;
     margin-bottom: 2rem;
 `;
 
@@ -30,6 +31,10 @@ export const PreviewBody = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
+
+    @media screen and (max-width: 1000px) {
+        width: 90vw;
+    }
 
     .control {
         display: flex;
@@ -78,11 +83,16 @@ export const CopyButton = styled.button`
 
 export const StyledInput = styled(InputText)`
     border: 2px solid #fff;
-    width: 40%;
+    width: 45%;
     border-radius: 0;
     background-color: transparent;
-    color: #838383;
+    color: #fff;
     margin-bottom: 1rem;
+
+    @media screen and (max-width: 1000px) {
+        font-size: 0.8rem;
+        width: 100%;
+    }
 `;
 
 const moveText = keyframes`
@@ -126,7 +136,7 @@ export const AboutContainer = styled.div`
 `;
 
 export const AboutCard = styled.div`
-    margin: 1rem 1rem 3rem;
+    margin-bottom: 3rem;
     display: flex;
     align-items: center;
     border: 4px solid #ccc;
@@ -303,6 +313,10 @@ export const LinksSection = styled.div`
     }
 
     @media screen and (max-width: 1000px) {
+        width: 60vw;
+    }
+
+    @media screen and (max-width: 700px) {
         width: 90vw;
         flex-direction: row;
     }
@@ -311,8 +325,9 @@ export const LinksSection = styled.div`
         flex-grow: 1;
         display: flex;
         flex-direction: row;
-        justify-content: space-between;
+        justify-content: space-around;
         margin-bottom: 2rem;
+        gap: 1rem;
 
         @media screen and (max-width: 700px) {
             flex-direction: column;
@@ -332,7 +347,8 @@ export const LinksSection = styled.div`
         }
 
         @media screen and (max-width: 700px) {
-            width: 50%;
+            width: 7.5em;
+            flex-grow: 0;
         }
     }
 

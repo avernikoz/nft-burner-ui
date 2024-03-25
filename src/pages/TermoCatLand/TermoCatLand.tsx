@@ -109,10 +109,10 @@ export const TermoCatLand = () => {
                     <div className="joinUs">
                         <span>Join us</span>
                         <div className="joinUsList">
-                            <DiscordSVG></DiscordSVG>
-                            <TicTokSVG></TicTokSVG>
-                            <XWitterSVG></XWitterSVG>
-                            <YouTubeSVG></YouTubeSVG>
+                            <DiscordSVG className="item"></DiscordSVG>
+                            <TicTokSVG className="item"></TicTokSVG>
+                            <XWitterSVG className="item"></XWitterSVG>
+                            <YouTubeSVG className="item"></YouTubeSVG>
                         </div>
                     </div>
                 </LinksSection>
