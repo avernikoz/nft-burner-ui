@@ -25,9 +25,24 @@ import { ReactComponent as DiscordSVG } from "../../assets/termo-cat-land/discor
 import { ReactComponent as TicTokSVG } from "../../assets/termo-cat-land/tiktok.svg";
 import { ReactComponent as XWitterSVG } from "../../assets/termo-cat-land/Xwitter.svg";
 import { ReactComponent as YouTubeSVG } from "../../assets/termo-cat-land/tube.svg";
+import * as process from "process";
 
 export const TermoCatLand = () => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const [copySuccess, setCopySuccess] = useState<string | null>(null);
+
+    const KEY =
+        process.env.REACT_APP_THERMOCAT_ADDRESS + "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a";
+
+    const copyLink = async () => {
+        try {
+            console.log(process.env);
+            await navigator.clipboard.writeText(KEY);
+            setCopySuccess("Copied!");
+        } catch (err) {
+            setCopySuccess("Failed to copy!");
+        }
+    };
 
     return (
         <>
@@ -37,8 +52,8 @@ export const TermoCatLand = () => {
                     <PreviewBody>
                         <StyledHeadingLogo />
                         <div className="control">
-                            <StyledInput placeholder="XXXXXXXXXXXXXX"></StyledInput>
-                            <CopyButton>Copy address</CopyButton>
+                            <StyledInput placeholder="XXXXXXXXXXXXXX" value={KEY}></StyledInput>
+                            <CopyButton onClick={copyLink}>{copySuccess ? "Copied!" : "Copy address"}</CopyButton>
                         </div>
                     </PreviewBody>
                 </PreviewContainer>
