@@ -116,6 +116,13 @@ export const AboutContainer = styled.div`
     margin: auto;
     padding-top: 5.8rem;
     color: #fff;
+
+    .end-comics {
+        margin-top: 0.5rem;
+        text-align: end;
+        display: block;
+        font-size: 1.5rem;
+    }
 `;
 
 export const AboutCard = styled.div`
@@ -268,7 +275,7 @@ export const ComicsContainer = styled.img`
 `;
 
 export const ComicsText = styled.div`
-    border: 8px solid #fff;
+    border: 0.7em solid #fff;
     font-size: 1.5rem;
     color: #fff;
     max-width: 700px;

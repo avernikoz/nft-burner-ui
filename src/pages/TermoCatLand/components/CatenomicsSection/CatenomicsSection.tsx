@@ -13,6 +13,7 @@ const CatenomicsContainer = styled.div`
         flex-direction: row;
         justify-content: space-around;
         align-items: center;
+        gap: 3rem;
         width: 100%;
 
         @media screen and (max-width: 1000px) {
@@ -39,11 +40,15 @@ const CatenomicsContainer = styled.div`
         display: flex;
         justify-content: center;
         align-items: center;
-        width: auto;
+        width: 40%;
+
+        @media screen and (max-width: 1000px) {
+            width: auto;
+        }
 
         .chart {
-            height: 400px;
-            width: 400px;
+            height: 100%;
+            width: 100%;
             z-index: 2;
         }
 

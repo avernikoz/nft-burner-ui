@@ -95,6 +95,7 @@ export const TermoCatLand = () => {
                     </ComicsText>
 
                     <ComicsContainer src={require("assets/termo-cat-land/comics_2.png")} />
+                    <span className="end-comics">to be continued...</span>
                 </AboutContainer>
                 <CatenomicsSection></CatenomicsSection>
                 <HowToByContainer></HowToByContainer>
