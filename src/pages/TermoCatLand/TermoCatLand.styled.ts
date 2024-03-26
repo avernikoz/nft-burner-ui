@@ -12,6 +12,9 @@ export const StyledHeadingLogo = styled(Logo)`
 
 export const LandWrapper = styled.div`
     background-color: black;
+
+    .twitter-section {
+    }
 `;
 
 export const PreviewContainer = styled.div`
@@ -21,6 +24,16 @@ export const PreviewContainer = styled.div`
     background-position: center;
     background-repeat: no-repeat;
     background-image: url(${catBackImage});
+`;
+
+export const TwitterSection = styled.div`
+    margin: auto;
+    width: 80%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-around;
 `;
 
 export const PreviewBody = styled.div`
@@ -51,7 +64,7 @@ export const CopyButton = styled.button`
     align-items: center;
     background-color: #ffffff;
     color: rgba(0, 0, 0, 1);
-    font-size: 20px;
+    font-size: 1.25rem;
     gap: 10%;
     border: 1px solid #fff;
     width: 9em;
@@ -299,6 +312,10 @@ export const ComicsText = styled.div`
     span {
         color: #ff852d;
     }
+
+    @media screen and (max-width: 1000px) {
+        border: 0.5em solid #fff;
+    }
 `;
 
 export const LinksSection = styled.div`
@@ -386,4 +403,27 @@ export const SideBarContent = styled.a`
     flex-direction: column;
     align-items: end;
     gap: 1rem;
+`;
+
+export const HeadPhaseSection = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.2rem;
+
+    h1 {
+        margin: 0.5rem;
+    }
+
+    .open-button {
+        margin: auto;
+        background-color: #107350;
+        color: white;
+        border: none;
+        border-radius: 0;
+        padding: 10px 20px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        cursor: pointer;
+    }
 `;

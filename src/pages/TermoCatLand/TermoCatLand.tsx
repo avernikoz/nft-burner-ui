@@ -16,6 +16,7 @@ import {
     StyledInput,
     TermoCatCoinLine,
     TextWrapper,
+    TwitterSection,
 } from "./TermoCatLand.styled";
 import React, { useState } from "react";
 import { HowToByContainer } from "./components/HowToByContainer/HowToByContainer";
@@ -26,13 +27,19 @@ import { ReactComponent as TicTokSVG } from "../../assets/termo-cat-land/tiktok.
 import { ReactComponent as XWitterSVG } from "../../assets/termo-cat-land/Xwitter.svg";
 import { ReactComponent as YouTubeSVG } from "../../assets/termo-cat-land/tube.svg";
 import * as process from "process";
+import { Tweet } from "react-twitter-widgets";
+import { AirdropPhaseContainer } from "./components/AirdropPhaseContainer/AirdropPhaseContainer";
+import { PresalePhase } from "./components/PresalePhase/PresalePhase";
+import { EPhase } from "./TermoCatModel";
 
 export const TermoCatLand = () => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [copySuccess, setCopySuccess] = useState<string | null>(null);
 
     const KEY =
-        process.env.REACT_APP_THERMOCAT_ADDRESS + "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a";
+        process.env.REACT_APP_THERMOCAT_ADDRESS ?? "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a";
+
+    const phase = process.env.REACT_APP_THERMOCAT_CURRENT_TOKEN_PHASE ?? EPhase.AIRDROP;
 
     const copyLink = async () => {
         try {
@@ -41,6 +48,17 @@ export const TermoCatLand = () => {
             setCopySuccess("Copied!");
         } catch (err) {
             setCopySuccess("Failed to copy!");
+        }
+    };
+
+    const renderPhaseSwitch = () => {
+        switch (phase) {
+            case EPhase.AIRDROP:
+                return <AirdropPhaseContainer></AirdropPhaseContainer>;
+            case EPhase.PRE_SALE:
+                return <PresalePhase></PresalePhase>;
+            case EPhase.TRADING:
+                return <HowToByContainer></HowToByContainer>;
         }
     };
 
@@ -113,7 +131,15 @@ export const TermoCatLand = () => {
                     <span className="end-comics">to be continued...</span>
                 </AboutContainer>
                 <CatenomicsSection></CatenomicsSection>
-                <HowToByContainer></HowToByContainer>
+                {renderPhaseSwitch()}
+
+                <TwitterSection>
+                    <Tweet tweetId="1455776873032601600" options={{ theme: "dark", height: "400" }} />
+                    <Tweet tweetId="1772306781642867043" options={{ theme: "dark", height: "400" }} />
+                    <Tweet tweetId="1455776873032601600" options={{ theme: "dark", height: "400" }} />
+                    <Tweet tweetId="1772306781642867043" options={{ theme: "dark", height: "400" }} />
+                </TwitterSection>
+
                 <LinksSection>
                     <div className="links">
                         <NavLink href="#section1">About</NavLink>
