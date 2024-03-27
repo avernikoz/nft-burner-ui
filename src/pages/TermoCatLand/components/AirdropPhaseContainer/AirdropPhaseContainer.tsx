@@ -3,13 +3,14 @@ import { PhaseWarning } from "../PhaseWarning/PhaseWarning";
 import { HeadPhaseSection } from "../../TermoCatLand.styled";
 
 export const AirdropPhaseWrapper = styled.div`
-    width: 90vw;
-    margin: auto;
+    width: 100vw;
     color: #fff;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1rem;
+    padding: 1.5rem 1rem 1rem;
+    background-color: #141b2a;
+    margin: auto auto 2rem;
 
     @media screen and (max-width: 1000px) {
         width: 100%;
@@ -19,8 +20,12 @@ export const AirdropPhaseWrapper = styled.div`
 export const CardContainer = styled.div`
     display: flex;
     flex-direction: row;
-    justify-content: space-around;
-    width: 100%;
+    justify-content: center;
+    width: 90%;
+
+    @media screen and (max-width: 1400px) {
+        justify-content: space-around;
+    }
 
     @media screen and (max-width: 1000px) {
         flex-direction: column;
@@ -35,7 +40,12 @@ export const StepCard = styled.div`
     width: 25%;
 
     img {
-        width: 80%;
+        width: 100%;
+        border: 0.3em solid #fff;
+
+        @media screen and (max-width: 1400px) {
+            border: none;
+        }
     }
 
     .card-header {
@@ -57,16 +67,57 @@ export const StepCard = styled.div`
         background-color: #cee4f9;
         color: black;
         border: 0.5em solid #fff;
-        width: 100%;
+        width: 70%;
         text-align: center;
-        transform: translateY(-1.5rem);
 
         font-family: "Comic Neue", cursive;
-        font-weight: 700;
         font-style: normal;
+        font-size: 1rem;
 
         @media screen and (max-width: 1000px) {
             border: 0.5em solid #fff;
+            width: 100%;
+        }
+    }
+
+    &:nth-child(1) {
+        .description {
+            transform: translateY(-7.5rem) translateX(-6rem);
+
+            @media screen and (max-width: 1400px) {
+                transform: translateY(-1.5rem);
+            }
+        }
+    }
+
+    &:nth-child(2) {
+        .description {
+            transform: translateY(-2rem);
+
+            @media screen and (max-width: 1400px) {
+                transform: translateY(-1.5rem);
+            }
+        }
+    }
+
+    &:nth-child(3) {
+        .description {
+            transform: translateY(-21rem) translateX(6rem);
+            @media screen and (max-width: 2900px) {
+                transform: translateY(-32em) translateX(15rem);
+            }
+
+            @media screen and (max-width: 2500px) {
+                transform: translateY(-28em) translateX(6rem);
+            }
+
+            @media screen and (max-width: 2100px) {
+                transform: translateY(-22rem) translateX(6rem);
+            }
+
+            @media screen and (max-width: 1400px) {
+                transform: translateY(-1.5rem);
+            }
         }
     }
 
@@ -90,8 +141,7 @@ export const AirdropPhaseContainer = () => {
     return (
         <AirdropPhaseWrapper>
             <HeadPhaseSection>
-                <h1>Airdrop phase</h1>
-                <button className="open-button">OPEN</button>
+                <button className="open-button">Airdrop active</button>
             </HeadPhaseSection>
             <CardContainer>
                 <StepCard>

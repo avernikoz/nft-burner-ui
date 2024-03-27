@@ -40,11 +40,10 @@ export const TermoCatLand = () => {
     const KEY =
         process.env.REACT_APP_THERMOCAT_ADDRESS ?? "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a";
 
-    const phase = EPhase.AIRDROP;
+    const phase = process.env.REACT_APP_THERMOCAT_CURRENT_TOKEN_PHASE ?? EPhase.AIRDROP;
 
     const copyLink = async () => {
         try {
-            console.log(process.env);
             await navigator.clipboard.writeText(KEY);
             setCopySuccess("Copied!");
         } catch (err) {

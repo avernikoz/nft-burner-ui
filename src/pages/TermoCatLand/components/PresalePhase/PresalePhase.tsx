@@ -74,7 +74,7 @@ export const SendButton = styled(CopyButton)`
 
 export const PresalePhase = () => {
     return (
-        <>
+        <div style={{ marginBottom: "2rem" }}>
             <PresalePhaseWrapper>
                 <HeadPhaseSection>
                     <h1>Pre-sale phase</h1>
@@ -101,6 +101,6 @@ export const PresalePhase = () => {
             <PhaseWarning
                 textWarning={"The Presale will run from the moment of announcement until the start of the airdrop."}
             ></PhaseWarning>
-        </>
+        </div>
     );
 };
