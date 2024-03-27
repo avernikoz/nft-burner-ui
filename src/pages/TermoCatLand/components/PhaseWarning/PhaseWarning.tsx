@@ -11,19 +11,21 @@ export const PhaseWarningWrapper = styled.div`
     padding-bottom: 2rem;
     justify-content: center;
 
-    @media screen and (max-width: 1000px) {
-        width: 100%;
-    }
-
     .text {
         margin: 1rem;
+    }
+
+    @media screen and (max-width: 1000px) {
+        width: 90vw;
     }
 `;
 
 export const PhaseWarning = ({ textWarning }: { textWarning: string }) => {
     return (
         <PhaseWarningWrapper>
-            <WarningSVG></WarningSVG>
+            <div style={{ width: "30px" }}>
+                <WarningSVG></WarningSVG>
+            </div>
             <div className="text">{textWarning}</div>
         </PhaseWarningWrapper>
     );

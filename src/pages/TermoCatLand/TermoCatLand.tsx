@@ -39,7 +39,7 @@ export const TermoCatLand = () => {
     const KEY =
         process.env.REACT_APP_THERMOCAT_ADDRESS ?? "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a";
 
-    const phase = process.env.REACT_APP_THERMOCAT_CURRENT_TOKEN_PHASE ?? EPhase.AIRDROP;
+    const phase = EPhase.AIRDROP;
 
     const copyLink = async () => {
         try {
@@ -51,8 +51,8 @@ export const TermoCatLand = () => {
         }
     };
 
-    const renderPhaseSwitch = () => {
-        switch (phase) {
+    const renderPhaseSwitch = (currentPhase: EPhase) => {
+        switch (currentPhase) {
             case EPhase.AIRDROP:
                 return <AirdropPhaseContainer></AirdropPhaseContainer>;
             case EPhase.PRE_SALE:
@@ -131,7 +131,7 @@ export const TermoCatLand = () => {
                     <span className="end-comics">to be continued...</span>
                 </AboutContainer>
                 <CatenomicsSection></CatenomicsSection>
-                {renderPhaseSwitch()}
+                {renderPhaseSwitch(phase as EPhase)}
 
                 <TwitterSection>
                     <Tweet tweetId="1455776873032601600" options={{ theme: "dark", height: "400" }} />

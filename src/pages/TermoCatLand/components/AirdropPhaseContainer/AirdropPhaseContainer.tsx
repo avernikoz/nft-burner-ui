@@ -33,10 +33,16 @@ export const StepCard = styled.div`
     flex-direction: column;
     align-items: center;
     width: 30%;
+    margin-bottom: 1rem;
+
+    @media screen and (max-width: 1000px) {
+        width: 100%;
+    }
 
     img {
         width: 250px;
     }
+
     .card-header {
         text-align: center;
         margin-bottom: 1rem;
@@ -59,6 +65,7 @@ export const StepCard = styled.div`
         width: 100%;
         max-width: 18em;
         text-align: center;
+        transform: translateY(-1.5rem);
 
         font-family: "Comic Neue", cursive;
         font-weight: 700;
