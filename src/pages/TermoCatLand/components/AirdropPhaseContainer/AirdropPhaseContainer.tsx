@@ -32,10 +32,10 @@ export const StepCard = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 30%;
+    width: 25%;
 
     img {
-        width: 250px;
+        width: 80%;
     }
 
     .card-header {
@@ -58,7 +58,6 @@ export const StepCard = styled.div`
         color: black;
         border: 0.5em solid #fff;
         width: 100%;
-        max-width: 18em;
         text-align: center;
         transform: translateY(-1.5rem);
 
@@ -75,9 +74,14 @@ export const StepCard = styled.div`
         width: 100%;
         flex-direction: column;
         margin-bottom: 1rem;
+        max-width: 18em;
 
         &:last-child {
             margin-bottom: 0;
+        }
+
+        img {
+            width: 250px;
         }
     }
 `;
