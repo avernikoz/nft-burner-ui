@@ -102,7 +102,7 @@ export function CatenomicsSection() {
         const data = {
             datasets: [
                 {
-                    data: [300, 50, 100],
+                    data: [65, 30, 5],
                     backgroundColor: ["#69489E", "#F1552E", "#107350"],
                     borderWidth: 3,
                     borderColor: "#000000",
