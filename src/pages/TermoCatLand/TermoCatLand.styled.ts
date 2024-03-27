@@ -1,5 +1,6 @@
 import { keyframes, styled } from "styled-components";
 import catBackImage from "../../assets/termo-cat-land/cat-back.webp";
+import catBackImageMob from "../../assets/termo-cat-land/start_Mob.webp";
 import { ReactComponent as Logo } from "../../assets/termo-cat-land/catLabel.svg";
 import { InputText } from "primereact/inputtext";
 
@@ -24,6 +25,10 @@ export const PreviewContainer = styled.div`
     background-position: center;
     background-repeat: no-repeat;
     background-image: url(${catBackImage});
+
+    @media screen and (max-width: 1000px) {
+        background-image: url(${catBackImageMob});
+    }
 `;
 
 export const TwitterSection = styled.div`
@@ -145,6 +150,10 @@ export const AboutContainer = styled.div`
         text-align: end;
         display: block;
         font-size: 1.5rem;
+    }
+
+    @media screen and (max-width: 1000px) {
+        width: 90vw;
     }
 `;
 
@@ -290,11 +299,28 @@ export const BuyNowButton = styled.button`
     }
 `;
 
+export const ComicsContainerMobile = styled.img`
+    flex: 1;
+    width: 100%;
+    object-fit: contain;
+    margin-top: 1rem;
+    display: none;
+
+    @media screen and (max-width: 1000px) {
+        display: block;
+    }
+`;
+
 export const ComicsContainer = styled.img`
     flex: 1;
     width: 100%;
     object-fit: contain;
-    margin-top: 1rem 1rem;
+    margin-top: 1rem;
+    display: block;
+
+    @media screen and (max-width: 1000px) {
+        display: none;
+    }
 `;
 
 export const ComicsText = styled.div`
@@ -314,7 +340,7 @@ export const ComicsText = styled.div`
     }
 
     @media screen and (max-width: 1000px) {
-        border: 0.5em solid #fff;
+        border: 0.4em solid #fff;
     }
 `;
 

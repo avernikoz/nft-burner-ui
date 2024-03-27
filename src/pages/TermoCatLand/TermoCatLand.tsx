@@ -3,6 +3,7 @@ import {
     AboutCard,
     AboutContainer,
     ComicsContainer,
+    ComicsContainerMobile,
     ComicsText,
     CopyButton,
     ImageWrapper,
@@ -123,6 +124,7 @@ export const TermoCatLand = () => {
                         <ImageWrapper src={require("../../assets/termo-cat-land/aboutCat.png")}></ImageWrapper>
                     </AboutCard>
                     <h1 style={{ textAlign: "start" }}>Thermo Cat's Origin Story</h1>
+                    <ComicsContainerMobile id="section2" src={require("assets/termo-cat-land/comics_mob.webp")} />
                     <ComicsContainer id="section2" src={require("assets/termo-cat-land/comics_1-1.webp")} />
                     <ComicsText>
                         When the blaze subsided and the embers cooled,<span>Thermo Cat</span> emerged, forever changed.
@@ -130,7 +132,8 @@ export const TermoCatLand = () => {
                         radiant display of <span>infrared grace</span>!
                     </ComicsText>
 
-                    <ComicsContainer src={require("assets/termo-cat-land/comics_2.webp")} />
+                    <ComicsContainer id="section2" src={require("assets/termo-cat-land/comics_2.webp")} />
+                    <ComicsContainerMobile id="section2" src={require("assets/termo-cat-land/reborn_Mob.webp")} />
                     <span className="end-comics">to be continued...</span>
                 </AboutContainer>
                 <CatenomicsSection></CatenomicsSection>
