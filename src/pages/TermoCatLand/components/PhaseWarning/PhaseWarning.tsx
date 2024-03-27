@@ -7,7 +7,6 @@ export const PhaseWarningWrapper = styled.div`
     color: #fff;
     display: flex;
     align-items: center;
-    padding-top: 1rem;
     padding-bottom: 2rem;
     justify-content: center;
 

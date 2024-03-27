@@ -9,7 +9,7 @@ export const AirdropPhaseWrapper = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2rem;
+    padding: 1rem;
 
     @media screen and (max-width: 1000px) {
         width: 100%;
@@ -33,11 +33,6 @@ export const StepCard = styled.div`
     flex-direction: column;
     align-items: center;
     width: 30%;
-    margin-bottom: 1rem;
-
-    @media screen and (max-width: 1000px) {
-        width: 100%;
-    }
 
     img {
         width: 250px;
@@ -77,7 +72,13 @@ export const StepCard = styled.div`
     }
 
     @media screen and (max-width: 1000px) {
+        width: 100%;
         flex-direction: column;
+        margin-bottom: 1rem;
+        
+        &:last-child {
+            margin-bottom: 0;
+        }
     }
 `;
 
