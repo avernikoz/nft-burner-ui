@@ -75,7 +75,7 @@ export const StepCard = styled.div`
         width: 100%;
         flex-direction: column;
         margin-bottom: 1rem;
-        
+
         &:last-child {
             margin-bottom: 0;
         }

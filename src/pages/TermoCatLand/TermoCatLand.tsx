@@ -88,10 +88,11 @@ export const TermoCatLand = () => {
                             <h1>About</h1>
                             <div className="text-content">
                                 <p>
-                                    Thermo Cat was a frequent visitor of the NFT Burner Chambers, captivated by the sight of
-                                    transcended pixels as he watched old digital art disintegrate into something new.
+                                    Thermo Cat was a frequent visitor of the NFT Burner Chambers, captivated by the
+                                    sight of transcended pixels as he watched old digital art disintegrate into
+                                    something new.
                                 </p>
-                              <p>
+                                <p>
                                     But one fateful night, an oversight occurred: a forgetful artist neglected to
                                     evacuate our Cat before commencing the burning of NFTs.  As the pixels ignited and
                                     the chamber grew infernal, poor Cat was bathed in a torrent of scorching HEAT and
