@@ -76,11 +76,11 @@ export const TermoCatLand = () => {
                     </PreviewBody>
                 </PreviewContainer>
                 <TermoCatCoinLine>
-                    <div className="text">TERMOCAT COIN</div>
-                    <div className="text">TERMOCAT COIN</div>
-                    <div className="text">TERMOCAT COIN</div>
-                    <div className="text">TERMOCAT COIN</div>
-                    <div className="text">TERMOCAT COIN</div>
+                    <div className="text">THERMO COIN</div>
+                    <div className="text">THERMO COIN</div>
+                    <div className="text">THERMO COIN</div>
+                    <div className="text">THERMO COIN</div>
+                    <div className="text">THERMO COIN</div>
                 </TermoCatCoinLine>
                 <AboutContainer id="section1">
                     <AboutCard>

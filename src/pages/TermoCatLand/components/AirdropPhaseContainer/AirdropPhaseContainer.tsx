@@ -8,7 +8,7 @@ export const AirdropPhaseWrapper = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1.5rem 1rem 1rem;
+    padding: 3.5rem 1rem 1rem;
     background-color: #141b2a;
     margin: auto auto 2rem;
 
@@ -67,8 +67,9 @@ export const StepCard = styled.div`
         background-color: #cee4f9;
         color: black;
         border: 0.5em solid #fff;
-        width: 70%;
+        width: 80%;
         text-align: center;
+        padding: 0.2rem;
 
         font-family: "Comic Neue", cursive;
         font-style: normal;
@@ -162,7 +163,7 @@ export const AirdropPhaseContainer = () => {
                     </div>
                     <img src={require("assets/termo-cat-land/airdropStep2.png")} alt="step 1" />
                     <div className="description">
-                        Share a Twitter post featuring a your Thermo Cat, including $THERMOCAT #THERMOCAT, and tag
+                        Share a Twitter post featuring a your Thermo Cat, including $THERMO #THERMOCAT, and tag
                         @nftburnerapp.
                     </div>
                 </StepCard>

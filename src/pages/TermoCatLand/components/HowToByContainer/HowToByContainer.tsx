@@ -100,7 +100,7 @@ export function HowToByContainer() {
                     <div className={"text-section"}>
                         <h2>Get Some ETH</h2>
                         <p>
-                            Have ETH in your wallet to switch to $Thermocat. If you don’t have any ETH, you can buy
+                            Have ETH in your wallet to switch to $THERMO. If you don’t have any ETH, you can buy
                             directly on metamask, transfer from another wallet, or buy on another exchange and send it
                             to your wallet.
                         </p>
@@ -114,7 +114,7 @@ export function HowToByContainer() {
                         <h2>Go to Uniswap</h2>
                         <p>
                             Connect to Uniswap. Go to app.uniswap.org in google chrome or on the browser inside your
-                            Metamask app. Connect your wallet. Paste the $Thermocat token address into Uniswap, select
+                            Metamask app. Connect your wallet. Paste the $THERMO token address into Uniswap, select
                             Pepe, and confirm. When Metamask prompts you for a wallet signature, sign.
                         </p>
                     </div>
@@ -124,9 +124,9 @@ export function HowToByContainer() {
                         <img src={require("assets/termo-cat-land/switch.png")} />
                     </div>
                     <div className={"text-section"}>
-                        <h2>Switch ETH for $Thermocat</h2>
+                        <h2>Switch ETH for $THERMO</h2>
                         <p>
-                            Switch ETH for $Thermocat. We have ZERO taxes so you don’t need to worry about buying with a
+                            Switch ETH for $THERMO. We have ZERO taxes so you don’t need to worry about buying with a
                             specific slippage, although you may need to use slippage during times of market volatility.
                         </p>
                     </div>

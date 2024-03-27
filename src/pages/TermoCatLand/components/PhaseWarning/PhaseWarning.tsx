@@ -2,7 +2,7 @@ import { styled } from "styled-components";
 import { ReactComponent as WarningSVG } from "../../../../assets/termo-cat-land/warningIcon.svg";
 
 export const PhaseWarningWrapper = styled.div`
-    width: 80vw;
+    width: 30vw;
     margin: auto;
     color: #fff;
     display: flex;
@@ -10,7 +10,15 @@ export const PhaseWarningWrapper = styled.div`
     justify-content: center;
 
     .text {
-        margin: 1rem;
+        text-align: center;
+    }
+
+    @media screen and (max-width: 1600px) {
+        width: 40vw;
+    }
+
+    @media screen and (max-width: 1400px) {
+        width: 60vw;
     }
 
     @media screen and (max-width: 1000px) {
@@ -21,7 +29,7 @@ export const PhaseWarningWrapper = styled.div`
 export const PhaseWarning = ({ textWarning }: { textWarning: string }) => {
     return (
         <PhaseWarningWrapper>
-            <div style={{ width: "30px" }}>
+            <div style={{ width: "40px", marginRight: "0.2rem" }}>
                 <WarningSVG></WarningSVG>
             </div>
             <div className="text">{textWarning}</div>
