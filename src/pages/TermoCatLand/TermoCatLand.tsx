@@ -120,14 +120,14 @@ export const TermoCatLand = () => {
                         <ImageWrapper src={require("../../assets/termo-cat-land/aboutCat.png")}></ImageWrapper>
                     </AboutCard>
                     <h1 style={{ textAlign: "start" }}>Thermo Cat's Origin Story</h1>
-                    <ComicsContainer id="section2" src={require("assets/termo-cat-land/comics_1.png")} />
+                    <ComicsContainer id="section2" src={require("assets/termo-cat-land/comics_1-1.webp")} />
                     <ComicsText>
                         When the blaze subsided and the embers cooled,<span>Thermo Cat</span> emerged, forever changed.
                         No longer an ordinary house cat, absorbing all the digital <span>HEAT</span>, it now became a
                         radiant display of <span>infrared grace</span>!
                     </ComicsText>
 
-                    <ComicsContainer src={require("assets/termo-cat-land/comics_2.png")} />
+                    <ComicsContainer src={require("assets/termo-cat-land/comics_2.webp")} />
                     <span className="end-comics">to be continued...</span>
                 </AboutContainer>
                 <CatenomicsSection></CatenomicsSection>

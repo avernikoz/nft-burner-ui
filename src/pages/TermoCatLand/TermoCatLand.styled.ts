@@ -1,5 +1,5 @@
 import { keyframes, styled } from "styled-components";
-import catBackImage from "../../assets/termo-cat-land/cat-back.png";
+import catBackImage from "../../assets/termo-cat-land/cat-back.webp";
 import { ReactComponent as Logo } from "../../assets/termo-cat-land/catLabel.svg";
 import { InputText } from "primereact/inputtext";
 
