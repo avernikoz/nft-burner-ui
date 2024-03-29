@@ -155,10 +155,20 @@ export const TermoCatLand = () => {
                     <div className="joinUs">
                         <span>Join us</span>
                         <div className="joinUsList">
-                            <DiscordSVG className="item"></DiscordSVG>
-                            <TicTokSVG className="item"></TicTokSVG>
-                            <XWitterSVG className="item"></XWitterSVG>
-                            <YouTubeSVG className="item"></YouTubeSVG>
+                            <a href="https://twitter.com/nftburnerapp">
+                                <DiscordSVG className="item"></DiscordSVG>
+                            </a>
+
+                            <a href="https://www.tiktok.com/@nftburnerio?_t=8l5ZDPO93se&_r=1">
+                                <TicTokSVG className="item"></TicTokSVG>
+                            </a>
+                            <a href="https://twitter.com/nftburnerapp">
+                                <XWitterSVG className="item"></XWitterSVG>
+                            </a>
+
+                            <a href="https://youtube.com/@NFTBurner?si=EQH-Uh9h3MyoDm6T">
+                                <YouTubeSVG className="item"></YouTubeSVG>
+                            </a>
                         </div>
                     </div>
                 </LinksSection>

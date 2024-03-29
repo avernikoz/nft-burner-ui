@@ -8,7 +8,7 @@ export const AirdropPhaseWrapper = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 3.5rem 1rem 1rem;
+    padding: 3.5rem 1rem;
     background-color: #141b2a;
     margin: auto auto 2rem;
 
