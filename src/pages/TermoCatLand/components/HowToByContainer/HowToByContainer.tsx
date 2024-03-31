@@ -2,7 +2,7 @@ import { styled } from "styled-components";
 import React from "react";
 import { EPhase } from "../../TermoCatModel";
 
-export const BuyList = styled.ul`
+const BuyList = styled.ul`
     display: flex;
     flex-direction: column;
     gap: 1.75rem;
@@ -11,7 +11,7 @@ export const BuyList = styled.ul`
     margin: 2rem 0 2.5rem;
 `;
 
-export const ListItem = styled.li<{ $primary?: string }>`
+const ListItem = styled.li<{ $primary?: string }>`
     background-color: ${(props) => props.$primary || "#BF4F74"};
     display: flex;
     flex-direction: row;
@@ -31,7 +31,7 @@ export const ListItem = styled.li<{ $primary?: string }>`
     }
 `;
 
-export const HowToByWrapper = styled.div<{ $primary?: string }>`
+const HowToByWrapper = styled.div<{ $primary?: string }>`
     width: 60vw;
     margin: auto;
     color: #fff;
@@ -45,7 +45,7 @@ export const HowToByWrapper = styled.div<{ $primary?: string }>`
     }
 `;
 
-export const BuyNowButton = styled.button`
+const BuyNowButton = styled.button`
     color: #fff;
     padding: 0.7rem 1.2rem;
     display: inline-flex;
@@ -77,7 +77,7 @@ export const BuyNowButton = styled.button`
     }
 `;
 
-export function HowToByContainer() {
+function HowToByContainer() {
     return (
         <HowToByWrapper id={EPhase.TRADING}>
             <h1>How to buy</h1>
@@ -140,3 +140,5 @@ export function HowToByContainer() {
         </HowToByWrapper>
     );
 }
+
+export default HowToByContainer;

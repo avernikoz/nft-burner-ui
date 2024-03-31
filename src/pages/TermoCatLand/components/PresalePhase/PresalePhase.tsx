@@ -5,7 +5,7 @@ import { InputTextarea } from "primereact/inputtextarea";
 import { PhaseWarning } from "../PhaseWarning/PhaseWarning";
 import { EPhase } from "../../TermoCatModel";
 
-export const PresalePhaseWrapper = styled.div`
+const PresalePhaseWrapper = styled.div`
     width: 45vw;
     color: #fff;
     display: flex;
@@ -27,7 +27,7 @@ export const PresalePhaseWrapper = styled.div`
     }
 `;
 
-export const PresaleForm = styled.form`
+const PresaleForm = styled.form`
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -38,7 +38,7 @@ export const PresaleForm = styled.form`
     }
 `;
 
-export const StyledInput = styled(InputText)`
+const StyledInput = styled(InputText)`
     border: 2px solid #fff;
     width: 100%;
     border-radius: 0;
@@ -52,7 +52,7 @@ export const StyledInput = styled(InputText)`
     }
 `;
 
-export const StyledTextarea = styled(InputTextarea)`
+const StyledTextarea = styled(InputTextarea)`
     border: 2px solid #fff;
     width: 100%;
     min-height: 8em;
@@ -67,7 +67,7 @@ export const StyledTextarea = styled(InputTextarea)`
     }
 `;
 
-export const SendButton = styled(CopyButton)`
+const SendButton = styled(CopyButton)`
     padding: 0.7rem 1rem;
     font-size: 1rem;
     display: inline-flex;
@@ -105,3 +105,5 @@ export const PresalePhase = () => {
         </div>
     );
 };
+
+export default PresalePhase;

@@ -31,18 +31,6 @@ export const NavLinks = styled.nav`
     }
 `;
 
-export const MobileNav = styled.nav`
-    display: none;
-
-    @media screen and (max-width: 1000px) {
-        display: block;
-    }
-
-    .burger {
-        color: white;
-    }
-`;
-
 export const NavLink = styled.a`
     text-decoration: none;
     color: #ffffff;
@@ -50,9 +38,5 @@ export const NavLink = styled.a`
     &:hover {
         color: #fd9e1b;
         cursor: pointer;
-    }
-
-    @media screen and (max-width: 1000px) {
-        color: black;
     }
 `;

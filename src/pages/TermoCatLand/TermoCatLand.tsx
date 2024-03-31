@@ -16,20 +16,23 @@ import {
     StyledHeadingLogo,
     TermoCatCoinLine,
     TextWrapper,
+    TwitterSection,
 } from "./TermoCatLand.styled";
-import React, { useState } from "react";
-import { HowToByContainer } from "./components/HowToByContainer/HowToByContainer";
-import { CatenomicsSection } from "./components/CatenomicsSection/CatenomicsSection";
+import React, { useState, lazy, Suspense } from "react";
 
 import { ReactComponent as DiscordSVG } from "../../assets/termo-cat-land/discord.svg";
 import { ReactComponent as TicTokSVG } from "../../assets/termo-cat-land/tiktok.svg";
 import { ReactComponent as XWitterSVG } from "../../assets/termo-cat-land/Xwitter.svg";
 import { ReactComponent as YouTubeSVG } from "../../assets/termo-cat-land/tube.svg";
 import * as process from "process";
-import { AirdropPhaseContainer } from "./components/AirdropPhaseContainer/AirdropPhaseContainer";
-import { PresalePhase } from "./components/PresalePhase/PresalePhase";
 import { EPhase } from "./TermoCatModel";
-import { CoinAddress } from "./components/CoinAddress/CoinAddress";
+import CatenomicsSection from "./components/CatenomicsSection/CatenomicsSection";
+import CoinAddress from "./components/CoinAddress/CoinAddress";
+import { Timeline } from "react-twitter-widgets";
+
+const AirdropPhaseContainer = lazy(() => import("./components/AirdropPhaseContainer/AirdropPhaseContainer"));
+const PresalePhase = lazy(() => import("./components/PresalePhase/PresalePhase"));
+const HowToByContainer = lazy(() => import("./components/HowToByContainer/HowToByContainer"));
 
 export const TermoCatLand = () => {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -38,7 +41,12 @@ export const TermoCatLand = () => {
     const KEY =
         process.env.REACT_APP_THERMOCAT_ADDRESS ?? "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a";
 
-    const phase = process.env.REACT_APP_THERMOCAT_CURRENT_TOKEN_PHASE ?? EPhase.AIRDROP;
+    const phase = (process.env.REACT_APP_THERMOCAT_CURRENT_TOKEN_PHASE ?? EPhase.AIRDROP) as EPhase;
+    const phaseRoutes = {
+        [EPhase.AIRDROP]: "Air drop",
+        [EPhase.PRE_SALE]: "Pre sale",
+        [EPhase.TRADING]: "How to Buy",
+    };
 
     const copyLink = async () => {
         try {
@@ -52,11 +60,21 @@ export const TermoCatLand = () => {
     const renderPhaseSwitch = (currentPhase: EPhase) => {
         switch (currentPhase) {
             case EPhase.AIRDROP:
-                return <AirdropPhaseContainer></AirdropPhaseContainer>;
+                return <Suspense fallback={<div>Loading Airdrop...</div>}>{<AirdropPhaseContainer />}</Suspense>;
             case EPhase.PRE_SALE:
-                return <PresalePhase></PresalePhase>;
+                return (
+                    <Suspense fallback={<div>Loading Presale...</div>}>
+                        <PresalePhase />
+                    </Suspense>
+                );
             case EPhase.TRADING:
-                return <HowToByContainer></HowToByContainer>;
+                return (
+                    <Suspense fallback={<div>Loading Trading...</div>}>
+                        <HowToByContainer />
+                    </Suspense>
+                );
+            default:
+                return <div>No phase selected</div>;
         }
     };
 
@@ -118,32 +136,61 @@ export const TermoCatLand = () => {
                                 <i className="pi pi-arrow-down ms-2"></i>
                             )}
                         </ReadMoreButton>
-                        <ImageWrapper src={require("../../assets/termo-cat-land/aboutCat.png")}></ImageWrapper>
+                        <ImageWrapper
+                            loading="lazy"
+                            src={require("../../assets/termo-cat-land/aboutCat.webp")}
+                        ></ImageWrapper>
                     </AboutCard>
                     <h1 id="story" style={{ textAlign: "start" }}>
                         Thermo Cat's Origin Story
                     </h1>
-                    <ComicsContainerMobile src={require("assets/termo-cat-land/comics_mob.webp")} />
-                    <ComicsContainer src={require("assets/termo-cat-land/comics_1-1.webp")} />
+                    <ComicsContainerMobile
+                        loading="lazy"
+                        rel="preload"
+                        src={require("assets/termo-cat-land/comics_mob.webp")}
+                    />
+                    <ComicsContainer
+                        loading="lazy"
+                        rel="preload"
+                        src={require("assets/termo-cat-land/comics_1-1.webp")}
+                    />
                     <ComicsText>
                         When the blaze subsided and the embers cooled,<span>Thermo Cat</span> emerged, forever changed.
                         No longer an ordinary house cat, absorbing all the digital <span>HEAT</span>, it now became a
                         radiant display of <span>infrared grace</span>!
                     </ComicsText>
 
-                    <ComicsContainer id="story" src={require("assets/termo-cat-land/comics_2.webp")} />
-                    <ComicsContainerMobile id="story" src={require("assets/termo-cat-land/reborn_Mob.webp")} />
+                    <ComicsContainer id="story" loading="lazy" src={require("assets/termo-cat-land/comics_2.webp")} />
+                    <ComicsContainerMobile
+                        id="story"
+                        loading="lazy"
+                        src={require("assets/termo-cat-land/reborn_Mob.webp")}
+                    />
                     <span className="end-comics">to be continued...</span>
                 </AboutContainer>
                 <CatenomicsSection></CatenomicsSection>
                 {renderPhaseSwitch(phase as EPhase)}
 
+                <TwitterSection>
+                    <Timeline
+                        dataSource={{
+                            sourceType: "profile",
+                            screenName: "nftburnerapp",
+                        }}
+                        options={{
+                            height: "600",
+                            width: "100%",
+                            theme: "dark",
+                        }}
+                    />
+                </TwitterSection>
+
                 <LinksSection>
                     <div className="links">
-                        <NavLink href="#section1">About</NavLink>
-                        <NavLink href="#section2">Story</NavLink>
-                        <NavLink href="#section3">Catemonics</NavLink>
-                        <NavLink href="#section4">How to Buy</NavLink>
+                        <NavLink href="#about">About</NavLink>
+                        <NavLink href="#story">Story</NavLink>
+                        <NavLink href="#catenomics">Catemonics</NavLink>
+                        <NavLink href={"#" + phase}>{phaseRoutes[phase]}</NavLink>
                     </div>
                     <div className="joinUs">
                         <span>Join us</span>

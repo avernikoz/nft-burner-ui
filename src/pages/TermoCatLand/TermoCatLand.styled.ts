@@ -12,9 +12,6 @@ export const StyledHeadingLogo = styled(Logo)`
 
 export const LandWrapper = styled.div`
     background-color: black;
-
-    .twitter-section {
-    }
 `;
 
 export const PreviewContainer = styled.div`
@@ -32,10 +29,7 @@ export const PreviewContainer = styled.div`
 
 export const TwitterSection = styled.div`
     margin: auto;
-    width: 80%;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
+    width: 60%;
     gap: 1rem;
     justify-content: space-around;
 `;
@@ -267,21 +261,6 @@ export const BuyNowButton = styled.button`
             background-color: rgba(0, 0, 0, 0);
         }
     }
-
-    @media screen and (max-width: 1000px) {
-        border: 3px solid #000000;
-        color: #000000;
-
-        &:hover {
-            background-color: #000000;
-            color: #fff;
-            cursor: pointer;
-
-            svg {
-                color: #fff;
-            }
-        }
-    }
 `;
 
 export const ComicsContainerMobile = styled.img`
@@ -406,14 +385,6 @@ export const NavLink = styled.a`
         color: #fd9e1b;
         cursor: pointer;
     }
-`;
-
-export const SideBarContent = styled.a`
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: end;
-    gap: 1rem;
 `;
 
 export const HeadPhaseSection = styled.div`

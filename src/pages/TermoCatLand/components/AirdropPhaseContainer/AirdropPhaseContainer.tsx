@@ -3,7 +3,7 @@ import { PhaseWarning } from "../PhaseWarning/PhaseWarning";
 import { HeadPhaseSection } from "../../TermoCatLand.styled";
 import { EPhase } from "../../TermoCatModel";
 
-export const AirdropPhaseWrapper = styled.div`
+const AirdropPhaseWrapper = styled.div`
     width: 100vw;
     color: #fff;
     display: flex;
@@ -18,7 +18,7 @@ export const AirdropPhaseWrapper = styled.div`
     }
 `;
 
-export const CardContainer = styled.div`
+const CardContainer = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -34,7 +34,7 @@ export const CardContainer = styled.div`
     }
 `;
 
-export const StepCard = styled.div`
+const StepCard = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -139,7 +139,7 @@ export const StepCard = styled.div`
     }
 `;
 
-export const AirdropPhaseContainer = () => {
+function AirdropPhaseContainer() {
     return (
         <AirdropPhaseWrapper id={EPhase.AIRDROP}>
             <HeadPhaseSection>
@@ -151,7 +151,7 @@ export const AirdropPhaseContainer = () => {
                         <h1>Step 1</h1>
                         <p>Snap your ThermoCat</p>
                     </div>
-                    <img src={require("assets/termo-cat-land/airdropStep1.png")} alt="step 1" />
+                    <img src={require("assets/termo-cat-land/airdropStep1.webp")} alt="step 1" />
                     <div className="description">
                         Take a photo/video of your cat with a Thermo filter applied to it  (e.g. Thermo Mask on
                         Instagram)
@@ -162,7 +162,7 @@ export const AirdropPhaseContainer = () => {
                         <h1>Step 2</h1>
                         <p>Share your ThermoCat</p>
                     </div>
-                    <img src={require("assets/termo-cat-land/airdropStep2.png")} alt="step 1" />
+                    <img src={require("assets/termo-cat-land/airdropStep2.webp")} alt="step 1" />
                     <div className="description">
                         Share a Twitter post featuring a your Thermo Cat, including $THERMO #THERMOCAT, and tag
                         @nftburnerapp.
@@ -173,7 +173,7 @@ export const AirdropPhaseContainer = () => {
                         <h1>Step 3</h1>
                         <p>Get a Reward</p>
                     </div>
-                    <img src={require("assets/termo-cat-land/airdropStep3.png")} alt="step 1" />
+                    <img src={require("assets/termo-cat-land/airdropStep3.webp")} alt="step 1" />
                     <div className="description">We ensure all conditions are met and send you coins.</div>
                 </StepCard>
             </CardContainer>
@@ -184,4 +184,6 @@ export const AirdropPhaseContainer = () => {
             ></PhaseWarning>
         </AirdropPhaseWrapper>
     );
-};
+}
+
+export default AirdropPhaseContainer;

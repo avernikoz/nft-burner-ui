@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { InputText } from "primereact/inputtext";
 
-export const StyledInput = styled(InputText)`
+const StyledInput = styled(InputText)`
     border: 2px solid #fff;
     width: 45%;
     border-radius: 0;
@@ -18,36 +18,35 @@ export const StyledInput = styled(InputText)`
     }
 `;
 
-export const CoinAddress = ({ address }: { address: string }) => {
+const CoinAddress = ({ address }: { address: string }) => {
     const [displayedAddress, setDisplayedAddress] = useState<string>(address);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    const checkWidthAndAdjust = useCallback(() => {
+        const inputWidth = inputRef.current?.offsetWidth || 0;
+        const fullAddress = address;
+        const ellipsis = "…";
+
+        const charWidth = 9.5;
+        const fullAddressWidth = fullAddress.length * charWidth;
+
+        if (fullAddressWidth > inputWidth) {
+            const cutLength = Math.floor((fullAddress.length - (fullAddressWidth - inputWidth) / charWidth) / 2) - 1;
+            const firstPart = fullAddress.substring(0, cutLength);
+            const lastPart = fullAddress.substring(fullAddress.length - cutLength);
+            setDisplayedAddress(`${firstPart}${ellipsis}${lastPart}`);
+        } else {
+            setDisplayedAddress(fullAddress);
+        }
+    }, [address]); // Specify address as a dependency
+
     useEffect(() => {
-        const checkWidthAndAdjust = () => {
-            const inputWidth = inputRef.current?.offsetWidth || 0;
-            const fullAddress = address;
-            const ellipsis = "…";
-
-            const charWidth = 9.5;
-            const fullAddressWidth = fullAddress.length * charWidth;
-
-            if (fullAddressWidth > inputWidth) {
-                const cutLength = (fullAddress.length - (fullAddressWidth - inputWidth) / charWidth) / 2 - 1;
-                const firstPart = fullAddress.substring(0, cutLength);
-                const lastPart = fullAddress.substring(fullAddress.length - cutLength);
-                setDisplayedAddress(`${firstPart}${ellipsis}${lastPart}`);
-            } else {
-                setDisplayedAddress(fullAddress);
-            }
-        };
-
-        checkWidthAndAdjust();
-        window.addEventListener("resize", checkWidthAndAdjust);
-
-        return () => {
-            window.removeEventListener("resize", checkWidthAndAdjust);
-        };
-    }, [address]);
+        if (address.length > 0) {
+            checkWidthAndAdjust();
+        }
+    }, [address.length, checkWidthAndAdjust]); // Dependency on checkWidthAndAdjust ensures it runs when address changes
 
     return <StyledInput ref={inputRef} type="text" value={displayedAddress} readOnly />;
 };
+
+export default CoinAddress;

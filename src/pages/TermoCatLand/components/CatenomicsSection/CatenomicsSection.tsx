@@ -76,7 +76,7 @@ const CatenomicsContainer = styled.div`
     }
 `;
 
-export const List = styled.ul`
+const List = styled.ul`
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -84,7 +84,7 @@ export const List = styled.ul`
     padding: 0;
 `;
 
-export const ListItem = styled.li<{ $primary?: string }>`
+const ListItem = styled.li<{ $primary?: string }>`
     background-color: ${(props) => props.$primary || "#BF4F74"};
     display: flex;
     flex-direction: row;
@@ -94,7 +94,7 @@ export const ListItem = styled.li<{ $primary?: string }>`
     width: 100%;
 `;
 
-export function CatenomicsSection() {
+function CatenomicsSection() {
     const [chartDataCircle, setChartDataCircle] = useState({});
     const [chartOptionsCircle, setChartOptionsCircle] = useState({});
 
@@ -148,10 +148,12 @@ export function CatenomicsSection() {
                         className="chart w-full md:w-40rem"
                     />
                     <div className="center-image">
-                        <img src={require("assets/termo-cat-land/EllipseCat.png")} alt="Center Image" />
+                        <img loading="lazy" src={require("assets/termo-cat-land/EllipseCat.webp")} alt="Center Image" />
                     </div>
                 </div>
             </div>
         </CatenomicsContainer>
     );
 }
+
+export default CatenomicsSection;
