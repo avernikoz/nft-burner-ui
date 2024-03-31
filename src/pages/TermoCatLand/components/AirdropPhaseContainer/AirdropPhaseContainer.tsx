@@ -1,6 +1,7 @@
 import { styled } from "styled-components";
 import { PhaseWarning } from "../PhaseWarning/PhaseWarning";
 import { HeadPhaseSection } from "../../TermoCatLand.styled";
+import { EPhase } from "../../TermoCatModel";
 
 export const AirdropPhaseWrapper = styled.div`
     width: 100vw;
@@ -140,7 +141,7 @@ export const StepCard = styled.div`
 
 export const AirdropPhaseContainer = () => {
     return (
-        <AirdropPhaseWrapper>
+        <AirdropPhaseWrapper id={EPhase.AIRDROP}>
             <HeadPhaseSection>
                 <button className="open-button">Airdrop active</button>
             </HeadPhaseSection>

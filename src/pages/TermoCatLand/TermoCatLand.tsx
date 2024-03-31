@@ -14,10 +14,8 @@ import {
     PreviewContainer,
     ReadMoreButton,
     StyledHeadingLogo,
-    StyledInput,
     TermoCatCoinLine,
     TextWrapper,
-    TwitterSection,
 } from "./TermoCatLand.styled";
 import React, { useState } from "react";
 import { HowToByContainer } from "./components/HowToByContainer/HowToByContainer";
@@ -28,10 +26,10 @@ import { ReactComponent as TicTokSVG } from "../../assets/termo-cat-land/tiktok.
 import { ReactComponent as XWitterSVG } from "../../assets/termo-cat-land/Xwitter.svg";
 import { ReactComponent as YouTubeSVG } from "../../assets/termo-cat-land/tube.svg";
 import * as process from "process";
-import { Tweet } from "react-twitter-widgets";
 import { AirdropPhaseContainer } from "./components/AirdropPhaseContainer/AirdropPhaseContainer";
 import { PresalePhase } from "./components/PresalePhase/PresalePhase";
 import { EPhase } from "./TermoCatModel";
+import { CoinAddress } from "./components/CoinAddress/CoinAddress";
 
 export const TermoCatLand = () => {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -70,7 +68,7 @@ export const TermoCatLand = () => {
                     <PreviewBody>
                         <StyledHeadingLogo />
                         <div className="control">
-                            <StyledInput placeholder="XXXXXXXXXXXXXX" value={KEY}></StyledInput>
+                            <CoinAddress address={KEY}></CoinAddress>
                             <CopyButton onClick={copyLink}>{copySuccess ? "Copied!" : "Copy address"}</CopyButton>
                         </div>
                     </PreviewBody>
@@ -82,7 +80,7 @@ export const TermoCatLand = () => {
                     <div className="text">THERMO COIN</div>
                     <div className="text">THERMO COIN</div>
                 </TermoCatCoinLine>
-                <AboutContainer id="section1">
+                <AboutContainer id="about">
                     <AboutCard>
                         <TextWrapper className={isExpanded ? "expanded" : "collapsed"}>
                             <h1>About</h1>
@@ -122,28 +120,23 @@ export const TermoCatLand = () => {
                         </ReadMoreButton>
                         <ImageWrapper src={require("../../assets/termo-cat-land/aboutCat.png")}></ImageWrapper>
                     </AboutCard>
-                    <h1 style={{ textAlign: "start" }}>Thermo Cat's Origin Story</h1>
-                    <ComicsContainerMobile id="section2" src={require("assets/termo-cat-land/comics_mob.webp")} />
-                    <ComicsContainer id="section2" src={require("assets/termo-cat-land/comics_1-1.webp")} />
+                    <h1 id="story" style={{ textAlign: "start" }}>
+                        Thermo Cat's Origin Story
+                    </h1>
+                    <ComicsContainerMobile src={require("assets/termo-cat-land/comics_mob.webp")} />
+                    <ComicsContainer src={require("assets/termo-cat-land/comics_1-1.webp")} />
                     <ComicsText>
                         When the blaze subsided and the embers cooled,<span>Thermo Cat</span> emerged, forever changed.
                         No longer an ordinary house cat, absorbing all the digital <span>HEAT</span>, it now became a
                         radiant display of <span>infrared grace</span>!
                     </ComicsText>
 
-                    <ComicsContainer id="section2" src={require("assets/termo-cat-land/comics_2.webp")} />
-                    <ComicsContainerMobile id="section2" src={require("assets/termo-cat-land/reborn_Mob.webp")} />
+                    <ComicsContainer id="story" src={require("assets/termo-cat-land/comics_2.webp")} />
+                    <ComicsContainerMobile id="story" src={require("assets/termo-cat-land/reborn_Mob.webp")} />
                     <span className="end-comics">to be continued...</span>
                 </AboutContainer>
                 <CatenomicsSection></CatenomicsSection>
                 {renderPhaseSwitch(phase as EPhase)}
-
-                <TwitterSection>
-                    <Tweet tweetId="1455776873032601600" options={{ theme: "dark", height: "400" }} />
-                    <Tweet tweetId="1772306781642867043" options={{ theme: "dark", height: "400" }} />
-                    <Tweet tweetId="1455776873032601600" options={{ theme: "dark", height: "400" }} />
-                    <Tweet tweetId="1772306781642867043" options={{ theme: "dark", height: "400" }} />
-                </TwitterSection>
 
                 <LinksSection>
                     <div className="links">

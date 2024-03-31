@@ -3,6 +3,7 @@ import { CopyButton, HeadPhaseSection } from "../../TermoCatLand.styled";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import { PhaseWarning } from "../PhaseWarning/PhaseWarning";
+import { EPhase } from "../../TermoCatModel";
 
 export const PresalePhaseWrapper = styled.div`
     width: 45vw;
@@ -74,7 +75,7 @@ export const SendButton = styled(CopyButton)`
 
 export const PresalePhase = () => {
     return (
-        <div style={{ marginBottom: "2rem" }}>
+        <div style={{ marginBottom: "2rem" }} id={EPhase.PRE_SALE}>
             <PresalePhaseWrapper>
                 <HeadPhaseSection>
                     <h1>Pre-sale phase</h1>

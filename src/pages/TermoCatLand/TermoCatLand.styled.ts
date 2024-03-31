@@ -2,7 +2,6 @@ import { keyframes, styled } from "styled-components";
 import catBackImage from "../../assets/termo-cat-land/cat-back.webp";
 import catBackImageMob from "../../assets/termo-cat-land/start_Mob.webp";
 import { ReactComponent as Logo } from "../../assets/termo-cat-land/catLabel.svg";
-import { InputText } from "primereact/inputtext";
 
 export const StyledHeadingLogo = styled(Logo)`
     height: auto;
@@ -96,20 +95,6 @@ export const CopyButton = styled.button`
         &:hover {
             background-color: rgba(0, 0, 0, 0);
         }
-    }
-`;
-
-export const StyledInput = styled(InputText)`
-    border: 2px solid #fff;
-    width: 45%;
-    border-radius: 0;
-    background-color: transparent;
-    color: #fff;
-    margin-bottom: 1rem;
-
-    @media screen and (max-width: 1000px) {
-        font-size: 0.8rem;
-        width: 100%;
     }
 `;
 

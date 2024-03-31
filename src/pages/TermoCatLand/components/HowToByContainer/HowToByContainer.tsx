@@ -1,5 +1,6 @@
 import { styled } from "styled-components";
 import React from "react";
+import { EPhase } from "../../TermoCatModel";
 
 export const BuyList = styled.ul`
     display: flex;
@@ -78,7 +79,7 @@ export const BuyNowButton = styled.button`
 
 export function HowToByContainer() {
     return (
-        <HowToByWrapper id="section4">
+        <HowToByWrapper id={EPhase.TRADING}>
             <h1>How to buy</h1>
             <BuyList>
                 <ListItem $primary={"#F1552E"}>

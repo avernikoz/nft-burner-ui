@@ -118,7 +118,7 @@ export function CatenomicsSection() {
     }, []);
 
     return (
-        <CatenomicsContainer id="section3">
+        <CatenomicsContainer id="catenomics">
             <h1>Сatenomics</h1>
             <div className="content">
                 <div className="card">
