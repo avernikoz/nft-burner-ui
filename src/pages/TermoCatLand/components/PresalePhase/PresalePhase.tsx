@@ -12,7 +12,7 @@ const PresalePhaseWrapper = styled.div`
     flex-direction: column;
     align-items: center;
     text-align: center;
-    margin: auto auto;
+    margin: auto auto 1rem;
 
     @media screen and (max-width: 1000px) {
         width: 70vw;

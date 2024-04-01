@@ -51,7 +51,7 @@ export const TermoCatLand = () => {
 
     const getTweets = async () => {
         const url =
-            "https://deploy-preview-93--musical-starburst-8c5276.netlify.app/https://api.twitter.com/1.1/search/tweets.json";
+            "https://api.twitter.com/1.1/search/tweets.json";
         const params = {
             q: "%23example", // Замените #example на ваш хештег
             count: 5,
