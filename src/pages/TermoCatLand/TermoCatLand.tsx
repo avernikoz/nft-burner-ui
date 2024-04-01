@@ -18,7 +18,7 @@ import {
     TextWrapper,
     TwitterSection,
 } from "./TermoCatLand.styled";
-import React, { useState, lazy, Suspense } from "react";
+import React, { useState, lazy, Suspense, useEffect } from "react";
 
 import { ReactComponent as DiscordSVG } from "../../assets/termo-cat-land/discord.svg";
 import { ReactComponent as TicTokSVG } from "../../assets/termo-cat-land/tiktok.svg";
@@ -29,6 +29,7 @@ import { EPhase } from "./TermoCatModel";
 import CatenomicsSection from "./components/CatenomicsSection/CatenomicsSection";
 import CoinAddress from "./components/CoinAddress/CoinAddress";
 import { Timeline } from "react-twitter-widgets";
+import axios from "axios";
 
 const AirdropPhaseContainer = lazy(() => import("./components/AirdropPhaseContainer/AirdropPhaseContainer"));
 const PresalePhase = lazy(() => import("./components/PresalePhase/PresalePhase"));
@@ -47,6 +48,30 @@ export const TermoCatLand = () => {
         [EPhase.PRE_SALE]: "Pre sale",
         [EPhase.TRADING]: "How to Buy",
     };
+
+    const getTweets = async () => {
+        const url =
+            "https://deploy-preview-93--musical-starburst-8c5276.netlify.app/https://api.twitter.com/1.1/search/tweets.json";
+        const params = {
+            q: "%23example", // Замените #example на ваш хештег
+            count: 5,
+        };
+        const headers = {
+            Authorization: `Bearer AAAAAAAAAAAAAAAAAAAAABFdtAEAAAAAjd1ZkBFh6yUMxhdy8j9IF8Qp8ko%3DghyiTkrOJ1b87ZjRtro3M7bHzZmmnGTo5CfeysWvMJ3rn9gMt3`, // Замените YOUR_BEARER_TOKEN на ваш токен доступа
+        };
+
+        try {
+            const response = await axios.get(url, { params, headers });
+            console.log(response.data);
+            // Обработайте полученные твиты здесь
+        } catch (error) {
+            console.error("Ошибка при получении твитов:", error);
+        }
+    };
+
+    useEffect(() => {
+        getTweets();
+    }, []);
 
     const copyLink = async () => {
         try {
@@ -171,19 +196,21 @@ export const TermoCatLand = () => {
                 <CatenomicsSection></CatenomicsSection>
                 {renderPhaseSwitch(phase as EPhase)}
 
-                <TwitterSection>
-                    <Timeline
-                        dataSource={{
-                            sourceType: "profile",
-                            screenName: "nftburnerapp",
-                        }}
-                        options={{
-                            height: "600",
-                            width: "100%",
-                            theme: "dark",
-                        }}
-                    />
-                </TwitterSection>
+                <Suspense fallback={<h2>Loading...</h2>}>
+                    <TwitterSection>
+                        <Timeline
+                            dataSource={{
+                                sourceType: "profile",
+                                screenName: "nftburnerapp",
+                            }}
+                            options={{
+                                height: "600",
+                                width: "100%",
+                                theme: "dark",
+                            }}
+                        />
+                    </TwitterSection>
+                </Suspense>
 
                 <LinksSection>
                     <div className="links">

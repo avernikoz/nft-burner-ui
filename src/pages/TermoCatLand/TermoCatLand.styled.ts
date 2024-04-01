@@ -170,7 +170,7 @@ export const TextWrapper = styled.div`
     transition: height 0.5s linear;
 
     h1 {
-        margin: 0 0 1rem;
+        margin: 0 0 1.5rem;
     }
 
     div {
@@ -193,6 +193,14 @@ export const TextWrapper = styled.div`
         .text-content {
             text-overflow: ellipsis;
             overflow: hidden;
+
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+
+            p {
+                margin: 0;
+            }
         }
     }
 `;
