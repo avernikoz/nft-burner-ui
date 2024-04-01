@@ -50,8 +50,7 @@ export const TermoCatLand = () => {
     };
 
     const getTweets = async () => {
-        const url =
-            "https://api.twitter.com/1.1/search/tweets.json";
+        const url = "https://api.twitter.com/1.1/search/tweets.json";
         const params = {
             q: "%23example", // Замените #example на ваш хештег
             count: 5,
