@@ -106,7 +106,7 @@ export const PresalePhase = () => {
                     "Content-Type": "application/x-www-form-urlencoded",
                 },
                 body: encode({
-                    "form-name": "contact",
+                    "form-name": "Presale",
                     ...formData,
                 }),
             });
@@ -144,7 +144,7 @@ export const PresalePhase = () => {
                 </HeadPhaseSection>
                 <PresaleForm
                     onSubmit={handleSubmit}
-                    name="contact"
+                    name="Presale"
                     method="POST"
                     data-netlify="true"
                     data-netlify-honeypot="bot-field"
