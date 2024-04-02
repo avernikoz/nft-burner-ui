@@ -238,7 +238,7 @@ export const TermoCatLand = () => {
                     <div className="joinUs">
                         <span>Join us</span>
                         <div className="joinUsList">
-                            <a href="https://twitter.com/nftburnerapp">
+                            <a href="https://discord.gg/2NVUYdwB">
                                 <DiscordSVG className="item"></DiscordSVG>
                             </a>
 
