@@ -17,6 +17,7 @@ import {
     TermoCatCoinLine,
     TextWrapper,
     TwitterSection,
+    GlobalStyle,
 } from "./TermoCatLand.styled";
 import React, { useState, lazy, Suspense, useEffect } from "react";
 
@@ -28,8 +29,9 @@ import * as process from "process";
 import { EPhase } from "./TermoCatModel";
 import CatenomicsSection from "./components/CatenomicsSection/CatenomicsSection";
 import CoinAddress from "./components/CoinAddress/CoinAddress";
-import { Timeline } from "react-twitter-widgets";
 import axios from "axios";
+// eslint-disable-next-line import/no-unresolved
+import { Tweet } from "react-tweet";
 
 const AirdropPhaseContainer = lazy(() => import("./components/AirdropPhaseContainer/AirdropPhaseContainer"));
 const PresalePhase = lazy(() => import("./components/PresalePhase/PresalePhase"));
@@ -41,6 +43,13 @@ export const TermoCatLand = () => {
 
     const KEY =
         process.env.REACT_APP_THERMOCAT_ADDRESS ?? "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a";
+
+    const TWEET1 = process.env.REACT_APP_TWEET_1 ?? "1455776873032601600";
+    const TWEET2 = process.env.REACT_APP_TWEET_2 ?? "1772306781642867043";
+    const TWEET3 = process.env.REACT_APP_TWEET_3 ?? "1774889916582752546";
+    const TWEET4 = process.env.REACT_APP_TWEET_4 ?? "1774861431776657560";
+    const TWEET5 = process.env.REACT_APP_TWEET_5 ?? "1773445706826609080";
+    const TWEET6 = process.env.REACT_APP_TWEET_6 ?? "1767564996496519613";
 
     const phase = (process.env.REACT_APP_THERMOCAT_CURRENT_TOKEN_PHASE ?? EPhase.AIRDROP) as EPhase;
     const phaseRoutes = {
@@ -116,11 +125,11 @@ export const TermoCatLand = () => {
                     </PreviewBody>
                 </PreviewContainer>
                 <TermoCatCoinLine>
-                    <div className="text">THERMO COIN</div>
-                    <div className="text">THERMO COIN</div>
-                    <div className="text">THERMO COIN</div>
-                    <div className="text">THERMO COIN</div>
-                    <div className="text">THERMO COIN</div>
+                    <div className="text">$THERMO CAT</div>
+                    <div className="text">$THERMO CAT</div>
+                    <div className="text">$THERMO CAT</div>
+                    <div className="text">$THERMO CAT</div>
+                    <div className="text">$THERMO CAT</div>
                 </TermoCatCoinLine>
                 <AboutContainer id="about">
                     <AboutCard>
@@ -196,18 +205,26 @@ export const TermoCatLand = () => {
                 {renderPhaseSwitch(phase as EPhase)}
 
                 <Suspense fallback={<h2>Loading...</h2>}>
+                    <GlobalStyle />
                     <TwitterSection>
-                        <Timeline
-                            dataSource={{
-                                sourceType: "profile",
-                                screenName: "nftburnerapp",
-                            }}
-                            options={{
-                                height: "600",
-                                width: "100%",
-                                theme: "dark",
-                            }}
-                        />
+                        <div className="tweet dark">
+                            <Tweet id={TWEET1 || "1455776873032601600"} />
+                        </div>
+                        <div className="tweet dark">
+                            <Tweet id={TWEET2 || "1772306781642867043"} />
+                        </div>
+                        <div className="tweet dark">
+                            <Tweet id={TWEET3 || "1774889916582752546"} />
+                        </div>
+                        <div className="tweet dark">
+                            <Tweet id={TWEET4} />
+                        </div>
+                        <div className="tweet dark">
+                            <Tweet id={TWEET5} />
+                        </div>
+                        <div className="tweet dark">
+                            <Tweet id={TWEET6} />
+                        </div>
                     </TwitterSection>
                 </Suspense>
 

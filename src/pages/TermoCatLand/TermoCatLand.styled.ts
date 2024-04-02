@@ -1,8 +1,41 @@
-import { keyframes, styled } from "styled-components";
+import { keyframes, styled, createGlobalStyle } from "styled-components";
 import catBackImage from "../../assets/termo-cat-land/cat-back.webp";
 import catBackImageMob from "../../assets/termo-cat-land/start_Mob.webp";
 import { ReactComponent as Logo } from "../../assets/termo-cat-land/catLabel.svg";
 
+export const GlobalStyle = createGlobalStyle`
+ .tweet {
+    width: 300px;
+    --tweet-container-margin: 2rem 0;
+    --tweet-body-font-size: 1rem;
+
+     p {
+         height: 25px;
+         overflow: hidden;
+         font-size: 1rem;
+         text-overflow: ellipsis;
+     }
+     
+     article {
+         display: flex;
+         flex-direction: column;
+         justify-content: space-around;
+         height: 100%;
+     }
+     
+     .tweet-body_root {
+         display: none;
+     }
+     
+     .tweet-replies_replies {
+        display: none;
+     }
+     
+     .react-tweet-theme {
+         height: 545px;
+     }
+ }
+`;
 export const StyledHeadingLogo = styled(Logo)`
     height: auto;
     width: 100%;
@@ -29,8 +62,10 @@ export const PreviewContainer = styled.div`
 
 export const TwitterSection = styled.div`
     margin: auto;
-    width: 60%;
+    width: 80%;
     gap: 1rem;
+    display: flex;
+    flex-wrap: wrap;
     justify-content: space-around;
 `;
 
@@ -145,29 +180,28 @@ export const AboutCard = styled.div`
     height: min-content;
     max-height: 500px;
     background-color: #2d1622;
+    transition: max-height 0.5s linear;
 
     @media screen and (max-width: 1000px) {
         flex-direction: column;
-        max-height: fit-content;
+        height: 100%;
+        max-height: none;
     }
 
     .collapsed {
-        @media screen and (max-width: 1000px) {
-            max-height: 370px !important;
-            display: -webkit-box;
-            -webkit-line-clamp: 3; /* Количество строк, после которых будет добавлено многоточие */
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        height: 370px;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 `;
 
 export const TextWrapper = styled.div`
     width: 63%;
+    height: 100%;
     padding: 2rem;
     color: #fff;
-    transition: height 0.5s linear;
 
     h1 {
         margin: 0 0 1.5rem;

@@ -8,6 +8,10 @@ const CatenomicsContainer = styled.div`
     width: 80vw;
     margin: 3rem auto;
 
+    @media screen and (max-width: 1000px) {
+        margin: 4rem auto;
+    }
+
     .content {
         display: flex;
         flex-direction: row;
@@ -123,10 +127,10 @@ function CatenomicsSection() {
             <div className="content">
                 <div className="card">
                     <label>Total supply:</label>
-                    <h2 className="count">3,107,54</h2>
+                    <h2 className="count">100,000,000</h2>
                     <List className="list">
                         <ListItem $primary={"#69489E"}>
-                            <div>Prescale</div>
+                            <div>Presale</div>
                             <div>65%</div>
                         </ListItem>
                         <ListItem $primary={"#F1552E"}>
