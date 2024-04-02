@@ -9,7 +9,7 @@ export const BURNER_FEE_CONFIG =
           }
         : {
               percentageOfFloorPrice: 5,
-              lowerLimitUSD: 5,
+              lowerLimitUSD: 2,
               upperLimitUSD: 100,
           };
 
@@ -22,6 +22,6 @@ export const INSTRUMENTS_PRICE_CONFIG_USD =
           }
         : {
               laser: 0,
-              lighter: 15,
-              thunder: 25,
+              lighter: 2,
+              thunder: 3,
           };

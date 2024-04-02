@@ -6,14 +6,9 @@ import reportWebVitals from "./utils/reportWebVitals";
 import { PrimeReactProvider } from "primereact/api";
 import "primeicons/primeicons.css";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
-import { SolanaWalletContext } from "./context/SolanaWalletContext";
-import { EVMWalletContext } from "./context/EVMWalletContext";
-import { SuiWalletContext } from "./context/SuiWalletContext";
-import { NftProvider } from "./components/NftProvider/NftProvider";
 import { ToastProvider } from "./components/ToastProvider/ToastProvider";
 
 import { configureSentry } from "./utils/configureSentry";
-import { UserLevelProvider } from "./context/UserLevelContext";
 import { REACT_APP_GOOGLE_TAG_MANAGER_ID } from "./config/analytics.config";
 
 // Sentry init
@@ -32,17 +27,7 @@ root.render(
 
     <ToastProvider>
         <PrimeReactProvider>
-            <SolanaWalletContext>
-                <EVMWalletContext>
-                    <SuiWalletContext>
-                        <NftProvider>
-                            <UserLevelProvider>
-                                <App />
-                            </UserLevelProvider>
-                        </NftProvider>
-                    </SuiWalletContext>
-                </EVMWalletContext>
-            </SolanaWalletContext>
+            <App />
         </PrimeReactProvider>
     </ToastProvider>,
     // </React.StrictMode>,

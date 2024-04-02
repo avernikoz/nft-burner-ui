@@ -1,0 +1,168 @@
+import React, { useEffect, useState } from "react";
+import { Chart } from "primereact/chart";
+import { styled } from "styled-components";
+
+const CatenomicsContainer = styled.div`
+    color: #fff;
+    text-align: center;
+    width: 80vw;
+    margin: 3rem auto;
+
+    @media screen and (max-width: 1000px) {
+        margin: 4rem auto;
+    }
+
+    .content {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+        gap: 3rem;
+        width: 100%;
+
+        @media screen and (max-width: 1000px) {
+            flex-direction: column;
+        }
+    }
+
+    .card {
+        width: 40%;
+        text-align: start;
+
+        @media screen and (max-width: 1000px) {
+            width: 100%;
+        }
+    }
+
+    .count {
+        font-size: clamp(2rem, 19vw, 5rem);
+        margin: 0rem 0rem 1rem;
+
+        @media screen and (max-width: 1000px) {
+            font-size: clamp(1rem, 6vw, 3rem);
+            width: 100%;
+        }
+    }
+
+    .chart-container {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 40%;
+
+        @media screen and (max-width: 1000px) {
+            width: auto;
+        }
+
+        .chart {
+            height: 100%;
+            width: 100%;
+            z-index: 2;
+        }
+
+        .center-image {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            display: flex;
+
+            img {
+                width: 80%;
+                height: 80%;
+                margin: auto;
+
+                @media screen and (max-width: 100px) {
+                    width: 90%;
+                    height: 90%;
+                }
+            }
+        }
+    }
+`;
+
+const List = styled.ul`
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+`;
+
+const ListItem = styled.li<{ $primary?: string }>`
+    background-color: ${(props) => props.$primary || "#BF4F74"};
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 1rem;
+    font-size: 1.5rem;
+    width: 100%;
+`;
+
+function CatenomicsSection() {
+    const [chartDataCircle, setChartDataCircle] = useState({});
+    const [chartOptionsCircle, setChartOptionsCircle] = useState({});
+
+    useEffect(() => {
+        const data = {
+            datasets: [
+                {
+                    data: [65, 30, 5],
+                    backgroundColor: ["#69489E", "#F1552E", "#107350"],
+                    borderWidth: 3,
+                    borderColor: "#000000",
+                },
+            ],
+        };
+        const options = {
+            cutout: "65%",
+        };
+
+        setChartDataCircle(data);
+        setChartOptionsCircle(options);
+    }, []);
+
+    return (
+        <CatenomicsContainer id="catenomics">
+            <h1>Сatenomics</h1>
+            <div className="content">
+                <div className="card">
+                    <label>Total supply:</label>
+                    <h2 className="count">100,000,000</h2>
+                    <List className="list">
+                        <ListItem $primary={"#69489E"}>
+                            <div>Presale</div>
+                            <div>65%</div>
+                        </ListItem>
+                        <ListItem $primary={"#F1552E"}>
+                            <div>Airdrop</div>
+                            <div>30%</div>
+                        </ListItem>
+                        <ListItem $primary={"#107350"}>
+                            <div>Liquidity pool</div>
+                            <div>5%</div>
+                        </ListItem>
+                    </List>
+                </div>
+
+                <div className="card flex justify-content-center circle chart-container">
+                    <Chart
+                        type="doughnut"
+                        data={chartDataCircle}
+                        options={chartOptionsCircle}
+                        className="chart w-full md:w-40rem"
+                    />
+                    <div className="center-image">
+                        <img loading="lazy" src={require("assets/termo-cat-land/EllipseCat.webp")} alt="Center Image" />
+                    </div>
+                </div>
+            </div>
+        </CatenomicsContainer>
+    );
+}
+
+export default CatenomicsSection;
