@@ -78,7 +78,7 @@ export const PresalePhase = () => {
         <div style={{ marginBottom: "2rem" }} id={EPhase.PRE_SALE}>
             <PresalePhaseWrapper>
                 <HeadPhaseSection>
-                    <h1>Pre-sale phase</h1>
+                    <h1>Presale phase</h1>
                     <button className="open-button">OPEN</button>
                     <p>
                         If you'd like to buy $THERMO CAT during the Presale stage, please fill out the form or reach out
