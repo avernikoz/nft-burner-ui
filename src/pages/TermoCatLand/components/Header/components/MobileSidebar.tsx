@@ -34,7 +34,7 @@ const MobileSidebar = () => {
     const [visible, setVisible] = useState(false);
     const phaseRoutes = {
         [EPhase.AIRDROP]: "Air drop",
-        [EPhase.PRE_SALE]: "Pre sale",
+        [EPhase.PRE_SALE]: "Presale",
         [EPhase.TRADING]: "How to Buy",
     };
 
@@ -51,7 +51,7 @@ const MobileSidebar = () => {
                         Story
                     </NavLink>
                     <NavLink href="#catenomics" onClick={() => setVisible(false)}>
-                        Catemonics
+                        Catenomics
                     </NavLink>
                     <NavLink href={"#" + phase} onClick={() => setVisible(false)}>
                         {phaseRoutes[phase]}

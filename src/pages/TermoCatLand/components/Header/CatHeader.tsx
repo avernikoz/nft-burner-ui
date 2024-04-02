@@ -8,7 +8,7 @@ const SideBar = lazy(() => import("./components/MobileSidebar"));
 export function CatHeader() {
     const phaseRoutes = {
         [EPhase.AIRDROP]: "Air drop",
-        [EPhase.PRE_SALE]: "Pre sale",
+        [EPhase.PRE_SALE]: "Presale",
         [EPhase.TRADING]: "How to Buy",
     };
 
@@ -22,7 +22,7 @@ export function CatHeader() {
             <NavLinks>
                 <NavLink href="#about">About</NavLink>
                 <NavLink href="#story">Story</NavLink>
-                <NavLink href="#catenomics">Catemonics</NavLink>
+                <NavLink href="#catenomics">Catenomics</NavLink>
                 <NavLink href={"#" + phase}>{phaseRoutes[phase]}</NavLink>
                 {phase == EPhase.TRADING && (
                     <BuyNowButton>

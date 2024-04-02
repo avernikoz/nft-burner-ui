@@ -37,6 +37,11 @@ const CatenomicsContainer = styled.div`
     .count {
         font-size: clamp(2rem, 19vw, 5rem);
         margin: 0rem 0rem 1rem;
+
+        @media screen and (max-width: 1000px) {
+            font-size: clamp(1rem, 6vw, 3rem);
+            width: 100%;
+        }
     }
 
     .chart-container {

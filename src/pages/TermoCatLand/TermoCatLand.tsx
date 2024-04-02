@@ -46,7 +46,7 @@ export const TermoCatLand = () => {
 
     const TWEET1 = process.env.REACT_APP_TWEET_1 ?? "1455776873032601600";
     const TWEET2 = process.env.REACT_APP_TWEET_2 ?? "1772306781642867043";
-    const TWEET3 = process.env.REACT_APP_TWEET_3 ?? "1774889916582752546";
+    const TWEET3 = process.env.REACT_APP_TWEET_3 ?? "1762614646572188032";
     const TWEET4 = process.env.REACT_APP_TWEET_4 ?? "1774861431776657560";
     const TWEET5 = process.env.REACT_APP_TWEET_5 ?? "1773445706826609080";
     const TWEET6 = process.env.REACT_APP_TWEET_6 ?? "1767564996496519613";
@@ -54,7 +54,7 @@ export const TermoCatLand = () => {
     const phase = (process.env.REACT_APP_THERMOCAT_CURRENT_TOKEN_PHASE ?? EPhase.AIRDROP) as EPhase;
     const phaseRoutes = {
         [EPhase.AIRDROP]: "Air drop",
-        [EPhase.PRE_SALE]: "Pre sale",
+        [EPhase.PRE_SALE]: "Presale",
         [EPhase.TRADING]: "How to Buy",
     };
 
@@ -188,7 +188,7 @@ export const TermoCatLand = () => {
                         src={require("assets/termo-cat-land/comics_1-1.webp")}
                     />
                     <ComicsText>
-                        When the blaze subsided and the embers cooled,<span>Thermo Cat</span> emerged, forever changed.
+                        When the blaze subsided and the embers cooled, <span>Thermo Cat</span> emerged, forever changed.
                         No longer an ordinary house cat, absorbing all the digital <span>HEAT</span>, it now became a
                         radiant display of <span>infrared grace</span>!
                     </ComicsText>
@@ -208,13 +208,13 @@ export const TermoCatLand = () => {
                     <GlobalStyle />
                     <TwitterSection>
                         <div className="tweet dark">
-                            <Tweet id={TWEET1 || "1455776873032601600"} />
+                            <Tweet id={TWEET1} />
                         </div>
                         <div className="tweet dark">
-                            <Tweet id={TWEET2 || "1772306781642867043"} />
+                            <Tweet id={TWEET2} />
                         </div>
                         <div className="tweet dark">
-                            <Tweet id={TWEET3 || "1774889916582752546"} />
+                            <Tweet id={TWEET3} />
                         </div>
                         <div className="tweet dark">
                             <Tweet id={TWEET4} />
@@ -232,7 +232,7 @@ export const TermoCatLand = () => {
                     <div className="links">
                         <NavLink href="#about">About</NavLink>
                         <NavLink href="#story">Story</NavLink>
-                        <NavLink href="#catenomics">Catemonics</NavLink>
+                        <NavLink href="#catenomics">Catenomics</NavLink>
                         <NavLink href={"#" + phase}>{phaseRoutes[phase]}</NavLink>
                     </div>
                     <div className="joinUs">
