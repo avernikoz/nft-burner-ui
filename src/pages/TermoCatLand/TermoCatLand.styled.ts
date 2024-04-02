@@ -228,6 +228,7 @@ export const TextWrapper = styled.div`
             text-overflow: ellipsis;
             overflow: hidden;
 
+            display: -webkit-flex;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
