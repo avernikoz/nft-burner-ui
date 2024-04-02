@@ -86,7 +86,7 @@ export const PresalePhase = () => {
                     </p>
                 </HeadPhaseSection>
                 <PresaleForm>
-                    <StyledInput type="text" placeholder="Name or nickname" required />
+                    <StyledInput type="text" placeholder="Name" required />
                     <StyledInput type="email" placeholder="Email" required />
                     <StyledTextarea placeholder="Write your message for us here" required />
                     <SendButton
