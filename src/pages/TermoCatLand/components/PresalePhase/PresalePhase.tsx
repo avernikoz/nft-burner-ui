@@ -81,12 +81,12 @@ export const PresalePhase = () => {
                     <h1>Pre-sale phase</h1>
                     <button className="open-button">OPEN</button>
                     <p>
-                        If you'd like to receive a coin during the Presale stage, please fill out the form or reach out
-                        to us on TwitterX at @nftburnerapp
+                        If you'd like to buy $TERMO CAT during the Presale stage, please fill out the form or reach out
+                        to us on X at @nftburnerapp
                     </p>
                 </HeadPhaseSection>
                 <PresaleForm>
-                    <StyledInput type="text" placeholder="Name or nickname" required />
+                    <StyledInput type="text" placeholder="Name" required />
                     <StyledInput type="email" placeholder="Email" required />
                     <StyledTextarea placeholder="Write your message for us here" required />
                     <SendButton
