@@ -14,6 +14,7 @@ import { ReactComponent as InstagramIcon } from "../../assets/svg/social/instagr
 import { GAudioEngine } from "../../webl/audioEngine";
 import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { APP_ENVIRONMENT } from "../../config/config";
+import { GraphicsWarning } from "../../components/ToastProvider/graphicsInfo";
 
 //=========================
 // 	  MEDIA QUERIES
@@ -1238,6 +1239,7 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
 
                 <LPPageSocial />
             </LPContainerMain>
+            <GraphicsWarning />
         </>
     );
 };
