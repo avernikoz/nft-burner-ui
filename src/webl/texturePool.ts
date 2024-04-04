@@ -128,7 +128,8 @@ export class GTexturePool {
 
     private static DefaultFormatsArr = ["webp", "png", "jpg"];
 
-    private static TextureLocationFolder = `assets/textures/`;
+    //private static TextureLocationFolder = `assets/textures/`;
+    private static TextureLocationFolder = `https://assetsfr.s3.eu-west-3.amazonaws.com/`;
 
     static async LoadTextureImageAsync(
         gl: WebGL2RenderingContext,
@@ -215,6 +216,7 @@ export class GTexturePool {
                 if (fetchRes.ok) {
                     const contentType = fetchRes.headers.get("Content-Type");
                     if (contentType && contentType.startsWith("image/")) {
+                        //console.log(`LOADED` + `${textureBaseName}.${currentFormat}`);
                         const blob = await fetchRes.blob();
                         const image = await loadImageAsync(URL.createObjectURL(blob));
                         uploadImage(image);
