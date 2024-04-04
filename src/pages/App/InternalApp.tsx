@@ -180,7 +180,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
             {showConnectWalletScreen && (
                 <BodyContainer>
                     <div className="half" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                        <ConnectWalletButton
+                        {/* <ConnectWalletButton
                             onClick={() => {
                                 GAudioEngine.getInstance().PlayUIClickSound();
                                 ReactGA.event("connect_wallet_open_popup_button_pressed");
@@ -191,7 +191,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boo
                             }}
                         >
                             Connect wallet
-                        </ConnectWalletButton>
+                        </ConnectWalletButton> */}
                     </div>
                 </BodyContainer>
             )}

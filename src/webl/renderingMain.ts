@@ -654,8 +654,6 @@ export function RenderMain() {
         if (GDatGUI) {
             //For global vars
             {
-                GDatGUI.close();
-
                 GDatGUI.add(GSettings, "bRunSimulation").name("Run Simulation");
 
                 const folder = GDatGUI.addFolder("Main");
@@ -750,6 +748,8 @@ export function RenderMain() {
             GTool.Current.SubmitDebugUI(GDatGUI);
             GTexturePool.SubmitDebugUI(GDatGUI);
             BurntStampSprite.SubmitDebugUI(GDatGUI);
+
+            GDatGUI.close();
         }
 
         //deprecated fpsElem = document.querySelector("#fps");

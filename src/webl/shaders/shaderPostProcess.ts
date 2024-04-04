@@ -879,6 +879,7 @@ export function GetShaderSourceCombinerPassPS() {
 			const float exposure = 1.f;
 			final.rgb *= exposure;
 
+		#if 1 //COLOR FILTER
 			//final.rgb = pow(final.rgb, vec3(1.f/2.2f));
 			const float kGreenAmount = float(` +
         MathLerp(0.25, 0.75, Math.random()) +
@@ -914,6 +915,32 @@ export function GetShaderSourceCombinerPassPS() {
 			/* colorFilter1 = mix(colorFilter1 * final.rgb, final.rgb, gradParam);
 			final.rgb = mix(colorFilter1, final.rgb, 1.f - (gradParam * 0.5)); */
 			final.b = max(0.025, final.b);
+
+		#endif //COLOR FILTER
+
+		#if 0 //HEAT MAP
+		{
+			const vec4 darkBlue = vec4(0.0, 0.0, 0.25, 1.0);
+			const vec4 purple = vec4(0.5, 0.0, 0.5, 1.0);
+			const vec4 orange = vec4(1.0, 0.5, 0.0, 1.0);
+			const vec4 white = vec4(1.0, 1.0, 1.0, 1.0);
+
+			float luma = dot(final.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+			if (luma <= 0.25)
+			{
+				final.rgb = mix(darkBlue, purple, luma * 4.0).rgb;
+			}
+			else if(luma <= 0.75)
+			{
+				final.rgb = mix(purple, orange, MapToRange(luma, 0.25, 0.75, 0.0, 1.0)).rgb;
+			}
+    		else 
+			{
+				final.rgb = mix(orange, white, MapToRange(luma, 0.75, 1.0, 0.0, 1.0)).rgb;
+			}
+		}
+		#endif
 
 			// Generate random noise for each pixel
 			vec2 noiseUV = texCoords;

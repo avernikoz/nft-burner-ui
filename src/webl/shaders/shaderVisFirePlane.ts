@@ -677,13 +677,15 @@ export function GetShaderSourceFireVisualizerPS() {
 			/* float gr = dot(vec3(0.3), ashesColor.rgb);
 			ashesColor.rgb = vec3(gr * 0.5); */
 			//ashesColor.rgb = max(ashesColor.rgb, curPaint * vec3(0.1, 0.925,  0.8) * 15.0);
-			//ashesColor.rgb = max(ashesColor.rgb * 0.7, curPaint * vec3(1.0, 0.025,  0.8) * 15.0);
+			//const vec3 curPaintColor = vec3(0.8, 0.025, 0.9);
+			const vec3 curPaintColor = vec3(1.0, 0.325, 0.1);
+			ashesColor.rgb = max(ashesColor.rgb * 0.5, curPaint * curPaintColor * 10.0 * emberScale);
 		#endif
 		#endif////BURNED IMAGE
 
 		#if PAPER
-		#endif
 		ashesColor = vec3(0.0);
+		#endif
 
 			surfaceColor = mix(ashesColor, surfaceColor, /* saturate */(curFuel));
 
@@ -713,7 +715,6 @@ export function GetShaderSourceFireVisualizerPS() {
 		#if 1//RECT FADE BUMPY
 			const highp float rectPow = 32.f;
 			highp float rectCircleLength = pow(abs(ndcSpace.x), rectPow) + pow(abs(ndcSpace.y), rectPow);
-			//float rectCircleLength = abs(vsOutTexCoords.x * 2.f - 1.f) + abs(vsOutTexCoords.y * 2.f - 1.f);
 			const float rectCircleFadeStart = 0.8;
 			const float edgeBumpScale = 1.0f;
 			if(rectCircleLength > rectCircleFadeStart)

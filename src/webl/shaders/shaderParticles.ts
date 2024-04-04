@@ -1222,6 +1222,8 @@ function scAshesSpecificShading() {
 			
 		}
 
+		colorFinal.a = min(0.75, colorFinal.a);
+
 		`
     );
 }

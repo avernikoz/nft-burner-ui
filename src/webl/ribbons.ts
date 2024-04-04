@@ -20,9 +20,17 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         VelocityPrev: gl.getUniformLocation(shaderProgram, "VelocityPrev"),
         LineThickness: gl.getUniformLocation(shaderProgram, "LineThickness"),
         Color: gl.getUniformLocation(shaderProgram, "Color"),
+        bCameraFacing: gl.getUniformLocation(shaderProgram, "bCameraFacing"),
+        PointIndex: gl.getUniformLocation(shaderProgram, "PointIndex"),
+        NumSegments: gl.getUniformLocation(shaderProgram, "NumSegments"),
+        TailFadeMode: gl.getUniformLocation(shaderProgram, "TailFadeMode"),
     };
     return params;
 }
+
+/* export class FirePaintDesc {
+    PosCur = GetVec2(0, 0);
+} */
 
 export class GRibbonsRenderer {
     public static GInstance: GRibbonsRenderer | null;
@@ -49,6 +57,7 @@ export class GRibbonsRenderer {
         color = GetVec3(1.0, 0.5, 0.7),
         scale = 0.1,
         bTailFade = false,
+        bCameraFacing = true,
     ) {
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
@@ -66,6 +75,13 @@ export class GRibbonsRenderer {
 
         gl.uniform1f(this.UniformParametersLocationList.LineThickness, scale * 0.1);
 
+        gl.uniform1i(this.UniformParametersLocationList.bCameraFacing, bCameraFacing ? 1 : 0);
+
+        gl.uniform3f(this.UniformParametersLocationList.Color, color.x, color.y, color.z);
+
+        gl.uniform1i(this.UniformParametersLocationList.NumSegments, posArr.length - 1);
+        gl.uniform1i(this.UniformParametersLocationList.TailFadeMode, bTailFade ? 2 : 0);
+
         for (let i = 1; i < posArr.length; i++) {
             const posPrev = posArr[i - 1];
             const posCur = posArr[i];
@@ -77,17 +93,7 @@ export class GRibbonsRenderer {
             GLSetVec3(gl, this.UniformParametersLocationList.PosCur, posCur);
             GLSetVec3(gl, this.UniformParametersLocationList.VelocityCur, velCur);
 
-            let brightness = 1.0;
-            if (bTailFade) {
-                brightness = i / (posArr.length - 1);
-            }
-
-            gl.uniform3f(
-                this.UniformParametersLocationList.Color,
-                color.x * brightness,
-                color.y * brightness,
-                color.z * brightness,
-            );
+            gl.uniform1i(this.UniformParametersLocationList.PointIndex, i - 1);
 
             gl.drawArrays(gl.TRIANGLES, 0, 6);
         }

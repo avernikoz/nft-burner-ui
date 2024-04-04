@@ -116,7 +116,7 @@ export function InitializeSceneStateDescsArr() {
     //For Mobile
     if (GScreenDesc.ScreenRatio < 1) {
         GSceneStateDescsArray[ERenderingState.Intro] = GSceneStateDescsArray[ERenderingState.BurningReady];
-        GSceneStateDescsArray[ERenderingState.Intro].FloorHeight = -1;
+        //GSceneStateDescsArray[ERenderingState.Intro].FloorHeight = -1;
     }
 }
 

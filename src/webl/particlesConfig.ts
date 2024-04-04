@@ -5,7 +5,7 @@ export function GetFlameParticlesDesc(): ParticleEmitterDesc {
     const desc = new ParticleEmitterDesc();
     desc.NumSpawners2D = 64;
     desc.NumParticlesPerSpawner = 1;
-    desc.SpawnRange = { x: 10.0 + Math.random() * 100.0, y: 1000.0 };
+    desc.SpawnRange = { x: 100.0 + Math.random() * 100.0, y: 1000.0 };
     desc.ParticleLife = 2.4;
     desc.NumLoops = 3.0;
     desc.TextureFileName = "Flame02_16x4";

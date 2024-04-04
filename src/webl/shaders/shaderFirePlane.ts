@@ -15,7 +15,7 @@ function scTransformBasedOnMotion(condition: boolean) {
 		pos = rotatedPosition; */
 		
 		
-		float velLength = length(Velocity) * 100.0 /* * 0.10 */;
+		float velLength = length(VelocityCur) * 100.0 /* * 0.10 */;
 		if(velLength > 0.f)
 		{
 			velLength = min(15.0, velLength);
@@ -23,7 +23,7 @@ function scTransformBasedOnMotion(condition: boolean) {
 			pos.x *= (1.f + velLength * 2.0);
 
 			// Calculate the angle between the initial direction (1, 0) and the desired direction
-			float angle = atan(Velocity.y, Velocity.x);
+			float angle = atan(VelocityCur.y, VelocityCur.x);
 
 			// Rotate the stretched position
 			float cosAngle = cos(angle);
@@ -57,10 +57,10 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
 	uniform float ScreenRatio;
 	uniform vec3 FirePlanePositionOffset;
 
-	uniform vec2 PointerPositionOffset;//ViewSpace
+	uniform vec2 PosCur;
 	uniform vec3 Orientation;
 	uniform vec2 SizeScale;
-	uniform vec2 Velocity;
+	uniform vec2 VelocityCur;
 
 	out vec2 vsOutTexCoords;
 
@@ -111,7 +111,7 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
 		scale *= SizeScale;
 		
 		//calculate offset
-		vec2 posOffset = PointerPositionOffset.xy;
+		vec2 posOffset = PosCur.xy;
 		
 		pos = (pos.xy * scale.xy) + posOffset.xy;
 		
@@ -133,7 +133,7 @@ export function GetShaderSourceApplyFirePaintVS() {
 	uniform float ScreenRatio;
 	uniform vec3 FirePlanePositionOffset;
 
-	uniform vec2 PointerPositionOffset;
+	uniform vec2 PosCur;
 	uniform vec2 PosPrev;
 	uniform vec2 SizeScale;
 	uniform vec2 VelocityLengthCurPrev;
@@ -155,7 +155,7 @@ export function GetShaderSourceApplyFirePaintVS() {
 		float thicknessCur = max(minSize, sizeInitial * max(0.0, (1.0 - VelocityLengthCurPrev.y * thicknessScale)));
 		float thicknessPrev = max(minSize, sizeInitial * max(0.0, (1.0 - VelocityLengthCurPrev.x * thicknessScale)));
 
-		vec3 curPos = vec3(PointerPositionOffset.xy, 0.0);
+		vec3 curPos = vec3(PosCur.xy, 0.0);
 		vec3 prevPos = vec3(PosPrev.xy, 0.0);
 	
 		//Length can't be lower than cur thickness
@@ -171,14 +171,14 @@ export function GetShaderSourceApplyFirePaintVS() {
 			maxThicknessScale = 1.0;
 		}
 		{
-			vec2 rayOrigin = PointerPositionOffset;
+			vec2 rayOrigin = PosCur;
 			vec2 rayDirection = PosPrev - rayOrigin;
 			float length = length(rayDirection);
 			prevPos.xy = rayOrigin + normalize(rayDirection) * max(thicknessMax * maxThicknessScale, length * lengthScale);
 		}
 		{
 			vec2 rayOrigin = PosPrev;
-			vec2 rayDirection = PointerPositionOffset - rayOrigin;
+			vec2 rayDirection = PosCur - rayOrigin;
 			float length = length(rayDirection);
 			curPos.xy = rayOrigin + normalize(rayDirection) * max(thicknessMax * maxThicknessScale, length * lengthScale);
 		}
@@ -236,6 +236,81 @@ export function GetShaderSourceApplyFirePaintVS() {
 	}`
     );
 }
+export function GetShaderSourceApplyFireRibbonVS() {
+    return (
+        /* glsl */ `#version 300 es
+
+	precision highp float;
+
+	layout(location = 0) in vec2 VertexBuffer;
+	layout(location = 1) in vec2 TexCoordsBuffer;
+
+	uniform vec4 CameraDesc;
+	uniform float ScreenRatio;
+	uniform vec2 PosCur;
+	uniform vec2 PosPrev;
+	uniform vec2 VelocityCur;
+	uniform vec2 VelocityPrev;
+	uniform vec2 LineThickness;
+
+	out vec2 vsOutTexCoords;
+	//out float interpolatorLengthRatio;
+
+	vec2 GetNormal(vec2 p, vec2 v)
+	{
+		vec3 pos3D = vec3(p.xy, 0.0);
+		vec3 vel3D = normalize(vec3(v.xy, 0.0));
+		/* vec3 camPos = CameraDesc.xyz;
+		vec3 dirToCam = normalize(camPos - p); */
+		const vec3 dirToCam = vec3(0.0, 0.0, -1.0);
+		vec3 lineNormal = cross(vel3D, dirToCam);
+
+		lineNormal.z = 0.0;
+		lineNormal = normalize(lineNormal);
+
+		return lineNormal.xy;
+	}
+
+	void main()
+	{
+		vec2 lineNormalp0 = GetNormal(PosPrev, VelocityPrev) * LineThickness.y;
+		vec2 lineNormalp1 = GetNormal(PosCur, VelocityCur) * LineThickness.x;
+
+		vec2 verts0 = PosPrev - lineNormalp0;
+		vec2 verts1 = PosCur - lineNormalp1;
+		vec2 verts2 = PosCur + lineNormalp1;
+		vec2 verts3 = PosPrev + lineNormalp0;
+
+		////Clockwise, starting from left down
+		vec2 uv0 = vec2(0.0, 0.0);
+		vec2 uv1 = vec2(0.0, 1.0);
+		vec2 uv2 = vec2(1.0, 1.0);
+		vec2 uv3 = vec2(1.0, 0.0);
+
+		uint vertId = uint(gl_VertexID);
+		vec2 pos = verts3;
+		vsOutTexCoords = uv3;
+		if(vertId == 0u || vertId == 3u)
+		{
+			pos = verts0;
+			vsOutTexCoords = uv0;
+		}
+		else if(vertId == 1u)
+		{
+			pos = verts1;
+			vsOutTexCoords = uv1;
+		}
+		else if(vertId == 2u || vertId == 4u)
+		{
+			pos = verts2;
+			vsOutTexCoords = uv2;
+		}
+
+		gl_Position = vec4(pos.xy, 0.0, 1.0);
+		
+	}`
+    );
+}
 
 
 export const ShaderSourceApplyFirePS =
@@ -249,8 +324,9 @@ export const ShaderSourceApplyFirePS =
 
 	uniform float AppliedFireStrength;
 	uniform float Time;
+	uniform float NoiseScale; //[0.05, 0.4]
 	uniform int bSmoothOutEdges;
-	uniform int bApplyFireUseNoise;
+	uniform int EAppliedFireNoiseType;
 	uniform int bApplyFireUseMask;
 
 
@@ -317,6 +393,8 @@ export const ShaderSourceApplyFirePS =
 
 		}
 
+	#else
+
 		//else
 		{	
 
@@ -329,14 +407,18 @@ export const ShaderSourceApplyFirePS =
 				s = 1.0;
 			} */
 
-			/* const float thres = 0.75;
+			// Calculate the distance from the center
+			float d = length(texCoords - vec2(0.5));	
+			d = min(1.0, d);
+			d = 1.f - d;
+			const float thres = 0.75;
 			if(bSmoothOutEdges == 0)
 			{
 				
-				if(s < thres)
+				/* if(d < thres)
 				{
 					const float sThres = 0.6;
-					if(s > sThres)
+					if(l > sThres)
 					{
 						//s = MapToRange(s, sThres,thres, 0.75, 1.0);
 						s = 1.0;
@@ -349,11 +431,11 @@ export const ShaderSourceApplyFirePS =
 				else
 				{
 					s = 1.0;
-				}
+				} */
 			}
 			else
 			{
-				if(s < 0.3)
+				if(d < thres)
 				{
 					s = 0.0;
 				}
@@ -361,35 +443,26 @@ export const ShaderSourceApplyFirePS =
 				{
 					s = 1.0;
 				}
-			} */
+			}
 
 		}
 
 	#endif
 
-		// Calculate the distance from the center
-		float l = length(texCoords - vec2(0.5));	
-		l = min(1.0, l);
-		l = 1.f - l;
+		
 
 		if(bApplyFireUseMask > 0)
 		{	
 			s *= texture(MaskTexture, texCoords.xy).r;
 		}
 
-		if(bApplyFireUseNoise > 0)
-		{
-			vec3 noise = texture(ColorTexture, (texCoords.xy + Time) * float(` +
-    MathLerp(0.05, 0.4, Math.random()) +
-    /* glsl */ `)).rgb;
-			noise.r = MapToRange(noise.r, 0.4, 0.6, 0.0, 1.0);
-			noise.g = MapToRange(noise.g, 0.4, 0.6, 0.0, 1.0);
-			noise.b = MapToRange(noise.b, 0.4, 0.6, 0.0, 1.0);
-			noise.r = noise.r * noise.g * noise.b;
-			s *= (noise.r * noise.r * noise.r);
-		}
 		
-	#if 0 //blur border
+		
+		float borderD = 1.0 - abs(vsOutTexCoords.x - 0.5) * 2.0; // 1 is Center
+		//borderD *= borderD;
+		//borderD *= borderD;
+
+	#if 1 //blur border
 		const float thres = 0.1;
 		if(vsOutTexCoords.x > (1.0 - thres))
 		{
@@ -401,11 +474,47 @@ export const ShaderSourceApplyFirePS =
 		}
 	#endif
 
-		
-		OutFire = Fire * s;
+		if(EAppliedFireNoiseType > 0)
+		{
+			vec2 noiseScaleRatio = vec2(0.5, 1.0);
+			vec2 timeAdd = vec2(1.0, 0.877) * Time;
+			vec3 noise = texture(ColorTexture, (texCoords.xy) * NoiseScale * noiseScaleRatio + timeAdd).rgb;
+			noise.r = MapToRange(noise.r, 0.4, 0.6, 0.0, 1.0);
+			
+			if(EAppliedFireNoiseType > 2)
+			{
+				noise.g = MapToRange(noise.g, 0.4, 0.6, 0.0, 1.0);
+				noise.b = MapToRange(noise.b, 0.4, 0.6, 0.0, 1.0);
 
-		s *= rand(vsOutTexCoords * 100.0);
-		OutPaint = 1.0 * s;
+				noise.r = noise.r * noise.g * noise.b;
+			}
+
+			noise.r = noise.r * noise.r * noise.r;
+
+			if((EAppliedFireNoiseType == 2) || (EAppliedFireNoiseType == 4))
+			{
+				noise.r = mix(noise.r, 1.0, borderD);
+			}
+
+			if(EAppliedFireNoiseType == 1)
+			{
+				noise.r = max(0.25, noise.r);
+			}
+			
+			s *= (noise.r);
+		}
+		
+		
+		//Output Paint that is not affected by Noise
+		float paintNoise = rand(vsOutTexCoords * 100.0);
+		paintNoise = max(borderD, paintNoise);
+		//paintNoise = 1.0;
+		OutPaint = 1.0 * s * paintNoise;
+
+
+		
+
+		OutFire = Fire * s;
 	}`;
 
 export const ShaderSourceFireUpdatePS =

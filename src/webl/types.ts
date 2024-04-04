@@ -1,7 +1,6 @@
 export type Vector2 = { x: number; y: number };
 export type Color = { r: number; g: number; b: number };
 
-//export type Vector3 = { x: number; y: number; z: number };
 export class Vector3 {
     x: number;
 
@@ -177,4 +176,15 @@ export class Matrix4x4 {
         }
         return result;
     }
+}
+
+//To avoid heap allocations
+export class GStack {
+    static readonly TempVec3 = new Vector3(0, 0, 0);
+
+    static readonly TempVec3_2 = new Vector3(0, 0, 0);
+
+    static readonly TempVec3_3 = new Vector3(0, 0, 0);
+
+    static readonly TempVec3_4 = new Vector3(0, 0, 0);
 }

@@ -1,3 +1,5 @@
+import { scGetCommonFuncsDeclarations } from "./shaderCommon";
+
 export function GetShaderSourceSingleFlameRenderVS() {
     return /* glsl */ `#version 300 es
 	
@@ -601,5 +603,251 @@ export function GetShaderSourceFireballRenderPS() {
 		//colorScale = vec3(1.9, 1.5, 1.7) * 1.9 * 1.5;
 
 		outColor = color * colorScale;
+	}`;
+}
+
+
+
+export function GetShaderSourceLightsaberPS() {
+    return /* glsl */ `#version 300 es
+	
+	precision highp float;
+	precision highp sampler2D;
+
+	layout(location = 0) out vec3 outColor;
+
+	uniform vec3 Color;
+	uniform float LineLength;
+	uniform float Time;
+
+	uniform sampler2D NoiseTexture;
+
+	in vec2 vsOutTexCoords;
+
+	`+ scGetCommonFuncsDeclarations() + /* glsl */`
+
+	void main()
+	{
+		float s = 1.0;
+
+		vec2 texCoords = vsOutTexCoords;
+
+	#if 1 //DISTORT HF
+	{
+		const float noiseSpeed = 8.0;
+
+		vec2 distortionUV = vsOutTexCoords;
+
+		if(vsOutTexCoords.x > 0.5)
+		{
+			distortionUV.x -= Time * 0.25 * noiseSpeed * 2.0;
+		}
+		else
+		{
+			distortionUV.x += Time * 0.25 * noiseSpeed * 2.0;
+		}
+
+		distortionUV.y -= Time * 0.05 * noiseSpeed;
+
+		const float distPrecisionScale = 0.05;
+		//const float distPrecisionScale = 0.01;
+		distortionUV *= distPrecisionScale;
+		distortionUV.y *= 5.0;
+		vec3 distortionNoise = textureLod(NoiseTexture, distortionUV.xy, 0.f).rgb;
+		//distortionNoise.x = clamp(MapToRange(distortionNoise.x, 0.4, 0.6, 0.0, 1.0), 0.0, 1.0);
+		distortionNoise.y = clamp(MapToRange(distortionNoise.y, 0.2, 0.8, 0.0, 1.0), 0.0, 1.0);
+		//distortionNoise.z = clamp(MapToRange(distortionNoise.z, 0.2, 0.8, 0.0, 1.0), 0.0, 1.0);
+		distortionNoise = (distortionNoise * 2.f) - 1.f;
+		float t = mod(Time + vsOutTexCoords.y, 1.f) * 3.0;
+		if(t < 1.f)
+		{
+			distortionNoise.x = mix(distortionNoise.x, distortionNoise.y, t);
+		}
+		else if(t < 2.f)
+		{
+			distortionNoise.x = mix(distortionNoise.y, distortionNoise.z, t - 1.f);
+		}
+		else
+		{
+			distortionNoise.x = mix(distortionNoise.z, distortionNoise.x, t - 2.f);
+		}
+
+		const float offsetScale = 0.1;
+		texCoords.x += distortionNoise.x * offsetScale;
+		texCoords.x = clamp(texCoords.x, 0.0, 1.0);
+	}
+	#endif
+
+	#if 1 //DISTORT LF
+	{
+		const float noiseSpeed = 5.0;
+
+		vec2 distortionUV = vsOutTexCoords;
+
+		if(vsOutTexCoords.x > 0.5)
+		{
+			distortionUV.x -= Time * 0.25 * noiseSpeed * 2.0;
+		}
+		else
+		{
+			distortionUV.x += Time * 0.25 * noiseSpeed * 2.0;
+		}
+
+		distortionUV.y -= Time * 0.05 * noiseSpeed;
+
+		//const float distPrecisionScale = 0.05;
+		const float distPrecisionScale = 0.01;
+		distortionUV *= distPrecisionScale;
+		distortionUV.y *= 5.0;
+		vec3 distortionNoise = textureLod(NoiseTexture, distortionUV.xy, 0.f).rgb;
+		//distortionNoise.x = clamp(MapToRange(distortionNoise.x, 0.4, 0.6, 0.0, 1.0), 0.0, 1.0);
+		distortionNoise.y = clamp(MapToRange(distortionNoise.y, 0.2, 0.8, 0.0, 1.0), 0.0, 1.0);
+		//distortionNoise.z = clamp(MapToRange(distortionNoise.z, 0.2, 0.8, 0.0, 1.0), 0.0, 1.0);
+		distortionNoise = (distortionNoise * 2.f) - 1.f;
+		float t = mod(Time + vsOutTexCoords.y, 1.f) * 3.0;
+		if(t < 1.f)
+		{
+			distortionNoise.x = mix(distortionNoise.x, distortionNoise.y, t);
+		}
+		else if(t < 2.f)
+		{
+			distortionNoise.x = mix(distortionNoise.y, distortionNoise.z, t - 1.f);
+		}
+		else
+		{
+			distortionNoise.x = mix(distortionNoise.z, distortionNoise.x, t - 2.f);
+		}
+
+		const float offsetScale = 0.1;
+		texCoords.x += distortionNoise.x * offsetScale;
+		texCoords.x = clamp(texCoords.x, 0.0, 1.0);
+	}
+	#endif
+	
+
+	#if 1 //CAPSULE
+		if(LineLength > 1.0)
+		{
+			vec2 st = texCoords.yx;
+		
+			vec2 objectSize = vec2(LineLength * 2.0, 1.0);
+			vec2 objectSpacePos = st * objectSize;
+		
+    		float radius = 0.5;
+		
+			vec2 circle1Pos = vec2(objectSize.x - radius, 0.5);
+			vec2 circle2Pos = vec2(0.0 + radius, 0.5);
+			
+			s = 1.0;
+		
+			if(objectSpacePos.x > circle1Pos.x)
+			{
+				float distToCircle1 = length(vec2(objectSpacePos - circle1Pos));
+				if(distToCircle1 > radius)
+				{
+					float m = MapToRange(distToCircle1, radius, radius + 0.01, 1.0, 0.0);
+					m = clamp(m, 0.0, 1.0);
+					m *= m;
+					s *= m;
+					s = 0.0;
+				}
+			}
+			else if(objectSpacePos.x < circle2Pos.x)
+			{
+				float distToCircle1 = length(objectSpacePos - circle2Pos);
+				if(distToCircle1 > radius)
+				{
+					float m = MapToRange(distToCircle1, radius, radius + 0.05, 1.0, 0.0);
+					m = clamp(m, 0.0, 1.0);
+					m *= m;
+					s *= m;
+				}
+			}
+
+		}
+	#endif
+
+		//if(texCoords.y > 0.5)
+		{
+			float d = length(texCoords - vec2(0.5));
+			const float thres = 0.5;
+			if(d > thres)
+			{
+				//s = 0.2;
+				float m = MapToRange(d, thres, thres + 0.2, 1.0, 0.0);
+				m = clamp(m, 0.0, 1.0);
+				m *= m;
+				s *= m;
+			}
+		}
+		
+	#if 1 //blur border
+	{
+		/* const float thres = 0.3;
+		if(texCoords.x > (1.0 - thres))
+		{
+			s *= MapToRange(texCoords.x, 1.0 - thres, 1.0, 1.0, 0.0);
+		}
+		else if(texCoords.x < thres)
+		{
+			s *= MapToRange(texCoords.x, 0.0, thres, 0.0, 1.0);
+		} */
+
+		float c = abs(texCoords.x - 0.5) * 2.0;
+		const float thres0Birhgtness = 0.2;
+		const float thres0 = 0.7;
+		const float thres1 = thres0 - 0.2;
+		if(c < thres0)
+		{
+			if(c > thres1)
+			{
+				float m = MapToRange(c, thres1, thres0, 1.0, thres0Birhgtness);
+				s *= m;
+			}
+		}
+		else
+		{
+			float m = MapToRange(c, thres0, 1.0, thres0Birhgtness, 0.0);
+			s *= m;
+		}
+		
+	}
+	#endif
+
+	#if 1 //blur ends
+	{
+		const float thres = 0.01;
+		if(texCoords.y > (1.0 - thres))
+		{
+			//s *= MapToRange(texCoords.y, 1.0 - thres, 1.0, 1.0, 0.0);
+		}
+		else if(texCoords.y < thres)
+		{
+			s *= MapToRange(texCoords.y, 0.0, thres, 0.0, 1.0);
+		}
+	}
+	#endif
+
+	const float brightThres = 0.5 - 0.02;
+	if(vsOutTexCoords.x > brightThres && vsOutTexCoords.x < (1.0 - brightThres) && vsOutTexCoords.y < 0.95 && vsOutTexCoords.y > 0.05)
+	{
+		s *= 10.0;
+		//s = 0.0;
+	}
+
+	#if 1 //Flicker
+	{
+		const float flickerSpeed = 2.0;
+		vec2 flickerUV = vec2(0.0, 0.5);
+		flickerUV.x += Time * flickerSpeed;
+		float flickerNoise = textureLod(NoiseTexture, flickerUV.xy, 0.f).r;
+		flickerNoise = MapToRange(flickerNoise, 0.2, 0.8, 0.0, 1.0);
+		s *= (1.0 + flickerNoise);
+	}
+	#endif
+
+		//s *= 2.0;
+
+		outColor = Color * s;
 	}`;
 }

@@ -352,7 +352,7 @@ export class Stickbody extends PhysicsBody {
 
     //Specific Points
 
-    constructor(length = 1.5, gravityForce = 5) {
+    constructor(length = 1.5) {
         super();
 
         const posCur = GetVec3(-1.0, -0.5, -3.0);
@@ -370,7 +370,6 @@ export class Stickbody extends PhysicsBody {
             const end = new PhysPoint();
             end.PositionCur.Set(posCur);
             this.Points.push(end);
-            posCur.x += length;
         }
 
         //Constraint
@@ -378,8 +377,6 @@ export class Stickbody extends PhysicsBody {
         const end = this.Points[1];
 
         this.Constraints.push(new Constraint(start, end, length, 1.0));
-
-        this.ConstantForce.z = -gravityForce;
     }
 }
 
@@ -611,6 +608,15 @@ export class RectRigidBody extends PhysicsBody {
             const forceScale = MathClamp(1.0 - dist / radius, 0, 1);
 
             point.Acceleration.z += strength * 10 * forceScale;
+        }
+    }
+
+    ApplyShake(offset: Vector3) {
+        for (let i = 0; i < 4; i++) {
+            const point = this.Points[i];
+
+            point.PositionPrev.Set(point.PositionCur);
+            point.PositionCur.Add(offset);
         }
     }
 }

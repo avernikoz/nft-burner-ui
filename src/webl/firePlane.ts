@@ -6,6 +6,7 @@ import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import {
     GetShaderSourceApplyFirePaintVS,
+    GetShaderSourceApplyFireRibbonVS,
     GetShaderSourceApplyFireVS,
     ShaderSourceApplyFirePS,
     ShaderSourceFireUpdatePS,
@@ -19,10 +20,11 @@ import {
 import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
 import { GTexturePool } from "./texturePool";
 import { GetVec2, GetVec3, SetVec2, Vector2 } from "./types";
-import { GTime, MathGetVec2Length, Vec3Cross, Vec3Negate } from "./utils";
+import { GTime, MathGetVec2Length, MathLerp, Vec3Cross, Vec3Negate } from "./utils";
 import { GUserInputDesc } from "./input";
 import { RectRigidBody } from "./physics";
 import { GLSetVec3 } from "./helpers/glHelper";
+import { hasUncaughtExceptionCaptureCallback } from "process";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -35,14 +37,18 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         SpotlightScale: gl.getUniformLocation(shaderProgram, "SpotlightScale"),
         CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
         ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
-        Velocity: gl.getUniformLocation(shaderProgram, "Velocity"),
+
+        PosCur: gl.getUniformLocation(shaderProgram, "PosCur"),
+        PosPrev: gl.getUniformLocation(shaderProgram, "PosPrev"),
+        VelocityCur: gl.getUniformLocation(shaderProgram, "VelocityCur"),
+        VelocityPrev: gl.getUniformLocation(shaderProgram, "VelocityPrev"),
+        LineThickness: gl.getUniformLocation(shaderProgram, "LineThickness"),
+        NoiseScale: gl.getUniformLocation(shaderProgram, "NoiseScale"),
 
         FirePlanePositionOffset: gl.getUniformLocation(shaderProgram, "FirePlanePositionOffset"),
-        PointerPositionOffset: gl.getUniformLocation(shaderProgram, "PointerPositionOffset"),
         SizeScale: gl.getUniformLocation(shaderProgram, "SizeScale"),
         AppliedFireStrength: gl.getUniformLocation(shaderProgram, "AppliedFireStrength"),
         VelocityLengthCurPrev: gl.getUniformLocation(shaderProgram, "VelocityLengthCurPrev"),
-        PosPrev: gl.getUniformLocation(shaderProgram, "PosPrev"),
         ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
         MaskTexture: gl.getUniformLocation(shaderProgram, "MaskTexture"),
         FireTexture: gl.getUniformLocation(shaderProgram, "FireTexture"),
@@ -68,7 +74,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         SurfaceMaterialColorTexture: gl.getUniformLocation(shaderProgram, "SurfaceMaterialColorTexture"),
         AfterBurnEmbersParam: gl.getUniformLocation(shaderProgram, "AfterBurnEmbersParam"),
         bSmoothOutEdges: gl.getUniformLocation(shaderProgram, "bSmoothOutEdges"),
-        bApplyFireUseNoise: gl.getUniformLocation(shaderProgram, "bApplyFireUseNoise"),
+        EAppliedFireNoiseType: gl.getUniformLocation(shaderProgram, "EAppliedFireNoiseType"),
         bApplyFireUseMask: gl.getUniformLocation(shaderProgram, "bApplyFireUseMask"),
         TBNNormal: gl.getUniformLocation(shaderProgram, "TBNNormal"),
         TBNTangent: gl.getUniformLocation(shaderProgram, "TBNTangent"),
@@ -76,16 +82,27 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
     return params;
 }
 
+export enum EAppliedFireNoiseType {
+    Disabled = 0,
+    EnabledSoft = 1,
+    EnabledSoftEdges = 2,
+    EnabledStrong = 3,
+    EnabledStrongEdges = 4,
+}
+
 export class FirePaintDesc {
     PosCur = GetVec2(0, 0);
     PosPrev = GetVec2(0, 0);
-    Velocity = GetVec2(0, 0);
-    Size = GetVec2(1, 1);
+    VelocityCur = GetVec2(0, 0);
+    VelocityPrev = GetVec2(0, 0);
+    Size = GetVec2(1, 1); //Line Thickness Cur & Prev
     Orientation = GetVec3(0, 0, 0);
     Strength = 1.0;
     bMotionBasedTransform = false;
+    bRibbonRender = false;
     bSmoothOutEdges = false;
-    bApplyFireUseNoise = false;
+    AppliedNoiseType = EAppliedFireNoiseType.Disabled;
+    AppliedNoiseScale = MathLerp(0.05, 0.4, Math.random());
     pMaskTexture: WebGLTexture | null = null;
 }
 
@@ -93,12 +110,14 @@ export class RApplyFireRenderPass {
     public colorTexture;
 
     public ShaderProgramMotion;
+    public ShaderProgramRibbon;
 
     public ShaderProgram;
 
     public UniformParametersLocationList;
 
     public UniformParametersLocationListMotion;
+    public UniformParametersLocationListRibbon;
 
     public NoiseTexture;
 
@@ -114,42 +133,35 @@ export class RApplyFireRenderPass {
         this.ShaderProgramMotion = CreateShaderProgramVSPS(
             gl,
             GetShaderSourceApplyFireVS(true),
-            //GetShaderSourceApplyFirePaintVS(),
+            ShaderSourceApplyFirePS,
+        );
+        this.ShaderProgramRibbon = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceApplyFireRibbonVS(),
             ShaderSourceApplyFirePS,
         );
         this.ShaderProgram = CreateShaderProgramVSPS(gl, GetShaderSourceApplyFireVS(false), ShaderSourceApplyFirePS);
 
         //Shader Parameters
+        this.UniformParametersLocationListRibbon = GetUniformParametersList(gl, this.ShaderProgramRibbon);
         this.UniformParametersLocationListMotion = GetUniformParametersList(gl, this.ShaderProgramMotion);
         this.UniformParametersLocationList = GetUniformParametersList(gl, this.ShaderProgram);
 
         this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
     }
 
-    readonly VelocityCur = GetVec2(0, 0);
-    readonly VelocityLastInteraction = GetVec2(0, 0);
-    readonly LineDirectionLastInteraction = GetVec2(0, 0);
-
-    Execute(
-        gl: WebGL2RenderingContext,
-        inDesc: FirePaintDesc,
-        /* positionOffset: Vector2,
-        velDirection: Vector2,
-        sizeScale: Vector2,
-        strength: number,
-        bMotionBasedTransform: boolean,
-        bSmoothOutEdges: boolean,
-        bApplyFireUseNoise: boolean, */
-    ) {
-        this.VelocityCur.x = GUserInputDesc.InputVelocityCurViewSpace.x;
-        this.VelocityCur.y = GUserInputDesc.InputVelocityCurViewSpace.y;
-
+    Execute(gl: WebGL2RenderingContext, inDesc: FirePaintDesc) {
         let ParametersLocationListRef = this.UniformParametersLocationListMotion;
         if (inDesc.bMotionBasedTransform) {
             gl.useProgram(this.ShaderProgramMotion);
         } else {
-            gl.useProgram(this.ShaderProgram);
-            ParametersLocationListRef = this.UniformParametersLocationList;
+            if (inDesc.bRibbonRender) {
+                gl.useProgram(this.ShaderProgramRibbon);
+                ParametersLocationListRef = this.UniformParametersLocationListRibbon;
+            } else {
+                gl.useProgram(this.ShaderProgram);
+                ParametersLocationListRef = this.UniformParametersLocationList;
+            }
         }
 
         //VAO
@@ -178,20 +190,25 @@ export class RApplyFireRenderPass {
             inDesc.Orientation.z,
         );
 
-        gl.uniform2f(ParametersLocationListRef.PointerPositionOffset, inDesc.PosCur.x, inDesc.PosCur.y);
+        //VS
+        gl.uniform2f(ParametersLocationListRef.PosCur, inDesc.PosCur.x, inDesc.PosCur.y);
         gl.uniform2f(ParametersLocationListRef.SizeScale, inDesc.Size.x, inDesc.Size.y);
+
+        gl.uniform2f(ParametersLocationListRef.VelocityCur, inDesc.VelocityCur.x, inDesc.VelocityCur.y);
+
+        if (inDesc.bRibbonRender) {
+            gl.uniform2f(ParametersLocationListRef.PosPrev, inDesc.PosPrev.x, inDesc.PosPrev.y);
+            gl.uniform2f(ParametersLocationListRef.VelocityPrev, inDesc.VelocityPrev.x, inDesc.VelocityPrev.y);
+            gl.uniform2f(ParametersLocationListRef.LineThickness, inDesc.Size.x, inDesc.Size.y);
+        }
+
+        //PS
         gl.uniform1f(ParametersLocationListRef.AppliedFireStrength, inDesc.Strength);
+        gl.uniform1f(ParametersLocationListRef.NoiseScale, inDesc.AppliedNoiseScale);
         gl.uniform1f(ParametersLocationListRef.Time, GTime.Cur);
         gl.uniform1i(ParametersLocationListRef.bSmoothOutEdges, inDesc.bSmoothOutEdges ? 1 : 0);
-        gl.uniform1i(ParametersLocationListRef.bApplyFireUseNoise, inDesc.bApplyFireUseNoise ? 1 : 0);
+        gl.uniform1i(ParametersLocationListRef.EAppliedFireNoiseType, inDesc.AppliedNoiseType);
         gl.uniform1i(ParametersLocationListRef.bApplyFireUseMask, inDesc.pMaskTexture ? 1 : 0);
-        gl.uniform2f(
-            ParametersLocationListRef.VelocityLengthCurPrev,
-            MathGetVec2Length(this.VelocityCur),
-            MathGetVec2Length(this.VelocityLastInteraction),
-        );
-        gl.uniform2f(ParametersLocationListRef.Velocity, inDesc.Velocity.x, inDesc.Velocity.y);
-        gl.uniform2f(ParametersLocationListRef.PosPrev, inDesc.PosPrev.x, inDesc.PosPrev.y);
 
         //Textures
         gl.activeTexture(gl.TEXTURE0 + 4);
@@ -205,9 +222,6 @@ export class RApplyFireRenderPass {
         }
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        this.VelocityLastInteraction.x = this.VelocityCur.x;
-        this.VelocityLastInteraction.y = this.VelocityCur.y;
     }
 }
 
@@ -647,8 +661,8 @@ export class GBurningSurface {
         gl.blendFunc(gl.ONE, gl.ONE);
 
         SetVec2(GBurningSurface.ApplyFireAutoDesc.PosCur, curInputPos.x, curInputPos.y);
-        GBurningSurface.ApplyFireAutoDesc.Velocity.x = 1.0;
-        GBurningSurface.ApplyFireAutoDesc.Velocity.y = 0.0;
+        GBurningSurface.ApplyFireAutoDesc.VelocityCur.x = 1.0;
+        GBurningSurface.ApplyFireAutoDesc.VelocityCur.y = 0.0;
         GBurningSurface.ApplyFireAutoDesc.Size.x = size;
         GBurningSurface.ApplyFireAutoDesc.Size.y = size;
         GBurningSurface.ApplyFireAutoDesc.Strength = 100;

@@ -16,16 +16,17 @@ export function GetUniformParametersListSimpleShape(gl: WebGL2RenderingContext, 
     const params = {
         Position: gl.getUniformLocation(shaderProgram, "Position"),
         Orientation: gl.getUniformLocation(shaderProgram, "Orientation"),
+        LineEnd: gl.getUniformLocation(shaderProgram, "LineEnd"),
         Scale: gl.getUniformLocation(shaderProgram, "Scale"),
         Color: gl.getUniformLocation(shaderProgram, "Color"),
         CameraDesc: gl.getUniformLocation(shaderProgram, "CameraDesc"),
         ScreenRatio: gl.getUniformLocation(shaderProgram, "ScreenRatio"),
-        LineEnd: gl.getUniformLocation(shaderProgram, "LineEnd"),
         Vertex1: gl.getUniformLocation(shaderProgram, "Vertex1"),
         Vertex2: gl.getUniformLocation(shaderProgram, "Vertex2"),
         Vertex3: gl.getUniformLocation(shaderProgram, "Vertex3"),
         bCircle: gl.getUniformLocation(shaderProgram, "bCircle"),
         ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
+        bSwitchUVs: gl.getUniformLocation(shaderProgram, "bSwitchUVs"),
     };
     return params;
 }
@@ -44,6 +45,9 @@ export class GSimpleShapesRenderer {
 
     ShaderProgramLine;
     UniformParametersLocationListLine;
+
+    ShaderProgramLineTextured;
+    UniformParametersLocationListLineTextured;
 
     ShaderProgramTriangle;
     UniformParametersLocationListTriangle;
@@ -88,6 +92,17 @@ export class GSimpleShapesRenderer {
         );
 
         this.UniformParametersLocationListLine = GetUniformParametersListSimpleShape(gl, this.ShaderProgramLine);
+
+        this.ShaderProgramLineTextured = CreateShaderProgramVSPS(
+            gl,
+            GetShaderSourceGenericLineRenderVS(),
+            GetShaderSourceGenericTexturedRenderPS(),
+        );
+
+        this.UniformParametersLocationListLineTextured = GetUniformParametersListSimpleShape(
+            gl,
+            this.ShaderProgramLineTextured,
+        );
 
         //Triangle
         this.ShaderProgramTriangle = CreateShaderProgramVSPS(
@@ -154,6 +169,7 @@ export class GSimpleShapesRenderer {
         gl.uniform3f(uniformsLocation.Orientation, 0.0, 0.0, orientationRoll);
         gl.uniform3f(uniformsLocation.Color, color.x, color.y, color.z);
         gl.uniform1i(uniformsLocation.bCircle, bCircle ? 1 : 0);
+        gl.uniform1i(uniformsLocation.bSwitchUVs, 0);
 
         if (pTexture) {
             //Textures
@@ -171,25 +187,44 @@ export class GSimpleShapesRenderer {
         posEnd: Vector3,
         scale = 0.01,
         color: Vector3 = GetVec3(1, 0, 1),
+        pTexture: WebGLTexture | null = null,
     ) {
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
-        gl.useProgram(this.ShaderProgramLine);
+        let uniformParams = this.UniformParametersLocationListLine;
+
+        if (pTexture) {
+            uniformParams = this.UniformParametersLocationListLineTextured;
+            gl.useProgram(this.ShaderProgramLineTextured);
+        } else {
+            gl.useProgram(this.ShaderProgramLine);
+        }
 
         //Constants
         gl.uniform4f(
-            this.UniformParametersLocationListLine.CameraDesc,
+            uniformParams.CameraDesc,
             GSceneDesc.Camera.Position.x,
             GSceneDesc.Camera.Position.y,
             GSceneDesc.Camera.Position.z,
             GSceneDesc.Camera.ZoomScale,
         );
-        gl.uniform1f(this.UniformParametersLocationListLine.ScreenRatio, GScreenDesc.ScreenRatio);
-        gl.uniform1f(this.UniformParametersLocationListLine.Scale, scale);
-        GLSetVec3(gl, this.UniformParametersLocationListLine.Position, posStart);
-        GLSetVec3(gl, this.UniformParametersLocationListLine.LineEnd, posEnd);
-        gl.uniform3f(this.UniformParametersLocationListLine.Color, color.x, color.y, color.z);
-        gl.uniform1i(this.UniformParametersLocationListLine.bCircle, 0);
+        gl.uniform1f(uniformParams.ScreenRatio, GScreenDesc.ScreenRatio);
+        gl.uniform1f(uniformParams.Scale, scale);
+        GLSetVec3(gl, uniformParams.Position, posStart);
+        GLSetVec3(gl, uniformParams.LineEnd, posEnd);
+        gl.uniform3f(uniformParams.Color, color.x, color.y, color.z);
+        gl.uniform1i(uniformParams.bCircle, 0);
+
+        if (pTexture) {
+            //Textures
+            gl.activeTexture(gl.TEXTURE0 + 1);
+            gl.bindTexture(gl.TEXTURE_2D, pTexture);
+            gl.uniform1i(uniformParams.ColorTexture, 1);
+
+            gl.uniform1i(uniformParams.bSwitchUVs, 1);
+        } else {
+            gl.uniform1i(uniformParams.bSwitchUVs, 0);
+        }
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }

@@ -129,6 +129,7 @@ export function MathIntersectionRayAABB(
     rayDirection: Vector3,
     aabbCenter: Vector3,
     aabbExtent: Vector3,
+    outIntersectionPos: Vector3 | null = null,
 ) {
     // Calculate the inverse direction of the ray
     const invDirection = GetVec3(1.0 / rayDirection.x, 1.0 / rayDirection.y, 1.0 / rayDirection.z);
@@ -149,6 +150,11 @@ export function MathIntersectionRayAABB(
     if (tExit < 0 || tEnter > tExit) {
         return false;
     } else {
+        if (outIntersectionPos != null) {
+            outIntersectionPos.x = rayOrigin.x + tEnter * rayDirection.x;
+            outIntersectionPos.y = rayOrigin.y + tEnter * rayDirection.y;
+            outIntersectionPos.z = rayOrigin.z + tEnter * rayDirection.z;
+        }
         return true;
     }
 }

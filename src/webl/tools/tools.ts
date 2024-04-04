@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/lines-between-class-members */
 import { GAudioEngine, SoundSample } from "../audioEngine";
 import { GCameraShakeController, GSpotlightShakeController } from "../animationController";
-import { FirePaintDesc, GBurningSurface } from "../firePlane";
+import { EAppliedFireNoiseType, FirePaintDesc, GBurningSurface } from "../firePlane";
 import { GMeshGenerator } from "../helpers/meshGenerator";
 import { GUserInputDesc } from "../input";
 import { EParticleShadingMode, ParticlesEmitter } from "../particles";
@@ -13,8 +13,10 @@ import {
     GetSmokeParticlesDesc,
 } from "../particlesConfig";
 import { GSceneDesc, GSceneStateDescsArray, GScreenDesc } from "../scene";
-import { CreateShaderProgramVSPS } from "../shaderUtils";
+import { CreateShaderProgramVSPS, Shader } from "../shaderUtils";
 import {
+    GetShaderSourceGenericLineRenderVS,
+    GetShaderSourceGenericRenderPS,
     GetShaderSourceGenericSpriteRenderVS,
     GetShaderSourceGenericTexturedRenderPS,
     GetShaderSourceImpactFlareRenderPS,
@@ -28,12 +30,13 @@ import {
     GetShaderSourceFireballRenderPS,
     GetShaderSourceLaserPS,
     GetShaderSourceLaserVS,
+    GetShaderSourceLightsaberPS,
     GetShaderSourceSingleFlameRenderVS,
     GetShaderSourceThunderPS,
 } from "../shaders/shaderTools";
 import { ERenderingState, GRenderingStateMachine } from "../states";
 import { GTexturePool } from "../texturePool";
-import { GetVec2, GetVec3, Matrix4x4, SetVec2, Vector3 } from "../types";
+import { GStack, GetVec2, GetVec3, Matrix4x4, SetVec2, Vector3 } from "../types";
 import {
     GTime,
     MathClamp,
@@ -73,7 +76,7 @@ import { GUI } from "dat.gui";
 import { GRibbonsRenderer, RRibbonMesh } from "../ribbons";
 import { RopeBody, Stickbody } from "../physics";
 import { GSimpleShapesRenderer } from "../helpers/shapeRender";
-import { GLSetVec3 } from "../helpers/glHelper";
+import { GLSetTexture, GLSetVec3 } from "../helpers/glHelper";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
     const params = {
@@ -100,6 +103,9 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         Scale: gl.getUniformLocation(shaderProgram, "Scale"),
         Color: gl.getUniformLocation(shaderProgram, "Color"),
         CurrentState: gl.getUniformLocation(shaderProgram, "CurrentState"),
+        LineLength: gl.getUniformLocation(shaderProgram, "LineLength"),
+
+        LineEnd: gl.getUniformLocation(shaderProgram, "LineEnd"),
     };
     return params;
 }
@@ -271,12 +277,23 @@ export abstract class ToolBase {
     ApplyFireDesc = new FirePaintDesc();
 
     // Base
+
+    PositionCurrentWS = GetVec3(0, 0, 0);
+    PositionPrevWS = GetVec3(0, 0, 0);
+
+    VelocityCurrent = GetVec3(0, 0, 0);
+    VelocityPrev = GetVec3(0, 0, 0);
+
+    //Intersection
     bActiveThisFrame;
     bFirstInteraction;
     bIntersection;
     bIntersectionPrevFrame;
+    IntersectionFramesCount = 0;
 
-    LastHitPositionWS = new Vector3(0, 0, 0);
+    IntersectionPositionCurWS = new Vector3(0, 0, 0);
+    IntersectionPositionPrevWS = new Vector3(0, 0, 0);
+
     LastImpactStrength = 0.0;
 
     ColorInitial = GetVec3(1.0, 1.0, 1.0);
@@ -295,18 +312,32 @@ export abstract class ToolBase {
     abstract UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface): void;
     abstract RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface): void;
 
-    UpdatePositionMain(offset = { x: 0.0, y: 0.0, z: 0.0 }) {
-        const posWS = { x: GUserInputDesc.InputPosCurNDC.x, y: GUserInputDesc.InputPosCurNDC.y };
-        posWS.x *= GScreenDesc.ScreenRatio;
-        posWS.x /= GSceneDesc.Camera.ZoomScale;
-        posWS.y /= GSceneDesc.Camera.ZoomScale;
+    BaseUpdatePositionFromPointer(offset = { x: 0.0, y: 0.0, z: 0.0 }) {
+        this.PositionPrevWS.Set(this.PositionCurrentWS);
+        this.VelocityPrev.Set(this.VelocityCurrent);
+        const posWSCur = TransformFromNDCToWorld(GUserInputDesc.InputPosCurNDC);
+        this.PositionCurrentWS.Set(posWSCur);
+        this.VelocityCurrent.x = GUserInputDesc.InputVelocityCurViewSpace.x;
+        this.VelocityCurrent.y = GUserInputDesc.InputVelocityCurViewSpace.y;
 
-        posWS.x *= -GSceneDesc.Camera.Position.z + 1.0;
-        posWS.y *= -GSceneDesc.Camera.Position.z + 1.0;
-
-        GSceneDesc.Tool.Position.x = posWS.x + offset.x;
-        GSceneDesc.Tool.Position.y = posWS.y + offset.y;
+        GSceneDesc.Tool.Position.x = posWSCur.x + offset.x;
+        GSceneDesc.Tool.Position.y = posWSCur.y + offset.y;
         GSceneDesc.Tool.Position.z = offset.z;
+    }
+
+    BaseUpdatePositionVel(posWSCur: Vector3, vel: Vector3) {
+        this.PositionPrevWS.Set(this.PositionCurrentWS);
+        this.VelocityPrev.Set(this.VelocityCurrent);
+
+        this.PositionCurrentWS.Set(posWSCur);
+        this.VelocityCurrent.Set(vel);
+    }
+
+    BaseApplyPosToFirePaintDesc() {
+        SetVec2(this.ApplyFireDesc.PosCur, this.PositionCurrentWS.x, this.PositionCurrentWS.y);
+        SetVec2(this.ApplyFireDesc.PosPrev, this.PositionPrevWS.x, this.PositionPrevWS.y);
+        SetVec2(this.ApplyFireDesc.VelocityCur, this.VelocityCurrent.x, this.VelocityCurrent.y);
+        SetVec2(this.ApplyFireDesc.VelocityPrev, this.VelocityPrev.x, this.VelocityPrev.y);
     }
 
     IsAllowedToRender() {
@@ -314,10 +345,9 @@ export abstract class ToolBase {
         return RenderStateMachine.currentState !== ERenderingState.BurningFinished && RenderStateMachine.bCanBurn;
     }
 
-    BaseUpdate() {}
-
     BaseOnInteraction(hitPosWS: Vector3) {
-        this.LastHitPositionWS.Set(hitPosWS);
+        this.IntersectionPositionPrevWS.Set(this.IntersectionPositionCurWS);
+        this.IntersectionPositionCurWS.Set(hitPosWS);
         this.RandNumberOnInteraction = Math.random();
     }
 
@@ -464,7 +494,7 @@ class CImpactComponent {
 
                 GSimpleShapesRenderer.GInstance!.RenderPoint(
                     gl,
-                    owner.LastHitPositionWS,
+                    owner.IntersectionPositionCurWS,
                     GetVec3(finalGlareSize * 2.0, finalGlareSize, 0.0),
                     colorCur,
                     false,
@@ -488,7 +518,7 @@ class CImpactComponent {
 
             GSimpleShapesRenderer.GInstance!.RenderPoint(
                 gl,
-                owner.LastHitPositionWS,
+                owner.IntersectionPositionCurWS,
                 t * 1.85,
                 colorCur,
                 false,
@@ -511,7 +541,7 @@ class CImpactComponent {
 
             GSimpleShapesRenderer.GInstance!.RenderPoint(
                 gl,
-                owner.LastHitPositionWS,
+                owner.IntersectionPositionCurWS,
                 t * 1.25,
                 colorCur,
                 false,
@@ -534,7 +564,7 @@ class CImpactComponent {
 
             GSimpleShapesRenderer.GInstance!.RenderPoint(
                 gl,
-                owner.LastHitPositionWS,
+                owner.IntersectionPositionCurWS,
                 0.8,
                 colorCur,
                 false,
@@ -675,7 +705,7 @@ export class LighterTool extends ToolBase {
     UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
         const RenderStateMachine = GRenderingStateMachine.GetInstance();
 
-        this.UpdatePositionMain({ x: 0.0, y: 0.25, z: -0.3 });
+        this.BaseUpdatePositionFromPointer({ x: 0.0, y: 0.25, z: -0.3 });
 
         //Interactivity check
         const bInteracted =
@@ -774,10 +804,9 @@ export class LighterTool extends ToolBase {
         this.ApplyFireDesc.Size.y = curInputPos.y + 0.1;
         this.ApplyFireDesc.Strength = 4.0 * GTime.Delta;
         this.ApplyFireDesc.bMotionBasedTransform = true;
-        this.ApplyFireDesc.bApplyFireUseNoise = false;
         this.ApplyFireDesc.bSmoothOutEdges = true;
-        this.ApplyFireDesc.Velocity.x = 0.0;
-        this.ApplyFireDesc.Velocity.y = 1.0;
+        this.ApplyFireDesc.VelocityCur.x = 0.0;
+        this.ApplyFireDesc.VelocityCur.y = 1.0;
 
         /* Set up blending */
         gl.enable(gl.BLEND);
@@ -1031,22 +1060,14 @@ export class LaserTool extends ToolBase {
         SparksParticlesDesc.MotionStretchScale = 3.75;
 
         this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
+        this.SparksParticles.DynamicBrightness = 0.2;
     }
-
-    PositionCurrent = GetVec3(0, 0, 0);
-    PositionPrev = GetVec3(0, 0, 0);
 
     //Executes regardless of state
     UpdateMain(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
         const RenderStateMachine = GRenderingStateMachine.GetInstance();
 
-        this.UpdatePositionMain({ x: 0.0, y: 0.0, z: this.LaserGlowZPos });
-
-        this.PositionPrev.Set(this.PositionCurrent);
-        const posWSCur = TransformFromNDCToWorld(GUserInputDesc.InputPosCurNDC);
-        this.PositionCurrent.Set(posWSCur);
-
-        BurningSurface.RigidBody.ApplyForce(posWSCur, 5.0);
+        this.BaseUpdatePositionFromPointer({ x: 0.0, y: 0.0, z: this.LaserGlowZPos });
 
         //Interactivity check
         this.LaserDir = MathVector3Normalize(
@@ -1063,7 +1084,7 @@ export class LaserTool extends ToolBase {
             GetVec3(1.0, 1.0, 0.0),
         ); */
 
-        this.bIntersection = Math.abs(posWSCur.x) < 1.0 && Math.abs(posWSCur.y) < 1.0;
+        this.bIntersection = Math.abs(this.PositionCurrentWS.x) < 1.0 && Math.abs(this.PositionCurrentWS.y) < 1.0;
 
         //this.bIntersection = true;
 
@@ -1075,6 +1096,7 @@ export class LaserTool extends ToolBase {
 
         if (bInteracted) {
             this.bActiveThisFrame = true;
+
             if (!GUserInputDesc.bPointerInputPressedPrevFrame || !this.bIntersectionPrevFrame) {
                 //start fade in logic
 
@@ -1092,8 +1114,6 @@ export class LaserTool extends ToolBase {
                     this.bFirstInteraction = false;
                 }
 
-                this.PositionPrev.Set(this.PositionCurrent);
-
                 this.PlayLaserSound();
 
                 GCameraShakeController.ShakeCameraFast(0.5);
@@ -1103,15 +1123,6 @@ export class LaserTool extends ToolBase {
                 //start fade out logic
                 this.ForceStopLaserSound();
             }
-            /* if (this.AnimationComponent.IsFadeInFinished()) {
-                this.AnimationComponent.FadeOutUpdate();
-            }
-
-            if (this.bActiveThisFrame) {
-                if (this.AnimationComponent.IsFadeOutFinished()) {
-                    this.bActiveThisFrame = false;
-                }
-            } */
             this.bActiveThisFrame = false;
         }
 
@@ -1125,8 +1136,8 @@ export class LaserTool extends ToolBase {
 
         if (this.bActiveThisFrame) {
             //Animation
-            /* this.AnimationComponent.Update();
-            this.AnimationComponent.FadeInUpdate(); */
+
+            BurningSurface.RigidBody.ApplyForce(this.PositionCurrentWS, 1.0);
 
             //Color
             GSceneDesc.Tool.Color.r = this.ColorInitial.x;
@@ -1167,21 +1178,20 @@ export class LaserTool extends ToolBase {
     }
 
     RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
-        const curInputPos = GUserInputDesc.InputPosCurNDC;
         const sizeScale = 0.01;
 
         //BurningSurface.Reset(gl);
 
         BurningSurface.BindFireRT(gl);
 
-        SetVec2(this.ApplyFireDesc.PosCur, this.PositionCurrent.x, this.PositionCurrent.y);
-        SetVec2(this.ApplyFireDesc.PosPrev, this.PositionPrev.x, this.PositionPrev.y);
+        this.BaseApplyPosToFirePaintDesc();
+
         this.ApplyFireDesc.Size.x = sizeScale;
         this.ApplyFireDesc.Size.y = sizeScale;
-        this.ApplyFireDesc.Strength = this.LaserStrength;
-        this.ApplyFireDesc.bMotionBasedTransform = true;
-        this.ApplyFireDesc.Velocity.x = GUserInputDesc.InputVelocityCurViewSpace.x;
-        this.ApplyFireDesc.Velocity.y = GUserInputDesc.InputVelocityCurViewSpace.y;
+        //this.ApplyFireDesc.Strength = this.LaserStrength;
+        this.ApplyFireDesc.Strength = 100.0;
+        this.ApplyFireDesc.AppliedNoiseType = EAppliedFireNoiseType.EnabledSoft;
+        this.ApplyFireDesc.bRibbonRender = true;
 
         /* Set up blending */
         gl.enable(gl.BLEND);
@@ -1298,7 +1308,7 @@ export class LaserTool extends ToolBase {
     }
 
     RenderToFlameRT(gl: WebGL2RenderingContext): void {
-        return;
+        //return;
         if (this.bActiveThisFrame) {
             this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
         }
@@ -1481,8 +1491,6 @@ export class ThunderTool extends ToolBase {
         /* const posWSCur = TransformFromNDCToWorld(GUserInputDesc.InputPosCurNDC);
         BurningSurface.RigidBody.ApplyForce(posWSCur, 5.0, 2.0); */
 
-        this.BaseUpdate();
-
         //this.bIntersection = this.Projectile.CheckInteresctionWithPlane();
         this.bIntersection = MathIntersectionAABBSphere(
             this.Projectile.PositionCurrent,
@@ -1652,10 +1660,9 @@ export class ThunderTool extends ToolBase {
         this.ApplyFireDesc.Size.y = sizeScale;
         this.ApplyFireDesc.Strength = this.LastImpactStrength * 5.0;
         this.ApplyFireDesc.bMotionBasedTransform = false;
-        this.ApplyFireDesc.bApplyFireUseNoise = false;
         this.ApplyFireDesc.bSmoothOutEdges = false;
-        this.ApplyFireDesc.Velocity.x = this.Projectile.VelocityCurrent.x * GTime.Delta * 0.001;
-        this.ApplyFireDesc.Velocity.y = this.Projectile.VelocityCurrent.y * GTime.Delta * 0.001;
+        this.ApplyFireDesc.VelocityCur.x = this.Projectile.VelocityCurrent.x * GTime.Delta * 0.001;
+        this.ApplyFireDesc.VelocityCur.y = this.Projectile.VelocityCurrent.y * GTime.Delta * 0.001;
         this.ApplyFireDesc.pMaskTexture = this.Projectile.MaskTexture;
         this.ApplyFireDesc.Orientation.Set(this.Projectile.Orientation);
 
@@ -1668,7 +1675,7 @@ export class ThunderTool extends ToolBase {
         this.ApplyFireDesc.Size.x = sizeScale * 2.0;
         this.ApplyFireDesc.Size.y = sizeScale * 2.0;
         this.ApplyFireDesc.pMaskTexture = null;
-        this.ApplyFireDesc.bApplyFireUseNoise = true;
+        this.ApplyFireDesc.AppliedNoiseType = EAppliedFireNoiseType.EnabledStrong;
         this.ApplyFireDesc.Strength = this.LastImpactStrength * 0.5;
 
         BurningSurface.ApplyFirePass.Execute(gl, this.ApplyFireDesc);
@@ -1740,7 +1747,7 @@ export class ThunderTool extends ToolBase {
 
             gl.uniform1f(this.UniformParametersLocationList.LineColorCutThreshold, this.LifetimeComponent.ValueCurrent);
 
-            const posEnd = this.LastHitPositionWS;
+            const posEnd = this.IntersectionPositionCurWS;
             gl.uniform3f(this.UniformParametersLocationList.PositionEnd, posEnd.x, posEnd.y, posEnd.z);
 
             gl.uniform1f(this.UniformParametersLocationList.Time, GTime.CurClamped);
@@ -1838,8 +1845,8 @@ export class ThunderTool extends ToolBase {
 
         gl.uniform3f(
             this.UniformParametersLocationListFlare.SpotlightPos,
-            this.LastHitPositionWS.x,
-            this.LastHitPositionWS.y,
+            this.IntersectionPositionCurWS.x,
+            this.IntersectionPositionCurWS.y,
             -0.05,
         );
 
@@ -1926,7 +1933,7 @@ export class FireballTool extends ToolBase {
             this.Projectile.bLaunched = false;
         }
 
-        this.BaseUpdate();
+        this.BaseUpdatePositionFromPointer();
 
         //Trail Ribbons
         {
@@ -2010,10 +2017,9 @@ export class FireballTool extends ToolBase {
         this.ApplyFireDesc.Size.y = sizeScale;
         this.ApplyFireDesc.Strength = this.LastImpactStrength * 5.0;
         this.ApplyFireDesc.bMotionBasedTransform = false;
-        this.ApplyFireDesc.bApplyFireUseNoise = false;
         this.ApplyFireDesc.bSmoothOutEdges = false;
-        this.ApplyFireDesc.Velocity.x = this.Projectile.VelocityCurrent.x * GTime.Delta * 0.001;
-        this.ApplyFireDesc.Velocity.y = this.Projectile.VelocityCurrent.y * GTime.Delta * 0.001;
+        this.ApplyFireDesc.VelocityCur.x = this.Projectile.VelocityCurrent.x * GTime.Delta * 0.001;
+        this.ApplyFireDesc.VelocityCur.y = this.Projectile.VelocityCurrent.y * GTime.Delta * 0.001;
         this.ApplyFireDesc.pMaskTexture = this.Projectile.MaskTexture;
         this.ApplyFireDesc.Orientation.Set(this.Projectile.Orientation);
 
@@ -2026,7 +2032,7 @@ export class FireballTool extends ToolBase {
         this.ApplyFireDesc.Size.x = sizeScale * 2.0;
         this.ApplyFireDesc.Size.y = sizeScale * 2.0;
         this.ApplyFireDesc.pMaskTexture = null;
-        this.ApplyFireDesc.bApplyFireUseNoise = true;
+        this.ApplyFireDesc.AppliedNoiseType = EAppliedFireNoiseType.EnabledStrong;
         this.ApplyFireDesc.Strength = this.LastImpactStrength * 0.33;
 
         BurningSurface.ApplyFirePass.Execute(gl, this.ApplyFireDesc);
@@ -2296,8 +2302,8 @@ export class ScorpionTool extends ToolBase {
         this.ApplyFireDesc.Size.y = sizeScale;
         this.ApplyFireDesc.Strength = 1.0;
         this.ApplyFireDesc.bMotionBasedTransform = true;
-        this.ApplyFireDesc.Velocity.x = v.x * vBoost;
-        this.ApplyFireDesc.Velocity.y = v.y * vBoost;
+        this.ApplyFireDesc.VelocityCur.x = v.x * vBoost;
+        this.ApplyFireDesc.VelocityCur.y = v.y * vBoost;
 
         /* Set up blending */
         gl.enable(gl.BLEND);
@@ -2661,76 +2667,144 @@ export class ScorpionTool extends ToolBase {
 } */
 
 export class LightsaberTool extends ToolBase {
-    Sword = new Stickbody(1.5, 40);
+    SwordLength = 1.5;
+    SwordThickness = 0.04;
+    Sword = new Stickbody(this.SwordLength);
     SwordStart;
     SwordEnd;
+    SwordMiddle = GetVec3(0, 0, 0);
     SwordDir = GetVec3(0, 0, 0);
+    SwordSwingDir = GetVec3(0, 0, 0);
+    SwordSwingStrength = 0.0;
+
+    //Sword Light Up
+    SwordLightUpParam = 0.0;
+    SwordLightUpSpeed = 0.1;
+    SwordLightDownSpeed = 0.07;
+
+    //Sparks
+    SparksParticles: ParticlesEmitter;
+
+    //Impact
+    ImpactComponent: CImpactComponent;
+
+    //Ribbon
+    TrailRibbon = new RRibbonMesh(20);
+
+    //Sword Render
+    ShaderSword;
+    LaserTexture: WebGLTexture;
+    NoiseTexture: WebGLTexture;
+    SwordHandleTexture: WebGLTexture;
 
     //Controller
     ControllerInitialPos = GetVec2(0.0, -0.8);
     SpatialController = new SpatialControlPoint(this.ControllerInitialPos, 0.075, true);
 
-    //Painter
-    bSurfacePaintedPrevFrame = false;
-    SurfacePaintPrevFramePos = GetVec3(0, 0, 0);
+    //Sword control config
+    ControllerZPushStrength = 1200.0;
+    ControllerZPullStrength = 40;
+    ControllerDampingX = 0.925;
+    ControllerDampingY = 0.975;
+    /* ControllerDampingX = 0.95;
+    ControllerDampingY = 0.99; */
+
+    //Sound
+    SoundIdle: SoundSample = new SoundSample();
+    SoundIgnite: SoundSample = new SoundSample();
+    SoundSwing: SoundSample = new SoundSample();
+    SoundHit: SoundSample = new SoundSample();
+    SoundHit2: SoundSample = new SoundSample();
+    SoundHit3: SoundSample = new SoundSample();
 
     constructor(gl: WebGL2RenderingContext) {
-        super(true);
+        super(false);
+
+        this.ColorInitial.Set3(0.4, 0.5, 3.0);
+
+        //Create Shader Program
+        this.ShaderSword = new Shader(
+            gl,
+            GetShaderSourceGenericLineRenderVS(),
+            GetShaderSourceLightsaberPS(),
+            GetUniformParametersList,
+        );
+
+        this.LaserTexture = GTexturePool.CreateTexture(gl, false, "FlamesTexture", false);
+        this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise1024");
+        this.SwordHandleTexture = GTexturePool.CreateTexture(gl, false, "saberHandle1");
+
+        this.LifetimeComponent.AttackDuration = 0.0;
+        this.LifetimeComponent.ReleaseDuration = 1.0;
+
         this.SwordStart = this.Sword.Points[0];
         this.SwordEnd = this.Sword.Points[1];
-        this.Sword.VelocityDampingScale.x = 0.95;
-    }
+        this.Sword.VelocityDampingScale.x = this.ControllerDampingX;
+        this.Sword.VelocityDampingScale.y = this.ControllerDampingY;
 
-    RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
-        const sizeScale = 0.01;
+        this.ImpactComponent = new CImpactComponent(gl, GetVec3(0.8, 0.7, 1.0), 1.0);
 
-        BurningSurface.BindFireRT(gl);
+        //Particles
+        const SparksParticlesDesc = GetEmberParticlesDesc();
+        SparksParticlesDesc.NumSpawners2D = 4;
+        SparksParticlesDesc.NumParticlesPerSpawner = 32;
+        SparksParticlesDesc.ParticleLife = 0.4;
+        SparksParticlesDesc.InitialVelocityScale = 10;
+        //SparksParticlesDesc.SizeRangeMinMax.y = 0.75;
+        //SparksParticlesDesc.SizeRangeMinMax.x = 0.25;
+        SparksParticlesDesc.EInitialPositionMode = 2;
+        //SparksParticlesDesc.inBrightness = 5.0;
+        //SparksParticlesDesc.RandomSpawnThres = 0.9;
+        SparksParticlesDesc.bOneShotParticle = true;
+        SparksParticlesDesc.bFreeFallParticle = true;
+        SparksParticlesDesc.bAlwaysRespawn = true;
+        SparksParticlesDesc.b3DSpace = true;
+        SparksParticlesDesc.ESpecificShadingMode = EParticleShadingMode.EmbersImpact;
+        SparksParticlesDesc.Color = GetVec3(1.0, 0.6, 0.1);
+        //SparksParticlesDesc.InitialVelocityAddScale.y *= 0.5;
+        //SparksParticlesDesc.InitialVelocityAddScale.x *= 1.25;
+        SparksParticlesDesc.MotionStretchScale = 3.75;
 
-        //BurningSurface.Reset(gl);
+        this.SparksParticles = new ParticlesEmitter(gl, SparksParticlesDesc);
+        this.SparksParticles.DynamicBrightness = 0.2;
 
-        const p = this.Sword.Points[1]!.PositionCur;
-        const v = this.Sword.Points[1]!.PrevVelocity;
-
-        const vBoost = 1.0;
-
-        SetVec2(this.ApplyFireDesc.PosCur, p.x, p.y);
-        this.ApplyFireDesc.Size.x = sizeScale;
-        this.ApplyFireDesc.Size.y = sizeScale;
-        this.ApplyFireDesc.Strength = 1.0;
-        this.ApplyFireDesc.bMotionBasedTransform = true;
-        this.ApplyFireDesc.Velocity.x = v.x * vBoost;
-        this.ApplyFireDesc.Velocity.y = v.y * vBoost;
-
-        /* Set up blending */
-        gl.enable(gl.BLEND);
-        gl.blendEquation(gl.MAX);
-        gl.blendFunc(gl.ONE, gl.ONE);
-        BurningSurface.ApplyFirePass.Execute(gl, this.ApplyFireDesc);
-        gl.disable(gl.BLEND);
+        this.SoundIdle.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/lightsaberIdle3.mp3",
+            GAudioEngine.GetMasterGain(),
+        );
+        this.SoundIgnite.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/lightsaberStart.mp3",
+            GAudioEngine.GetMasterGain(),
+        );
+        this.SoundSwing.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/lightsaberSwing.mp3",
+            GAudioEngine.GetMasterGain(),
+            0.5,
+        );
+        this.SoundHit.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/lightsaber1.mp3",
+            GAudioEngine.GetMasterGain(),
+            0.75,
+        );
+        this.SoundHit2.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/lightsaber2.mp3",
+            GAudioEngine.GetMasterGain(),
+            0.75,
+        );
+        this.SoundHit3.Init(
+            GAudioEngine.GetContext(),
+            "assets/audio/lightsaber3.mp3",
+            GAudioEngine.GetMasterGain(),
+            0.75,
+        );
     }
 
     ControllerTraction(bInstant = false) {
-        /* const vsPos = GetVec3(0, 0, 0);
-        vsPos.Set3(
-            this.SpatialController.PositionViewSpace.x,
-            MathMapToRange(
-                this.SpatialController.PositionNDCSpace.y,
-                this.ControllerInitialPos.y,
-                1.0,
-                this.ControllerInitialPos.y + 0.2 + Math.abs(this.SpatialController.PositionNDCSpace.x),
-                0.0,
-            ),
-            MathMapToRange(this.SpatialController.PositionNDCSpace.y, this.ControllerInitialPos.y, 1.0, 2.0, 4.0),
-        );
-
-        vsPos.y += 0.2 * (1.0 - Math.min(1.0, this.SpatialController.PositionViewSpace.x));
-
-        const worldPos = GetVec3(
-            GSceneDesc.Camera.Position.x + vsPos.x,
-            GSceneDesc.Camera.Position.y + vsPos.y,
-            GSceneDesc.Camera.Position.z + vsPos.z,
-        ); */
-
         const posWS = TransformFromNDCToWorld(this.SpatialController.PositionNDCSpace, 3.0);
 
         const cp = this.SwordStart!.PositionCur;
@@ -2748,68 +2822,359 @@ export class LightsaberTool extends ToolBase {
             this.SpatialController.PositionViewSpace.y - this.SpatialController.PositionViewSpacePrev.y,
         );
         const length = MathGetVec2Length(pointerVel);
-        this.SwordEnd.Acceleration.z += length * 1000.0;
+        //const length = pointerVel.x + pointerVel.y;
+        this.SwordEnd.Acceleration.z += length * this.ControllerZPushStrength;
 
+        //Compute Cur Sword Dir
         this.SwordDir.Set(this.SwordEnd.PositionCur);
         this.SwordDir.Negate(this.SwordStart!.PositionCur);
         this.SwordDir.Normalize();
 
+        this.SwordSwingDir.Set(this.SwordEnd.PrevVelocity);
+        this.SwordSwingStrength = MathGetVec3Length(this.SwordSwingDir);
+        this.SwordSwingDir.Normalize();
+
+        //Trail Ribbon
+        {
+            //middle.Set(this.Rope.PrevLastPoint!.PositionCur);
+            this.SwordMiddle.Set(this.SwordStart!.PositionCur);
+            this.SwordMiddle.Add(this.SwordEnd.PositionCur);
+            this.SwordMiddle.Mul(0.5);
+            let tangent = GetVec3(0, 0, 0);
+
+            const vecZ = GetVec3(0, 0, -1);
+            tangent = Vec3Cross(this.SwordDir, vecZ);
+            //tangent.Set(this.SwordEnd.PrevVelocity);
+            tangent.Normalize();
+
+            //tangent.Set(this.SwordSwingDir);
+            tangent.Set(this.SwordDir);
+
+            //this.SwordMiddle.Set(this.SwordEnd.PositionCur);
+            this.TrailRibbon.OnUpdate(this.SwordMiddle, tangent);
+        }
+
         //Painter
         if (this.SpatialController.bDragState) {
+            //Sword is pulled back when we hold it
+            //this.Sword.ConstantForce.z = -this.ControllerZPullStrength;
+
+            //Light up the sword
+            if (this.SwordLightUpParam < 1.0) {
+                this.SwordLightUpParam += GTime.Delta + this.SwordLightUpSpeed;
+                this.SwordLightUpParam = Math.min(1.0, this.SwordLightUpParam);
+            }
+
             //make sure it looks forward
             if (this.SwordEnd!.PositionCur.z > this.SwordStart!.PositionCur.z) {
                 const rayOrigin = this.SwordEnd!.PositionCur;
                 const rayDir = GetVec3(-this.SwordDir.x, -this.SwordDir.y, -this.SwordDir.z);
-                /* this.bIntersection = MathIntersectionAABBSphere(
-                this.Rope.LastPoint!.PositionCur,
-                0.5,
-                GSceneDesc.FirePlane.PositionOffset,
-                GetVec3(1.0, 1.0, 0.0),
-            ); */
 
-                const bPaintIntersection = MathIntersectionRayAABB(
+                this.bIntersection = MathIntersectionRayAABB(
                     rayOrigin,
                     rayDir,
                     GSceneDesc.FirePlane.PositionOffset,
                     GetVec3(1.0, 1.0, 0.0),
+                    this.IntersectionPositionCurWS,
                 );
 
-                if (bPaintIntersection) {
+                if (this.bIntersection) {
+                    if (this.bIntersectionPrevFrame) {
+                        this.IntersectionFramesCount += 1;
+                    } else {
+                        this.IntersectionFramesCount = 0;
+                    }
+
+                    this.bActiveThisFrame = true;
+                    this.LifetimeComponent.Reset();
+
                     this.RenderToFireSurface(gl, BurningSurface);
 
-                    GCameraShakeController.ShakeCameraFast(0.5);
+                    if (!this.bIntersectionPrevFrame) {
+                        GCameraShakeController.ShakeCameraFast(0.5);
+
+                        //BurningSurface.RigidBody.ApplyForce(this.IntersectionPositionCurWS, 50.0);
+
+                        this.SparksParticles.Reset(gl);
+
+                        this.RandNumberOnInteraction = Math.random();
+
+                        this.Sword.ConstantForce.z = -this.ControllerZPullStrength;
+                    }
+
+                    if (this.IntersectionFramesCount == 3) {
+                        this.ImpactComponent.OnInteraction(gl);
+                        this.ImpactComponent.SparksParticles.SetDynamicBrightness(0.25);
+                    }
+
+                    /* this.SparksParticles.Update(
+                        gl,
+                        BurningSurface.GetCurFireTexture()!,
+                        this.IntersectionPositionCurWS,
+                    ); */
+
+                    BurningSurface.RigidBody.ApplyForce(this.IntersectionPositionCurWS, 40.0, 1.25);
+                    const dir = GStack.TempVec3;
+                    dir.Set3(
+                        this.SwordEnd.PrevVelocity.x,
+                        this.SwordEnd.PrevVelocity.y,
+                        this.SwordEnd.PrevVelocity.z * 0.1,
+                    );
+                    dir.Mul(0.01);
+                    BurningSurface.RigidBody.ApplyShake(dir);
                 }
 
-                this.bSurfacePaintedPrevFrame = bPaintIntersection;
+                this.IntersectionPositionPrevWS.Set(this.IntersectionPositionCurWS);
+            }
+        } else {
+            //Light down the sword
+            if (this.SwordLightUpParam > 0.0) {
+                this.SwordLightUpParam -= GTime.Delta + this.SwordLightUpSpeed;
+                this.SwordLightUpParam = Math.max(0.0, this.SwordLightUpParam);
+            }
+
+            this.Sword.ConstantForce.z = 0;
+
+            //Streighten up the sword
+            const desiredPos = GStack.TempVec3;
+            desiredPos.Set(this.SwordStart.PositionCur);
+            desiredPos.y += this.SwordLength;
+            this.SwordEnd.PositionCur.Set(desiredPos);
+        }
+
+        this.SparksParticles.Update(gl, BurningSurface.GetCurFireTexture()!, this.IntersectionPositionCurWS);
+
+        this.Sword.OnUpdateBase();
+
+        this.LifetimeComponent.Update(this.bActiveThisFrame);
+
+        if (this.LifetimeComponent.TimeSinceStart < this.ImpactComponent.SparksParticles.Desc.ParticleLife + 0.1) {
+            this.ImpactComponent.UpdateParticles(gl);
+        }
+
+        //Sounds
+        if (this.SpatialController.bDragState) {
+            //Volume depends on cur velocity
+            let motionStrength = MathGetVec3Length(this.SwordEnd.PrevVelocity);
+            motionStrength = MathClamp(motionStrength, 0.1, 1.0);
+            this.SoundIdle.Gain!.gain.value = motionStrength * 7.5;
+
+            this.SoundIdle.Play(GAudioEngine.GetContext(), true);
+
+            if (motionStrength > 0.25) {
+                if (!this.SoundSwing.bIsPlaying) {
+                    this.SoundSwing.Play(GAudioEngine.GetContext());
+                }
+            }
+        } else {
+            if (this.SoundIdle.bIsPlaying) {
+                this.SoundIdle.Stop();
             }
         }
 
-        this.Sword.OnUpdateBase();
+        if (this.SpatialController.bSelectedThisFrame) {
+            this.SoundIgnite.Play(GAudioEngine.GetContext());
+        }
+
+        if (this.bIntersection) {
+            if (!this.bIntersectionPrevFrame) {
+                const randInt = Math.random() * 3;
+                if (randInt < 1) {
+                    this.SoundHit.Play(GAudioEngine.GetContext()!);
+                } else if (randInt < 2) {
+                    this.SoundHit2.Play(GAudioEngine.GetContext()!);
+                } else {
+                    this.SoundHit3.Play(GAudioEngine.GetContext()!);
+                }
+                //this.SoundHit.Play(GAudioEngine.GetContext());
+            }
+        }
+
+        this.bIntersectionPrevFrame = this.bIntersection;
+    }
+
+    RenderToFireSurface(gl: WebGL2RenderingContext, BurningSurface: GBurningSurface) {
+        BurningSurface.BindFireRT(gl);
+
+        //BurningSurface.Reset(gl);
+
+        const vCur = GetVec2(0, 0);
+        vCur.x = this.IntersectionPositionCurWS.x - this.IntersectionPositionPrevWS.x;
+        vCur.y = this.IntersectionPositionCurWS.y - this.IntersectionPositionPrevWS.y;
+        let curVLength = MathGetVec2Length(vCur);
+        curVLength = Math.max(0.5, 1.0 - Math.min(1.0, curVLength));
+        const v = this.Sword.Points[1]!.PrevVelocity;
+        let prevVLength = MathGetVec2Length(GetVec2(v.x, v.y));
+        prevVLength = Math.max(1.0 - Math.min(1.0, prevVLength));
+
+        if (1) {
+            curVLength = prevVLength = 1.0;
+        }
+
+        //this.BaseApplyPosToFirePaintDesc();
+        SetVec2(this.ApplyFireDesc.PosCur, this.IntersectionPositionCurWS.x, this.IntersectionPositionCurWS.y);
+        SetVec2(this.ApplyFireDesc.PosPrev, this.IntersectionPositionPrevWS.x, this.IntersectionPositionPrevWS.y);
+        SetVec2(this.ApplyFireDesc.VelocityCur, v.x, v.y);
+        SetVec2(this.ApplyFireDesc.VelocityPrev, v.x, v.y);
+
+        const sizeScale = 0.0275;
+        this.ApplyFireDesc.Size.x = curVLength * sizeScale;
+        this.ApplyFireDesc.Size.y = prevVLength * sizeScale;
+        this.ApplyFireDesc.Strength = 15.0;
+        this.ApplyFireDesc.bMotionBasedTransform = false;
+        this.ApplyFireDesc.AppliedNoiseType = this.bIntersectionPrevFrame
+            ? EAppliedFireNoiseType.EnabledSoft
+            : EAppliedFireNoiseType.EnabledSoft;
+        this.ApplyFireDesc.AppliedNoiseScale = 0.1;
+        //this.ApplyFireDesc.bSmoothOutEdges = true;
+
+        this.ApplyFireDesc.bRibbonRender = this.bIntersectionPrevFrame;
+
+        /* Set up blending */
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.MAX);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        BurningSurface.ApplyFirePass.Execute(gl, this.ApplyFireDesc);
+        gl.disable(gl.BLEND);
+    }
+
+    RenderSword(gl: WebGL2RenderingContext) {
+        const handleStart = GStack.TempVec3;
+        const handleEnd = GStack.TempVec3_2;
+        const scaledDir = GStack.TempVec3_3;
+        scaledDir.Set(this.SwordDir);
+
+        //Render Handle
+        scaledDir.Normalize();
+        scaledDir.Mul(0.45);
+        handleStart.Set(this.SwordStart.PositionCur);
+        handleStart.Negate(scaledDir);
+
+        scaledDir.Normalize();
+        scaledDir.Mul(0.1);
+        handleEnd.Set(this.SwordStart.PositionCur);
+        handleEnd.Add(scaledDir);
+
+        const handleColor = GStack.TempVec3_4;
+        if (this.SpatialController.bDragState) {
+            handleColor.Set(this.ColorInitial);
+        } else {
+            handleColor.Set3(1.0, 1.0, 1.0);
+        }
+        handleColor.Mul(0.2);
+
+        GSimpleShapesRenderer.GInstance!.RenderLine(
+            gl,
+            handleStart,
+            handleEnd,
+            0.06,
+            handleColor,
+            this.SwordHandleTexture,
+        );
+
+        gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
+
+        gl.useProgram(this.ShaderSword.ShaderProgram);
+        const uniformParams = this.ShaderSword.UniformParametersLocationList;
+
+        //Constants
+        gl.uniform4f(
+            uniformParams.CameraDesc,
+            GSceneDesc.Camera.Position.x,
+            GSceneDesc.Camera.Position.y,
+            GSceneDesc.Camera.Position.z,
+            GSceneDesc.Camera.ZoomScale,
+        );
+        gl.uniform1f(uniformParams.ScreenRatio, GScreenDesc.ScreenRatio);
+
+        gl.uniform1f(uniformParams.Scale, this.SwordThickness * Math.max(0.5, this.SwordLightUpParam));
+        gl.uniform1f(uniformParams.LineLength, this.SwordLength);
+        GLSetVec3(gl, uniformParams.Position, handleEnd);
+
+        const swordEnd = GStack.TempVec3;
+        scaledDir.Set(this.SwordEnd.PositionCur);
+        scaledDir.Negate(handleEnd);
+        scaledDir.Mul(this.SwordLightUpParam);
+        swordEnd.Set(handleEnd);
+        swordEnd.Add(scaledDir);
+
+        GLSetVec3(gl, uniformParams.LineEnd, swordEnd);
+        const tvec = GStack.TempVec3;
+        tvec.Set(this.ColorInitial);
+        tvec.Mul(3.0);
+        GLSetVec3(gl, uniformParams.Color, tvec);
+        gl.uniform1i(uniformParams.bCircle, 0);
+
+        gl.uniform1f(uniformParams.Time, GTime.CurClamped);
+
+        //Textures
+        GLSetTexture(gl, uniformParams.NoiseTexture, this.NoiseTexture, 0);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
     RenderToFirePlaneRT(gl: WebGL2RenderingContext): void {
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.MAX);
+        gl.blendFunc(gl.ONE, gl.ONE);
+
+        this.ImpactComponent.RenderFlare(gl, this, GetVec3(0.7, 0.8, 1.0));
+
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LESS);
         gl.depthMask(false);
 
-        GSimpleShapesRenderer.GInstance!.RenderLine(
-            gl,
-            this.SwordStart.PositionCur,
-            this.SwordEnd.PositionCur,
-            0.05,
-            GetVec3(0.4, 0.5, 2.0),
-        );
+        this.RenderSword(gl);
 
         const posWS = TransformFromNDCToWorld(this.SpatialController.PositionNDCSpace, 3.0);
-        GSimpleShapesRenderer.GInstance!.RenderPoint(gl, posWS, 0.05);
+        GSimpleShapesRenderer.GInstance!.RenderPoint(gl, posWS, 0.01, this.ColorInitial, true);
 
         gl.depthMask(true);
         gl.disable(gl.DEPTH_TEST);
+
+        //Trail Ribbon
+        const tvec = GStack.TempVec3;
+        tvec.Set(this.ColorInitial);
+        tvec.Mul(1.0);
+        GRibbonsRenderer.GInstance!.Render(
+            gl,
+            this.TrailRibbon.DataCPU.bufferPos,
+            this.TrailRibbon.DataCPU.bufferVel,
+            tvec,
+            this.SwordLength * 0.5 * 10.0,
+            true,
+            false,
+        );
+
+        GSceneDesc.Tool.Position.x = this.SwordMiddle.x;
+        GSceneDesc.Tool.Position.y = this.SwordMiddle.y;
+        GSceneDesc.Tool.Position.z = this.SwordMiddle.z;
+        const toolBright = 0.85;
+        GSceneDesc.Tool.Color.r = this.ColorInitial.x * toolBright;
+        GSceneDesc.Tool.Color.g = this.ColorInitial.y * toolBright;
+        GSceneDesc.Tool.Color.b = this.ColorInitial.z * toolBright;
+        GSceneDesc.Tool.Radius = 2.5 * this.SwordLightUpParam;
     }
 
-    RenderToFlameRT(gl: WebGL2RenderingContext): void {}
+    RenderToFlameRT(gl: WebGL2RenderingContext): void {
+        if (
+            this.bIntersection ||
+            this.LifetimeComponent.TimeSinceStart < this.SparksParticles.Desc.ParticleLife * 0.5
+        ) {
+            this.SparksParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
+        }
 
-    RenderToSmokeRT(gl: WebGL2RenderingContext): void {}
+        if (
+            this.bActiveThisFrame ||
+            this.LifetimeComponent.TimeSinceStart < this.ImpactComponent.SparksParticles.Desc.ParticleLife
+        ) {
+            this.ImpactComponent.SparksParticles.Render(gl, gl.MAX, gl.ONE, gl.ONE);
+        }
+    }
+
+    RenderToSmokeRT(gl: WebGL2RenderingContext): void {
+        //this.ImpactComponent.RenderSmoke(gl);
+    }
 
     SubmitDebugUI(datGui: GUI): GUI {
         const folder = super.SubmitDebugUI(datGui);

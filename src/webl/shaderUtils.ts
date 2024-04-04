@@ -67,3 +67,20 @@ export function CheckGL(gl: WebGL2RenderingContext) {
     }
     return true;
 }
+
+export class Shader {
+    ShaderProgram;
+
+    UniformParametersLocationList;
+
+    constructor(
+        gl: WebGL2RenderingContext,
+        shaderSourceVS: string,
+        shaderSourcePS: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        uniformParamsFactory: (gl: WebGL2RenderingContext, program: WebGLProgram) => any,
+    ) {
+        this.ShaderProgram = CreateShaderProgramVSPS(gl, shaderSourceVS, shaderSourcePS);
+        this.UniformParametersLocationList = uniformParamsFactory(gl, this.ShaderProgram);
+    }
+}
