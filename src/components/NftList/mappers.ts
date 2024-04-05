@@ -11,7 +11,7 @@ export function suiMapper(
         name: string;
         url: string;
         description: string | null | undefined;
-        kioskId: string;
+        kioskId?: string;
         nftId: string;
         nftType: string;
     }[],

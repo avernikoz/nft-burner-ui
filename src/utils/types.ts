@@ -38,7 +38,7 @@ export interface SolanaCNft extends BaseNft {
 // Interface for Sui network
 export interface SuiNft extends BaseNft {
     nftId: string;
-    kioskId: string;
+    kioskId?: string;
     nftType: string;
 }
 

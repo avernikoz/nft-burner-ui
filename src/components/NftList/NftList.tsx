@@ -87,10 +87,11 @@ export const NftList = () => {
                         const allSolanaNFTs: INft[] = basicNFTs.concat(filtredCNFTs);
                         setNFTList(allSolanaNFTs);
                     } else if (suiChangeOrConnected) {
-                        const rawNfts = await SUI_NFT_CLIENT_INSTANCE.getNFTsOffchainWithFilter({
+                        const { kioskNfts, nonKioskNfts } = await SUI_NFT_CLIENT_INSTANCE.getNFTsOffchainWithFilter({
                             owner: suietWallet.address as string,
                         });
-                        const convertedNfts = suiMapper(rawNfts);
+
+                        const convertedNfts = suiMapper([...kioskNfts, ...nonKioskNfts]);
                         setNFTList(convertedNfts);
                     } else {
                         setActiveNft(null);
