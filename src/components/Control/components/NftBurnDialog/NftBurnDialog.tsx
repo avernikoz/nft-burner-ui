@@ -58,6 +58,8 @@ import { sleep } from "../../../../utils/sleep";
 import { useInstumentsPrice } from "../../../../hooks/useInstrumentsPrice";
 import { GReactGLBridgeFunctions } from "../../../../webl/reactglBridge";
 import { INSTRUMENTS_COLOR_MAP } from "../../../../config/styles.config";
+import { useWalletBalance } from "../../../../hooks/useWalletBalance";
+import { SWR_CONFIG } from "../../../../config/swr.config";
 
 export const NftBurnDialog = ({
     nft,
@@ -95,7 +97,7 @@ export const NftBurnDialog = ({
         };
     }, [visible]);
 
-    const { signAndExecuteTransactionBlock } = suietUseWallet();
+    const { signAndExecuteTransactionBlock, account } = suietUseWallet();
     const solanaWallet = solanaUseWallet();
     const solanaConnection = useConnection();
     const signer = useEthersSigner();
@@ -104,6 +106,20 @@ export const NftBurnDialog = ({
     const { data: floorPrice } = useNftFloorPrice(nft);
     const { feeInNetworkToken: burnerFee } = useBurnerFee({ floorPrice, network: nft?.network });
     const { instrumentPriceInNetworkToken } = useInstumentsPrice({ instrument, network: nft?.network });
+    // TODO: Update in regards of other networks (for multichain)
+    const { data: walletBalanceData } = useWalletBalance(
+        { address: account?.address, network: ALLOWED_NETWORKS.Sui },
+        { refreshInterval: SWR_CONFIG.refetchInterval.fast },
+    );
+
+    // TODO: Move to the hook
+    const isBalanceEnoughForBurning =
+        burnerFee !== undefined &&
+        instrumentPriceInNetworkToken !== undefined &&
+        walletBalanceData !== null &&
+        walletBalanceData !== undefined &&
+        walletBalanceData.balanceFormatted !== null &&
+        +walletBalanceData.balanceFormatted > burnerFee + instrumentPriceInNetworkToken;
 
     const burnerFeeToken = getNetworkTokenSymbol(nft?.network);
 
@@ -356,7 +372,7 @@ export const NftBurnDialog = ({
             <div>
                 <ConfirmBurningButton
                     style={{ width: "100%", display: "flex", height: "58.5px" }}
-                    disabled={loadingFirstTransaction || loadingSecondTransaction}
+                    disabled={loadingFirstTransaction || loadingSecondTransaction || !isBalanceEnoughForBurning}
                     onClick={handleBurn}
                 >
                     {onChainBurningSuccess && onChainFeeSuccess ? (
@@ -366,6 +382,8 @@ export const NftBurnDialog = ({
                         </>
                     ) : loadingFirstTransaction || loadingSecondTransaction ? (
                         <ProgressSpinner style={{ width: "25px", height: "25px", margin: 0 }} />
+                    ) : !isBalanceEnoughForBurning ? (
+                        `Your SUI balance is low for burning NFT`
                     ) : (
                         `Commence burning ritual`
                     )}
