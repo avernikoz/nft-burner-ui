@@ -50,6 +50,10 @@ if (!process.env.REACT_APP_OPTIMISM_MAINNET_API_KEY?.length) {
     throw new Error("Empty OPTIMISM_MAINNET_API_KEY");
 }
 
+if (!process.env.REACT_APP_ENCHANCED_RPC_API_API_KEY?.length) {
+    throw new Error("Empty REACT_APP_ENCHANCED_RPC_API_API_KEY");
+}
+
 export const EVM_CHAINS_ALCHEMY_CONFIG: EVMMultichainSettings = {
     [ALLOWED_EVM_CHAINS.Ethereum]: {
         apiKey: process.env.REACT_APP_ETHEREUM_MAINNET_API_KEY,
@@ -75,6 +79,7 @@ export const SUI_NFT_CLIENT_INSTANCE = new sui.SuiNFTClient({
     provider: suiProvider,
     feeCollector: process.env.REACT_APP_SUI_FEE_COLLECTOR_WALLET,
     priceApiURL: PRICE_API_URL,
+    rpcEnchancedApiApiKey: process.env.REACT_APP_ENCHANCED_RPC_API_API_KEY,
 });
 
 export const SOLANA_NFT_CLIENT_INSTANCE = new solana.SolanaNFTClient({

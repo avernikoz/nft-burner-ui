@@ -44,6 +44,7 @@ export const NftList = () => {
         NftController.setNftStatus(ENftBurnStatus.SELECTED);
     };
 
+    // TODO: Add updating nfts intervally
     useEffect(() => {
         const fetchNfts = async () => {
             try {
@@ -87,8 +88,11 @@ export const NftList = () => {
                         const allSolanaNFTs: INft[] = basicNFTs.concat(filtredCNFTs);
                         setNFTList(allSolanaNFTs);
                     } else if (suiChangeOrConnected) {
-                        const rawNfts = await SUI_NFT_CLIENT_INSTANCE.getNFTs({ owner: suietWallet.address as string });
-                        const convertedNfts = suiMapper(rawNfts);
+                        const { kioskNfts, nonKioskNfts } = await SUI_NFT_CLIENT_INSTANCE.getNFTsOffchainWithFilter({
+                            owner: suietWallet.address as string,
+                        });
+
+                        const convertedNfts = suiMapper([...kioskNfts, ...nonKioskNfts]);
                         setNFTList(convertedNfts);
                     } else {
                         setActiveNft(null);
@@ -185,7 +189,7 @@ export const NftList = () => {
                                                         <NftItem
                                                             item={item}
                                                             key={index}
-                                                            isActive={item.id == activeNft}
+                                                            isActive={item.id === activeNft}
                                                             onClick={() => handleItemClick(item)}
                                                         />
                                                     </div>

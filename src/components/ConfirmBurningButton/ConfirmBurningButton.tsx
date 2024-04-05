@@ -28,4 +28,9 @@ export const ConfirmBurningButton = styled.button`
         border-radius: 4px;
         background: var(--Orange-act--02, #ff852d);
     }
+
+    &:disabled {
+        cursor: not-allowed;
+        background: #2d2d31;
+    }
 `;
