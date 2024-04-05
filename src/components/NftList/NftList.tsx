@@ -44,6 +44,7 @@ export const NftList = () => {
         NftController.setNftStatus(ENftBurnStatus.SELECTED);
     };
 
+    // TODO: Add updating nfts intervally
     useEffect(() => {
         const fetchNfts = async () => {
             try {
