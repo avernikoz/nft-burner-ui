@@ -34,16 +34,17 @@ export async function handleSuiTransaction({
         transactionBlock: burnRes.transaction,
         options: { showEffects: true, showObjectChanges: true, showEvents: true },
     });
-
     console.debug("result: ", result);
 
     const transactionStatus = isTransactionSuccessful(result);
-
     console.debug("transactionStatus: ", transactionStatus);
 
     if (!transactionStatus) {
-        const errorMessage =
-            result.errors && result.errors.length ? JSON.stringify(result.errors.map((el) => el)) : "Unknown error";
+        const possibleTransactionErrorMessage =
+            result.errors && result.errors.length !== 0 && JSON.stringify(result.errors.map((el) => el));
+        const possibleEffectedErrorMessage = result.effects?.status.error;
+
+        const errorMessage = possibleTransactionErrorMessage || possibleEffectedErrorMessage || "Unknown error";
         throw new Error(`Transaction failed: ${errorMessage}`);
     }
 
