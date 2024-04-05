@@ -35,7 +35,11 @@ export async function handleSuiTransaction({
         options: { showEffects: true, showObjectChanges: true, showEvents: true },
     });
 
+    console.debug("result: ", result);
+
     const transactionStatus = isTransactionSuccessful(result);
+
+    console.debug("transactionStatus: ", transactionStatus);
 
     if (!transactionStatus) {
         const errorMessage =
