@@ -188,7 +188,7 @@ export const NftList = () => {
                                                         <NftItem
                                                             item={item}
                                                             key={index}
-                                                            isActive={item.id == activeNft}
+                                                            isActive={item.id === activeNft}
                                                             onClick={() => handleItemClick(item)}
                                                         />
                                                     </div>
