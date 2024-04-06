@@ -44,14 +44,13 @@ const Wrapper = styled.div`
     z-index: 100;
 
     .links {
-        margin: 1rem;
-        width: 100%;
+        margin-top: 2rem;
         min-height: 5rem;
         display: flex;
         align-items: center;
         justify-content: center;
 
-        a {
+        a:first-child {
             margin-right: 1rem;
         }
     }
