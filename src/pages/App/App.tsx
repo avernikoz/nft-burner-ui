@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { GlobalStyles } from "../../config/globalStyles";
 import "./App.css";
@@ -8,8 +8,12 @@ import { InternalApp } from "./InternalApp";
 import { Canvas } from "../../components/Canvas/Canvas";
 import { RenderMain } from "../../webl/renderingMain";
 import { FPSMeter } from "../../components/FPSMeter/FPSMeter";
+import { UnsupportedMobileModal } from "../../components/UnsupportedMobileModal/UnsupportedMobileModal";
+import { useDeviceType } from "../../hooks/useDeviceType";
 
 function App() {
+    const deviceType = useDeviceType();
+
     useEffect(() => {
         if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
         } else {
@@ -26,7 +30,11 @@ function App() {
             <GlobalStyles />
             <FPSMeter />
             <Canvas />
-            <AppComponent setAboutPageActive={setAboutPageActive} />
+            {deviceType == "Mobile" ? (
+                <UnsupportedMobileModal />
+            ) : (
+                <AppComponent setAboutPageActive={setAboutPageActive} />
+            )}
         </>
     );
 }
