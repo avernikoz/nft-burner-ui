@@ -1,13 +1,20 @@
 import React from "react";
 import { styled } from "styled-components";
 import { ReactComponent as FireStepCircle } from "../../assets/roadmap/stepCircle.svg";
+import { ReactComponent as TwitterLogo } from "../../assets/roadmap/Twitter.svg";
+import { ReactComponent as InstLogo } from "../../assets/roadmap/inst.svg";
+import { Header } from "../../components/Header/Header";
 
 const RoadmapContainer = styled.div`
     width: 70vw;
-    margin: auto;
+    margin: 6rem auto auto;
     font-family: Khand;
     color: white;
-    position: relative;
+    z-index: 100;
+
+    @media (max-width: 700px) {
+        width: 80vw;
+    }
 
     h1 {
         font-size: 4rem;
@@ -33,6 +40,7 @@ const StepperContainer = styled.div`
     display: flex;
     flex-direction: column;
     align-items: start;
+    position: relative;
 `;
 
 const Step = styled.div`
@@ -70,7 +78,7 @@ const HorizontalLine = styled.div`
     height: 5px;
     background-color: #ff4a00;
     z-index: -1;
-    margin: 0.5rem;
+    margin: 0.5rem 1rem 0.5rem 0.5rem;
 
     @media (max-width: 700px) {
         display: none;
@@ -81,7 +89,7 @@ const TextBody = styled.div`
     display: flex;
     flex-direction: row;
     align-items: start;
-    height: 4.063rem;
+    height: 2.5rem;
 
     @media (max-width: 700px) {
         height: 2.25em;
@@ -93,6 +101,10 @@ const TextBody = styled.div`
         }
     }
 
+    h2 {
+        margin: 0.5rem;
+    }
+
     .description {
         display: flex;
         flex-direction: column;
@@ -100,6 +112,7 @@ const TextBody = styled.div`
 
         p {
             color: #ffffff80;
+            font-family: sans-serif;
         }
     }
 
@@ -108,41 +121,133 @@ const TextBody = styled.div`
     }
 `;
 
+export interface IStep {
+    title: string;
+    date: string;
+    description: string;
+}
+
+const Footer = styled.div`
+    margin: 10rem auto 2rem;
+    width: 70vw;
+    font-family: Khand;
+    color: white;
+
+    @media (max-width: 700px) {
+        width: 90vw;
+    }
+
+    @media (max-width: 900px) {
+        width: 80vw;
+    }
+
+    hr {
+        border-color: #515158;
+    }
+
+    h2 {
+        font-size: clamp(1rem, 10vw, 4rem);
+    }
+
+    .footer-wrapper {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+
+        @media (max-width: 820px) {
+            flex-direction: column;
+            justify-content: start;
+        }
+    }
+
+    .links {
+        min-height: 5rem;
+        margin-left: 1rem;
+
+        a {
+            margin-right: 1rem;
+        }
+    }
+`;
+
 export const Roadmap = () => {
-    const steps = ["hello", "hello 2", "hello 2", "hello 2"];
+    const steps: IStep[] = [
+        {
+            date: "April 2024",
+            title: "HEAT Coin Integration",
+            description:
+                "I think in each of the points (Q1,Q2,Q3...) we will simply write 2-3 paragraphs or 2-3 points inside that will say what we are doing, etc.",
+        },
+        {
+            date: "April 2024",
+            title: "HEAT Coin Integration",
+            description:
+                "I think in each of the points (Q1,Q2,Q3...) we will simply write 2-3 paragraphs or 2-3 points inside that will say what we are doing, etc.",
+        },
+        {
+            date: "April 2024",
+            title: "HEAT Coin Integration",
+            description:
+                "I think in each of the points (Q1,Q2,Q3...) we will simply write 2-3 paragraphs or 2-3 points inside that will say what we are doing, etc.",
+        },
+        {
+            date: "April 2024",
+            title: "HEAT Coin Integration",
+            description:
+                "I think in each of the points (Q1,Q2,Q3...) we will simply write 2-3 paragraphs or 2-3 points inside that will say what we are doing, etc.",
+        },
+    ];
 
     return (
-        <RoadmapContainer>
-            <h1>ROADMAP</h1>
-            <StepperContainer>
-                <SmallVerticalLine />
-                {steps.map((step, index) => (
-                    <>
-                        <Step key={index}>
-                            <div className="small-svg">
-                                <FireStepCircle width={56} height={56}>
-                                    {index + 1}
-                                </FireStepCircle>
-                            </div>
-                            <HorizontalLine />
-                            <TextBody>
-                                <h2 className="date">April 2024</h2>
-                                <div className="description">
-                                    <h2>HEAT Coin Integration</h2>
-                                    <p>
-                                        I think in each of the points (Q1,Q2,Q3...) we will simply write 2-3 paragraphs
-                                        or 2-3 points inside that will say what we are doing, etc.
-                                    </p>
+        <>
+            <Header />
+            <RoadmapContainer>
+                <h1>ROADMAP</h1>
+                <StepperContainer>
+                    <SmallVerticalLine />
+                    {steps.map((step, index) => (
+                        <div key={index}>
+                            <Step>
+                                <div className="small-svg">
+                                    <FireStepCircle width={56} height={56}>
+                                        {index + 1}
+                                    </FireStepCircle>
                                 </div>
-                            </TextBody>
-                        </Step>
-                        <VerticalLine></VerticalLine>
-                    </>
-                ))}
-            </StepperContainer>
-            <div className="last-fire-circle">
-                <FireStepCircle></FireStepCircle>
-            </div>
-        </RoadmapContainer>
+                                <HorizontalLine />
+                                <TextBody>
+                                    <h2 className="date">{step.date}</h2>
+                                    <div className="description">
+                                        <h2>{step.title}</h2>
+                                        <p>{step.description}</p>
+                                    </div>
+                                </TextBody>
+                            </Step>
+                            <VerticalLine></VerticalLine>
+                        </div>
+                    ))}
+                    <div className="last-fire-circle">
+                        <FireStepCircle></FireStepCircle>
+                    </div>
+                </StepperContainer>
+                <Footer>
+                    <hr />
+                    <div className="footer-wrapper">
+                        <h2>OUR SOCIAL MEDIA</h2>
+                        <div className="links">
+                            <a
+                                className="logo"
+                                href="https://www.instagram.com/nftburnerapp?igsh=em81OTFnc3psanhq&utm_source=qr"
+                            >
+                                <TwitterLogo />
+                            </a>
+                            <a className="logo" href="https://twitter.com/nftburnerapp">
+                                <InstLogo />
+                            </a>
+                        </div>
+                    </div>
+                </Footer>
+            </RoadmapContainer>
+        </>
     );
 };
