@@ -92,7 +92,7 @@ const TextBody = styled.div`
     height: 2.5rem;
 
     @media (max-width: 700px) {
-        height: 2.25em;
+        height: 3em;
         flex-direction: column;
         margin: 1rem;
 
@@ -102,7 +102,8 @@ const TextBody = styled.div`
     }
 
     h2 {
-        margin: 0.5rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
     }
 
     .description {
@@ -110,7 +111,14 @@ const TextBody = styled.div`
         flex-direction: column;
         max-width: 16em;
 
-        p {
+        @media (max-width: 700px) {
+            h2 {
+                margin: 0;
+            }
+        }
+
+        .description-body {
+            margin-top: 0.4rem;
             color: #ffffff80;
             font-family: sans-serif;
         }
@@ -118,6 +126,9 @@ const TextBody = styled.div`
 
     .date {
         margin-right: 1rem;
+        @media (max-width: 700px) {
+            margin: 0;
+        }
     }
 `;
 
@@ -145,15 +156,16 @@ const Footer = styled.div`
         border-color: #515158;
     }
 
-    h2 {
-        font-size: clamp(1rem, 10vw, 4rem);
-    }
-
     .footer-wrapper {
         display: flex;
         flex-direction: row;
         justify-content: space-around;
         align-items: center;
+        font-family: "Poppins", sans-serif;
+
+        h2 {
+            font-size: clamp(1rem, 9vw, 2.5em);
+        }
 
         @media (max-width: 820px) {
             flex-direction: column;
@@ -219,7 +231,7 @@ export const Roadmap = () => {
                                     <h2 className="date">{step.date}</h2>
                                     <div className="description">
                                         <h2>{step.title}</h2>
-                                        <p>{step.description}</p>
+                                        <p className="description-body">{step.description}</p>
                                     </div>
                                 </TextBody>
                             </Step>
