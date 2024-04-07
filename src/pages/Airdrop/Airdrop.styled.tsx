@@ -22,7 +22,7 @@ export const StyledDialog = styled(Dialog)`
         text-align: center;
 
         &::before {
-            content: "$HEAT ";
+            content: "NFTBurner ";
             color: #ff6a2d;
         }
     }

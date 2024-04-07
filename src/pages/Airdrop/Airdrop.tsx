@@ -9,9 +9,10 @@ import { NftBurnDialogContainer } from "../../components/Control/components/NftB
 import { styled } from "styled-components";
 import { ToastContext } from "../../components/ToastProvider/ToastProvider";
 import { ConfirmBurningButton, StyledDialog, SubmitContainer } from "./Airdrop.styled";
+import { encode } from "../../utils/encode";
 
 export interface FormData {
-    walletAdress: string | null;
+    walletAddress: string | null;
     userName: string | null;
     repost: string | null;
     userNameCorrect: boolean;
@@ -110,7 +111,7 @@ export const Airdrop = () => {
     const [walletSelectPopupVisible, setWalletSelectPopupVisible] = useState<boolean>(false);
 
     const [formData, setFormData] = useState<FormData>({
-        walletAdress: null,
+        walletAddress: null,
         userName: null,
         repost: null,
         userNameCorrect: false,
@@ -122,7 +123,7 @@ export const Airdrop = () => {
     const toastController = useContext(ToastContext);
 
     useEffect(() => {
-        setFormData((data) => ({ ...data, walletAdress: suietWallet.account?.address ?? "" }));
+        setFormData((data) => ({ ...data, walletAddress: suietWallet.account?.address ?? "" }));
     }, [suietWallet.account?.address]);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -134,7 +135,7 @@ export const Airdrop = () => {
         if (form.userName !== null && regex.test(form.userName)) {
             userNameCorrect = true;
         }
-        if (form.repost?.length && form.userName?.length && form.walletAdress?.length && userNameCorrect) {
+        if (form.repost?.length && form.userName?.length && form.walletAddress?.length && userNameCorrect) {
             fieldsRequired = true;
         }
         setFormData({
@@ -148,11 +149,34 @@ export const Airdrop = () => {
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
         try {
-            setIsSubmitted((formData.walletAdress ?? "").length > 0);
+            setIsSubmitted((formData.walletAddress ?? "").length > 0);
+            if (!formData.walletAddress) {
+                throw new Error(`Wallet is not connected`);
+            }
+            const data = {
+                walletAddress: formData.walletAddress,
+                userName: formData.userName,
+                repost: formData.repost,
+            } as { [key: string]: string | number | boolean };
+
+            const response = await fetch("/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: encode({
+                    "form-name": "giveaway",
+                    ...data,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to submit form: ${response.statusText}`);
+            }
+
             setFormData({
-                walletAdress: null,
+                walletAddress: null,
                 userName: null,
                 repost: null,
                 fieldsValid: false,
@@ -189,7 +213,7 @@ export const Airdrop = () => {
             </HeaderAppContainer>
             <div>
                 <StyledDialog
-                    header="AIRDROP"
+                    header="GIVEAWAY"
                     headerStyle={{ textAlign: "center" }}
                     closable={false}
                     style={{ width: "min-content" }}
@@ -216,14 +240,15 @@ export const Airdrop = () => {
                             <StyledLabel>
                                 <GlowingInput
                                     type="text"
-                                    name="walletAdress"
+                                    name="walletAddress"
                                     placeholder="WALLET ADDRESS"
-                                    value={formData.walletAdress ?? ""}
+                                    value={formData.walletAddress ?? ""}
                                     onChange={handleChange}
+                                    disabled
                                 />
                                 {formData.touched &&
-                                    formData.walletAdress !== null &&
-                                    !formData.walletAdress.length && <StyledError>Please provide Adress</StyledError>}
+                                    formData.walletAddress !== null &&
+                                    !formData.walletAddress.length && <StyledError>Please provide Adress</StyledError>}
                             </StyledLabel>
 
                             <StyledLabel>
