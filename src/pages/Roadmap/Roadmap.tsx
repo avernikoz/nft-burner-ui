@@ -4,6 +4,7 @@ import { ReactComponent as FireStepCircle } from "../../assets/roadmap/stepCircl
 import { ReactComponent as TwitterLogo } from "../../assets/roadmap/Twitter.svg";
 import { ReactComponent as InstLogo } from "../../assets/roadmap/inst.svg";
 import { Header } from "../../components/Header/Header";
+import { EAppPages } from "../App/AppModel";
 
 const RoadmapContainer = styled.div`
     width: 70vw;
@@ -138,7 +139,7 @@ export interface IStep {
     description: string;
 }
 
-const Footer = styled.div`
+const LinkFooter = styled.div`
     margin: 10rem auto 2rem;
     width: 70vw;
     font-family: Khand;
@@ -183,7 +184,7 @@ const Footer = styled.div`
     }
 `;
 
-export const Roadmap = () => {
+export const Roadmap = ({ setActivePage }: { setActivePage: (isAboutPageActive: EAppPages) => void }) => {
     const steps: IStep[] = [
         {
             date: "April 2024",
@@ -213,7 +214,7 @@ export const Roadmap = () => {
 
     return (
         <>
-            <Header />
+            <Header setActivePage={setActivePage} />
             <RoadmapContainer>
                 <h1>ROADMAP</h1>
                 <StepperContainer>
@@ -242,7 +243,7 @@ export const Roadmap = () => {
                         <FireStepCircle></FireStepCircle>
                     </div>
                 </StepperContainer>
-                <Footer>
+                <LinkFooter>
                     <hr />
                     <div className="footer-wrapper">
                         <h2>OUR SOCIAL MEDIA</h2>
@@ -258,7 +259,7 @@ export const Roadmap = () => {
                             </a>
                         </div>
                     </div>
-                </Footer>
+                </LinkFooter>
             </RoadmapContainer>
         </>
     );

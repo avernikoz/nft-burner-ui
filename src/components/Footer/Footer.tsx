@@ -9,6 +9,7 @@ import { ReactComponent as LetterIcon } from "../../assets/svg/letter.svg";
 import { ReactComponent as FullScreenIcon } from "../../assets/svg/fullScreen.svg";
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import { ContactDialog } from "../ContactDialog/ContactDialog";
+import { EAppPages } from "../../pages/App/AppModel";
 
 export const FooterContainer = styled.div`
     background-color: rgba(0, 0, 0, 0);
@@ -153,7 +154,7 @@ export const ContactFormComponent = ({ showContactForm }: { showContactForm: () 
     );
 };
 
-export const Footer = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: boolean) => void }) => {
+export const Footer = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: EAppPages) => void }) => {
     const [contactPopupVisible, setContactPopupVisible] = useState<boolean>(false);
 
     return (
@@ -181,7 +182,7 @@ export const Footer = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPag
                             }
                             GReactGLBridgeFunctions.OnAboutButtonPressed();
 
-                            setAboutPageActive(true);
+                            setAboutPageActive(EAppPages.ABOUT);
                         }}
                     >
                         ABOUT

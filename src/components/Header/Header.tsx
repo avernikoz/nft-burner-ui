@@ -1,6 +1,7 @@
 import { styled } from "styled-components";
 
 import { ReactComponent as BurnerLogoIcon } from "../../assets/svg/burnerLogoDesktop.svg";
+import { EAppPages } from "../../pages/App/AppModel";
 
 export const HeaderContainer = styled.div`
     //background-color: #500fe9cf;
@@ -12,6 +13,11 @@ export const HeaderContainer = styled.div`
     z-index: 99;
     padding: 1.25vw 4vw;
     height: 102px;
+
+    a {
+        cursor: pointer;
+        width: fit-content;
+    }
 
     @media (max-width: 600px) {
         flex-direction: column;
@@ -52,11 +58,19 @@ export const BetaText = styled.span`
     //width: clamp(32px, 40vw, 512px);
 `;
 
-export const Header = () => (
+export const Header = ({ setActivePage }: { setActivePage: (isAboutPageActive: EAppPages) => void }) => (
     <HeaderContainer>
-        <BurnerLogoIcon />
+        <a
+            href="#"
+            onClick={(e) => {
+                e.preventDefault();
+                setActivePage(EAppPages.ABOUT);
+            }}
+        >
+            <BurnerLogoIcon />
+        </a>
         <BetaContainer>
-            <BetaText> beta</BetaText>
+            <BetaText>beta</BetaText>
         </BetaContainer>
         <HeaderLine />
     </HeaderContainer>
