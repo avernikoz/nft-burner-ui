@@ -2,6 +2,7 @@ import { styled } from "styled-components";
 import { ReactComponent as TwitterLogo } from "../../assets/unsupportMobileModal/twitter-logo.svg";
 import { ReactComponent as InstLogo } from "../../assets/unsupportMobileModal/instagram-logo.svg";
 import { ReactComponent as BurnerLogoIcon } from "../../assets/svg/burnerLogoDesktop.svg";
+import React from "react";
 
 const StyledCard = styled.div`
     padding: 2rem;
@@ -67,12 +68,24 @@ const ModalHeader = styled.header`
     justify-content: center;
 `;
 
-export const UnsupportedMobileModal = () => {
+export const UnsupportedMobileModal = ({
+    setAboutPageActive,
+}: {
+    setAboutPageActive: (isAboutPageActive: boolean) => void;
+}) => {
     return (
         <Wrapper>
             <div></div>
             <ModalHeader>
-                <BurnerLogoIcon />
+                <a
+                    onClick={(e) => {
+                        e.preventDefault();
+                        setAboutPageActive(true);
+                    }}
+                    href="#"
+                >
+                    <BurnerLogoIcon />
+                </a>
             </ModalHeader>
             <ImageContainer>
                 <img src={require("assets/unsupportMobileModal/CARD.webp")} alt="unsupport-image" loading="lazy" />

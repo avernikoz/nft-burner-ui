@@ -23,18 +23,15 @@ function App() {
     }, []);
 
     const [isAboutPageActive, setAboutPageActive] = useState(true);
-    const AppComponent = isAboutPageActive ? About : InternalApp;
+    const checkDeviceComponent = deviceType == "Mobile" ? UnsupportedMobileModal : InternalApp;
+    const AppComponent = isAboutPageActive ? About : checkDeviceComponent;
 
     return (
         <>
             <GlobalStyles />
             <FPSMeter />
             <Canvas />
-            {deviceType == "Mobile" ? (
-                <UnsupportedMobileModal />
-            ) : (
-                <AppComponent setAboutPageActive={setAboutPageActive} />
-            )}
+            <AppComponent setAboutPageActive={setAboutPageActive} />
         </>
     );
 }
