@@ -248,13 +248,13 @@ export const Roadmap = ({ setActivePage }: { setActivePage: (isAboutPageActive: 
                     <div className="footer-wrapper">
                         <h2>OUR SOCIAL MEDIA</h2>
                         <div className="links">
-                            <a
-                                className="logo"
-                                href="https://www.instagram.com/nftburnerapp?igsh=em81OTFnc3psanhq&utm_source=qr"
-                            >
+                            <a className="logo" href="https://twitter.com/nftburnerapp">
                                 <TwitterLogo />
                             </a>
-                            <a className="logo" href="https://twitter.com/nftburnerapp">
+                            <a
+                                className="logo"
+                                href="https://www.instagram.com/nftburnerapp?igsh=em81OTFnc3psanhq&utm_source=qr "
+                            >
                                 <InstLogo />
                             </a>
                         </div>
