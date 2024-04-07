@@ -10,6 +10,7 @@ import { styled } from "styled-components";
 import { ToastContext } from "../../components/ToastProvider/ToastProvider";
 import { ConfirmBurningButton, StyledDialog, SubmitContainer } from "./Airdrop.styled";
 import { encode } from "../../utils/encode";
+import { GAudioEngine } from "../../webl/audioEngine";
 
 export interface FormData {
     walletAddress: string | null;
@@ -121,6 +122,10 @@ export const Airdrop = () => {
 
     const [isSubmitted, setIsSubmitted] = useState(false);
     const toastController = useContext(ToastContext);
+
+    useEffect(() => {
+        GAudioEngine.getInstance().toggleSound();
+    }, []);
 
     useEffect(() => {
         setFormData((data) => ({ ...data, walletAddress: suietWallet.account?.address ?? "" }));
