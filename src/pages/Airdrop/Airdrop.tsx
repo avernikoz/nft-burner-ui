@@ -156,13 +156,35 @@ export const Airdrop = () => {
         e.preventDefault();
         try {
             setIsSubmitted((formData.walletAddress ?? "").length > 0);
+            const message = {
+                walletAddress: formData.walletAddress,
+                userName: formData.userName,
+                repost: formData.repost,
+            };
+            const publicKey = suietWallet.account?.publicKey;
+
+            const msgBytes = new TextEncoder().encode(JSON.stringify(message));
+            const resultSignature = await suietWallet.signMessage({
+                message: msgBytes,
+            });
+
+            if (!publicKey) {
+                throw new Error(`Wallet is not connected`);
+            }
+
+            const verifyResult = await suietWallet.verifySignedMessage(resultSignature, publicKey);
+            console.log("verify sign:", verifyResult);
+
             if (!formData.walletAddress) {
                 throw new Error(`Wallet is not connected`);
             }
+
             const data = {
                 walletAddress: formData.walletAddress,
                 userName: formData.userName,
                 repost: formData.repost,
+                signature: resultSignature.signature,
+                messageBytes: resultSignature.messageBytes,
             } as { [key: string]: string | number | boolean };
 
             const response = await fetch("/", {
