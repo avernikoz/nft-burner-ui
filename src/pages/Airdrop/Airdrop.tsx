@@ -167,6 +167,7 @@ export const Airdrop = () => {
             const resultSignature = await suietWallet.signMessage({
                 message: msgBytes,
             });
+
             if (!publicKey) {
                 throw new Error(`Wallet is not connected`);
             }
@@ -177,12 +178,11 @@ export const Airdrop = () => {
             if (!formData.walletAddress) {
                 throw new Error(`Wallet is not connected`);
             }
-            const stringPublicKey = new TextDecoder().decode(publicKey);
+
             const data = {
                 walletAddress: formData.walletAddress,
                 userName: formData.userName,
                 repost: formData.repost,
-                publicKey: stringPublicKey,
                 signature: resultSignature.signature,
                 messageBytes: resultSignature.messageBytes,
             } as { [key: string]: string | number | boolean };
