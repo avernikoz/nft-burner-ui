@@ -199,16 +199,17 @@ export const Roadmap = ({ setActivePage }: { setActivePage: (isAboutPageActive: 
             date: "February 2024",
             title: "Building PoC",
             descriptions: [
-                `Integrate support for NFT collections using Mysten Kiosk with OriginByte Kiosk extension.`,
-                `Introduce burning instruments to enhance user engagement.`,
+                `Support NFT collections using Mysten Kiosk with OriginByte Kiosk extension.`,
+                `Integrate first Burning Tools and Burning Surface.`,
+                `Add audio for UI and sfx.`,
             ],
         },
         {
             date: "March 2024",
             title: "Performance optimizations",
             descriptions: [
-                `Improve WebGL simulation performance for compatibility with low-end devices.`,
-                `Enhance metadata fetching performance by leveraging off-chain and on-chain data sources.`,
+                `Optimize Rendering Engine performance to support lower-end devices.`,
+                `Improve metadata fetching performance by leveraging off-chain and on-chain data sources.`,
                 `Add support for Bluemove NFT collection standard.`,
             ],
         },
@@ -216,15 +217,19 @@ export const Roadmap = ({ setActivePage }: { setActivePage: (isAboutPageActive: 
             date: "April 2024",
             title: "Utility Coin & Physical Engine",
             descriptions: [
-                `Build a prototype of the Physical Engine to enable users to interact with NFTs respecting physical laws.`,
-                `Design economics based on the utility coin launch.`,
+                `Integrate Physics Engine with Rigid Body Simulation and Springs to add dynamics to the burning process.`,
+                `Design in-app economics and revenue model for the utility coin launch.`,
                 `Develop smart contracts for utility coin usage within the app.`,
             ],
         },
         {
             date: "May 2024",
             title: "Minting Burned NFTs",
-            descriptions: [`Allow user's to mint the burned versions of their nfts as a separate nft collection. `],
+            descriptions: [
+                `Allow user's to mint the burned versions of their nfts as a separate nft collection. `,
+                `Integrate additional Burning Surface Material Types and Burnt Image style.`,
+                `Add interactive Velocity Field and Procedural Density Texture for dynamic vfx.`,
+            ],
         },
         {
             date: "June 2024",
