@@ -3,13 +3,17 @@ import { useEffect, useState } from "react";
 import { GlobalStyles } from "../../config/globalStyles";
 import "./App.css";
 
-import { About } from "../About/About";
-import { InternalApp } from "./InternalApp";
+import { Roadmap } from "../Roadmap/Roadmap";
 import { Canvas } from "../../components/Canvas/Canvas";
 import { RenderMain } from "../../webl/renderingMain";
 import { FPSMeter } from "../../components/FPSMeter/FPSMeter";
+import { InternalApp } from "./InternalApp";
+import { About } from "../About/About";
+import { EAppPages } from "./AppModel";
 
 function App() {
+    const [activePage, setActivePage] = useState<EAppPages>(EAppPages.ABOUT);
+
     useEffect(() => {
         if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
         } else {
@@ -18,15 +22,26 @@ function App() {
         }
     }, []);
 
-    const [isAboutPageActive, setAboutPageActive] = useState(true);
-    const AppComponent = isAboutPageActive ? About : InternalApp;
+    const chosenPage = () => {
+        switch (activePage) {
+            case EAppPages.ABOUT:
+                return <About setAboutPageActive={setActivePage} />;
+            case EAppPages.INTERNAL_APP:
+                return <InternalApp setAboutPageActive={setActivePage} />;
+            case EAppPages.ROADMAP:
+                return <Roadmap setActivePage={setActivePage} />;
+            default:
+                return About;
+        }
+    };
+    // const AppComponent = Roadmap;
 
     return (
         <>
             <GlobalStyles />
             <FPSMeter />
             <Canvas />
-            <AppComponent setAboutPageActive={setAboutPageActive} />
+            {chosenPage()}
         </>
     );
 }
