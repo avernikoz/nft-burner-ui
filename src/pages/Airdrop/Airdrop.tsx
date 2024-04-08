@@ -11,6 +11,7 @@ import { ToastContext } from "../../components/ToastProvider/ToastProvider";
 import { ConfirmBurningButton, StyledDialog, SubmitContainer } from "./Airdrop.styled";
 import { encode } from "../../utils/encode";
 import { GAudioEngine } from "../../webl/audioEngine";
+import { verifyPersonalMessage } from "@mysten/sui.js/verify";
 
 export interface FormData {
     walletAddress: string | null;
@@ -179,6 +180,14 @@ export const Airdrop = () => {
                 throw new Error(`Wallet is not connected`);
             }
 
+            // check signature
+
+            const log = await verifyPersonalMessage(msgBytes, resultSignature.signature);
+            console.log(log.toSuiAddress());
+            console.log(formData.walletAddress);
+            console.log(formData.walletAddress === log.toSuiAddress());
+
+            //
             const data = {
                 walletAddress: formData.walletAddress,
                 userName: formData.userName,
@@ -295,7 +304,7 @@ export const Airdrop = () => {
                             <StyledLabel>
                                 <GlowingInput
                                     name="repost"
-                                    placeholder="X REPOST"
+                                    placeholder="X POST OF YOUR BURNED NFT"
                                     value={formData.repost ?? ""}
                                     onChange={handleChange}
                                     required
