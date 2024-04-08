@@ -219,7 +219,7 @@ export const Roadmap = ({ setActivePage }: { setActivePage: (isAboutPageActive: 
             descriptions: [
                 `Integrate Physics Engine with Rigid Body Simulation and Springs to add dynamics to the burning process.`,
                 `Design in-app economics and revenue model for the utility coin launch.`,
-                `Develop smart contracts for utility coin usage within the app.`,
+                `Develop smart contract for utility coin usage within the app.`,
             ],
         },
         {
