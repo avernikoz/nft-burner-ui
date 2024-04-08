@@ -180,13 +180,6 @@ export const Airdrop = () => {
                 throw new Error(`Wallet is not connected`);
             }
 
-            // check signature
-
-            const log = await verifyPersonalMessage(msgBytes, resultSignature.signature);
-            console.log(log.toSuiAddress());
-            console.log(formData.walletAddress);
-            console.log(formData.walletAddress === log.toSuiAddress());
-
             //
             const data = {
                 walletAddress: formData.walletAddress,
