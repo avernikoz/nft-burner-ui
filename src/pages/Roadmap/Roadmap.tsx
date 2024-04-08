@@ -237,7 +237,7 @@ export const Roadmap = ({ setActivePage }: { setActivePage: (isAboutPageActive: 
                 `Implement functionality to allow users to burn NFTs from other chains.`,
                 `Develop bridge mechanism for verifying burned NFTs.`,
                 `Design user-friendly interface for bridge and minting process.`,
-                `Integrate reward system: users earn utility coins for burning and minting NFTs.`,
+                `Integrate reward system: users earn utility coin for burning and minting NFTs.`,
                 `Implement fraud prevention measures.`,
                 `Conduct testing and auditing for security.`,
             ],
