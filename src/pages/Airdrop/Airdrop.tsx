@@ -11,7 +11,6 @@ import { ToastContext } from "../../components/ToastProvider/ToastProvider";
 import { ConfirmBurningButton, StyledDialog, SubmitContainer } from "./Airdrop.styled";
 import { encode } from "../../utils/encode";
 import { GAudioEngine } from "../../webl/audioEngine";
-import { verifyPersonalMessage } from "@mysten/sui.js/verify";
 
 export interface FormData {
     walletAddress: string | null;
