@@ -191,3 +191,23 @@ export const Footer = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPag
         </>
     );
 };
+
+export const FooterStartScreen = () => {
+    const [contactPopupVisible, setContactPopupVisible] = useState<boolean>(false);
+
+    return (
+        <>
+            <ContactDialog
+                visible={contactPopupVisible}
+                setVisible={() => {
+                    setContactPopupVisible(false);
+                }}
+            />
+            <FooterContainer>
+                <FooterButtonsContainer>
+                    <SoundIconElement />
+                </FooterButtonsContainer>
+            </FooterContainer>
+        </>
+    );
+};

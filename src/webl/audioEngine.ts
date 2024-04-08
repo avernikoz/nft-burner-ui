@@ -78,7 +78,7 @@ export class SoundSample {
 export class GAudioEngine {
     private static instance: GAudioEngine;
 
-    public isSoundEnabled: boolean = true;
+    public isSoundEnabled: boolean = false;
 
     public Context: AudioContext | null = null;
 
@@ -134,6 +134,11 @@ export class GAudioEngine {
             this.Context = new AudioContext();
             this.MasterGain = this.Context.createGain();
             this.MasterGain.connect(this.Context.destination);
+            if (this.isSoundEnabled) {
+                this.MasterGain!.gain.value = 1.0;
+            } else {
+                this.MasterGain!.gain.value = 0.0;
+            }
         } else {
             //console.error("Web Audio API is not supported in this browser");
         }
@@ -177,42 +182,23 @@ export class GAudioEngine {
     }
 
     PlayUIHoverSound() {
-        if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
-            this.SoundUIHover.Play(this.Context!);
-        }
+        this.SoundUIHover.Play(this.Context!);
     }
 
     PlayUIClickSound() {
-        if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
-            this.SoundUIClick.Play(this.Context!);
-        }
-    }
-
-    PlayUISelectSound() {
-        //if (!!localStorage.getItem("isBurnedNFTAtLeastOnce"))
-        {
-            //this.SoundUISelect.Play(this.Context!);
-        }
+        this.SoundUIClick.Play(this.Context!);
     }
 
     PlayUIClickStartSound() {
-        if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
-            this.SoundUIClickStart.Play(this.Context!);
-        }
+        this.SoundUIClickStart.Play(this.Context!);
     }
 
     PlayFireExtingSound() {
-        //if (!!localStorage.getItem("isBurnedNFTAtLeastOnce"))
-        {
-            this.SoundFireExting.Play(this.Context!);
-        }
+        this.SoundFireExting.Play(this.Context!);
     }
 
     PlayTransitionSound() {
-        //if (!!localStorage.getItem("isBurnedNFTAtLeastOnce"))
-        {
-            this.SoundTransition.Play(this.Context!);
-        }
+        this.SoundTransition.Play(this.Context!);
     }
 
     PlayIntroSound() {

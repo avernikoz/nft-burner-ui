@@ -15,6 +15,7 @@ import { GAudioEngine } from "../../webl/audioEngine";
 import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { APP_ENVIRONMENT } from "../../config/config";
 import { GraphicsWarning } from "../../components/ToastProvider/graphicsInfo";
+import { FooterStartScreen } from "../../components/Footer/Footer";
 
 //=========================
 // 	  MEDIA QUERIES
@@ -1240,6 +1241,7 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
                 <LPPageSocial />
             </LPContainerMain>
             <GraphicsWarning />
+            <FooterStartScreen />
         </>
     );
 };
