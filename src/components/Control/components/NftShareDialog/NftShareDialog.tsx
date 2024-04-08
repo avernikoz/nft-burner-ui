@@ -64,7 +64,7 @@ export const NftShareDialog = ({
                         <SocialIconContainer
                             target="_blank"
                             rel="noopener noreferrer"
-                            href={generateTwitterIntentShare()}
+                            href={generateTwitterIntentShare(nft)}
                         >
                             <TwitterIcon />
                         </SocialIconContainer>
