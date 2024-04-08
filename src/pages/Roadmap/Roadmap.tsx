@@ -122,7 +122,7 @@ const TextBody = styled.div`
         h2 {
             margin: 0;
         }
-        
+
         .description-body {
             margin-top: 0.4rem;
             color: #ffffff80;
@@ -131,10 +131,8 @@ const TextBody = styled.div`
     }
 
     .date {
-        margin-right: 1rem; 
+        //margin-right: 1rem;
         margin: 0;
-        @media (max-width: 700px)
-        }
     }
 
     .title {
