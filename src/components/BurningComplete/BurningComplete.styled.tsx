@@ -14,10 +14,7 @@ export const BurningCompleteContainer = styled.div`
 
     @media (max-width: 600px) {
         width: 100%;
-    }
-
-    @media (max-width: 700px) {
-        margin: 0 1rem;
+        padding: 0 1rem;
 
         button {
             flex-grow: 1;
