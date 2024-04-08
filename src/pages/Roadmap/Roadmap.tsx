@@ -225,6 +225,7 @@ export const Roadmap = ({ setActivePage }: { setActivePage: (isAboutPageActive: 
             title: "Minting Burned NFTs",
             descriptions: [
                 `Allow user's to mint the burned versions of their nfts as a separate nft collection. `,
+                `Create smart contracts on Sui chain for minting NFTs.`,
                 `Integrate additional Burning Surface Material Types and Burnt Image style.`,
                 `Add interactive Velocity Field and Procedural Density Texture for dynamic vfx.`,
             ],
@@ -232,7 +233,14 @@ export const Roadmap = ({ setActivePage }: { setActivePage: (isAboutPageActive: 
         {
             date: "June 2024",
             title: "Bridge NFTs from other chains",
-            descriptions: [``],
+            descriptions: [
+                `Implement functionality to allow users to burn NFTs from other chains.`,
+                `Develop bridge mechanism for verifying burned NFTs.`,
+                `Design user-friendly interface for bridge and minting process.`,
+                `Integrate reward system: users earn utility coins for burning and minting NFTs.`,
+                `Implement fraud prevention measures.`,
+                `Conduct testing and auditing for security.`,
+            ],
         },
     ];
 
