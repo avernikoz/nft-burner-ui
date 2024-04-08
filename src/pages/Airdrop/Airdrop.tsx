@@ -179,6 +179,7 @@ export const Airdrop = () => {
                 throw new Error(`Wallet is not connected`);
             }
 
+            //
             const data = {
                 walletAddress: formData.walletAddress,
                 userName: formData.userName,
@@ -295,7 +296,7 @@ export const Airdrop = () => {
                             <StyledLabel>
                                 <GlowingInput
                                     name="repost"
-                                    placeholder="X REPOST"
+                                    placeholder="X POST OF YOUR BURNED NFT"
                                     value={formData.repost ?? ""}
                                     onChange={handleChange}
                                     required
