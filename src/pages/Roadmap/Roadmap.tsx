@@ -136,7 +136,7 @@ const TextBody = styled.div`
 export interface IStep {
     title: string;
     date: string;
-    description: string;
+    descriptions: string[];
 }
 
 const LinkFooter = styled.div`
@@ -187,28 +187,40 @@ const LinkFooter = styled.div`
 export const Roadmap = ({ setActivePage }: { setActivePage: (isAboutPageActive: EAppPages) => void }) => {
     const steps: IStep[] = [
         {
-            date: "April 2024",
-            title: "HEAT Coin Integration",
-            description:
-                "I think in each of the points (Q1,Q2,Q3...) we will simply write 2-3 paragraphs or 2-3 points inside that will say what we are doing, etc.",
+            date: "February 2024",
+            title: "Building PoC",
+            descriptions: [
+                `Integrate support for NFT collections using Mysten Kiosk with OriginByte Kiosk extension.`,
+                `Introduce burning instruments to enhance user engagement.`,
+            ],
+        },
+        {
+            date: "March 2024",
+            title: "Performance optimizations",
+            descriptions: [
+                `Improve WebGL simulation performance for compatibility with low-end devices.`,
+                `Enhance metadata fetching performance by leveraging off-chain and on-chain data sources.`,
+                `Add support for Bluemove NFT collection standard.`,
+            ],
         },
         {
             date: "April 2024",
-            title: "HEAT Coin Integration",
-            description:
-                "I think in each of the points (Q1,Q2,Q3...) we will simply write 2-3 paragraphs or 2-3 points inside that will say what we are doing, etc.",
+            title: "Utility Coin & Physical Engine",
+            descriptions: [
+                `Build a prototype of the Physical Engine to enable users to interact with NFTs respecting physical laws.`,
+                `Design economics based on the utility coin launch.`,
+                `Develop smart contracts for utility coin usage within the app.`,
+            ],
         },
         {
-            date: "April 2024",
-            title: "HEAT Coin Integration",
-            description:
-                "I think in each of the points (Q1,Q2,Q3...) we will simply write 2-3 paragraphs or 2-3 points inside that will say what we are doing, etc.",
+            date: "May 2024",
+            title: "Minting Burned NFTs",
+            descriptions: [`Allow user's to mint the burned versions of their nfts as a separate nft collection. `],
         },
         {
-            date: "April 2024",
-            title: "HEAT Coin Integration",
-            description:
-                "I think in each of the points (Q1,Q2,Q3...) we will simply write 2-3 paragraphs or 2-3 points inside that will say what we are doing, etc.",
+            date: "June 2024",
+            title: "Bridge NFTs from other chains",
+            descriptions: [``],
         },
     ];
 
@@ -232,7 +244,13 @@ export const Roadmap = ({ setActivePage }: { setActivePage: (isAboutPageActive: 
                                     <h2 className="date">{step.date}</h2>
                                     <div className="description">
                                         <h2>{step.title}</h2>
-                                        <p className="description-body">{step.description}</p>
+                                        <p className="description-body">
+                                            {step.descriptions.map((el) => (
+                                                <>
+                                                    {el} <br />
+                                                </>
+                                            ))}
+                                        </p>
                                     </div>
                                 </TextBody>
                             </Step>
