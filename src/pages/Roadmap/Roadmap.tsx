@@ -56,7 +56,7 @@ const VerticalLine = styled.div`
     left: 50%;
     width: 5px;
     height: 200px;
-    background-color: #ff4a00;
+    background-color: #ff852d;
     z-index: -1;
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
@@ -66,7 +66,7 @@ const VerticalLine = styled.div`
 const SmallVerticalLine = styled.div`
     width: 5px;
     height: 3.75em;
-    background-color: #ff4a00;
+    background-color: #ff852d;
     z-index: -1;
     margin-top: 0.5em;
     margin-bottom: 0.5rem;
@@ -77,7 +77,7 @@ const HorizontalLine = styled.div`
     left: 50%;
     width: 12.5em;
     height: 5px;
-    background-color: #ff4a00;
+    background-color: #ff852d;
     z-index: -1;
     margin: 0.5rem 1rem 0.5rem 0.5rem;
 
