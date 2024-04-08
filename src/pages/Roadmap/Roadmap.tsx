@@ -75,7 +75,7 @@ const SmallVerticalLine = styled.div`
 
 const HorizontalLine = styled.div`
     left: 50%;
-    width: 12.5em;
+    width: 16.5em;
     height: 5px;
     background-color: #ff852d;
     z-index: -1;
@@ -88,19 +88,26 @@ const HorizontalLine = styled.div`
 
 const TextBody = styled.div`
     display: flex;
-    flex-direction: row;
+    //flex-direction: row;
     align-items: start;
-    height: 2.5rem;
+    //height: 2.5rem;
+    height: 1.5em;
+    flex-direction: column;
+    margin: 1rem;
 
-    @media (max-width: 700px) {
-        height: 3em;
-        flex-direction: column;
-        margin: 1rem;
-
-        h2 {
-            margin: 0;
-        }
+    h2 {
+        margin: 0;
     }
+
+    //@media (max-width: 700px) {
+    //    height: 3em;
+    //    flex-direction: column;
+    //    margin: 1rem;
+    //
+    //    h2 {
+    //        margin: 0;
+    //    }
+    //}
 
     h2 {
         margin-top: 0.5rem;
@@ -110,14 +117,12 @@ const TextBody = styled.div`
     .description {
         display: flex;
         flex-direction: column;
-        max-width: 16em;
+        max-width: 22em;
 
-        @media (max-width: 700px) {
-            h2 {
-                margin: 0;
-            }
+        h2 {
+            margin: 0;
         }
-
+        
         .description-body {
             margin-top: 0.4rem;
             color: #ffffff80;
@@ -126,10 +131,14 @@ const TextBody = styled.div`
     }
 
     .date {
-        margin-right: 1rem;
-        @media (max-width: 700px) {
-            margin: 0;
+        margin-right: 1rem; 
+        margin: 0;
+        @media (max-width: 700px)
         }
+    }
+
+    .title {
+        font-size: 2rem;
     }
 `;
 
@@ -243,7 +252,7 @@ export const Roadmap = ({ setActivePage }: { setActivePage: (isAboutPageActive: 
                                 <TextBody>
                                     <h2 className="date">{step.date}</h2>
                                     <div className="description">
-                                        <h2>{step.title}</h2>
+                                        <h2 className="title">{step.title}</h2>
                                         <p className="description-body">
                                             {step.descriptions.map((el) => (
                                                 <>
