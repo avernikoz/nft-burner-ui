@@ -30,6 +30,7 @@
         "@avernikoz/nft-sdk": "2.1.0",
         "@mysten/sui.js": "0.41.1",
         "@mysten/wallet-standard": "^0.8.11",
+        "@nightlylabs/wallet-selector-sui": "^0.3.0",
         "@rainbow-me/rainbowkit": "^1.1.1",
         "@sentry/browser": "^7.84.0",
         "@sentry/react": "^7.84.0",
