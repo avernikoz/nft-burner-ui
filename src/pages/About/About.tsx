@@ -18,6 +18,7 @@ import { GraphicsWarning } from "../../components/ToastProvider/graphicsInfo";
 import { FooterStartScreen } from "../../components/Footer/Footer";
 
 import { EAppPages } from "../App/AppModel";
+import { useDeviceType } from "../../hooks/useDeviceType";
 
 //=========================
 // 	  MEDIA QUERIES
@@ -1208,6 +1209,8 @@ export const LPPageStartBlock = ({
 
 export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: EAppPages) => void }) => {
     const myRef: RefObject<HTMLDivElement> = useRef(null);
+    const device = useDeviceType();
+
     const executeScroll = () => myRef.current?.scrollIntoView({ behavior: "smooth" });
 
     return (
@@ -1249,7 +1252,7 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
 
                 <LPPageSocial />
             </LPContainerMain>
-            <GraphicsWarning />
+            {device !== "Mobile" && <GraphicsWarning />}
             <FooterStartScreen />
         </>
     );
