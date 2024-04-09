@@ -5,7 +5,6 @@ import { IMAGE_STORE_SINGLETON_INSTANCE } from "../../config/config";
 import { INft } from "../../utils/types";
 import ErrorSVG from "../../assets/svg/errorLoadNFT.svg";
 import { NFT_IMAGES_CORS_PROXY_URL } from "../../config/proxy.config";
-import { GAudioEngine } from "../../webl/audioEngine";
 
 export const NftItem = memo(({ item, isActive, onClick }: { item: INft; isActive: boolean; onClick: () => void }) => {
     const imgRef = useRef<HTMLImageElement>(null);
@@ -21,8 +20,6 @@ export const NftItem = memo(({ item, isActive, onClick }: { item: INft; isActive
         IMAGE_STORE_SINGLETON_INSTANCE.setImageUrl(item.logoURI);
         IMAGE_STORE_SINGLETON_INSTANCE.setImage(imgRef.current);
         onClick();
-
-        GAudioEngine.getInstance().PlayUISelectSound();
     }, [error, isPlaceholderImage, item.logoURI, loaded, onClick]);
 
     // TODO: Record all images that can't be loaded to don't load them twice

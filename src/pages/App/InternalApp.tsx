@@ -31,10 +31,12 @@ import { useUserLevel } from "../../context/UserLevelContext";
 import { MainLevelContainer } from "../../components/Level/Level.styled";
 import { BetaContainer, BetaText } from "../../components/Header/Header";
 
-export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: boolean) => void }> = ({
+import { EAppPages } from "./AppModel";
+
+export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAppPages) => void }> = ({
     setAboutPageActive,
 }: {
-    setAboutPageActive: (isAboutPageActive: boolean) => void;
+    setAboutPageActive: (isAboutPageActive: EAppPages) => void;
 }) => {
     const suietWallet = suietUseWallet();
     const solanaWallet = solanaUseWallet();

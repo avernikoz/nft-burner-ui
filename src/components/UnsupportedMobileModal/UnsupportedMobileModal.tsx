@@ -3,6 +3,7 @@ import { ReactComponent as TwitterLogo } from "../../assets/unsupportMobileModal
 import { ReactComponent as InstLogo } from "../../assets/unsupportMobileModal/instagram-logo.svg";
 import { ReactComponent as BurnerLogoIcon } from "../../assets/svg/burnerLogoDesktop.svg";
 import React from "react";
+import { EAppPages } from "../../pages/App/AppModel";
 
 const StyledCard = styled.div`
     padding: 2rem;
@@ -71,7 +72,7 @@ const ModalHeader = styled.header`
 export const UnsupportedMobileModal = ({
     setAboutPageActive,
 }: {
-    setAboutPageActive: (isAboutPageActive: boolean) => void;
+    setAboutPageActive: (isAboutPageActive: EAppPages) => void;
 }) => {
     return (
         <Wrapper>
@@ -80,7 +81,7 @@ export const UnsupportedMobileModal = ({
                 <a
                     onClick={(e) => {
                         e.preventDefault();
-                        setAboutPageActive(true);
+                        setAboutPageActive(EAppPages.ABOUT);
                     }}
                     href="#"
                 >

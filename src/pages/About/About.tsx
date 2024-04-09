@@ -15,6 +15,10 @@ import { GAudioEngine } from "../../webl/audioEngine";
 import { ReactComponent as TwitterIcon } from "../../assets/svg/social/twitter.svg";
 import { APP_ENVIRONMENT } from "../../config/config";
 import { GraphicsWarning } from "../../components/ToastProvider/graphicsInfo";
+import { FooterStartScreen } from "../../components/Footer/Footer";
+
+import { EAppPages } from "../App/AppModel";
+import { useDeviceType } from "../../hooks/useDeviceType";
 
 //=========================
 // 	  MEDIA QUERIES
@@ -236,7 +240,7 @@ const GetRandomTitle = () => {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const RandomTitle = GetRandomTitle();
 
-export const StartButton = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: boolean) => void }) => {
+export const StartButton = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: EAppPages) => void }) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [loadingPercentage, setLoadingPercentage] = useState(0);
     const [loadingFinished, setLoadingFinished] = useState(false);
@@ -272,7 +276,7 @@ export const StartButton = ({ setAboutPageActive }: { setAboutPageActive: (isAbo
             disabled={!loadingFinished}
             onClick={() => {
                 ReactGA.event("start_button_landing_page_pressed");
-                setAboutPageActive(false);
+                setAboutPageActive(EAppPages.INTERNAL_APP);
                 GReactGLBridgeFunctions.OnStartButtonPressed();
                 GAudioEngine.getInstance().PlayUIClickStartSound();
             }}
@@ -305,7 +309,7 @@ export const AboutFirstSection = ({
     setAboutPageActive,
     setShowMore,
 }: {
-    setAboutPageActive: (isAboutPageActive: boolean) => void;
+    setAboutPageActive: (isAboutPageActive: EAppPages) => void;
     setShowMore: () => void;
 }) => {
     return (
@@ -322,6 +326,13 @@ export const AboutFirstSection = ({
                     >
                         <AboutText>ABOUT</AboutText>
                         <DownArrowIcon />
+                    </StartMenuButton>
+                    <StartMenuButton
+                        onClick={() => {
+                            setAboutPageActive(EAppPages.ROADMAP);
+                        }}
+                    >
+                        <AboutText>ROADMAP</AboutText>
                     </StartMenuButton>
                     <StartButton setAboutPageActive={setAboutPageActive} />
                 </AboutStartContainer>
@@ -1169,7 +1180,7 @@ export const LPPageSocial = () => (
 export const LPPageStartBlock = ({
     setAboutPageActive,
 }: {
-    setAboutPageActive: (isAboutPageActive: boolean) => void;
+    setAboutPageActive: (isAboutPageActive: EAppPages) => void;
 }) => {
     return (
         <LPSectionExtendableCentered>
@@ -1196,13 +1207,15 @@ export const LPPageStartBlock = ({
 // 	  	   ENTRY
 //=========================
 
-export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: boolean) => void }) => {
+export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPageActive: EAppPages) => void }) => {
     const myRef: RefObject<HTMLDivElement> = useRef(null);
+    const device = useDeviceType();
+
     const executeScroll = () => myRef.current?.scrollIntoView({ behavior: "smooth" });
 
     return (
         <>
-            <Header />
+            <Header setActivePage={setAboutPageActive} />
             <LPContainerMain>
                 <AboutFirstSection setAboutPageActive={setAboutPageActive} setShowMore={executeScroll} />
                 <SectionDivider />
@@ -1239,7 +1252,8 @@ export const About = ({ setAboutPageActive }: { setAboutPageActive: (isAboutPage
 
                 <LPPageSocial />
             </LPContainerMain>
-            <GraphicsWarning />
+            {device !== "Mobile" && <GraphicsWarning />}
+            <FooterStartScreen />
         </>
     );
 };

@@ -3,6 +3,7 @@ import { css, styled } from "styled-components";
 export const BurningCompleteContainer = styled.div`
     display: flex;
     gap: 20px;
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
 
@@ -13,6 +14,11 @@ export const BurningCompleteContainer = styled.div`
 
     @media (max-width: 600px) {
         width: 100%;
+        padding: 0 1rem;
+
+        button {
+            flex-grow: 1;
+        }
     }
 `;
 

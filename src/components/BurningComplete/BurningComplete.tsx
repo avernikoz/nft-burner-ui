@@ -99,6 +99,18 @@ export const BurningComplete = () => {
                 >
                     SHARE
                 </ShareButton>
+                <a
+                    className="shareButton mainButton mainButtonLarge completeButton"
+                    href="https://giveaway.nftburner.io"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ textDecoration: "none" }}
+                    onMouseEnter={() => {
+                        GAudioEngine.getInstance().PlayUIHoverSound();
+                    }}
+                >
+                    GIVEAWAY
+                </a>
             </BurningCompleteContainer>
         </>
     );
