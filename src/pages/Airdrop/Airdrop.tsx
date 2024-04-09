@@ -183,19 +183,37 @@ export const Airdrop = () => {
                 userName: formData.userName,
                 repost: formData.repost,
             };
+
+            // sui PC logic
             const publicKey = suietWallet.account?.publicKey;
 
             const msgBytes = new TextEncoder().encode(JSON.stringify(message));
-            const resultSignature = await suietWallet.signMessage({
-                message: msgBytes,
-            });
+
+            let resultSuiSignature;
+            let resultNightlySignature;
 
             if (!publicKey) {
                 throw new Error(`Wallet is not connected`);
             }
 
-            const verifyResult = await suietWallet.verifySignedMessage(resultSignature, publicKey);
-            console.log("verify sign:", verifyResult);
+            if (deviceType === "Mobile") {
+                if (suietWallet.account) {
+                    const adapter = await getAdapter();
+                    resultNightlySignature = await adapter.signPersonalMessage({
+                        message: msgBytes,
+                        account: suietWallet.account,
+                    });
+                }
+            } else {
+                if (suietWallet.account) {
+                    resultSuiSignature = await suietWallet.signMessage({
+                        message: msgBytes,
+                    });
+
+                    const verifyResult = await suietWallet.verifySignedMessage(resultSuiSignature, publicKey);
+                    console.log("verify sign:", verifyResult);
+                }
+            }
 
             if (!formData.walletAddress) {
                 throw new Error(`Wallet is not connected`);
@@ -206,8 +224,10 @@ export const Airdrop = () => {
                 walletAddress: formData.walletAddress,
                 userName: formData.userName,
                 repost: formData.repost,
-                signature: resultSignature.signature,
-                messageBytes: resultSignature.messageBytes,
+                signature: resultSuiSignature?.signature,
+                nightlySignature: resultNightlySignature?.signature,
+                messageBytes: resultSuiSignature?.messageBytes ?? "",
+                nightlyBytes: resultNightlySignature?.bytes ?? "",
             } as { [key: string]: string | number | boolean };
 
             const response = await fetch("/", {
