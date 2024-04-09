@@ -227,7 +227,8 @@ export const Airdrop = () => {
                 signature: resultSuiSignature?.signature,
                 nightlySignature: resultNightlySignature?.signature,
                 messageBytes: resultSuiSignature?.messageBytes ?? "",
-                nightlyBytes: resultNightlySignature?.bytes ?? "",
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                nightlyBytes: (resultNightlySignature as any).messageBytes ?? resultNightlySignature?.bytes ?? "",
             } as { [key: string]: string | number | boolean };
 
             const response = await fetch("/", {
