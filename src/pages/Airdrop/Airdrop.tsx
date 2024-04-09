@@ -4,13 +4,20 @@ import { DesktopLogoIcon, HeaderAppContainer, LogoContainer, LogoDivider, Mobile
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
 import BurnerLogoDesktopIcon from "../../assets/svg/burnerLogoDesktop.svg";
 import BurnerLogoMobileIcon from "../../assets/svg/burnerLogoMobile.svg";
-import { ChangeEvent, FormEvent, useContext, useEffect, useState } from "react";
+import { ReactComponent as NightlyLogo } from "../../assets/svg/nightly.svg";
+import React, { ChangeEvent, FormEvent, useContext, useEffect, useState } from "react";
 import { NftBurnDialogContainer } from "../../components/Control/components/NftBurnDialog/NftBurnDialog.styled";
 import { styled } from "styled-components";
 import { ToastContext } from "../../components/ToastProvider/ToastProvider";
 import { ConfirmBurningButton, StyledDialog, SubmitContainer } from "./Airdrop.styled";
 import { encode } from "../../utils/encode";
 import { GAudioEngine } from "../../webl/audioEngine";
+import { StyledPanelMenu, WalletButton } from "../../components/WalletSelector/WalletSelector.styled";
+import { getAdapter } from "./misc";
+import { useDeviceType } from "../../hooks/useDeviceType";
+// eslint-disable-next-line import/no-unresolved
+import { MenuItem } from "primereact/menuitem";
+import { WalletAccount } from "@mysten/wallet-standard";
 
 export interface FormData {
     walletAddress: string | null;
@@ -74,6 +81,7 @@ export const GlowingInput = styled.input`
     }
 
     background-clip: text;
+
     &:-webkit-autofill {
         -webkit-text-fill-color: #fff !important;
         -webkit-background-clip: text;
@@ -110,7 +118,6 @@ export const GlowingInput = styled.input`
 export const Airdrop = () => {
     const suietWallet = suietUseWallet();
     const [walletSelectPopupVisible, setWalletSelectPopupVisible] = useState<boolean>(false);
-
     const [formData, setFormData] = useState<FormData>({
         walletAddress: null,
         userName: null,
@@ -119,9 +126,24 @@ export const Airdrop = () => {
         fieldsValid: false,
         touched: false,
     });
+    const deviceType = useDeviceType();
+    // eslint-disable-next-line
+    const [userAccount, setUserAccount] = React.useState<WalletAccount | undefined>();
 
     const [isSubmitted, setIsSubmitted] = useState(false);
     const toastController = useContext(ToastContext);
+
+    const menuItems: MenuItem[] = [
+        {
+            label: "Nightly",
+            icon: <NightlyLogo />,
+            style: {
+                backgroundColor: "primary",
+                color: "white",
+            },
+            items: [],
+        },
+    ];
 
     useEffect(() => {
         GAudioEngine.getInstance().toggleSound();
@@ -233,11 +255,35 @@ export const Airdrop = () => {
                     <BetaText> beta</BetaText>
                 </BetaContainer>
                 <LogoDivider />
-                <WalletSelector
-                    walletSelectPopupVisible={walletSelectPopupVisible}
-                    setWalletSelectPopupVisible={setWalletSelectPopupVisible}
-                    hideUI={() => {}}
-                />
+                {deviceType !== "Mobile" ? (
+                    <WalletSelector
+                        walletSelectPopupVisible={walletSelectPopupVisible}
+                        setWalletSelectPopupVisible={setWalletSelectPopupVisible}
+                        hideUI={() => {}}
+                    />
+                ) : (
+                    <>
+                        <StyledPanelMenu model={menuItems} color={"primary"} />
+                        <WalletButton
+                            aria-label="Choose your wallet"
+                            icon="pi pi-wallet"
+                            onClick={async () => {
+                                const adapter = await getAdapter();
+                                try {
+                                    await adapter.connect();
+                                    const account = await adapter.getAccounts();
+                                    if (account[0]) {
+                                        suietWallet.account = account[0];
+                                        setUserAccount(account[0]);
+                                    }
+                                } catch (error) {
+                                    // If error, disconnect ignore error
+                                    await adapter.disconnect().catch(() => {});
+                                }
+                            }}
+                        />
+                    </>
+                )}
             </HeaderAppContainer>
             <div>
                 <StyledDialog
@@ -250,6 +296,7 @@ export const Airdrop = () => {
                     modal={false}
                     draggable={false}
                     resizable={false}
+                    baseZIndex={deviceType === "Mobile" ? 85 : 1000}
                 >
                     <NftBurnDialogContainer style={{ maxWidth: "450px", width: "100%", marginBottom: 0 }}>
                         <StyledForm
