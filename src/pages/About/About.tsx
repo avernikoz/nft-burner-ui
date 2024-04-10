@@ -111,6 +111,10 @@ export const AboutStartContainer = styled.div`
         button {
             padding: 1.5rem 0.8rem;
             width: 100%;
+
+            svg {
+                display: none;
+            }
         }
     }
 `;
