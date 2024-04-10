@@ -55,12 +55,16 @@ const VerticalLine = styled.div`
     top: 20px;
     left: 50%;
     width: 5px;
-    height: 200px;
+    height: 12.5em;
     background-color: #ff852d;
     z-index: -1;
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
     margin-left: 1.65rem;
+
+    @media (max-width: 900px) {
+        height: 19.3em;
+    }
 `;
 
 const SmallVerticalLine = styled.div`

@@ -102,6 +102,17 @@ export const AboutStartContainer = styled.div`
     /* justify-content: flex-end;
     align-items: flex-end; */
     background-color: rgba(0, 0, 0, 0);
+
+    @media (max-width: ${MOBILE_RESOLUTION_BREAKPOINT}) {
+        padding: 0 1rem;
+        width: 100%;
+        flex-direction: column-reverse;
+
+        button {
+            padding: 1.5rem 0.8rem;
+            width: 100%;
+        }
+    }
 `;
 
 export const AboutText = styled.span`
