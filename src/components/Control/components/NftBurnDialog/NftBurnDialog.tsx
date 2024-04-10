@@ -6,7 +6,7 @@ import { Tooltip } from "primereact/tooltip";
 import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 // import { SUI_NFT_CLIENT_INSTANCE } from "../../../../config/nft.config";
 import { useBurnerFee } from "../../../../hooks/useBurnerFee";
 import { handleEvmPayTransaction, handleEvmBurnTransaction } from "../../../../transactions/handleEvmTransaction";
@@ -60,6 +60,8 @@ import { GReactGLBridgeFunctions } from "../../../../webl/reactglBridge";
 import { INSTRUMENTS_COLOR_MAP } from "../../../../config/styles.config";
 import { useWalletBalance } from "../../../../hooks/useWalletBalance";
 import { SWR_CONFIG } from "../../../../config/swr.config";
+import { NFT_IMAGES_CORS_PROXY_URL } from "../../../../config/proxy.config";
+import ErrorSVG from "../../../../assets/svg/errorLoadNFT.svg";
 
 export const NftBurnDialog = ({
     nft,
@@ -204,6 +206,17 @@ export const NftBurnDialog = ({
         setLoadingFirstTransaction(false);
         setLoadingSecondTransaction(false);
     };
+    const onImageError = useCallback(({ currentTarget }: { currentTarget: HTMLImageElement }) => {
+        // Try to get nft image without cors proxy
+        if (currentTarget.src.includes(NFT_IMAGES_CORS_PROXY_URL)) {
+            currentTarget.onerror = null;
+            currentTarget.src = currentTarget.src.replace(NFT_IMAGES_CORS_PROXY_URL, "");
+        } else {
+            // In case image failed to load even without cors proxy
+            currentTarget.onerror = null;
+            currentTarget.src = ErrorSVG;
+        }
+    }, []);
 
     return (
         <StyledDialog
@@ -216,7 +229,7 @@ export const NftBurnDialog = ({
         >
             <NftBurnDialogContainer>
                 <DialogImageContainer>
-                    <NftBurnDialogImg crossOrigin="anonymous" src={nft.logoURI} alt={nft.name} />
+                    <NftBurnDialogImg crossOrigin="anonymous" src={nft.logoURI} alt={nft.name} onError={onImageError} />
 
                     <NftBurnDialogImgTitle>
                         {nft.name.length > 12 ? nft.name.substring(0, 12) + "..." : nft.name}
@@ -371,7 +384,7 @@ export const NftBurnDialog = ({
             </>
             <div>
                 <ConfirmBurningButton
-                    style={{ width: "100%", display: "flex", height: "58.5px" }}
+                    style={{ width: "100%", display: "flex" }}
                     disabled={loadingFirstTransaction || loadingSecondTransaction || !isBalanceEnoughForBurning}
                     onClick={handleBurn}
                 >
