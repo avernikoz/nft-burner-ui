@@ -3,11 +3,11 @@ import { INft } from "./types";
 export function generateTwitterIntentShare(nft: INft): string {
     const baseUrl = "https://twitter.com/intent/tweet";
     const text = encodeURIComponent(
-        `Just experienced the power of renewal by burning ${nft.name} on nftburner.io 🔥 Letting go of the past to make room for the future. Ready for a new chapter!`,
+        `Just experienced the power of renewal by burning ${nft.name} on nftburner.io 🔥`,
     );
 
     // Tags
-    const hashtags = ["NFTCommunity", "BurnerApp", "CryptoLife"];
+    const hashtags = ["nftburner", "sui"];
 
     // New line encoded symbol
     const newLineCharacter = encodeURIComponent("\n");
