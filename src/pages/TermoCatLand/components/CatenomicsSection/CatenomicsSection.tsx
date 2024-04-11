@@ -111,7 +111,7 @@ function CatenomicsSection() {
         const data = {
             datasets: [
                 {
-                    data: [65, 30, 5],
+                    data: [80, 20],
                     backgroundColor: ["#69489E", "#F1552E", "#107350"],
                     borderWidth: 3,
                     borderColor: "#000000",
@@ -119,7 +119,7 @@ function CatenomicsSection() {
             ],
         };
         const options = {
-            cutout: "65%",
+            cutout: "80%",
         };
 
         setChartDataCircle(data);
@@ -136,16 +136,16 @@ function CatenomicsSection() {
                     <List className="list">
                         <ListItem $primary={"#69489E"}>
                             <div>Presale</div>
-                            <div>65%</div>
+                            <div>80%</div>
                         </ListItem>
                         <ListItem $primary={"#F1552E"}>
                             <div>Airdrop</div>
-                            <div>30%</div>
+                            <div>20%</div>
                         </ListItem>
-                        <ListItem $primary={"#107350"}>
+                        {/* <ListItem $primary={"#107350"}>
                             <div>Liquidity pool</div>
                             <div>5%</div>
-                        </ListItem>
+                        </ListItem> */}
                     </List>
                 </div>
 
