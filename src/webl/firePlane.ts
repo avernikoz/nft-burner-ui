@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/lines-between-class-members */
 import { RBurntStampVisualizer } from "./backgroundScene";
 import { BindRenderTarget, CreateFramebufferWithAttachment, CreateTextureRT, FrameBufferCheck } from "./resourcesUtils";
 import { GSceneDesc, GScreenDesc } from "./scene";
@@ -14,7 +15,7 @@ import {
 } from "./shaders/shaderFirePlane";
 import { ShaderSourceFullscreenPassVS } from "./shaders/shaderPostProcess";
 import { GTexturePool } from "./texturePool";
-import { Vector2 } from "./types";
+import { GetVec2, Vector2 } from "./types";
 import { GTime } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
@@ -30,6 +31,7 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
 
         FirePlanePositionOffset: gl.getUniformLocation(shaderProgram, "FirePlanePositionOffset"),
         PointerPositionOffset: gl.getUniformLocation(shaderProgram, "PointerPositionOffset"),
+        bWorldSpacePosInput: gl.getUniformLocation(shaderProgram, "bWorldSpacePosInput"),
         SizeScale: gl.getUniformLocation(shaderProgram, "SizeScale"),
         AppliedFireStrength: gl.getUniformLocation(shaderProgram, "AppliedFireStrength"),
         VelocityDir: gl.getUniformLocation(shaderProgram, "VelocityDir"),
@@ -59,6 +61,24 @@ function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: Web
         bApplyFireUseNoise: gl.getUniformLocation(shaderProgram, "bApplyFireUseNoise"),
     };
     return params;
+}
+
+export class ApplyFireDesc {
+    PositionOffset = GetVec2(0, 0);
+
+    VelDirection = GetVec2(0, 0);
+
+    SizeScale = GetVec2(1, 1);
+
+    Strength = 1.0;
+
+    bMotionBasedTransform = false;
+
+    bSmoothOutEdges = false;
+
+    bApplyFireUseNoise = false;
+
+    bWorldSpacePosInput = false;
 }
 
 export class RApplyFireRenderPass {
@@ -106,6 +126,7 @@ export class RApplyFireRenderPass {
         bMotionBasedTransform: boolean,
         bSmoothOutEdges: boolean,
         bApplyFireUseNoise: boolean,
+        bWorldSpacePosInput = false,
     ) {
         let ParametersLocationListRef = this.UniformParametersLocationListMotion;
         if (bMotionBasedTransform) {
@@ -140,6 +161,7 @@ export class RApplyFireRenderPass {
         gl.uniform1f(ParametersLocationListRef.Time, GTime.Cur);
         gl.uniform1i(ParametersLocationListRef.bSmoothOutEdges, bSmoothOutEdges ? 1 : 0);
         gl.uniform1i(ParametersLocationListRef.bApplyFireUseNoise, bApplyFireUseNoise ? 1 : 0);
+        gl.uniform1i(ParametersLocationListRef.bWorldSpacePosInput, bWorldSpacePosInput ? 1 : 0);
         gl.uniform2f(ParametersLocationListRef.VelocityDir, velDirection.x, velDirection.y);
 
         //Textures

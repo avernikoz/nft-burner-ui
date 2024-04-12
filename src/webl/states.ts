@@ -48,6 +48,10 @@ export class GRenderingStateMachine {
         return this.bNewStateWasProcessed;
     }
 
+    public bTransitionFinished(): boolean {
+        return this.transitionParameter > 1.0;
+    }
+
     public get currentState(): ERenderingState {
         return this.StateCurrent;
     }

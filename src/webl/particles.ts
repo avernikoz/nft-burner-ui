@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/lines-between-class-members */
 import {
     GetParticleRenderColorPS,
     GetParticleRenderInstancedVS,
@@ -9,10 +10,10 @@ import { CreateShader, CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { getWebGLProgram } from "./helpers/getWebGLProgram";
 import { GTime, showError } from "./utils";
-import { Vector2 } from "./types";
 import { GSceneDesc, GScreenDesc } from "./scene";
 import { GTexturePool } from "./texturePool";
 import { RTexture } from "./texture";
+import { GetVec2, GetVec3 } from "./types";
 
 // ====================================================== SHADERS END ======================================================
 
@@ -22,6 +23,7 @@ const GParticleUpdatePassDesc = {
         Velocity: 1,
         Age: 2,
         DefaultPosition: 3,
+        PrevPosition: 4,
     },
 };
 
@@ -46,39 +48,59 @@ export const EParticleShadingMode = {
     EmbersImpact: 7,
 };
 
+export class ParticleEmitterDesc {
+    NumSpawners2D = 128;
+    NumParticlesPerSpawner = 8;
+    SpawnRange = { x: 1, y: 1000 };
+    ParticleLife = 10;
+    NumLoops = 1;
+    TextureFileName = "";
+    FlipbookSizeRC = { x: 16.0, y: 4.0 };
+    DefaultSize = { x: 1.0, y: 1.0 };
+    SizeRangeMinMax = { x: 1.0, y: 1.0 };
+    SizeClampMax = { x: 0.0, y: 0.0 };
+    RandomSizeChangeSpeed = 1.0;
+    InitialVelocityScale = 0.0;
+    VelocityFieldForceScale = 0.0;
+    BuoyancyForceScale = 0.0;
+    DownwardForceScale = 2.5;
+    Brightness = 1.0;
+    AlphaScale = 0.25; //Currently smoke shading mode specific
+    InitialTranslate = { x: 0.0, y: 0.0 };
+    bMotionBasedTransform = false;
+    EInitialPositionMode = 0; //0:default, 1:random, 2:from Emitter Pos constant
+    RandomSpawnThres = 1.0; //higher value - less chances to spawn
+    EAlphaFade = 0; //0:disabled, 1:smooth, 2:fast
+    EFadeInOutMode = 1; //0-disabled //1-fadeIn only //2-fadeOut only 3-enable all
+    ESpecificShadingMode = EParticleShadingMode.Default;
+    InitSpawnPosOffset = { x: 0.0, y: 0.0 };
+    bOneShotParticle = false;
+    bFreeFallParticle = false;
+    b3DSpace = false;
+    bAlwaysRespawn = false;
+
+    Color = GetVec3(1, 1, 1);
+    InitialVelocityAddScale = GetVec2();
+    MotionStretchScale = 1.0;
+}
+
 export class ParticlesEmitter {
-    NumSpawners2D;
-
-    NumParticlesPerSpawner;
-
-    ParticleLife;
-
-    NumLoops;
-
-    FlipbookSizeRC: Vector2;
+    Desc: ParticleEmitterDesc;
 
     TimeBetweenParticleSpawn: number;
-
     NumActiveParticles: number;
 
     InitialPositionsBufferGPU;
-
     PositionsBufferGPU;
-
-    //public SizeBufferGPU;
-
+    PrevPositionsBufferGPU;
     VelocitiesBufferGPU;
-
     AgeBufferGPU;
 
     ParticleUpdateVAO;
-
     TransformFeedback;
-
     ParticleUpdateShaderProgram: WebGLProgram;
 
     NoiseTexture;
-
     NoiseTextureHQ;
 
     UniformParametersLocationList;
@@ -86,83 +108,41 @@ export class ParticlesEmitter {
     CurrentBufferIndex: number;
 
     ParticleRenderVAO;
-
     ParticleInstancedRenderVAO;
-
     ParticleRenderUniformParametersLocationList;
-
     ParticleInstancedRenderShaderProgram;
 
     ColorTexture;
-
     FlameColorLUTTexture;
-
     bUsesTexture;
 
-    bOneShotParticle;
+    constructor(gl: WebGL2RenderingContext, inDesc: ParticleEmitterDesc) {
+        this.Desc = inDesc;
 
-    constructor(
-        gl: WebGL2RenderingContext,
-        {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            inName = "Particles",
-            inNumSpawners2D = 128,
-            inNumParticlesPerSpawner = 8,
-            inSpawnRange = { x: 1, y: 1000 },
-            inParticleLife = 10,
-            inNumLoops = 1,
-            inTextureFileName = "",
-            inFlipbookSizeRC = { x: 16.0, y: 4.0 },
-            inDefaultSize = { x: 1.0, y: 1.0 },
-            inSizeRangeMinMax = { x: 1.0, y: 1.0 },
-            inSizeClampMax = { x: 1.0, y: 1.0 },
-            inRandomSizeChangeSpeed = 1.0,
-            inInitialVelocityScale = 0.0,
-            inVelocityFieldForceScale = 0.0,
-            inBuoyancyForceScale = 0.0,
-            inDownwardForceScale = 2.5,
-            inBrightness = 1.0,
-            inAlphaScale = 0.25, //Currently smoke shading mode specific
-            inInitialTranslate = { x: 0.0, y: 0.0 },
-            inbMotionBasedTransform = false,
-            inEInitialPositionMode = 0, //0:default, 1:random, 2:from Emitter Pos constant
-            inRandomSpawnThres = 1.0, //higher value - less chances to spawn
-            inEAlphaFade = 0, //0:disabled, 1:smooth, 2:fast
-            inEFadeInOutMode = 1, //0-disabled //1-fadeIn only //2-fadeOut only 3-enable all
-            inESpecificShadingMode = EParticleShadingMode.Default,
-            inInitSpawnPosOffset = { x: 0.0, y: 0.0 },
-            inbOneShotParticle = false,
-        },
-    ) {
-        this.bOneShotParticle = inbOneShotParticle;
-        this.NumSpawners2D = inNumSpawners2D;
-        this.NumParticlesPerSpawner = inNumParticlesPerSpawner;
-        this.ParticleLife = inParticleLife;
-        this.NumLoops = inNumLoops;
-        this.FlipbookSizeRC = inFlipbookSizeRC;
+        const numDimensions = this.Desc.b3DSpace ? 3 : 2;
 
-        this.bUsesTexture = inTextureFileName != "";
+        this.bUsesTexture = this.Desc.TextureFileName != "";
 
         this.ColorTexture = new RTexture();
 
-        this.TimeBetweenParticleSpawn = this.ParticleLife / this.NumParticlesPerSpawner;
+        this.TimeBetweenParticleSpawn = this.Desc.ParticleLife / this.Desc.NumParticlesPerSpawner;
 
-        this.NumActiveParticles = this.NumSpawners2D * this.NumSpawners2D * this.NumParticlesPerSpawner;
+        this.NumActiveParticles = this.Desc.NumSpawners2D * this.Desc.NumSpawners2D * this.Desc.NumParticlesPerSpawner;
 
         //Allocate Initial Positions Buffer
         const initialPositionsBufferCPU = new Float32Array(this.NumActiveParticles * 2);
         //Generate Initial Positions
         const distanceBetweenParticlesNDC = {
-            x: (2 - inInitSpawnPosOffset.x * 2) / (this.NumSpawners2D - 1.0),
-            y: (2 - inInitSpawnPosOffset.y * 2) / (this.NumSpawners2D - 1.0),
+            x: (2 - this.Desc.InitSpawnPosOffset.x * 2) / (this.Desc.NumSpawners2D - 1.0),
+            y: (2 - this.Desc.InitSpawnPosOffset.y * 2) / (this.Desc.NumSpawners2D - 1.0),
         };
-        const domainStart = { x: -1.0 + inInitSpawnPosOffset.x, y: -1.0 + inInitSpawnPosOffset.y };
+        const domainStart = { x: -1.0 + this.Desc.InitSpawnPosOffset.x, y: -1.0 + this.Desc.InitSpawnPosOffset.y };
         let count = 0;
-        for (let y = 0; y < this.NumSpawners2D; y++) {
-            for (let x = 0; x < this.NumSpawners2D; x++) {
+        for (let y = 0; y < this.Desc.NumSpawners2D; y++) {
+            for (let x = 0; x < this.Desc.NumSpawners2D; x++) {
                 const posX = domainStart.x + x * distanceBetweenParticlesNDC.x;
                 const posY = domainStart.y + y * distanceBetweenParticlesNDC.y;
-                for (let i = 0; i < this.NumParticlesPerSpawner; i++) {
+                for (let i = 0; i < this.Desc.NumParticlesPerSpawner; i++) {
                     initialPositionsBufferCPU[count] = posX;
                     initialPositionsBufferCPU[count + 1] = posY;
                     count += 2;
@@ -177,10 +157,7 @@ export class ParticlesEmitter {
         //Position, Velocity, Age, Size
         {
             //Position
-            const positionsBufferCPU = new Float32Array(this.NumActiveParticles * 2);
-            for (let i = 0; i < this.NumActiveParticles * 2; i++) {
-                positionsBufferCPU[i] = -10000;
-            }
+            const positionsBufferCPU = new Float32Array(this.NumActiveParticles * numDimensions);
             this.PositionsBufferGPU = [];
             this.PositionsBufferGPU[0] = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, this.PositionsBufferGPU[0]);
@@ -189,8 +166,17 @@ export class ParticlesEmitter {
             gl.bindBuffer(gl.ARRAY_BUFFER, this.PositionsBufferGPU[1]);
             gl.bufferData(gl.ARRAY_BUFFER, positionsBufferCPU, gl.STREAM_DRAW);
 
+            //PrevPosition
+            this.PrevPositionsBufferGPU = [];
+            this.PrevPositionsBufferGPU[0] = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.PrevPositionsBufferGPU[0]);
+            gl.bufferData(gl.ARRAY_BUFFER, positionsBufferCPU, gl.STREAM_DRAW);
+            this.PrevPositionsBufferGPU[1] = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.PrevPositionsBufferGPU[1]);
+            gl.bufferData(gl.ARRAY_BUFFER, positionsBufferCPU, gl.STREAM_DRAW);
+
             //Velocity
-            const velocitiesBufferCPU = new Float32Array(this.NumActiveParticles * 2);
+            const velocitiesBufferCPU = new Float32Array(this.NumActiveParticles * numDimensions);
             this.VelocitiesBufferGPU = [];
             this.VelocitiesBufferGPU[0] = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, this.VelocitiesBufferGPU[0]);
@@ -201,13 +187,6 @@ export class ParticlesEmitter {
 
             //Age
             const ageBufferCPU = new Float32Array(this.NumActiveParticles);
-            const numSpawners = this.NumSpawners2D * this.NumSpawners2D;
-            for (let i = 0; i < numSpawners; i++) {
-                ageBufferCPU[i * this.NumParticlesPerSpawner] = this.bOneShotParticle ? 0.0 : this.ParticleLife + 1.0;
-                for (let k = 1; k < this.NumParticlesPerSpawner; k++) {
-                    ageBufferCPU[i * this.NumParticlesPerSpawner + k] = k * this.TimeBetweenParticleSpawn;
-                }
-            }
             this.AgeBufferGPU = [];
             this.AgeBufferGPU[0] = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, this.AgeBufferGPU[0]);
@@ -215,6 +194,8 @@ export class ParticlesEmitter {
             this.AgeBufferGPU[1] = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, this.AgeBufferGPU[1]);
             gl.bufferData(gl.ARRAY_BUFFER, ageBufferCPU, gl.STREAM_DRAW);
+
+            this.Reset(gl);
         }
 
         //VAO
@@ -229,10 +210,22 @@ export class ParticlesEmitter {
             gl.enableVertexAttribArray(GParticleUpdatePassDesc.VertexAttributesList.Position);
             gl.vertexAttribPointer(
                 GParticleUpdatePassDesc.VertexAttributesList.Position,
-                2,
+                numDimensions,
                 gl.FLOAT,
                 false,
-                2 * Float32Array.BYTES_PER_ELEMENT,
+                numDimensions * Float32Array.BYTES_PER_ELEMENT,
+                0,
+            );
+
+            //PrevPosition
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.PrevPositionsBufferGPU[i]);
+            gl.enableVertexAttribArray(GParticleUpdatePassDesc.VertexAttributesList.PrevPosition);
+            gl.vertexAttribPointer(
+                GParticleUpdatePassDesc.VertexAttributesList.PrevPosition,
+                numDimensions,
+                gl.FLOAT,
+                false,
+                numDimensions * Float32Array.BYTES_PER_ELEMENT,
                 0,
             );
 
@@ -241,10 +234,10 @@ export class ParticlesEmitter {
             gl.enableVertexAttribArray(GParticleUpdatePassDesc.VertexAttributesList.Velocity);
             gl.vertexAttribPointer(
                 GParticleUpdatePassDesc.VertexAttributesList.Velocity,
-                2,
+                numDimensions,
                 gl.FLOAT,
                 false,
-                2 * Float32Array.BYTES_PER_ELEMENT,
+                numDimensions * Float32Array.BYTES_PER_ELEMENT,
                 0,
             );
 
@@ -282,25 +275,14 @@ export class ParticlesEmitter {
             gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 0, this.PositionsBufferGPU[i]);
             gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 1, this.VelocitiesBufferGPU[i]);
             gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 2, this.AgeBufferGPU[i]);
+
+            gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 3, this.PrevPositionsBufferGPU[i]);
         }
         gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, null);
 
         //Compile Shaders
         {
-            const shaderVS = CreateShader(
-                gl,
-                gl.VERTEX_SHADER,
-                GetParticleUpdateShaderVS(
-                    inSpawnRange,
-                    inInitialVelocityScale,
-                    inVelocityFieldForceScale,
-                    inBuoyancyForceScale,
-                    inDownwardForceScale,
-                    inEInitialPositionMode,
-                    inRandomSpawnThres,
-                    inbOneShotParticle,
-                ),
-            );
+            const shaderVS = CreateShader(gl, gl.VERTEX_SHADER, GetParticleUpdateShaderVS(this.Desc));
             const shaderPS = CreateShader(gl, gl.FRAGMENT_SHADER, ParticleUpdatePS);
 
             this.ParticleUpdateShaderProgram = getWebGLProgram(gl);
@@ -310,7 +292,7 @@ export class ParticlesEmitter {
             // Specify the varyings to capture for transform feedback
             gl.transformFeedbackVaryings(
                 this.ParticleUpdateShaderProgram,
-                ["outPosition", "outVelocity", "outAge"],
+                ["outPosition", "outVelocity", "outAge", "outPrevPosition"],
                 gl.SEPARATE_ATTRIBS,
             );
 
@@ -330,7 +312,6 @@ export class ParticlesEmitter {
         }
 
         //Noise Texture
-        //TODO: Use Static Noise Texture, not a texture per Particle System
         //this.NoiseTexture = CreateTexture(gl, 4, "assets/smokeNoiseColor.jpg");
         this.NoiseTexture = GTexturePool.CreateTexture(gl, false, "perlinNoise32");
         this.NoiseTextureHQ = GTexturePool.CreateTexture(gl, false, "perlinNoise512");
@@ -345,7 +326,7 @@ export class ParticlesEmitter {
             this.ColorTexture.InnerTexture = GTexturePool.CreateTexture(
                 gl,
                 false,
-                inTextureFileName,
+                this.Desc.TextureFileName,
                 true,
                 false,
                 false,
@@ -353,7 +334,7 @@ export class ParticlesEmitter {
             );
         }
 
-        if (inESpecificShadingMode === EParticleShadingMode.Flame) {
+        if (this.Desc.ESpecificShadingMode === EParticleShadingMode.Flame) {
             this.FlameColorLUTTexture = GTexturePool.CreateTexture(gl, false, "flameColorLUT5", true);
         } else {
             this.FlameColorLUTTexture = null;
@@ -361,24 +342,8 @@ export class ParticlesEmitter {
 
         this.ParticleInstancedRenderShaderProgram = CreateShaderProgramVSPS(
             gl,
-            GetParticleRenderInstancedVS(
-                this.bUsesTexture,
-                inDefaultSize,
-                inEFadeInOutMode,
-                inSizeRangeMinMax,
-                inSizeClampMax,
-                inInitialTranslate,
-                inbMotionBasedTransform,
-                inRandomSizeChangeSpeed,
-            ),
-            GetParticleRenderColorPS(
-                inESpecificShadingMode,
-                this.bUsesTexture,
-                inEAlphaFade,
-                inAlphaScale,
-                inBrightness,
-                0.5,
-            ),
+            GetParticleRenderInstancedVS(this.Desc),
+            GetParticleRenderColorPS(this.Desc, this.bUsesTexture),
         );
 
         this.ParticleRenderUniformParametersLocationList = this.GetUniformParametersList(
@@ -397,10 +362,10 @@ export class ParticlesEmitter {
             gl.enableVertexAttribArray(GParticleRenderPassDesc.VertexAttributesList.Position);
             gl.vertexAttribPointer(
                 GParticleRenderPassDesc.VertexAttributesList.Position,
-                2,
+                numDimensions,
                 gl.FLOAT,
                 false,
-                2 * Float32Array.BYTES_PER_ELEMENT,
+                numDimensions * Float32Array.BYTES_PER_ELEMENT,
                 0,
             );
 
@@ -421,10 +386,10 @@ export class ParticlesEmitter {
             gl.enableVertexAttribArray(GParticleRenderPassDesc.VertexAttributesList.Velocity);
             gl.vertexAttribPointer(
                 GParticleRenderPassDesc.VertexAttributesList.Velocity,
-                2,
+                numDimensions,
                 gl.FLOAT,
                 false,
-                2 * Float32Array.BYTES_PER_ELEMENT,
+                numDimensions * Float32Array.BYTES_PER_ELEMENT,
                 0,
             );
 
@@ -465,10 +430,10 @@ export class ParticlesEmitter {
             gl.enableVertexAttribArray(GParticleRenderPassDesc.VertexAttributesList.Position);
             gl.vertexAttribPointer(
                 GParticleRenderPassDesc.VertexAttributesList.Position,
-                2,
+                numDimensions,
                 gl.FLOAT,
                 false,
-                2 * Float32Array.BYTES_PER_ELEMENT,
+                numDimensions * Float32Array.BYTES_PER_ELEMENT,
                 0,
             );
             gl.vertexAttribDivisor(GParticleRenderPassDesc.VertexAttributesList.Position, 1);
@@ -491,10 +456,10 @@ export class ParticlesEmitter {
             gl.enableVertexAttribArray(GParticleRenderPassDesc.VertexAttributesList.Velocity);
             gl.vertexAttribPointer(
                 GParticleRenderPassDesc.VertexAttributesList.Velocity,
-                2,
+                numDimensions,
                 gl.FLOAT,
                 false,
-                2 * Float32Array.BYTES_PER_ELEMENT,
+                numDimensions * Float32Array.BYTES_PER_ELEMENT,
                 0,
             );
             gl.vertexAttribDivisor(GParticleRenderPassDesc.VertexAttributesList.Velocity, 1);
@@ -504,9 +469,10 @@ export class ParticlesEmitter {
     }
 
     Reset(gl: WebGL2RenderingContext) {
+        const numDimensions = this.Desc.b3DSpace ? 3 : 2;
         //Position
-        const positionsBufferCPU = new Float32Array(this.NumActiveParticles * 2);
-        for (let i = 0; i < this.NumActiveParticles * 2; i++) {
+        const positionsBufferCPU = new Float32Array(this.NumActiveParticles * numDimensions);
+        for (let i = 0; i < this.NumActiveParticles * numDimensions; i++) {
             positionsBufferCPU[i] = -10000;
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this.PositionsBufferGPU[0]);
@@ -514,8 +480,17 @@ export class ParticlesEmitter {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.PositionsBufferGPU[1]);
         gl.bufferData(gl.ARRAY_BUFFER, positionsBufferCPU, gl.STREAM_DRAW);
 
+        //Position Prev
+        for (let i = 0; i < this.NumActiveParticles * numDimensions; i++) {
+            positionsBufferCPU[i] = -10000;
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.PrevPositionsBufferGPU[0]);
+        gl.bufferData(gl.ARRAY_BUFFER, positionsBufferCPU, gl.STREAM_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.PrevPositionsBufferGPU[1]);
+        gl.bufferData(gl.ARRAY_BUFFER, positionsBufferCPU, gl.STREAM_DRAW);
+
         //Velocity
-        const velocitiesBufferCPU = new Float32Array(this.NumActiveParticles * 2);
+        const velocitiesBufferCPU = new Float32Array(this.NumActiveParticles * numDimensions);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VelocitiesBufferGPU[0]);
         gl.bufferData(gl.ARRAY_BUFFER, velocitiesBufferCPU, gl.STREAM_DRAW);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VelocitiesBufferGPU[1]);
@@ -523,11 +498,13 @@ export class ParticlesEmitter {
 
         //Age
         const ageBufferCPU = new Float32Array(this.NumActiveParticles);
-        const numSpawners = this.NumSpawners2D * this.NumSpawners2D;
+        const numSpawners = this.Desc.NumSpawners2D * this.Desc.NumSpawners2D;
         for (let i = 0; i < numSpawners; i++) {
-            ageBufferCPU[i * this.NumParticlesPerSpawner] = this.bOneShotParticle ? -0.25 : this.ParticleLife + 1.0;
-            for (let k = 1; k < this.NumParticlesPerSpawner; k++) {
-                ageBufferCPU[i * this.NumParticlesPerSpawner + k] = k * this.TimeBetweenParticleSpawn; //so that all particles are considered dead
+            ageBufferCPU[i * this.Desc.NumParticlesPerSpawner] = this.Desc.bOneShotParticle
+                ? -0.5
+                : this.Desc.ParticleLife + 1.0;
+            for (let k = 1; k < this.Desc.NumParticlesPerSpawner; k++) {
+                ageBufferCPU[i * this.Desc.NumParticlesPerSpawner + k] = k * this.TimeBetweenParticleSpawn; //so that all particles are considered dead
             }
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this.AgeBufferGPU[0]);
@@ -539,7 +516,7 @@ export class ParticlesEmitter {
         this.CurrentBufferIndex = 0;
     }
 
-    Update(gl: WebGL2RenderingContext, fireTexture: WebGLTexture, initialEmitterPosition = { x: 0.0, y: 0.0 }) {
+    Update(gl: WebGL2RenderingContext, fireTexture: WebGLTexture, initialEmitterPosition = GetVec3(0.0, 0.0, 0.0)) {
         if (this.bUsesTexture && !this.ColorTexture.bLoaded) {
             return;
         }
@@ -552,14 +529,25 @@ export class ParticlesEmitter {
         gl.useProgram(this.ParticleUpdateShaderProgram);
         gl.bindVertexArray(this.ParticleUpdateVAO[this.CurrentBufferIndex]);
 
-        gl.uniform1f(this.UniformParametersLocationList.DeltaTime, GTime.Delta);
-        gl.uniform1f(this.UniformParametersLocationList.ParticleLife, this.ParticleLife);
+        gl.uniform1f(this.UniformParametersLocationList.DeltaTime, Math.min(1.0 / 60.0, GTime.Delta));
+        gl.uniform1f(this.UniformParametersLocationList.ParticleLife, this.Desc.ParticleLife);
         gl.uniform1f(this.UniformParametersLocationList.CurTime, GTime.CurClamped);
-        gl.uniform2f(
-            this.UniformParametersLocationList.EmitterPosition,
-            initialEmitterPosition.x,
-            initialEmitterPosition.y,
-        );
+        if (this.Desc.b3DSpace) {
+            gl.uniform3f(
+                this.UniformParametersLocationList.EmitterPosition,
+                initialEmitterPosition.x,
+                initialEmitterPosition.y,
+                initialEmitterPosition.z,
+            );
+        } else {
+            gl.uniform2f(
+                this.UniformParametersLocationList.EmitterPosition,
+                initialEmitterPosition.x,
+                initialEmitterPosition.y,
+            );
+        }
+
+        gl.uniform1f(this.UniformParametersLocationList.FloorPosY, GSceneDesc.Floor.Position.y);
 
         gl.activeTexture(gl.TEXTURE0 + 1);
         gl.bindTexture(gl.TEXTURE_2D, this.NoiseTexture);
@@ -632,12 +620,12 @@ export class ParticlesEmitter {
             GSceneDesc.FirePlane.PositionOffset.z,
         );
 
-        gl.uniform1f(this.ParticleRenderUniformParametersLocationList.ParticleLife, this.ParticleLife);
-        gl.uniform1f(this.ParticleRenderUniformParametersLocationList.NumLoops, this.NumLoops);
+        gl.uniform1f(this.ParticleRenderUniformParametersLocationList.ParticleLife, this.Desc.ParticleLife);
+        gl.uniform1f(this.ParticleRenderUniformParametersLocationList.NumLoops, this.Desc.NumLoops);
         gl.uniform2f(
             this.ParticleRenderUniformParametersLocationList.FlipbookSizeRC,
-            this.FlipbookSizeRC.x,
-            this.FlipbookSizeRC.y,
+            this.Desc.FlipbookSizeRC.x,
+            this.Desc.FlipbookSizeRC.y,
         );
         gl.uniform1f(this.ParticleRenderUniformParametersLocationList.CurTime, GTime.CurClamped);
 
@@ -668,6 +656,7 @@ export class ParticlesEmitter {
             ColorTexture: gl.getUniformLocation(shaderProgram, "ColorTexture"),
             FlameColorLUT: gl.getUniformLocation(shaderProgram, "FlameColorLUT"),
             EmitterPosition: gl.getUniformLocation(shaderProgram, "EmitterPosition"),
+            FloorPosY: gl.getUniformLocation(shaderProgram, "FloorPosY"),
         };
         return params;
     }

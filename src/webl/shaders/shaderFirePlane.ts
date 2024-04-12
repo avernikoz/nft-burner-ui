@@ -57,9 +57,10 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
 	uniform float ScreenRatio;
 	uniform vec3 FirePlanePositionOffset;
 
-	uniform vec2 PointerPositionOffset;
+	uniform vec2 PointerPositionOffset;//ViewSpace
 	uniform vec2 SizeScale;
 	uniform vec2 VelocityDir;
+	uniform int bWorldSpacePosInput; 
 
 	out vec2 vsOutTexCoords;
 
@@ -82,10 +83,14 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
 		
 		//calculate offset
 		vec2 posOffset = PointerPositionOffset.xy;
-		posOffset.x *= ScreenRatio;
-		posOffset.xy /= CameraDesc.w;
+		if(bWorldSpacePosInput == 0)
+		{
+			posOffset.x *= ScreenRatio;
+			posOffset.xy /= CameraDesc.w;
 
-		posOffset.xy *= (FirePlanePositionOffset.z - CameraDesc.z + 1.f);
+			posOffset.xy *= (FirePlanePositionOffset.z - CameraDesc.z + 1.f);
+		}
+		
 		
 		pos = (scale.xy * pos.xy) + posOffset.xy;
 		gl_Position = vec4(pos.xy, 0.0, 1.0);
@@ -95,6 +100,7 @@ export function GetShaderSourceApplyFireVS(bMotion: boolean) {
 	}`
     );
 }
+
 export const ShaderSourceApplyFirePS =
     /* glsl */ `#version 300 es
 	
@@ -216,12 +222,10 @@ export const ShaderSourceFireUpdatePS =
 		float curFuel = texelFetch(FuelTexture, SampleCoord, 0).r;
 		//curFuel = 0.001f;
 		
-		const float kMutualScale = 1.0 + float(` +
-    Math.random() * 1.5 +
-    /* glsl */ `);
+		const float kMutualScale = 1.0 + float(` + Math.random() * 1.5 + /* glsl */ `);
 		const float GFireSpreadSpeed = 3. * kMutualScale;
 		const float NoiseAdvectedSpreadStrength = 0.45f;
-		const float GFuelConsumeSpeed = 0.45f * kMutualScale;
+		const float GFuelConsumeSpeed = float(` + MathLerp(0.4, 0.9, Math.random()) + /* glsl */ `) * kMutualScale;
 		const float GFireDissipationSpeed = 0.5f * kMutualScale; //How fast fire fades when no more fuel is left. Try 0.05
 		const float kIgnitionThreshold = 0.75; //When pixel becomes a source of fire
 		const float kHeatRaiseSpeedDuringCombustion = 1.0;
@@ -465,7 +469,7 @@ export const ShaderSourceFireUpdatePS =
 		}
 
 		OutFuel = curFuel;
-		OutFire = curFire;
+		OutFire = min(kMaxHeat, curFire);
 
 	}`;
 
@@ -899,7 +903,7 @@ export function GetShaderSourceFireVisualizerPS() {
 					vec3 halfVecCur = normalize(vToCurLight + vToCam);
 					float specularCur = pow(max(0.f, dot(halfVecCur, normal)), specularPowerScaledCur);
 					const float specularIntensityCur = 1.0f;
-					lightingSpecFinal += ToolColor * specularCur * specularIntensityCur * max(0.75,(1.f - roughness));
+					lightingSpecFinal += ToolColor * specularCur * specularIntensityCur * attenuation * max(0.75,(1.f - roughness));
 				}
 
 			}

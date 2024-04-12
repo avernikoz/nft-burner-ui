@@ -1,7 +1,8 @@
 //Objects positions are described in View Space, pre-Viewport Transform performed only on .x
 
 import { ERenderingState } from "./states";
-import { MathLerp, MathLerpVec2, MathLerpVec3, MathSmoothstep, MathVector3Negate, MathVector3Normalize } from "./utils";
+import { GetVec3, Vector3 } from "./types";
+import { MathLerp, MathLerpVec2, MathLerpVec3, MathSmoothstep, Vec3Negate, MathVector3Normalize } from "./utils";
 
 export const GScreenDesc = {
     WindowSize: { x: 512, y: 512 }, //size displayed on the page
@@ -21,7 +22,7 @@ export const GSceneDesc = {
     },
     //Surface to be burned
     FirePlane: {
-        PositionOffset: { x: 0.0, y: 0.0, z: 0.0 },
+        PositionOffset: GetVec3(0.0, 0.0, 0.0),
         SizeScale: 1.0,
         OrientationEuler: { yaw: 0.0, pitch: 0.0, roll: 0.0 },
     },
@@ -32,7 +33,7 @@ export const GSceneDesc = {
 
     //GPU Side SpotlightDesc: vec3(Radius, ConeAngles.xy)
     Spotlight: {
-        Position: { x: 0.0, y: 2.5, z: -1.0 },
+        Position: GetVec3(0.0, 2.5, -1.0),
         FocusPosition: { x: 0.0, y: 0.0, z: 1.5 }, //To deduce light direction
         SizeScale: { x: 1.5, y: 2.5 },
         ProjectedLightSizeScale: { x: 1.0, y: 1.0 },
@@ -40,16 +41,7 @@ export const GSceneDesc = {
         ConeAngles: { x: 0.1, y: 0.4 }, //Radians, Cone Inner, Cone Outer, Inner < Outer,
         GetDirection: function () {
             const sp = GSceneDesc.Spotlight.FocusPosition;
-            return MathVector3Normalize(
-                MathVector3Negate(
-                    {
-                        x: sp.x,
-                        y: -1.0 + sp.y,
-                        z: sp.z,
-                    },
-                    GSceneDesc.Spotlight.Position,
-                ),
-            );
+            return MathVector3Normalize(Vec3Negate(GetVec3(sp.x, -1.0 + sp.y, sp.z), GSceneDesc.Spotlight.Position));
         },
     },
 
@@ -61,10 +53,10 @@ export const GSceneDesc = {
 };
 
 export type SceneStateDescription = {
-    CameraPosition: { x: number; y: number; z: number };
+    CameraPosition: Vector3;
     CameraZoom: number;
-    SpotlightPosition: { x: number; y: number; z: number };
-    SpotlightFocusPosition: { x: number; y: number; z: number };
+    SpotlightPosition: Vector3;
+    SpotlightFocusPosition: Vector3;
     SpotlightSize: { x: number; y: number };
     FloorHeight: number;
 };
@@ -81,9 +73,9 @@ export const GSceneStateDescsArray: SceneStateDescription[] = new Array(ERenderi
 export function InitializeSceneStateDescsArr() {
     //Preloader
     GSceneStateDescsArray[ERenderingState.Preloading] = {
-        CameraPosition: { x: -4.75, y: 0.0, z: -3.61 },
-        SpotlightPosition: { x: -7.0, y: 0.94, z: -2.5 },
-        SpotlightFocusPosition: { x: 0, y: 0.25, z: 1.5 },
+        CameraPosition: GetVec3(-4.75, 0.0, -3.61),
+        SpotlightPosition: GetVec3(-7.0, 0.94, -2.5),
+        SpotlightFocusPosition: GetVec3(0, 0.25, 1.5),
         SpotlightSize: { x: GSceneDesc.Spotlight.SizeScale.x, y: 3.5 },
         FloorHeight: -5,
         CameraZoom: 2,
@@ -91,9 +83,9 @@ export function InitializeSceneStateDescsArr() {
 
     //Intro
     GSceneStateDescsArray[ERenderingState.Intro] = {
-        CameraPosition: { x: -1.6, y: 0.0, z: -3.61 },
-        SpotlightPosition: { x: -2.88, y: MathLerp(0.3, 1.7, Math.random()), z: MathLerp(-1.5, -2.5, Math.random()) },
-        SpotlightFocusPosition: { x: 0, y: 0.5, z: 1.5 },
+        CameraPosition: GetVec3(-1.6, 0.0, -3.61),
+        SpotlightPosition: GetVec3(-2.88, MathLerp(0.3, 1.7, Math.random()), MathLerp(-1.5, -2.5, Math.random())),
+        SpotlightFocusPosition: GetVec3(0, 0.5, 1.5),
         SpotlightSize: { x: GSceneDesc.Spotlight.SizeScale.x, y: GSceneDesc.Spotlight.SizeScale.y },
         FloorHeight: -1,
         CameraZoom: 2,
@@ -101,9 +93,9 @@ export function InitializeSceneStateDescsArr() {
 
     //Inventory
     GSceneStateDescsArray[ERenderingState.Inventory] = {
-        CameraPosition: { x: -1.5, y: 0.0, z: -6.0 },
-        SpotlightPosition: { x: -1.5, y: -1.5 + (Math.random() - 0.5), z: -1.0 - Math.random() },
-        SpotlightFocusPosition: { x: 0, y: 1.0, z: 0.0 },
+        CameraPosition: GetVec3(-1.5, 0.0, -6.0),
+        SpotlightPosition: GetVec3(-1.5, -1.5 + (Math.random() - 0.5), -1.0 - Math.random()),
+        SpotlightFocusPosition: GetVec3(0, 1.0, 0.0),
         SpotlightSize: { x: GSceneDesc.Spotlight.SizeScale.x, y: GSceneDesc.Spotlight.SizeScale.y },
         FloorHeight: -2,
         CameraZoom: 4,
@@ -111,9 +103,9 @@ export function InitializeSceneStateDescsArr() {
 
     //Burn
     GSceneStateDescsArray[ERenderingState.BurningReady] = {
-        CameraPosition: { x: 0, y: 0.0, z: -4.0 },
-        SpotlightPosition: { x: 0.0, y: MathLerp(1.75, 3, Math.random()), z: MathLerp(-0.75, -1.75, Math.random()) },
-        SpotlightFocusPosition: { x: 0.0, y: 0.0, z: 1.5 },
+        CameraPosition: GetVec3(0, 0.0, -4.0),
+        SpotlightPosition: GetVec3(0.0, MathLerp(1.75, 3, Math.random()), MathLerp(-0.75, -1.75, Math.random())),
+        SpotlightFocusPosition: GetVec3(0.0, 0.0, 1.5),
         SpotlightSize: { x: GSceneDesc.Spotlight.SizeScale.x, y: GSceneDesc.Spotlight.SizeScale.y },
         FloorHeight: -1.75,
         CameraZoom: 2,
@@ -224,7 +216,7 @@ export function GSceneDescSubmitDebugUI(datGui: dat.GUI) {
         folder.add(GSceneDesc.Camera, "ZoomScale", 0, 5).name("Zoom").step(0.01).listen();
 
         //folder.add(GSceneDesc.Floor.PositionOffset, "x", -2, 5).name("FloorPosX").step(0.01);
-        folder.add(GSceneDesc.Floor.Position, "y", -3, 10).name("FloorPosY").step(0.01);
+        folder.add(GSceneDesc.Floor.Position, "y", -3, 10).name("FloorPosY").step(0.01).listen();
         //folder.add(GSceneDesc.Floor.PositionOffset, "z", -10, 2).name("FloorPosZ").step(0.01);
 
         folder.add(GSceneDesc.Floor, "SizeScale", -2, 5).name("FloorSizeScale").step(0.01);

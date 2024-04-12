@@ -4,55 +4,46 @@ import { CreateShaderProgramVSPS } from "./shaderUtils";
 import { CommonRenderingResources } from "./shaders/shaderConfig";
 import { GetShaderSourceUISpriteRenderPS, GetShaderSourceUISpriteRenderVS } from "./shaders/shaderUI";
 import { GTexturePool } from "./texturePool";
-import { Vector2 } from "./types";
+import { GetVec2, Vector2 } from "./types";
 import { MathClamp, MathIntersectionSphereSphere } from "./utils";
 
 ///Screen Space Interactable GUI allowing to spatially control such Data as Position/Velocity
 export class SpatialControlPoint {
-    public bEnabled = true;
+    bEnabled = true;
 
-    public Radius;
+    Radius;
 
-    public PositionViewSpace;
+    PositionViewSpace;
 
-    public bDragState;
+    PositionNDCSpace = GetVec2();
 
-    public bIntersectionThisFrame;
+    bDragState;
 
-    public bIntersectionPrevFrame;
+    bIntersectionThisFrame;
 
-    public bSelectedThisFrame: boolean;
+    bIntersectionPrevFrame;
+
+    bSelectedThisFrame: boolean;
+
+    bReleasedThisFrame = false;
+
+    MinBoundsNDC = GetVec2(-1.0, -1.0);
+
+    MaxBoundsNDC = GetVec2(1.0, 1.0);
 
     private bDraggable: boolean;
 
-    //UI Textures
-    public ColorTexture0;
-
-    public ColorTexture1;
-
-    GetCurrentTexture() {
-        return this.bIntersectionThisFrame ? this.ColorTexture1 : this.ColorTexture0;
-    }
-
-    constructor(
-        gl: WebGL2RenderingContext,
-        initialPosition: Vector2,
-        inRadius: number,
-        inbIsDraggable: boolean,
-        defaultTextureLocation: string,
-        activeTextureLocation: string,
-    ) {
+    constructor(gl: WebGL2RenderingContext, initialPosition: Vector2, inRadius: number, inbIsDraggable: boolean) {
         this.Radius = inRadius;
         this.PositionViewSpace = initialPosition;
+        this.PositionNDCSpace.x = this.PositionViewSpace.x / GScreenDesc.ScreenRatio;
+        this.PositionNDCSpace.y = this.PositionViewSpace.y;
 
         this.bDragState = false;
         this.bIntersectionThisFrame = false;
         this.bIntersectionPrevFrame = false;
         this.bSelectedThisFrame = false;
         this.bDraggable = inbIsDraggable;
-
-        this.ColorTexture0 = GTexturePool.CreateTexture(gl, false, defaultTextureLocation);
-        this.ColorTexture1 = GTexturePool.CreateTexture(gl, false, activeTextureLocation);
     }
 
     ClearState() {
@@ -63,6 +54,7 @@ export class SpatialControlPoint {
 
     OnUpdate() {
         this.bSelectedThisFrame = false;
+        this.bReleasedThisFrame = false;
         this.bIntersectionPrevFrame = this.bIntersectionThisFrame;
         this.bIntersectionThisFrame = false;
         //Construct client pointer intersection sphere
@@ -92,22 +84,68 @@ export class SpatialControlPoint {
 
             this.PositionViewSpace.x = MathClamp(
                 this.PositionViewSpace.x,
+                this.MinBoundsNDC.x * GScreenDesc.ScreenRatio,
+                this.MaxBoundsNDC.x * GScreenDesc.ScreenRatio,
+            );
+            this.PositionViewSpace.y = MathClamp(this.PositionViewSpace.y, this.MinBoundsNDC.y, this.MaxBoundsNDC.y);
+
+            this.PositionViewSpace.x = MathClamp(
+                this.PositionViewSpace.x,
                 -GScreenDesc.ScreenRatio + this.Radius,
                 GScreenDesc.ScreenRatio - this.Radius,
             );
             this.PositionViewSpace.y = MathClamp(this.PositionViewSpace.y, -1 + this.Radius, 1 - this.Radius);
 
-            if (!this.bSelectedThisFrame) {
+            /* if (!this.bSelectedThisFrame) {
                 this.bDragState = false;
+            } */
+            /* const thres = 0.05;
+            const inputOutOfBounds =
+                GUserInputDesc.InputPosCurNDC.x > 1.0 - thres ||
+                GUserInputDesc.InputPosCurNDC.x < thres ||
+                GUserInputDesc.InputPosCurNDC.y > 1.0 - thres ||
+                GUserInputDesc.InputPosCurNDC.y < thres; */
+            if (!GUserInputDesc.bPointerInputPressedCurFrame /* || inputOutOfBounds */) {
+                this.bDragState = false;
+                this.bReleasedThisFrame = true;
             }
         }
+
+        this.PositionNDCSpace.x = this.PositionViewSpace.x / GScreenDesc.ScreenRatio;
+        this.PositionNDCSpace.y = this.PositionViewSpace.y;
+    }
+}
+
+export class SpatialControlPointWithTexture extends SpatialControlPoint {
+    //UI Textures
+    public ColorTexture0;
+
+    public ColorTexture1;
+
+    GetCurrentTexture() {
+        return this.bIntersectionThisFrame ? this.ColorTexture1 : this.ColorTexture0;
+    }
+
+    constructor(
+        gl: WebGL2RenderingContext,
+        initialPosition: Vector2,
+        inRadius: number,
+        inbIsDraggable: boolean,
+        defaultTextureLocation: string,
+        activeTextureLocation: string,
+    ) {
+        super(gl, initialPosition, inRadius, inbIsDraggable);
+        this.ColorTexture0 = GTexturePool.CreateTexture(gl, false, defaultTextureLocation);
+        this.ColorTexture1 = GTexturePool.CreateTexture(gl, false, activeTextureLocation);
     }
 }
 
 export class RSpatialControllerVisualizationRenderer {
-    public ShaderProgram;
+    static GInstance: RSpatialControllerVisualizationRenderer | null = null;
 
-    public UniformParametersLocationList;
+    private ShaderProgram;
+
+    private UniformParametersLocationList;
 
     constructor(gl: WebGL2RenderingContext) {
         //================================================ Floor Render
@@ -123,7 +161,7 @@ export class RSpatialControllerVisualizationRenderer {
         this.UniformParametersLocationList = this.GetUniformParametersList(gl, this.ShaderProgram);
     }
 
-    Render(gl: WebGL2RenderingContext, inController: SpatialControlPoint) {
+    Render(gl: WebGL2RenderingContext, inController: SpatialControlPointWithTexture) {
         gl.bindVertexArray(CommonRenderingResources.PlaneShapeVAO);
 
         gl.useProgram(this.ShaderProgram);

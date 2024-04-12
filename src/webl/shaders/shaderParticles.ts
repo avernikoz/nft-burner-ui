@@ -1,41 +1,65 @@
-import { EParticleShadingMode } from "../particles";
-import { Vector2 } from "../types";
+/* eslint-disable */
+import { EParticleShadingMode, ParticleEmitterDesc } from "../particles";
 import { MathLerp } from "../utils";
 
-//sc_ - ShaderCode
-
-function scGetRandomInitialVelocity(randomVelocityScale: number) {
-    if (randomVelocityScale > 0) {
+function scGetRandomInitialVelocity(inDesc: ParticleEmitterDesc) {
+    if (inDesc.InitialVelocityScale > 0) {
         return (
             /* glsl */ `
-		vec2 uv = vec2(CurTime * 0.17f + 0.12f * float(gl_VertexID), CurTime * 0.09 + 0.07 * float(gl_VertexID));
+
+		float vertexId = float(gl_VertexID);	
+		vec2 uv = vec2(0.0);
+		const float timeChangeSpeed = 1.0;
+		uv.x += CurTime * 0.17 * timeChangeSpeed;
+		uv.y += CurTime * 0.09 * timeChangeSpeed;
+		const float instanceChangeSpeed = 1.13;
+		uv.x += vertexId * 0.12f * instanceChangeSpeed;
+		uv.y += vertexId * 0.07 * instanceChangeSpeed;
 		//uv *= 0.1f;
-		vec2 noise = textureLod(NoiseTextureHQ, uv.xy, 0.0).rg;
-		noise = noise * 2.f - 1.f;
-	#if 1 //MIN LENGTH
-		float curLength = length(noise);
+		vec3 noise = textureLod(NoiseTextureHQ, uv.xy, 0.0).rgb;
+
+		vec2 dirVec = noise.rg;
+		dirVec = dirVec * 2.f - 1.f;
+
+		dirVec.x *= float(`+inDesc.InitialVelocityAddScale.x+/* glsl */`);
+		dirVec.y *= float(`+inDesc.InitialVelocityAddScale.y+/* glsl */`);
+		#if 1
+		/* if((gl_VertexID % 2) == 0)
+		{
+			dirVec.y = abs(dirVec.y);
+		} */
+		#endif
+
+		#if !FALLING //MIN LENGTH
+		float curLength = length(dirVec);
 		const float minLength = 0.3;
 		if(curLength < minLength)
 		{
-			noise /= curLength;
-			noise *= minLength;
+			dirVec /= curLength;
+			dirVec *= minLength;
 		}
-	#endif
+		#endif
+
 		//noise = normalize(noise);
-		const float InitialVelocityScale = float(` +
-            randomVelocityScale +
-            /* glsl */ `);
-		outVelocity = (noise.xy) * InitialVelocityScale;
-		/* if(outVelocity.y < 0.f)
+		const float InitialVelocityScale = float(` + inDesc.InitialVelocityScale +  /* glsl */ `);
+
+		netForce.xy = dirVec.xy * InitialVelocityScale;
+		if(netForce.y < 0.f)
 		{
-			outVelocity.y *= 0.25f;
-		} */
-		outVelocity.y += InitialVelocityScale * 0.25f;
-		//outVelocity.y += abs(outVelocity.y) * 0.75f;
+			netForce.y += abs(netForce.y) * 0.75f;
+		}
+
+		#if THIRD_DIMENSION
+		noise.z = MapToRange(noise.z, 0.2, 0.8, 0.f, 1.f);
+		netForce.z = -noise.z * InitialVelocityScale * 0.35;
+		#endif
+
+		//outVelocity.y += InitialVelocityScale * 0.25f;
+		//
 		`
         );
     } else {
-        return /* glsl */ `outVelocity = vec2(0, 0);`;
+        return /* glsl */ `/* outVelocity = vec2(0, 0); */`;
     }
 }
 
@@ -51,13 +75,20 @@ function scGetInitialPosition(EInitialPositionMode: number) {
 				noisePos.x = MapToRange(noisePos.x, 0.4, 0.6, -2.f, 2.f);
 				noisePos.y = MapToRange(noisePos.y, 0.4, 0.6, -1.f, 2.f);
 				//noisePos = noisePos * 2.f - 1.f;
-				outPosition = noisePos.xy /* + uvPos.xy * 0.01 */;
+				curPos.xy = noisePos.xy /* + uvPos.xy * 0.01 */;
 			  }
 		`;
     } else if (EInitialPositionMode == 2) {
-        return /* glsl */ `outPosition = EmitterPosition;`;
+        return /* glsl */ `
+		curPos.xy = EmitterPosition.xy;
+		#if THIRD_DIMENSION
+		curPos.z = EmitterPosition.z;
+		#endif
+		`;
     } else {
-        return /* glsl */ `outPosition = inDefaultPosition;`;
+        return /* glsl */ `
+		curPos.xy = inDefaultPosition;
+		`;
     }
 }
 
@@ -77,8 +108,9 @@ function scRandomiseParticleSpawn(threshold: number) {
 			{
 				outAge = ParticleLife;
 				//outPosition = vec2(0.f, 0.f);
-				outPosition = vec2(10000.f, 10000.f);
-				outVelocity = vec2(0, 0);
+				outPosition = DIM_TYPE(10000.f);
+				outPrevPosition = DIM_TYPE(10000.f);
+				outVelocity = DIM_TYPE(0.0);
 				return;
 			}
 		}
@@ -89,208 +121,117 @@ function scRandomiseParticleSpawn(threshold: number) {
     }
 }
 
-function scGetVectorFieldForce(scale: number) {
-    if (scale > 0) {
+function scGetVectorFieldForce(inDesc: ParticleEmitterDesc) {
+    if ((inDesc.VelocityFieldForceScale > 0)) {
         return (
             //sample vector field based on cur pos
-            /* glsl */ `vec2 uv = (inPosition + 1.f) * 0.5f;
+            /* glsl */ `
+
+		#if !FALLING
+			vec2 uv = (inPosition.xy + 1.f) * 0.5f;
 			uv.x += float(gl_VertexID) * 0.025;
 			uv.y += float(gl_VertexID) * 0.01;
 			//uv *= 0.5f;
 			uv.y -= CurTime * 0.1f;
 			//uv *= mix(0.1f, 0.5f, fract(mod(CurTime, 10.f) * 0.1f));
-			vec3 randVelNoise = texture(NoiseTexture, uv.xy).rgb;
-			//vec3 randVelNoise = texture(NoiseTextureHQ, uv.xy).rgb;
-			vec2 randVel;
-			randVel.x = randVelNoise.r;
-			randVel.y = mix(randVelNoise.g, randVelNoise.b, fract(mod(CurTime, 10.f) * 0.1f));
-			randVel = randVel * 2.f - 1.f;
-			const float RandVelocityScale = float(` +
-            scale +
-            /* glsl */ `);
-			//randVel = normalize(randVel);
-			randVel = (randVel) * RandVelocityScale * 2.0 /* * 0.5 */;
+			vec3 randVecNoise = texture(NoiseTexture, uv.xy).rgb;
+			//vec3 randVecNoise = texture(NoiseTextureHQ, uv.xy).rgb;
+			vec2 randVec;
+			randVec.x = randVecNoise.r;
+			randVec.y = mix(randVecNoise.g, randVecNoise.b, fract(mod(CurTime, 10.f) * 0.1f));
+			randVec = randVec * 2.f - 1.f;
+			const float RandVecScale = float(` + inDesc.VelocityFieldForceScale + /* glsl */ `);
+			//randVec = normalize(randVec);
+			randVec = (randVec) * RandVecScale * 2.0 /* * 0.5 */;
 
 
 			//LQ Noise
-			uv = (inPosition + 1.f) * 0.5f;
+			uv = (inPosition.xy + 1.f) * 0.5f;
 			uv *= 0.01f;
 			uv.y -= CurTime * 0.00025f;
 			uv.x += CurTime * 0.0025f;
-			randVelNoise = texture(NoiseTexture, uv.xy).rgb;
-			vec2 randVelLQ;
-			randVelLQ.x = randVelNoise.r;
-			randVelLQ.y = randVelNoise.g;
-			randVelLQ = randVelLQ * 2.f - 1.f;
-			randVel += (randVelLQ) * RandVelocityScale * 0.5;
+			randVecNoise = texture(NoiseTexture, uv.xy).rgb;
+			vec2 randVecLQ;
+			randVecLQ.x = randVecNoise.r;
+			randVecLQ.y = randVecNoise.g;
+			randVecLQ = randVecLQ * 2.f - 1.f;
+			randVec += (randVecLQ) * RandVecScale * 0.5;
 
 			//const float clampValue = 10.f;
-			const float clampValue = 50.f;
-			randVel = clamp(randVel, vec2(-clampValue), vec2(clampValue));
-
+			const float clampValue = 100.f;
+			randVec = clamp(randVec, vec2(-clampValue), vec2(clampValue));
 
 			//randVel = normalize(vec2(-1, 0.0)) * 35.f * 0.5;
 
-			curVel += randVel * DeltaTime;`
-        );
-    } else {
-        return ``;
-    }
-}
+			//curVel += randVel * DeltaTime;
+			netForce.xy += randVec;
 
-function scSmoothTransitionFlipbookSample(condition: boolean) {
-    if (condition) {
-        return /* glsl */ `
-	#if 1//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
-	float numFrames = float(FlipbookSizeRC.x * FlipbookSizeRC.y);
-	//if(ceil(interpolatorFrameIndex) < numFrames)
-	{
-		flipBookIndex1D = uint(ceil(interpolatorFrameIndex));
-		FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
-		FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
-		uv = interpolatorTexCoords * frameSize;
-		uv.x += (frameSize.x * float(FlipBookIndex2D.x));
-		uv.y += (frameSize.y * float(FlipBookIndex2D.y));
-		vec4 color2 = texture(ColorTexture, uv).rgba;
-		colorFinal = mix(colorFinal, color2, fract(interpolatorFrameIndex));
-	}
-	#endif
-	`;
-    } else {
-        return ``;
-    }
-}
+			#if THIRD_DIMENSION
+			//netForce.z -= 1000.0;
+			#endif
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function scParticleSampleFlipbook(condition: boolean, bSmoothTransition = true) {
-    if (condition) {
-        return (
-            /* glsl */ `
-		vec2 frameSize = 1.f / (FlipbookSizeRC);
-		vec2 uv = interpolatorTexCoords * frameSize;
+			//Radial Velocity away from center
+			//netForce.xy += normalize(inPosition) * 2.0;
 
-		uint flipBookIndex1D = uint(floor(interpolatorFrameIndex));
-		uvec2 FlipBookIndex2D;
-		FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
-		FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
+		#else
 
-		uv.x += (frameSize.x * float(FlipBookIndex2D.x));
-		uv.y += (frameSize.y * float(FlipBookIndex2D.y));
-		
-		colorFinal = texture(ColorTexture, uv).rgba;
+			//curVel += vec2(0.0, -100.0) * DeltaTime;
+			netForce.xy += vec2(0.0, -65.0);
 
-		` + scSmoothTransitionFlipbookSample(bSmoothTransition)
-        );
-    } else {
-        return ``;
-    }
-}
+		#endif//FALLING
 
-export function GetParticleUpdateShaderVS(
-    spawnFireRange: Vector2,
-    initialVelocityScale: number,
-    velocityFieldForceScale: number,
-    buoyancyForceScale: number,
-    downwardForceScale: number,
-    EInitialPositionMode: number, //0:default, 1:random, 2:from Emitter Pos constant
-    randomSpawnThres: number,
-    bOneShotParticle: boolean,
-) {
-    return (
-        /* glsl */ `#version 300 es
-  
-	  precision highp float;
-	  precision mediump sampler2D;
-  
-	  layout(location = 0) in vec2 inPosition;
-	  layout(location = 1) in vec2 inVelocity;
-	  layout(location = 2) in float inAge;
-	  layout(location = 3) in vec2 inDefaultPosition;
-  
-	  out vec2 outPosition;
-	  out vec2 outVelocity;
-	  out float outAge;
-  
-	  uniform float DeltaTime;
-	  uniform float CurTime;
-	  uniform float ParticleLife;
-	  uniform vec2 EmitterPosition; 
-
-	  uniform sampler2D NoiseTexture;
-	  uniform sampler2D NoiseTextureHQ;
-	  uniform sampler2D FireTexture;
-  
-	  //check if particle was spawned at least once
-	  bool IsParticleAlive()
-	  {
-		  const vec2 BoundsStart = vec2(-10.f, -10.f);//Make it -5 just to be sure
-		  return ((inPosition.x >= BoundsStart.x) && (inPosition.y >= BoundsStart.y)); 
-	  }
-  
-	  //check if particle should never be drawn again
-	  bool IsParticleDead()
-	  {
-		 //dead particles are set to -1.0
-		 return (inAge < -0.5f);
-	  }
-  
-	  float MapToRange(float t, float t0, float t1, float newt0, float newt1)
-	  {
-		  ///Translate to origin, scale by ranges ratio, translate to new position
-		  return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
-	  }
-  
-	  void main()
-	  {
-  
-		  bool bParticleDead = IsParticleDead();
-  
-		  if(bParticleDead)
-		  {
-			  outAge = inAge;
-			  outVelocity = inVelocity;
-			  outPosition = inPosition;
-		  }
-		  else
-		  {
-
-
-			const int bOneShotParticle = ` +
-        (bOneShotParticle ? 1 : 0) +
-        /* glsl */ `;
-
-			  //Get Cur Fire based on Pos
-			  vec2 fireUV = (inDefaultPosition + 1.f) * 0.5f;
-			  float curFire = textureLod(FireTexture, fireUV.xy, 0.0).r;
 			
-			  vec2 kSpawnRange = vec2(float(` +
-        spawnFireRange.x +
-        /* glsl */ `), float(` +
-        spawnFireRange.y +
-        /* glsl */ `));
-			  /* if(gl_VertexID % 400 == 0)
-			  {
-				kSpawnRange.x = 0.001f;
-			  } */
-			  bool bIsInSpawnRange = ((curFire >= kSpawnRange.x) && (curFire <= kSpawnRange.y ));
-			  bool bAllowNewSpawn = false;
-			  bool bAllowUpdate = false;
-			  bool bOutdatedParticle = inAge > ParticleLife;
-			  if(inAge < 0.0 && inAge > -1.0)
-			  {
-				 //one shot particles have initial range of -0.25 and are allowed to spawn once
-				 bAllowNewSpawn = true;
-			  }
-			  float curAge = inAge;
-  
-			  if(bIsInSpawnRange)
+			`
+        );
+    } else {
+        return ``;
+    }
+}
+
+function scGetParticleUpdateLogic(inDesc : ParticleEmitterDesc) : string
+{
+	if(inDesc.bOneShotParticle)
+	{
+		return (
+		 /* glsl */ `
+		if(curAge > -0.6f && curAge < 0.0f) //initial one sot age is -0.5
+		{
+			bAllowNewSpawn = true;
+		}
+		else
+		{
+		   if(bOutdatedParticle)
+		   {
+			#if ALWAYS_RESPAWN
+				bAllowNewSpawn = true;
+			#else
+				curAge = -1.f; //MARK DEAD
+			#endif
+		   }
+		   else
+		   {
+				bAllowUpdate = true;
+		   }
+		}`
+        );
+	}
+	else
+	{
+		return (
+			/* glsl */ `
+		   //Get Cur Fire based on Pos
+			vec2 fireUV = (inDefaultPosition + 1.f) * 0.5f;
+			float curFire = textureLod(FireTexture, fireUV.xy, 0.0).r;
+		  
+			vec2 kSpawnRange = vec2(float(` + inDesc.SpawnRange.x + /* glsl */ `), 
+			float(` + inDesc.SpawnRange.y + /* glsl */ `));
+			bool bIsInSpawnRange = ((curFire >= kSpawnRange.x) && (curFire <= kSpawnRange.y ));
+
+			if(bIsInSpawnRange)
 			  {
 				  if(bOutdatedParticle)
 				  {
-					if(!bAllowNewSpawn)//only one shot particle might have set this to true
-					{
-						bAllowNewSpawn = true && (bOneShotParticle == 0);
-					}
+					bAllowNewSpawn = true;
 				  }
 				  else
 				  {
@@ -312,72 +253,229 @@ export function GetParticleUpdateShaderVS(
 					  }
 				  }
 			  }
+			  `
+		   );
+	}
+}
+
+function scParticleUpdateDefines(inDesc : ParticleEmitterDesc)
+{
+	const freeFall = `#define FALLING ` + (inDesc.bFreeFallParticle ? `1` : `0`);
+	const respawn = `#define ALWAYS_RESPAWN ` + (inDesc.bAlwaysRespawn ? `1` : `0`);
+	const dim = `#define THIRD_DIMENSION ` + (inDesc.b3DSpace ? `1` : `0`); 
+	const dimtype = `#define DIM_TYPE ` + (inDesc.b3DSpace ? `vec3` : `vec2`); 
+
+	return freeFall + ` \n ` + respawn + ` \n ` + dim + ` \n ` + dimtype;
+}
+
+export function GetParticleUpdateShaderVS(
+    inDesc: ParticleEmitterDesc,
+    /* spawnFireRange: Vector2,
+    initialVelocityScale: number,
+    velocityFieldForceScale: number,
+    buoyancyForceScale: number,
+    downwardForceScale: number,
+    EInitialPositionMode: number, //0:default, 1:random, 2:from Emitter Pos constant
+    randomSpawnThres: number,
+    bOneShotParticle: boolean, */
+) {
+	const dimtype = (inDesc.b3DSpace ? `vec3` : `vec2`); 
+    return (
+        /* glsl */ `#version 300 es
   
+
+		`+scParticleUpdateDefines(inDesc)+ /* glsl */`
+
+
+	  precision highp float;
+	  precision mediump sampler2D;
+  
+	  layout(location = 0) in DIM_TYPE inPosition;
+	  layout(location = 1) in DIM_TYPE inVelocity;
+	  layout(location = 2) in float inAge;
+	  layout(location = 3) in vec2 inDefaultPosition;
+	  layout(location = 4) in DIM_TYPE inPrevPosition;
+  
+	  out DIM_TYPE outPosition;
+	  out DIM_TYPE outVelocity;
+	  out float outAge;
+	  out DIM_TYPE outPrevPosition;
+  
+	  uniform float DeltaTime;
+	  uniform float CurTime;
+	  uniform float ParticleLife;
+	  uniform DIM_TYPE EmitterPosition; 
+	  uniform float FloorPosY;
+
+	  uniform sampler2D NoiseTexture;
+	  uniform sampler2D NoiseTextureHQ;
+	  uniform sampler2D FireTexture;
+  
+	  //check if particle was spawned at least once
+	  bool IsParticleAlive()
+	  {
+		  const vec2 BoundsStart = vec2(-10.f, -10.f);
+		  return ((inPosition.x >= BoundsStart.x) && (inPosition.y >= BoundsStart.y)); 
+	  }
+  
+	  //check if particle should never be drawn again
+	  bool IsParticleDead()
+	  {
+		 //dead particles are set to -1.0
+		 return (inAge < -0.5f);
+	  }
+  
+	  float MapToRange(float t, float t0, float t1, float newt0, float newt1)
+	  {
+		  ///Translate to origin, scale by ranges ratio, translate to new position
+		  return (t - t0) * ((newt1 - newt0) / (t1 - t0)) + newt0;
+	  }
+
+	  void main()
+	  {
+  
+		  bool bParticleDead = IsParticleDead();
+  
+		  if(bParticleDead)
+		  {
+			  outAge = inAge;
+			  outVelocity = inVelocity;
+			  outPosition = inPosition;
+			  #if FALLING
+			  outPrevPosition = inPrevPosition;
+			  #endif
+		  }
+		  else
+		  {
+			  bool bAllowNewSpawn = false;
+			  bool bAllowUpdate = false;
+			  bool bOutdatedParticle = inAge > ParticleLife;
+
+			  float curAge = inAge;
+
+				` + scGetParticleUpdateLogic(inDesc) + /* glsl */`
   
 			  if(bAllowNewSpawn)
 			  {
 					
 				  /* Particle has exceeded its lifetime. Respawn. */
+
+				  ` +
+        scRandomiseParticleSpawn(inDesc.RandomSpawnThres) +
+        /* glsl */ `
 				  
 					outAge = 0.0; //TODO: Random Age
 
-					` +
-        scRandomiseParticleSpawn(randomSpawnThres) +
-        /* glsl */ `
+					DIM_TYPE netForce = DIM_TYPE(0.0);
+					DIM_TYPE curPos = DIM_TYPE(0.0);
 
 				  ` +
-        scGetInitialPosition(EInitialPositionMode) +
+        scGetInitialPosition(inDesc.EInitialPositionMode) +
         /* glsl */ `
   
 				  ` +
-        scGetRandomInitialVelocity(initialVelocityScale) +
+        scGetRandomInitialVelocity(inDesc) +
         /* glsl */ `
-				  return;
+
+				//Intergrate
+			#if FALLING
+				outPrevPosition = curPos;
+			#endif//FALLING
+				DIM_TYPE vel = netForce * 100.0 * DeltaTime;
+    			curPos = curPos + vel * DeltaTime;
+				outVelocity = vel;
+				outPosition = curPos;
+				return;
+				
 			  }
 			  else if(bAllowUpdate)
 			  {
-				  /* Update */
+				/* Update */
+				//Hotter particles are faster
+				/* const float MinSpeedScale = 0.85f;
+				const float MaxSpeedScale = 1.25f;
+				float temperature = clamp(MapToRange(curFire, kSpawnRange.x, 10.f, MinSpeedScale, MaxSpeedScale), MinSpeedScale, MaxSpeedScale); */
 
-				  //Hotter particles are faster
-				  const float MinSpeedScale = 0.85f;
-				  const float MaxSpeedScale = 1.25f;
-				  float temperature = clamp(MapToRange(curFire, kSpawnRange.x, 10.f, MinSpeedScale, MaxSpeedScale), MinSpeedScale, MaxSpeedScale);
+				outAge = inAge + DeltaTime;
 
-				  outAge = inAge + DeltaTime * temperature;
-  
-				  vec2 curVel = inVelocity;
+				DIM_TYPE curVel = inVelocity;
+				DIM_TYPE netForce = DIM_TYPE(0.0);
+				` + scGetVectorFieldForce(inDesc) + /* glsl */ `
 
-				  ` +
-        scGetVectorFieldForce(velocityFieldForceScale) +
-        /* glsl */ `
-  
-				  const float buoyancyForce = float(` +
-        buoyancyForceScale +
-        /* glsl */ `);
+				const float buoyancyForce = float(` + inDesc.BuoyancyForceScale + /* glsl */ `);
+				//curVel.y += buoyancyForce * DeltaTime;
+				netForce.y += buoyancyForce;
+				const float downwardForceScale = float(` + inDesc.DownwardForceScale + /* glsl */ `);
+				float posYNorm = (inPosition.y + 1.f) * 0.5f;
+				float downwardForce = posYNorm  * downwardForceScale;
+				if(curVel.y > 0.f)
+				{
+					//curVel.y -= downwardForce * DeltaTime * curVel.y;
+					netForce.y -= downwardForce * curVel.y;
+				}
 
-				  float ageNorm = curAge / ParticleLife;
-				  float posYNorm = (inPosition.y + 1.f) * 0.5f;
-				  curVel.y += buoyancyForce * DeltaTime * temperature;
+				DIM_TYPE curPos = inPosition;
+				DIM_TYPE prevPos = inPrevPosition;
 
-				  const float downwardForceScale = float(` +
-        downwardForceScale +
-        /* glsl */ `);
-				  float downwardForce = /* ageNorm * */ (posYNorm /* * posYNorm */) /* * buoyancyForce */ * downwardForceScale;
-				  if(curVel.y > 0.f)
-				  {
-					curVel.y -= downwardForce * DeltaTime * curVel.y;
-				  }
-  
-				  const float Damping = 0.99f;
-				  curVel *= Damping;
-				  outVelocity = curVel;
-				  outPosition = inPosition + inVelocity * 0.1 * DeltaTime;
+				//Intergrate
+				const float Damping = 0.99f;
+			#if FALLING
+				//Verlet
+				DIM_TYPE prevVelocity = (curPos - prevPos);
+    			prevPos = curPos;
+    			prevVelocity = prevVelocity * Damping;
+    			curPos = curPos + prevVelocity + netForce * 0.1 * DeltaTime * DeltaTime;
+				outVelocity = (curPos - prevPos) / DeltaTime * 10.0 * 1.5;
+			#else
+				//Euler
+				curVel += netForce * DeltaTime;
+				curVel *= Damping;
+				curPos = curPos + curVel * 0.1 * DeltaTime;
+				outVelocity = curVel;
+			#endif//FALLING
+				
+				#if FALLING
+				//Floor Intersection
+				const float CollisionResponseCoef = 1.25;
+				float curDist = abs(curPos.y - FloorPosY);
+				const float particleRadius = 0.025;
+
+				bool bCollision = false;
+
+				if(curPos.y < FloorPosY)
+				{
+					curPos.y = FloorPosY + particleRadius;
+					bCollision = true;
+					
+				}
+				else if(curDist <= particleRadius)
+				{
+					float delta = particleRadius - curDist;
+					const vec2 planeNormal = vec2(0.0, 1.0);
+					curPos.xy += (planeNormal * delta * CollisionResponseCoef);
+					bCollision = true;
+				}
+
+				if(bCollision)
+				{
+					curPos.x = mix(curPos.x, prevPos.x, 0.25);
+					#if THIRD_DIMENSION
+					curPos.z = mix(curPos.z, prevPos.z, 0.25);
+					#endif
+				}
+				#endif
+
+				outPosition = curPos;
+				outPrevPosition = prevPos;
+				
+
 			  }
 			  else
 			  {
-				  outAge = curAge;
-				  outPosition = inPosition;
-				  outVelocity = inVelocity;
+				outAge = curAge;
+				outPosition = inPosition;
+				outPrevPosition = inPrevPosition;
+				outVelocity = inVelocity;
 			  }
 		  }
   
@@ -391,14 +489,26 @@ export const ParticleUpdatePS = /* glsl */ `#version 300 es
 	  void main()
 	  {}`;
 
-function scTransformBasedOnMotion(condition: boolean) {
-    if (condition) {
-        return /* glsl */ `vec2 curVelocity = inVelocity;
-			float velLength = length(curVelocity) * 0.10;
-			if(velLength > 0.f)
+function scTransformBasedOnMotion(inDesc: ParticleEmitterDesc) {
+    if (inDesc.bMotionBasedTransform) {
+        return /* glsl */ `DIM_TYPE curVelocity = inVelocity;
+			float velLength = length(curVelocity.xy) * 0.10 * 1.0 * (1.0 - ageNorm) * (1.0 - ageNorm);
+			#if THIRD_DIMENSION
+			//velLength += curVelocity.z * 0.1;
+			#endif
+			velLength *= float(`+inDesc.MotionStretchScale+/* glsl */`);
+			velLength *= max(0.5, (1.0 - min(1.0, inAge * 0.5)));
+			#if (0 && THIRD_DIMENSION)
+			/* if(distToCam < 2.0)
 			{
-				velLength = min(1.0, velLength);
-				pos.y *= clamp(1.f - velLength * 0.8, 0.5f, 1.f);
+				velLength *= 0.0;
+			} */
+			velLength *= clamp(MapToRange(distToCam, 3.0, 1.0, 1.0, 0.0), 0.0, 1.0);
+			#endif
+			//if(velLength > 0.f)
+			{
+				velLength = min(5.0, velLength);
+				pos.y *= clamp(1.f - velLength * 0.75, 0.5f, 1.f);
 				pos.x *= (1.f + velLength * 4.0);
 				
 				// Calculate the angle between the initial direction (1, 0) and the desired direction
@@ -456,30 +566,23 @@ function scFadeInOutTransform(condition: number) {
     } else {
         return ``;
     }
-}
+} 
 
-export function GetParticleRenderInstancedVS(
-    bUsesTexture: boolean,
-    defaultSize: Vector2,
-    EFadeInOutMode: number,
-    sizeRangeMinMax: Vector2,
-    sizeClampMax: Vector2,
-    initialTranslation: Vector2,
-    bMotionBasedTransform: boolean,
-    randomSizeChangeSpeed: number,
-) {
+export function GetParticleRenderInstancedVS(inDesc: ParticleEmitterDesc) {
     return (
         /* glsl */ `#version 300 es
   
 		precision mediump float;
-	precision mediump sampler2D;
+		precision mediump sampler2D;
+
+		`+scParticleUpdateDefines(inDesc)+ /* glsl */`
 	
 		layout(location = 0) in vec2 VertexBuffer;
 		layout(location = 1) in vec2 TexCoordsBuffer;
 	
-		layout(location = 2) in vec2 inPosition;
+		layout(location = 2) in DIM_TYPE inPosition;
 		layout(location = 3) in float inAge;
-		layout(location = 4) in vec2 inVelocity;
+		layout(location = 4) in DIM_TYPE inVelocity;
 	
 		uniform vec4 CameraDesc;
 		uniform float ScreenRatio;
@@ -496,6 +599,9 @@ export function GetParticleRenderInstancedVS(
 		flat out float interpolatorFrameIndex;
 		out vec2 interpolatorTexCoords;
 		flat out int interpolatorInstanceId;
+		#if (0 && THIRD_DIMENSION)
+		flat out float interpolatorDistToCam;
+		#endif
 	
 		//check if particle should never be drawn again
 		bool IsParticleDead()
@@ -514,9 +620,9 @@ export function GetParticleRenderInstancedVS(
 			float kSizeScale = 1.f + 0.0 - CameraDesc.z;
 
 			const vec2 kInitTranslate = vec2(float(` +
-        initialTranslation.x +
+        inDesc.InitialTranslate.x +
         /* glsl */ `), float(` +
-        initialTranslation.y +
+        inDesc.InitialTranslate.y +
         /* glsl */ `));
 
 			if(IsParticleDead())
@@ -560,25 +666,23 @@ export function GetParticleRenderInstancedVS(
 				//offset
 				pos += kInitTranslate;
 				
-				pos.xy *= CameraDesc.w;
-				pos.x /= ScreenRatio;
-				pos.xy /= kSizeScale;
+				
   
 			#if 1 //NOISE-DRIVEN SIZE
 			const float kSizeChangeSpeed = float(` +
-        randomSizeChangeSpeed +
+        inDesc.RandomSizeChangeSpeed +
         /* glsl */ `);
 			if(kSizeChangeSpeed > 0.01)
 			{
 				const vec2 kSizeRangeMinMax = vec2(float(` +
-        sizeRangeMinMax.x +
+        inDesc.SizeRangeMinMax.x +
         /* glsl */ `), float(` +
-        sizeRangeMinMax.y +
+        inDesc.SizeRangeMinMax.y +
         /* glsl */ `));
 				const vec2 kSizeClampMax = vec2(float(` +
-        sizeClampMax.x +
+        inDesc.SizeClampMax.x +
         /* glsl */ `), float(` +
-        sizeClampMax.y +
+        inDesc.SizeClampMax.y +
         /* glsl */ `));
 				
 				float scale = 1.0f;
@@ -631,35 +735,41 @@ export function GetParticleRenderInstancedVS(
 			#endif//NOISE DRIVEN SIZE
 
 				//scale
-				pos.x *= float(` +
-        defaultSize.x +
-        /* glsl */ `);
-				pos.y *= float(` +
-        defaultSize.y +
-        /* glsl */ `);
+				pos.x *= float(` + inDesc.DefaultSize.x + /* glsl */ `);
+				pos.y *= float(` + inDesc.DefaultSize.y + /* glsl */ `);
 
+			#if (0 && THIRD_DIMENSION)
+				float distToCam = length(inPosition.xyz - CameraDesc.xyz);
+				float distToCamZ = abs(inPosition.z - CameraDesc.z);
+				interpolatorDistToCam = distToCamZ;
+				pos.xy *= 1.0 + (1.0 - min(1.0, distToCamZ * 0.5)) * 20.0;
+			#endif
+
+
+		//fade in-out
+		` +
+        scFadeInOutTransform(inDesc.EFadeInOutMode) +
+        /* glsl */ `
 
 			//Rotate based on velocity
 			` +
-        scTransformBasedOnMotion(bMotionBasedTransform) +
+        scTransformBasedOnMotion(inDesc) +
         /* glsl */ `
 
-			//fade in-out
-		` +
-        scFadeInOutTransform(EFadeInOutMode) +
-        /* glsl */ `
-  
-				//translate
-				vec2 translation = inPosition;
-				//translation += FirePlanePositionOffset.xy;
-				translation -= CameraDesc.xy;
-				translation.xy *= CameraDesc.w;
-				translation /= kSizeScale;
-				translation.x /= ScreenRatio;
 
-				pos.xy += translation;
-	
+
+				DIM_TYPE translation = inPosition;
+				pos.xy += translation.xy;
+				pos.xy -= CameraDesc.xy;
+				pos.xy *= CameraDesc.w;
+				#if THIRD_DIMENSION
+				pos.xy /= (1.0 + translation.z - CameraDesc.z);
+				#else
+				pos.xy /= kSizeScale;
+				#endif
+				pos.x /= ScreenRatio;
 				gl_Position = vec4(pos.xy, 0.0, 1.0);
+
 				
 			}
 			
@@ -697,8 +807,56 @@ function scDefaultShading() {
     return;
 }
 
+function scSmoothTransitionFlipbookSample(condition: boolean) {
+    if (condition) {
+        return /* glsl */ `
+	#if 1//SMOOTH TRANSITION //TODO:COMPILE TIME CONDITIONAL
+	float numFrames = float(FlipbookSizeRC.x * FlipbookSizeRC.y);
+	//if(ceil(interpolatorFrameIndex) < numFrames)
+	{
+		flipBookIndex1D = uint(ceil(interpolatorFrameIndex));
+		FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
+		FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
+		uv = interpolatorTexCoords * frameSize;
+		uv.x += (frameSize.x * float(FlipBookIndex2D.x));
+		uv.y += (frameSize.y * float(FlipBookIndex2D.y));
+		vec4 color2 = texture(ColorTexture, uv).rgba;
+		colorFinal = mix(colorFinal, color2, fract(interpolatorFrameIndex));
+	}
+	#endif
+	`;
+    } else {
+        return ``;
+    }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function scFlameSpecificShading(bUsesTexture: boolean, artificialFlameAmount: number) {
+function scParticleSampleFlipbook(condition: boolean, bSmoothTransition = true) {
+    if (condition) {
+        return (
+            /* glsl */ `
+		vec2 frameSize = 1.f / (FlipbookSizeRC);
+		vec2 uv = interpolatorTexCoords * frameSize;
+
+		uint flipBookIndex1D = uint(floor(interpolatorFrameIndex));
+		uvec2 FlipBookIndex2D;
+		FlipBookIndex2D.x = (flipBookIndex1D % uint(FlipbookSizeRC.x));
+		FlipBookIndex2D.y = (flipBookIndex1D / uint(FlipbookSizeRC.x));
+
+		uv.x += (frameSize.x * float(FlipBookIndex2D.x));
+		uv.y += (frameSize.y * float(FlipBookIndex2D.y));
+		
+		colorFinal = texture(ColorTexture, uv).rgba;
+
+		` + scSmoothTransitionFlipbookSample(bSmoothTransition)
+        );
+    } else {
+        return ``;
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function scFlameSpecificShading(bUsesTexture: boolean) {
     return (
         scParticleSampleFlipbook(bUsesTexture, false) +
         /* glsl */ `
@@ -786,61 +944,77 @@ function scEmbersSpecificShading() {
 		vec3 colorLow = vec3(0.5f, 0.5f, 0.5f); */
 
 		float t = interpolatorAge;
-		t = CircularFadeOut(clamp(t, 0.f, 1.f));
-		float curFire = (1.f - t) * 10.f;
-		
-		curFire = 1.0;
+		t = CircularFadeOut(t);
 
-		vec3 colorBright = vec3(curFire * (1.0 + (14.0 * (1. - t))), curFire * 0.75, curFire * 0.1);
-		vec3 colorLow = vec3(curFire, curFire * 0.75, curFire * 0.5);
-
+	#if 1
+		vec3 colorBright = vec3(1.0 * (1.0 + (14.0 * (1. - t))), 0.75, 0.1);
+		//vec3 colorBright = vec3(1.0 * (1.0 + (14.0 * (1. - t))));
+		vec3 colorLow = vec3(1.0, 0.75, 0.5);
 		colorFinal.rgb = mix(colorBright, colorLow , t);
+
+	#else
+		colorFinal.rgb = vec3(1.0, 0.5, 0.2) * 10.0;
+		colorFinal.rgb = mix(colorFinal.rgb, vec3(0.5, 0.0, 0.5), interpolatorAge * interpolatorAge);
+	#endif
 
 		colorFinal.rgb *= 2.f * (1.0 - t);
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
-		s *= 2.f;
-		if(s > 0.5f)
-		{
-			s += 0.25f;
-			//s = 1.f;
-		}
-		else
-		{
-			s -= 0.25f;
-			//s = 0.f;
-		}
-		//s += 0.15f;
 		s = (1.f - clamp(s, 0.f, 1.f));
 		colorFinal.rgb *= s;
-		colorFinal.rgb *= 2.25f;
-		//colorFinal.rgb *= 50.f;
+
+		colorFinal.rgb *= 3.0f;
+
+		s = 1.0;
+
+		float thres = mix(0.0, 0.2, interpolatorAge);
+		if(interpolatorTexCoords.x > (1.0 - thres))
+		{	
+			float m = MapToRange(interpolatorTexCoords.x, (1.0 - thres), 1.0, 1.0, 0.0);
+			s = m * m;
+			colorFinal.rgb = min(vec3(1.0), colorFinal.rgb);
+		}
+		else if(interpolatorTexCoords.x < thres)
+		{
+			float m = MapToRange(interpolatorTexCoords.x, 0.0, thres, 0.0, 1.0);
+			s = m * m;
+			colorFinal.rgb = min(vec3(1.0), colorFinal.rgb);
+		}
+
+		colorFinal.rgb = mix(colorFinal.rgb, vec3(0.0), 1.0 - s);
+
 		`;
 }
 
-function scEmbersImpactSpecificShading() {
+function scEmbersImpactSpecificShading(inDesc : ParticleEmitterDesc) {
     return /* glsl */ `
 		/* vec3 colorBright = vec3(1.f, 0.5f, 0.1f) * 1.5f;
 		vec3 colorLow = vec3(0.5f, 0.5f, 0.5f); */
 
-		float t = interpolatorAge;
-		t = CircularFadeOut(clamp(t, 0.f, 1.f));
-		float curFire = (1.f - t) * 10.f;
 		
-		curFire = 1.0;
+		//t = sqrt(1.0 - t*t);
+		//t = 1.0 - t;
+		
+		//vec3 colorBright = vec3(1.0, 0.5, 0.1);
+		//vec3 colorBright = vec3(0.8, 0.7, 1.0);
+		const vec3 colorBright = vec3(`+inDesc.Color.x+`, `+inDesc.Color.y+`, `+inDesc.Color.z+ /* glsl */`);
 
-		vec3 colorBright = vec3(0.8, 0.7, 1.0) * curFire;
-		vec3 colorLow = vec3(0.7, 0.4, 1.0) * curFire;
+		colorFinal.rgb = colorBright;
 
-		colorFinal.rgb = mix(colorBright, colorLow , interpolatorTexCoords.x);
+		float t = interpolatorAge;
+		t = 1.0 - CircularFadeOut(t);
+		t = min(1.0, t + 0.2);
 
-		colorFinal.rgb *= 2.f * (1.0 - t);
+		colorFinal.rgb *= 2.f * t;
+
+		//t = interpolatorAge
 		
 		colorFinal.rgb *= 10.0;
 
 		float s = length(interpolatorTexCoords - vec2(0.5, 0.5));
-		s *= 2.f;
-		if(s > 0.5f)
+		//s *= 1.25f;
+		s *= (1.0 + interpolatorAge * 1.0);
+		/* if(s > 0.5f)
 		{
 			s += 0.25f;
 			//s = 1.f;
@@ -849,11 +1023,79 @@ function scEmbersImpactSpecificShading() {
 		{
 			s -= 0.25f;
 			//s = 0.f;
-		}
+		} */
 		//s += 0.15f;
 		s = (1.f - clamp(s, 0.f, 1.f));
-		colorFinal.rgb *= s;
-		colorFinal.rgb *= 2.25f;
+		
+
+		#if (0 && THIRD_DIMENSION)//DoF
+		float dNorm = 1.0 - clamp(MapToRange(interpolatorDistToCam, 2.0, 0.5, 0.0, 1.0), 0.0, 1.0);
+		dNorm = 1.0;
+		float dof = length(interpolatorTexCoords - vec2(0.5, 0.5));
+		float c = 0.75;
+		//float c = 0.1;
+		//dof *= 2.f;
+		if(dof > 0.5f)
+		{
+			dof += c;
+			//s = 1.f;
+		}
+		else
+		{
+			dof -= c;
+			//s = 0.f;
+		}
+		dof = (1.f - clamp(dof, 0.f, 1.f));
+
+		//s = mix(s, dof, min(1.0, dNorm));
+
+		vec3 colorRadialCut = colorFinal.rgb * s * s * 2.25f * 2.0;
+
+		vec3 colorDoF = colorFinal.rgb * dof * clamp(1.0 - dNorm, 0.5, 1.0);
+
+		colorFinal.rgb = mix(colorRadialCut, colorDoF, dNorm);
+
+		#else
+
+
+		float dNorm = 0.0;
+
+		colorFinal.rgb *= s * s;
+		colorFinal.rgb *= 2.25f * 2.0;
+
+		#endif //DoF
+
+		
+		#if 1 && THIRD_DIMENSION //sides fade
+		float s2 = 1.0;
+		float thres = mix(0.0, 0.2, max(0.0, interpolatorAge - dNorm));
+		if(interpolatorTexCoords.x > (1.0 - thres))
+		{	
+			float m = MapToRange(interpolatorTexCoords.x, (1.0 - thres), 1.0, 1.0, 0.0);
+			s2 = m * m;
+			//colorFinal.rgb = min(vec3(1.0), colorFinal.rgb);
+		}
+		else if(interpolatorTexCoords.x < thres)
+		{
+			float m = MapToRange(interpolatorTexCoords.x, 0.0, thres, 0.0, 1.0);
+			s2 = m * m;
+			//colorFinal.rgb = min(vec3(1.0), colorFinal.rgb);
+		}
+		colorFinal.rgb = mix(colorFinal.rgb, vec3(0.0), 1.0 - s2);
+		#endif
+
+		t = interpolatorAge;
+		const float fThres = 0.55;
+		if(t > fThres)
+		{
+			t = MapToRange(t, fThres, 1.0, 0.0, 1.0);
+			t = clamp(t, 0.0, 1.0);
+			colorFinal.rgb = mix(colorFinal.rgb, vec3(0.1) * s, t);
+		}
+		
+
+
+		
 		//colorFinal.rgb *= 50.f;
 		`;
 }
@@ -990,21 +1232,16 @@ function scDustSpecificShading() {
     );
 }
 
-function scGetBasedOnShadingMode(
-    shadingMode: number,
-    bUsesTexture: boolean,
-    alphaScale: number,
-    artificialFlameAmount: number,
-) {
-    switch (shadingMode) {
+function scGetBasedOnShadingMode(inDesc: ParticleEmitterDesc, bUsesTexture: boolean, alphaScale: number) {
+    switch (inDesc.ESpecificShadingMode) {
         case EParticleShadingMode.Default:
             return scDefaultShading();
         case EParticleShadingMode.Flame:
-            return scFlameSpecificShading(bUsesTexture, artificialFlameAmount);
+            return scFlameSpecificShading(bUsesTexture);
         case EParticleShadingMode.Embers:
             return scEmbersSpecificShading();
         case EParticleShadingMode.EmbersImpact:
-            return scEmbersImpactSpecificShading();
+            return scEmbersImpactSpecificShading(inDesc);
         case EParticleShadingMode.Smoke:
             return scSmokeSpecificShading(alphaScale);
         case EParticleShadingMode.AfterBurnSmoke:
@@ -1016,19 +1253,16 @@ function scGetBasedOnShadingMode(
     }
 }
 
-export function GetParticleRenderColorPS(
-    eShadingMode: number,
-    bUsesTexture: boolean,
-    EAlphaFadeEnabled: number, //0:disabled, 1:smooth, 2:fast
-    alphaScale: number,
-    brightness = 1.0,
-    artificialFlameAmount = 0.45,
-) {
+export function GetParticleRenderColorPS(inDesc: ParticleEmitterDesc, bUsesTexture: boolean) {
     return (
         /* glsl */ `#version 300 es
 	  
 		precision mediump float;
 		precision mediump sampler2D;
+
+		
+		`+scParticleUpdateDefines(inDesc)+ /* glsl */`
+	
 	
 		out vec4 OutColor;
 	
@@ -1036,6 +1270,9 @@ export function GetParticleRenderColorPS(
 		flat in float interpolatorFrameIndex;
 		in vec2 interpolatorTexCoords;
 		flat in int interpolatorInstanceId;
+		#if (0 && THIRD_DIMENSION)
+		flat in float interpolatorDistToCam;
+		#endif
 
 		uniform sampler2D ColorTexture;
 		uniform sampler2D FlameColorLUT;
@@ -1071,17 +1308,17 @@ export function GetParticleRenderColorPS(
 			//OutColor = vec4(0.5, 0.5, 0.5, 1); return;
 			vec4 colorFinal = vec4(1.f, 0.55f, 0.1f, 1.f);
 			` +
-        scGetBasedOnShadingMode(eShadingMode, bUsesTexture, alphaScale, artificialFlameAmount) +
+        scGetBasedOnShadingMode(inDesc, bUsesTexture, inDesc.AlphaScale) +
         /* glsl */ `
 
 		//fade in-out
 		` +
-        scAlphaFade(EAlphaFadeEnabled) +
+        scAlphaFade(inDesc.EAlphaFade) +
         /* glsl */ `
 
 		//initial brightness
 		` +
-        scApplyBrightness(brightness) +
+        scApplyBrightness(inDesc.Brightness) +
         /* glsl */ `
 
 			OutColor = colorFinal;

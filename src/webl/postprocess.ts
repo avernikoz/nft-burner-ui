@@ -17,7 +17,7 @@ import {
     ShaderSourcePresentPassPS,
 } from "./shaders/shaderPostProcess";
 import { GTexturePool } from "./texturePool";
-import { Vector2 } from "./types";
+import { GetVec3, Vector2 } from "./types";
 import { GTime, MathClamp, MathLerp } from "./utils";
 
 function GetUniformParametersList(gl: WebGL2RenderingContext, shaderProgram: WebGLProgram) {
@@ -639,7 +639,7 @@ export class RFlamePostProcessPass {
 
     constructor(gl: WebGL2RenderingContext) {
         //Create Shader Program
-        const randValsVec = { x: Math.random(), y: Math.random(), z: Math.random() };
+        const randValsVec = GetVec3(Math.random(), Math.random(), Math.random());
         this.shaderProgram = CreateShaderProgramVSPS(
             gl,
             ShaderSourceFullscreenPassVS,

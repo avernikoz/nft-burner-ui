@@ -3,14 +3,6 @@ import { GBurningSurface, GBurningSurfaceExport } from "./firePlane";
 import { getCanvas } from "./helpers/canvas";
 import { DrawUISingleton } from "./helpers/gui";
 import { ParticlesEmitter } from "./particles";
-import {
-    AfterBurnAshesParticlesDesc,
-    AfterBurnSmokeParticlesDesc,
-    DustParticlesDesc,
-    FlameParticlesDesc,
-    GetEmberParticlesDesc,
-    SmokeParticlesDesc,
-} from "./particlesConfig";
 import { RBloomPass, RBlurPass, RCombinerPass, RFlamePostProcessPass, RPresentPass } from "./postprocess";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {
@@ -39,7 +31,7 @@ import { CommonRenderingResources, CommonVertexAttributeLocationList } from "./s
 import { InitUserInputEvents, UserInputUpdatePerFrame } from "./input";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Vector2 } from "./types";
+import { GetVec3, Vector2 } from "./types";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -54,23 +46,46 @@ import {
     MathSmoothstep,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     MathVector2Normalize,
-    MathVector3Add,
+    Vec3Add,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    MathVector3Negate,
+    Vec3Negate,
     UpdateTime,
     showError,
     uint16ToFloat16,
 } from "./utils";
-import { ApplyCameraControl, GCameraShakeController, SetupCameraControlThroughInput } from "./controller";
-import { RSpatialControllerVisualizationRenderer, SpatialControlPoint } from "./spatialController";
+import { ApplyCameraControl, SetupCameraControlThroughInput } from "./controller";
+import { RSpatialControllerVisualizationRenderer, SpatialControlPointWithTexture } from "./spatialController";
 import { ERenderingState, GRenderingStateMachine } from "./states";
 import { APP_ENVIRONMENT, IMAGE_STORE_SINGLETON_INSTANCE } from "../config/config";
-import { AnimationController } from "./animationController";
+import { AnimationController, GCameraShakeController, GSpotlightShakeController } from "./animationController";
 import { GAudioEngine } from "./audioEngine";
-import { EBurningTool, LaserTool, LighterTool, ThunderTool, ToolBase } from "./tools";
+import { EBurningTool, FireballTool, LaserTool, LighterTool, ThunderTool, ToolBase } from "./tools";
 import { GTexturePool } from "./texturePool";
 import { GReactGLBridgeFunctions } from "./reactglBridge";
 import { GTransitionAnimationsConstants } from "./transitionAnimations";
+import {
+    GetAfterBurnAshesParticlesDesc,
+    GetAfterBurnSmokeParticlesDesc,
+    GetDustParticlesDesc,
+    GetEmberParticlesDesc,
+    GetFlameParticlesDesc,
+    GetSmokeParticlesDesc,
+} from "./particlesConfig";
+
+const ImageLink = {
+    url: "",
+    image: null as TexImageSource | null,
+};
+
+async function loadImageFromURL(url: string): Promise<TexImageSource> {
+    return new Promise((resolve, reject) => {
+        const img = document.createElement("img");
+        img.crossOrigin = "anonymous"; // Enable cross-origin requests if needed
+        img.onload = () => resolve(img);
+        img.onerror = (error) => reject(error);
+        img.src = url;
+    });
+}
 
 function AllocateCommonRenderingResources(gl: WebGL2RenderingContext) {
     if (CommonRenderingResources.FullscreenPassVertexBufferGPU == null) {
@@ -309,6 +324,7 @@ export function RenderMain() {
     const DEBUG_ENV = APP_ENVIRONMENT === "development";
     const DEBUG_UI = 1 && DEBUG_ENV;
     const DEBUG_STOP_SIMULATION = 0 && DEBUG_ENV;
+    const DEBUG_NOT_BURNT_ONSTART = 1 && DEBUG_ENV;
 
     const canvas = getCanvas();
 
@@ -400,8 +416,8 @@ export function RenderMain() {
     const firePlanePos = GSceneDesc.FirePlane.PositionOffset;
     const FirePlaneAnimationController = new AnimationController(
         firePlanePos,
-        MathVector3Add(firePlanePos, { x: 0, y: -0.05, z: 0.0 }),
-        MathVector3Add(firePlanePos, { x: 0, y: 0.05, z: 0.0 }),
+        Vec3Add(firePlanePos, GetVec3(0, -0.05, 0.0)),
+        Vec3Add(firePlanePos, GetVec3(0, 0.05, 0.0)),
     );
 
     //==============================
@@ -439,25 +455,28 @@ export function RenderMain() {
 
     SetupPostProcessPasses(gl);
 
-    const SpatialControlUIVisualizer = new RSpatialControllerVisualizationRenderer(gl);
+    RSpatialControllerVisualizationRenderer.GInstance = new RSpatialControllerVisualizationRenderer(gl);
 
     //======================
     // 		INIT TOOLS
     //======================
-    GTool.Current = new LaserTool(gl);
+    GTool.Current = new FireballTool(gl);
 
     //==============================
     // 		INIT PARTICLES
     //==============================
-
+    const FlameParticlesDesc = GetFlameParticlesDesc();
+    const SmokeParticlesDesc = GetSmokeParticlesDesc();
     const EmberParticlesDesc = GetEmberParticlesDesc();
+    const AfterBurnSmokeParticlesDesc = GetAfterBurnSmokeParticlesDesc();
     const AfterBurnEmberParticlesDesc = GetEmberParticlesDesc();
-    AfterBurnEmberParticlesDesc.inSpawnRange.x = 0.001;
-    AfterBurnEmberParticlesDesc.inSpawnRange.y = 1000.0;
-    AfterBurnEmberParticlesDesc.inNumSpawners2D = 4;
-    AfterBurnEmberParticlesDesc.inRandomSpawnThres = 0.5;
-    /* ;
-    AfterBurnEmberParticlesDesc.inNumSpawners2D = 64; */
+    AfterBurnEmberParticlesDesc.InitialVelocityScale *= 1.5;
+    AfterBurnEmberParticlesDesc.SpawnRange.x = 0.001;
+    AfterBurnEmberParticlesDesc.SpawnRange.y = 1000.0;
+    AfterBurnEmberParticlesDesc.NumSpawners2D = 4;
+    AfterBurnEmberParticlesDesc.RandomSpawnThres = 0.5;
+
+    const AfterBurnAshesParticlesDesc = GetAfterBurnAshesParticlesDesc();
 
     if (GScreenDesc.bWideScreen) {
         /* EmberParticlesDesc.inDownwardForceScale = 2.5;
@@ -468,22 +487,22 @@ export function RenderMain() {
     const bAshesInEmbersPass = 0;
     if (bPaperMaterial) {
         //FlameParticlesDesc.inDefaultSize.y *= 0.9;
-        FlameParticlesDesc.inRandomSpawnThres = 0.5;
-        FlameParticlesDesc.inSpawnRange.x = 500.0;
-        SmokeParticlesDesc.inSpawnRange.x = 5000.0;
-        SmokeParticlesDesc.inAlphaScale = 0.75;
-        SmokeParticlesDesc.inEAlphaFade = 1;
+        FlameParticlesDesc.RandomSpawnThres = 0.5;
+        FlameParticlesDesc.SpawnRange.x = 500.0;
+        SmokeParticlesDesc.SpawnRange.x = 5000.0;
+        SmokeParticlesDesc.AlphaScale = 0.75;
+        SmokeParticlesDesc.EAlphaFade = 1;
         //SmokeParticlesDesc.inBrightness = 0.0;
-        AfterBurnSmokeParticlesDesc.inSpawnRange.x = 0.1;
+        AfterBurnSmokeParticlesDesc.SpawnRange.x = 0.1;
 
-        AfterBurnAshesParticlesDesc.inSpawnRange.x = 0.05;
-        AfterBurnAshesParticlesDesc.inSpawnRange.y = 10.05;
-        AfterBurnAshesParticlesDesc.inNumSpawners2D = 64;
-        AfterBurnAshesParticlesDesc.inVelocityFieldForceScale = 50;
-        AfterBurnAshesParticlesDesc.inInitialVelocityScale = 1.0;
-        EmberParticlesDesc.inVelocityFieldForceScale = 50;
-        EmberParticlesDesc.inNumSpawners2D = 32;
-        SmokeParticlesDesc.inVelocityFieldForceScale = 30;
+        AfterBurnAshesParticlesDesc.SpawnRange.x = 0.05;
+        AfterBurnAshesParticlesDesc.SpawnRange.y = 10.05;
+        AfterBurnAshesParticlesDesc.NumSpawners2D = 64;
+        AfterBurnAshesParticlesDesc.VelocityFieldForceScale = 50;
+        AfterBurnAshesParticlesDesc.InitialVelocityScale = 1.0;
+        EmberParticlesDesc.VelocityFieldForceScale = 50;
+        EmberParticlesDesc.NumSpawners2D = 32;
+        SmokeParticlesDesc.VelocityFieldForceScale = 30;
 
         //DustParticlesDesc.inVelocityFieldForceScale = 50;
 
@@ -507,12 +526,12 @@ export function RenderMain() {
     const AfterBurnEmberParticles = new ParticlesEmitter(gl, AfterBurnEmberParticlesDesc);
     DynamicParticlesArr.push(AfterBurnEmberParticles);
     //
-    SmokeParticlesDesc.inAlphaScale = 0.2 + Math.random() * 0.8;
-    SmokeParticlesDesc.inBuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
+    SmokeParticlesDesc.AlphaScale = 0.2 + Math.random() * 0.8;
+    SmokeParticlesDesc.BuoyancyForceScale = MathLerp(10.0, 20.0, Math.random());
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const SmokeParticles = new ParticlesEmitter(gl, SmokeParticlesDesc);
     DynamicParticlesArr.push(SmokeParticles);
-    AfterBurnSmokeParticlesDesc.inAlphaScale = 0.25 + Math.random() * 0.5;
+    AfterBurnSmokeParticlesDesc.AlphaScale = 0.25 + Math.random() * 0.5;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const AfterBurnSmokeParticles = new ParticlesEmitter(gl, AfterBurnSmokeParticlesDesc);
     DynamicParticlesArr.push(AfterBurnSmokeParticles);
@@ -522,12 +541,12 @@ export function RenderMain() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     /* DustParticlesDesc.inBuoyancyForceScale = 5.0 * Math.random();
     DustParticlesDesc.inDownwardForceScale = DustParticlesDesc.inBuoyancyForceScale * 2.0; */
-    const DustParticles = new ParticlesEmitter(gl, DustParticlesDesc);
+    const DustParticles = new ParticlesEmitter(gl, GetDustParticlesDesc());
 
     //==============================
     // 		INIT GUI ELEMENTS
     //==============================
-    const SpotlightPositionController = new SpatialControlPoint(
+    const SpotlightPositionController = new SpatialControlPointWithTexture(
         gl,
         { x: 0.0, y: 0.9 },
         0.075,
@@ -572,7 +591,7 @@ export function RenderMain() {
         }
     }
 
-    const ConnectWalletButtonController = new SpatialControlPoint(
+    const ConnectWalletButtonController = new SpatialControlPointWithTexture(
         gl,
         { x: -0.75, y: 0.0 },
         0.35,
@@ -586,6 +605,17 @@ export function RenderMain() {
     //==============================
     InitializeSceneStateDescsArr();
     UpdateSceneStateDescsArr();
+
+    //DebugReset
+    if (DEBUG_ENV) {
+        document.addEventListener("keydown", function (event) {
+            if (event.key == "r") {
+                //DebugReset ResetDebug
+                //GTool.Current = new FireballTool(gl);
+                GSceneDesc.Camera.Position.y = -0.8;
+            }
+        });
+    }
 
     //===================
     // 		DEBUG UI
@@ -602,7 +632,7 @@ export function RenderMain() {
 
                 const folder = GDatGUI.addFolder("Main");
 
-                folder.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
+                /* folder.add(GTime, "DeltaMs").name("DeltaTime").listen().step(0.1);
                 folder.add(GTime, "Cur").name("CurTime").listen().step(0.0001);
 
                 folder.add(GScreenDesc, "ScreenRatio").name("ScreenRatio").listen().step(0.01);
@@ -610,7 +640,48 @@ export function RenderMain() {
 
                 folder.add(GGpuReadData, "CurFireValueCPU").listen().step(0.001);
 
-                folder.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses");
+                folder.add(GPostProcessPasses, "BloomNumBlurPasses", 0, 10, 1).name("BloomNumBlurPasses"); */
+
+                // Define an object to hold your parameters
+
+                // Add a text input field to the GUI
+                folder.add(ImageLink, "url").name("Link");
+
+                /* const LoadLinkParam = {
+                    buttonText: "Upload",
+                    handleClick: () => {
+                        loadImageFromURL(ImageLink.url)
+                            .then((image: TexImageSource) => {
+                                console.log("IMAGE LOAD ATTEMPT");
+                                if (image) {
+                                    BurningSurface.UpdatePlaneSurfaceImage(gl, image, ImageLink.url);
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Error loading image:", error);
+                            });
+                    },
+                };
+
+                folder.add(LoadLinkParam, "buttonText").name(LoadLinkParam.buttonText); */
+
+                const uploadParam = {
+                    buttonText: "Upload",
+                    handleClick: () => {
+                        loadImageFromURL(ImageLink.url)
+                            .then((image: TexImageSource) => {
+                                console.log("IMAGE LOAD ATTEMPT");
+                                if (image) {
+                                    BurningSurface.UpdatePlaneSurfaceImage(gl, image, ImageLink.url);
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Error loading image:", error);
+                            });
+                    },
+                };
+
+                folder.add(uploadParam, "handleClick").name(uploadParam.buttonText);
 
                 //State Debug UI
                 const stateFolder = GDatGUI.addFolder("States");
@@ -625,7 +696,9 @@ export function RenderMain() {
                 const burnMoreParam = {
                     buttonText: "BurnMore",
                     handleClick: () => {
-                        GRenderingStateMachine.OnBurnMoreButtonPress();
+                        BurningSurface.Reset(gl);
+                        ResetParticleEmitters(gl);
+                        GRenderingStateMachine.SetRenderingState(ERenderingState.BurningReady);
                     },
                 };
 
@@ -675,22 +748,23 @@ export function RenderMain() {
                     toolsFolder.add(thunderParam, "handleClick").name(thunderParam.buttonText);
                 }
 
-                const shakeParam = {
+                /* const shakeParam = {
                     buttonText: "Camera Shake",
                     handleClick: () => {
-                        GCameraShakeController.ShakeCameraFast();
+                        //GCameraShakeController.ShakeCameraFast();
+                        GSpotlightShakeController.ShakeSpotlight(1.0);
                     },
                 };
-                folder.add(shakeParam, "handleClick").name(shakeParam.buttonText);
+                folder.add(shakeParam, "handleClick").name(shakeParam.buttonText); */
             }
 
             GSceneDescSubmitDebugUI(GDatGUI);
 
-            BurningSurface.SubmitDebugUI(GDatGUI);
-            BackGroundRenderPass.SubmitDebugUI(GDatGUI);
-            GTool.Current.SubmitDebugUI(GDatGUI);
-            GTexturePool.SubmitDebugUI(GDatGUI);
-            BurntStampSprite.SubmitDebugUI(GDatGUI);
+            //BurningSurface.SubmitDebugUI(GDatGUI);
+            //BackGroundRenderPass.SubmitDebugUI(GDatGUI);
+            //GTool.Current.SubmitDebugUI(GDatGUI);
+            //GTexturePool.SubmitDebugUI(GDatGUI);
+            //BurntStampSprite.SubmitDebugUI(GDatGUI);
         }
 
         //deprecated fpsElem = document.querySelector("#fps");
@@ -864,11 +938,14 @@ export function RenderMain() {
 
             if (GTexturePool.AreAllTexturesLoaded() && !bInitialImagePreProcessed) {
                 BurningSurface.FirePlaneImagePreProcess(gl);
-                if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
-                    BurningSurface.SetToBurned(gl);
-                } else {
-                    BurningSurface.ApplyFireAuto(gl, { x: MathLerp(-0.1, 0.2, Math.random()), y: -0.3 }, 0.01);
+                if (!DEBUG_NOT_BURNT_ONSTART) {
+                    if (!!localStorage.getItem("isBurnedNFTAtLeastOnce")) {
+                        BurningSurface.SetToBurned(gl);
+                    } else {
+                        BurningSurface.ApplyFireAuto(gl, { x: MathLerp(-0.1, 0.2, Math.random()), y: -0.3 }, 0.01);
+                    }
                 }
+
                 //
                 bInitialImagePreProcessed = true;
             }
@@ -878,6 +955,17 @@ export function RenderMain() {
             }
 
             GCameraShakeController.OnUpdate();
+            if (bNewRenderStateThisFrame && RenderStateMachine.currentState === ERenderingState.BurningReady) {
+                GSpotlightShakeController.Init();
+            }
+            if (
+                (RenderStateMachine.currentState === ERenderingState.BurningReady &&
+                    RenderStateMachine.bTransitionFinished()) ||
+                RenderStateMachine.currentState === ERenderingState.BurningNow ||
+                RenderStateMachine.currentState === ERenderingState.BurningFinished
+            ) {
+                GSpotlightShakeController.OnUpdate();
+            }
 
             if (
                 /* GTexturePool.AreAllTexturesLoaded() && */
@@ -1093,17 +1181,17 @@ export function RenderMain() {
                 //======================
                 // 		GUI RENDER
                 //======================
-                {
+                if (RSpatialControllerVisualizationRenderer.GInstance) {
                     gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ONE, gl.ONE);
                     gl.blendEquation(gl.MAX);
                     if (SpotlightPositionController.bEnabled) {
-                        SpatialControlUIVisualizer.Render(gl, SpotlightPositionController);
+                        RSpatialControllerVisualizationRenderer.GInstance.Render(gl, SpotlightPositionController);
                     }
 
                     if (ConnectWalletButtonController.bEnabled) {
                         if (RenderStateMachine.currentState === ERenderingState.Intro) {
-                            SpatialControlUIVisualizer.Render(gl, ConnectWalletButtonController);
+                            RSpatialControllerVisualizationRenderer.GInstance.Render(gl, ConnectWalletButtonController);
                         }
                     }
 
@@ -1115,8 +1203,6 @@ export function RenderMain() {
                 //======================
                 let flameSourceTextureRef = GRenderTargets.FlameTexture;
                 BindRenderTarget(gl, GRenderTargets.FlameFramebuffer!, GScreenDesc.RenderTargetSize, true);
-
-                GTool.Current.RenderToFlameRT(gl);
 
                 if (1 || RenderStateMachine.bCanBurn) {
                     if (!bPreloaderState) {
@@ -1131,6 +1217,7 @@ export function RenderMain() {
                     );
                     flameSourceTextureRef = GRenderTargets.FlameTexture2;
 
+                    GTool.Current.RenderToFlameRT(gl);
                     EmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                     AfterBurnEmberParticles.Render(gl, gl.FUNC_ADD, gl.ONE, gl.ONE);
                     if (bAshesInEmbersPass) {
