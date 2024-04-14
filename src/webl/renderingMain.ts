@@ -1144,10 +1144,10 @@ export function RenderMain() {
 
                 if (GPostProcessPasses.Bloom!.BloomTexture !== null) {
                     //Downsample Source
-                    gl.bindTexture(gl.TEXTURE_2D, GRenderTargets.FirePlaneTexture);
+                    /* gl.bindTexture(gl.TEXTURE_2D, GRenderTargets.FirePlaneTexture);
                     gl.generateMipmap(gl.TEXTURE_2D);
                     gl.bindTexture(gl.TEXTURE_2D, flameSourceTextureRef);
-                    gl.generateMipmap(gl.TEXTURE_2D);
+                    gl.generateMipmap(gl.TEXTURE_2D); */
 
                     GPostProcessPasses.Bloom!.HQBloomPrePass(
                         gl,
