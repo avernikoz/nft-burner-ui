@@ -5,7 +5,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { MenuItem } from "primereact/menuitem";
 import { Menu } from "primereact/menu";
 import { ButtonContainer, ProfileLabel, StyledMenu, StyledPanelMenu, WalletButton } from "./WalletSelector.styled";
-import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import { useWallet as suietUseWallet, WalletAdapter } from "@suiet/wallet-kit";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
 import { ConnectorData, disconnect as wagmiDisconnect } from "@wagmi/core";
@@ -21,15 +21,20 @@ import { Level } from "../Level/Level";
 import { useUserLevel } from "../../context/UserLevelContext";
 import { useWalletBalance } from "../../hooks/useWalletBalance";
 import { getEVMNetworkName } from "../../utils/getEVMNetworkName";
+// eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
+import { ConnectModal, useCurrentAccount, useCurrentWallet } from "@mysten/dapp-kit";
+import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 
 export const WalletSelector = ({
     hideUI,
     walletSelectPopupVisible,
     setWalletSelectPopupVisible,
+    setConnected,
 }: {
     hideUI: () => void;
     walletSelectPopupVisible: boolean;
     setWalletSelectPopupVisible: (visible: boolean) => void;
+    setConnected: (visible: boolean) => void;
 }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const [activeRainbowConnector, setActiveRainbowConnector] = useState<Connector | null>(null);
@@ -44,6 +49,10 @@ export const WalletSelector = ({
     const { level, points } = useUserLevel();
     const { data: walletBalanceData } = useWalletBalance({ address: account?.id, network: account?.network });
 
+    const { currentWallet, connectionStatus } = useCurrentWallet();
+    const currentAccount = useCurrentAccount();
+    const [open, setOpen] = useState(false);
+
     const connect = useCallback(
         (acc: IAccount) => {
             localStorage.setItem("activeIndex", JSON.stringify(activeIndex));
@@ -55,6 +64,29 @@ export const WalletSelector = ({
         },
         [activeIndex, setWalletSelectPopupVisible],
     );
+    // const memoizedSuietWallet = useMemo(() => suietWallet, [suietWallet]);
+    useEffect(() => {
+        if (currentAccount && currentWallet) {
+            suietWallet.account = currentAccount ?? undefined;
+            suietWallet.address = currentAccount.address;
+            suietWallet.name = currentWallet.name;
+
+            const adapter = new WalletAdapter(currentWallet);
+            suietWallet.adapter = adapter;
+            suietWallet.status = connectionStatus;
+            console.log(suietWallet.adapter);
+            console.log(suietWallet);
+
+            suietWallet.connected = true;
+            setConnected(true);
+            // suietWallet.adapter?.chains = currentAccount?.chains
+            connect({
+                id: currentAccount.address,
+                network: "Sui" as ALLOWED_NETWORKS,
+                walletIcon: "",
+            });
+        }
+    }, [connect, connectionStatus, currentAccount, currentWallet, setConnected, suietWallet]);
 
     const disconnect = useCallback(async () => {
         if (wagmiAccount.isConnected) {
@@ -84,6 +116,7 @@ export const WalletSelector = ({
         NftController.setNftStatus(ENftBurnStatus.EMPTY);
         NftController.setActiveNft(null);
         setActiveRainbowConnector(null);
+        console.log("am i here");
         setAccount(null);
     }, [wagmiAccount.isConnected, suietWallet, solanaWallet, NftController, hideUI]);
 
@@ -128,7 +161,7 @@ export const WalletSelector = ({
 
                         const networkName = getEVMNetworkName(chainId);
                         if (!networkName) {
-                            throw new Error("Unsuported network type");
+                            throw new Error("Unsupported network type");
                         }
 
                         connect({
@@ -260,6 +293,11 @@ export const WalletSelector = ({
         <div className="wallet">
             <ButtonContainer>
                 <StyledPanelMenu model={menuItems} color={"primary"} />
+                <ConnectModal
+                    trigger={<button disabled={!!currentAccount}> {currentAccount ? "Connected" : "Connect"}</button>}
+                    open={open}
+                    onOpenChange={(isOpen) => setOpen(isOpen)}
+                />
                 {!account && (
                     <WalletButton
                         aria-label="Choose your wallet"

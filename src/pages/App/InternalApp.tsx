@@ -47,6 +47,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
     const [showBurnedScreen, setShowBurnedScreen] = useState<boolean>(false);
     const [showConnectWalletScreen, setShowConnectWalletScreen] = useState<boolean>(false);
     const [walletSelectPopupVisible, setWalletSelectPopupVisible] = useState<boolean>(false);
+    const [connected, setConnected] = useState<boolean>(false);
     const { level, points } = useUserLevel();
 
     const NftController = useContext(NftContext);
@@ -67,6 +68,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
     }, [
         solanaWallet.connected,
         suietWallet.address,
+        connected,
         suietWallet.connected,
         wagmiAccount.address,
         wagmiAccount.isConnected,
@@ -90,6 +92,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
         }
     }, [
         NftController.nftStatus,
+        connected,
         signer,
         solanaWallet.connected,
         solanaWallet.publicKey,
@@ -165,6 +168,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
                     hideUI={() => {
                         setShowUI(false);
                     }}
+                    setConnected={setConnected}
                 />
 
                 <MainLevelContainer $isVisible={isVisible}>
