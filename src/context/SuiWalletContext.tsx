@@ -9,6 +9,7 @@ import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 // import { registerZkSendWallet } from "@mysten/zksend";
 // Default styles that can be overridden by your app
 require("@suiet/wallet-kit/style.css");
+require("@mysten/dapp-kit/dist/index.css");
 
 export const SuiWalletContext: FC<PropsWithChildren> = (props) => {
     const { children } = props;

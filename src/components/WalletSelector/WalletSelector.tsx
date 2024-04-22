@@ -22,7 +22,7 @@ import { useUserLevel } from "../../context/UserLevelContext";
 import { useWalletBalance } from "../../hooks/useWalletBalance";
 import { getEVMNetworkName } from "../../utils/getEVMNetworkName";
 // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
-import { ConnectModal, useCurrentAccount, useCurrentWallet } from "@mysten/dapp-kit";
+import { ConnectButton, useCurrentAccount, useCurrentWallet } from "@mysten/dapp-kit";
 import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 
 export const WalletSelector = ({
@@ -51,7 +51,6 @@ export const WalletSelector = ({
 
     const { currentWallet, connectionStatus } = useCurrentWallet();
     const currentAccount = useCurrentAccount();
-    const [open, setOpen] = useState(false);
 
     const connect = useCallback(
         (acc: IAccount) => {
@@ -293,11 +292,7 @@ export const WalletSelector = ({
         <div className="wallet">
             <ButtonContainer>
                 <StyledPanelMenu model={menuItems} color={"primary"} />
-                <ConnectModal
-                    trigger={<button disabled={!!currentAccount}> {currentAccount ? "Connected" : "Connect"}</button>}
-                    open={open}
-                    onOpenChange={(isOpen) => setOpen(isOpen)}
-                />
+                <ConnectButton />
                 {!account && (
                     <WalletButton
                         aria-label="Choose your wallet"
