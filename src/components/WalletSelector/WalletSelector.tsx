@@ -6,7 +6,7 @@ import { MenuItem } from "primereact/menuitem";
 import { Menu } from "primereact/menu";
 import { ButtonContainer, ProfileLabel, StyledMenu, StyledPanelMenu, WalletButton } from "./WalletSelector.styled";
 // import { useWallet as suietUseWallet, WalletAdapter } from "@suiet/wallet-kit";
-import { ConnectButton, useCurrentWallet as suietUseWallet, useDisconnectWallet } from "@mysten/dapp-kit";
+import { useCurrentWallet as suietUseWallet, useDisconnectWallet } from "@mysten/dapp-kit";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
 import { ConnectorData, disconnect as wagmiDisconnect } from "@wagmi/core";
@@ -276,7 +276,6 @@ export const WalletSelector = ({
         <div className="wallet">
             <ButtonContainer>
                 <StyledPanelMenu model={menuItems} color={"primary"} />
-                <ConnectButton />
                 {!account && (
                     <WalletButton
                         aria-label="Choose your wallet"
