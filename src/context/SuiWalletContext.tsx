@@ -28,6 +28,7 @@ export const SuiWalletContext: FC<PropsWithChildren> = (props) => {
                     zkSend={{
                         name: "Nft burner",
                     }}
+                    preferredWallets={["zkSend"]}
                 >
                     {children}
                 </SuiWalletProvider>
