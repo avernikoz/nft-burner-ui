@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/react";
 
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
-import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import { useCurrentAccount, useCurrentWallet as suietUseWallet } from "@mysten/dapp-kit";
 import { useContext, useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import {
@@ -38,6 +38,8 @@ export const NftList = () => {
     const toastController = useContext(ToastContext);
     const NftController = useContext(NftContext);
 
+    const currentAccount = useCurrentAccount();
+
     const handleItemClick = (nft: INft) => {
         setActiveNft(nft.id);
         NftController.setActiveNft(nft);
@@ -55,7 +57,7 @@ export const NftList = () => {
                     const wagmiChangeOrConnected =
                         wagmiAccount.isConnected && wagmiAccount.address && !!signer?.address;
                     const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey !== null;
-                    const suiChangeOrConnected = suietWallet.connected && !!suietWallet.address;
+                    const suiChangeOrConnected = suietWallet.isConnected && !!currentAccount?.address;
 
                     if (!wagmiChangeOrConnected && !solanaChangeOrConnected && !suiChangeOrConnected) {
                         return;
@@ -89,7 +91,7 @@ export const NftList = () => {
                         setNFTList(allSolanaNFTs);
                     } else if (suiChangeOrConnected) {
                         const { kioskNfts, nonKioskNfts } = await SUI_NFT_CLIENT_INSTANCE.getNFTsOffchainWithFilter({
-                            owner: suietWallet.address as string,
+                            owner: currentAccount.address as string,
                         });
 
                         const convertedNfts = suiMapper([...kioskNfts, ...nonKioskNfts]);
@@ -122,8 +124,8 @@ export const NftList = () => {
         signer,
         solanaWallet.connected,
         solanaWallet.publicKey,
-        suietWallet.address,
-        suietWallet.connected,
+        currentAccount?.address,
+        suietWallet.isConnected,
         toastController,
         wagmiAccount.address,
         wagmiAccount.connector,

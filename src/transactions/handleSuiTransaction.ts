@@ -9,8 +9,8 @@ export async function handleSuiTransaction({
     signAndExecuteTransactionBlock,
 }: {
     nft: SuiNft;
-    signAndExecuteTransactionBlock: WalletContextState["signAndExecuteTransactionBlock"];
     burnerFee: number;
+    signAndExecuteTransactionBlock: WalletContextState["signAndExecuteTransactionBlock"];
 }) {
     const payRes = await SUI_NFT_CLIENT_INSTANCE.pay({ amount: burnerFee });
 

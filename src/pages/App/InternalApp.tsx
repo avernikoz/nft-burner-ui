@@ -1,6 +1,6 @@
 import ReactGA from "react-ga4";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
-import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import { useCurrentAccount, useCurrentWallet as suietUseWallet } from "@mysten/dapp-kit";
 import React, { useContext, useEffect, useState } from "react";
 import { useAccount as useWagmiAccount } from "wagmi";
 
@@ -47,8 +47,8 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
     const [showBurnedScreen, setShowBurnedScreen] = useState<boolean>(false);
     const [showConnectWalletScreen, setShowConnectWalletScreen] = useState<boolean>(false);
     const [walletSelectPopupVisible, setWalletSelectPopupVisible] = useState<boolean>(false);
-    const [connected, setConnected] = useState<boolean>(false);
     const { level, points } = useUserLevel();
+    const currentAccount = useCurrentAccount();
 
     const NftController = useContext(NftContext);
 
@@ -56,7 +56,7 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
     useEffect(() => {
         const wagmiChangeOrConnected = wagmiAccount.isConnected && wagmiAccount.address && signer;
         const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
-        const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
+        const suiChangeOrConnected = suietWallet.isConnected && currentAccount?.address;
 
         if (wagmiChangeOrConnected || solanaChangeOrConnected || suiChangeOrConnected) {
             setShowUI(true);
@@ -67,22 +67,21 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
         }
     }, [
         solanaWallet.connected,
-        suietWallet.address,
-        connected,
-        suietWallet.connected,
         wagmiAccount.address,
         wagmiAccount.isConnected,
         solanaWallet.publicKey,
         solanaWallet.disconnecting,
         NftController,
         signer,
+        suietWallet.isConnected,
+        currentAccount?.address,
     ]);
 
     // for burn more
     useEffect(() => {
         const wagmiChangeOrConnected = wagmiAccount.isConnected && wagmiAccount.address && signer;
         const solanaChangeOrConnected = solanaWallet.connected && solanaWallet.publicKey;
-        const suiChangeOrConnected = suietWallet.connected && suietWallet.address;
+        const suiChangeOrConnected = suietWallet.isConnected && currentAccount?.address;
 
         if (wagmiChangeOrConnected || solanaChangeOrConnected || suiChangeOrConnected) {
             if (NftController.nftStatus === ENftBurnStatus.EMPTY) {
@@ -92,12 +91,11 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
         }
     }, [
         NftController.nftStatus,
-        connected,
+        currentAccount?.address,
         signer,
         solanaWallet.connected,
         solanaWallet.publicKey,
-        suietWallet.address,
-        suietWallet.connected,
+        suietWallet.isConnected,
         wagmiAccount.address,
         wagmiAccount.isConnected,
     ]);
@@ -168,7 +166,6 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
                     hideUI={() => {
                         setShowUI(false);
                     }}
-                    setConnected={setConnected}
                 />
 
                 <MainLevelContainer $isVisible={isVisible}>

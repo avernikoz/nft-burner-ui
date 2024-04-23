@@ -1,5 +1,4 @@
 import React, { FC, PropsWithChildren } from "react";
-import { WalletProvider, SuiMainnetChain } from "@suiet/wallet-kit";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createNetworkConfig, SuiClientProvider, WalletProvider as SuiWalletProvider } from "@mysten/dapp-kit";
 import { getFullnodeUrl } from "@mysten/sui.js/client";
@@ -30,9 +29,7 @@ export const SuiWalletContext: FC<PropsWithChildren> = (props) => {
                         name: "Nft burner",
                     }}
                 >
-                    <WalletProvider chains={[SuiMainnetChain]} autoConnect={false}>
-                        {children}
-                    </WalletProvider>
+                    {children}
                 </SuiWalletProvider>
             </SuiClientProvider>
         </QueryClientProvider>
