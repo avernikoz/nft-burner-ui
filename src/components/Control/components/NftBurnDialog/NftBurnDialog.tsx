@@ -62,8 +62,8 @@ import { useWalletBalance } from "../../../../hooks/useWalletBalance";
 import { SWR_CONFIG } from "../../../../config/swr.config";
 import { NFT_IMAGES_CORS_PROXY_URL } from "../../../../config/proxy.config";
 import ErrorSVG from "../../../../assets/svg/errorLoadNFT.svg";
-import { SUI_NFT_CLIENT_INSTANCE } from "../../../../config/nft.config";
-import { isTransactionSuccessful } from "../../../../transactions/utils";
+import { handleSuiTransaction } from "../../../../transactions/handleSuiTransaction";
+import { executeSuccessBurnSuiNft } from "../../../../transactions/executeSuccessBurnSuiNft";
 
 export const NftBurnDialog = ({
     nft,
@@ -167,64 +167,19 @@ export const NftBurnDialog = ({
                 setOnchainFeeSuccess(true);
                 await handleEvmBurnTransaction({ nft: nft as EvmNft, signer });
             } else if (isSui) {
-                console.log("test");
-                // TODO: REWORK
-
-                const payRes = await SUI_NFT_CLIENT_INSTANCE.pay({
-                    amount: burnerFee + instrumentPriceInNetworkToken,
+                const burnRes = await handleSuiTransaction({
+                    nft: nft as SuiNft,
+                    burnerFee: burnerFee + instrumentPriceInNetworkToken,
                 });
-
-                let burnRes;
-                const suiNft = nft as SuiNft;
-                // Assuming it's OB standard & nft is in kiosk
-                if ("kioskId" in nft && suiNft.kioskId !== undefined) {
-                    const { kioskId } = suiNft;
-                    burnRes = await SUI_NFT_CLIENT_INSTANCE.burnNFT({
-                        nft: { kioskId, nftId: suiNft.id, nftType: suiNft.nftType },
-                        transaction: payRes.transaction,
-                    });
-                } else {
-                    // Assuming it's Bluemove standard & nft is not in kiosk
-                    burnRes = await SUI_NFT_CLIENT_INSTANCE.burnNonKioskBluemoveNFT({
-                        nft: suiNft,
-                        transaction: payRes.transaction,
-                    });
-                }
-
                 signAndExecuteTransactionBlock(
                     {
                         transactionBlock: burnRes.transaction,
                         options: { showEffects: true, showObjectChanges: true, showEvents: true },
                     },
                     {
-                        onSuccess: (result) => {
-                            console.debug("result: ", result);
-
-                            const transactionStatus = isTransactionSuccessful(result);
-                            console.debug("transactionStatus: ", transactionStatus);
-
-                            if (!transactionStatus) {
-                                const possibleTransactionErrorMessage =
-                                    result.errors &&
-                                    result.errors.length !== 0 &&
-                                    JSON.stringify(result.errors.map((el) => el));
-                                const possibleEffectedErrorMessage = result.effects?.status.error;
-
-                                const errorMessage =
-                                    possibleTransactionErrorMessage || possibleEffectedErrorMessage || "Unknown error";
-                                throw new Error(`Transaction failed: ${errorMessage}`);
-                            }
-
-                            return result;
-                        },
+                        onSuccess: executeSuccessBurnSuiNft,
                     },
                 );
-
-                // await handleSuiTransaction({
-                //     nft: nft as SuiNft,
-                //     burnerFee: burnerFee + instrumentPriceInNetworkToken,
-                //     signAndExecuteTransactionBlock,
-                // });
             } else if (isSolana) {
                 await handleSolanaTransaction({
                     nft: nft as SolanaNft | SolanaCNft,

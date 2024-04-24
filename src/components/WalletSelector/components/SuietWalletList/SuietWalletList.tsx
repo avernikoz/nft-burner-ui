@@ -1,7 +1,6 @@
 import * as Sentry from "@sentry/react";
 // import { IWallet, useWallet } from "@suiet/wallet-kit";
 import { useConnectWallet, useCurrentAccount, useCurrentWallet, useWallets } from "@mysten/dapp-kit";
-// import { IWallet } from "@suiet/wallet-kit/dist/types/wallet";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { ToastContext } from "../../../ToastProvider/ToastProvider";
 import { IAccount } from "../../types";

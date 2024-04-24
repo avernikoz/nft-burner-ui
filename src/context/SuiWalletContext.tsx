@@ -5,9 +5,7 @@ import { getFullnodeUrl } from "@mysten/sui.js/client";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
-// import { registerZkSendWallet } from "@mysten/zksend";
 // Default styles that can be overridden by your app
-require("@suiet/wallet-kit/style.css");
 require("@mysten/dapp-kit/dist/index.css");
 
 export const SuiWalletContext: FC<PropsWithChildren> = (props) => {
@@ -17,9 +15,6 @@ export const SuiWalletContext: FC<PropsWithChildren> = (props) => {
     });
     const queryClient = new QueryClient();
 
-    // <WalletProvider chains={[SuiMainnetChain]} autoConnect={false}>
-    //     {children}
-    // </WalletProvider>
     return (
         <QueryClientProvider client={queryClient}>
             <SuiClientProvider networks={networkConfig} defaultNetwork="mainnet">

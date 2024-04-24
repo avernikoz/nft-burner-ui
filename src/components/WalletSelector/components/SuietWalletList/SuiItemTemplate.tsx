@@ -1,4 +1,3 @@
-// import { IWallet } from "@suiet/wallet-kit/dist/types/wallet";
 import { Item } from "../RainbowWalletList/RainbowWalletList.styled";
 import React from "react";
 import { WalletWithRequiredFeatures } from "@mysten/wallet-standard";
