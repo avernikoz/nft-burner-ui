@@ -98,6 +98,7 @@ export const StyledPanelMenu = styled(PanelMenu)`
     @media screen and (max-width: 600px) {
         min-width: auto;
         max-width: 210px;
+        display: none;
     }
 
     .p-panelmenu-panel {

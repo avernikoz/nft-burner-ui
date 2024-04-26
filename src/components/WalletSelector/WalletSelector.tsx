@@ -22,6 +22,7 @@ import { Level } from "../Level/Level";
 import { useUserLevel } from "../../context/UserLevelContext";
 import { useWalletBalance } from "../../hooks/useWalletBalance";
 import { getEVMNetworkName } from "../../utils/getEVMNetworkName";
+import { SoundIconElement } from "../Footer/components/SoundIconElement";
 // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
 // import { ConnectButton, useCurrentAccount, useCurrentWallet } from "@mysten/dapp-kit";
 
@@ -274,6 +275,9 @@ export const WalletSelector = ({
     return (
         <div className="wallet">
             <ButtonContainer>
+                <div className="soundIcon">
+                    <SoundIconElement />
+                </div>
                 <StyledPanelMenu model={menuItems} color={"primary"} />
                 {!account && (
                     <WalletButton

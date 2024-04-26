@@ -32,7 +32,6 @@ import { MainLevelContainer } from "../../components/Level/Level.styled";
 import { BetaContainer, BetaText } from "../../components/Header/Header";
 
 import { EAppPages } from "./AppModel";
-import { SoundIconElement } from "../../components/Footer/components/SoundIconElement";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAppPages) => void }> = ({
     setAboutPageActive,
@@ -171,9 +170,6 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
                         <BetaText> beta</BetaText>
                     </BetaContainer>
                     <LogoDivider />
-                    <div className="soundIcon">
-                        <SoundIconElement />
-                    </div>
                     <WalletSelector
                         walletSelectPopupVisible={walletSelectPopupVisible}
                         setWalletSelectPopupVisible={setWalletSelectPopupVisible}
