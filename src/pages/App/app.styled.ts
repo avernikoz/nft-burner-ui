@@ -98,7 +98,6 @@ export const LogoContainer = styled.div`
     padding-right: 0.5rem;
     padding-bottom: 6px;
     margin-left: 12px;
-    min-width: 5em;
 
     @media (max-width: 600px) {
         // Styles for screens 600px and below (mobile)
