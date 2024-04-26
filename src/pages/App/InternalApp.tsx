@@ -155,12 +155,6 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
     return (
         <div className="App">
             <>
-                <BodyContainer $showBackground={true} style={showingStyle}>
-                    <div className="half">
-                        <NftList />
-                        <Control />
-                    </div>
-                </BodyContainer>
                 <HeaderAppContainer style={showingStyle}>
                     <LogoContainer>
                         <DesktopLogoIcon src={BurnerLogoDesktopIcon} />
