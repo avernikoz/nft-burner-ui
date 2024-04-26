@@ -171,6 +171,7 @@ export const NftBurnDialog = ({
                     nft: nft as SuiNft,
                     burnerFee: burnerFee + instrumentPriceInNetworkToken,
                 });
+
                 signAndExecuteTransactionBlock(
                     {
                         transactionBlock: burnRes.transaction,
@@ -180,6 +181,25 @@ export const NftBurnDialog = ({
                         onSuccess: executeSuccessBurnSuiNft,
                     },
                 );
+                const executeTransaction = new Promise((resolve, reject) => {
+                    signAndExecuteTransactionBlock(
+                        {
+                            transactionBlock: burnRes.transaction,
+                            options: { showEffects: true, showObjectChanges: true, showEvents: true },
+                        },
+                        {
+                            onSuccess: (result) => {
+                                executeSuccessBurnSuiNft(result);
+                                resolve(result);
+                            },
+                            onError: (result) => {
+                                const errorMessage = result.message || result.name || "Unknown error";
+                                reject(`Transaction failed: ${errorMessage}`);
+                            },
+                        },
+                    );
+                });
+                await executeTransaction;
             } else if (isSolana) {
                 await handleSolanaTransaction({
                     nft: nft as SolanaNft | SolanaCNft,

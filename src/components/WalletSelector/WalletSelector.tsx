@@ -91,7 +91,6 @@ export const WalletSelector = ({
         NftController.setNftStatus(ENftBurnStatus.EMPTY);
         NftController.setActiveNft(null);
         setActiveRainbowConnector(null);
-        console.log("am i here");
         setAccount(null);
     }, [wagmiAccount.isConnected, suietWallet.isConnected, solanaWallet, NftController, disconnect, hideUI]);
 

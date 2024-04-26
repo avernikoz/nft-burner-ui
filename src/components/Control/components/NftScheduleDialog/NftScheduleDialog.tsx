@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { INft } from "../../../../utils/types";
 import {
     DialogImageContainer,
@@ -13,6 +13,8 @@ import { ReactComponent as YoutTubeIcon } from "../../../../assets/svg/youtube.s
 import { ReactComponent as TwitterIcon } from "../../../../assets/svg/twitter.svg";
 import { SocialIconContainer, SocialMainText, SocialTitleText } from "./NftScheduleDialog.styled";
 import { generateTwitterIntentScheduleText } from "../../../../utils/generateTwitterIntentScheduleText";
+import { NFT_IMAGES_CORS_PROXY_URL } from "../../../../config/proxy.config";
+import ErrorSVG from "../../../../assets/svg/errorLoadNFT.svg";
 
 export const NftScheduleDialog = ({
     nft,
@@ -36,6 +38,18 @@ export const NftScheduleDialog = ({
         };
     }, [visible]);
 
+    const onImageError = useCallback(({ currentTarget }: { currentTarget: HTMLImageElement }) => {
+        // Try to get nft image without cors proxy
+        if (currentTarget.src.includes(NFT_IMAGES_CORS_PROXY_URL)) {
+            currentTarget.onerror = null;
+            currentTarget.src = currentTarget.src.replace(NFT_IMAGES_CORS_PROXY_URL, "");
+        } else {
+            // In case image failed to load even without cors proxy
+            currentTarget.onerror = null;
+            currentTarget.src = ErrorSVG;
+        }
+    }, []);
+
     return (
         <StyledDialog
             header="Schedule burn event"
@@ -47,7 +61,7 @@ export const NftScheduleDialog = ({
         >
             <NftBurnDialogContainer>
                 <DialogImageContainer>
-                    <NftBurnDialogImg crossOrigin="anonymous" src={nft.logoURI} alt={nft.name} />
+                    <NftBurnDialogImg crossOrigin="anonymous" src={nft.logoURI} alt={nft.name} onError={onImageError} />
 
                     <NftBurnDialogImgTitle>
                         {nft.name.length > 12 ? nft.name.substring(0, 12) + "..." : nft.name}

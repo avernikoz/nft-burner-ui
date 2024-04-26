@@ -91,7 +91,7 @@ export const NftList = () => {
                         setNFTList(allSolanaNFTs);
                     } else if (suiChangeOrConnected) {
                         const { kioskNfts, nonKioskNfts } = await SUI_NFT_CLIENT_INSTANCE.getNFTsOffchainWithFilter({
-                            owner: currentAccount.address as string,
+                            owner: currentAccount?.address as string,
                         });
 
                         const convertedNfts = suiMapper([...kioskNfts, ...nonKioskNfts]);
