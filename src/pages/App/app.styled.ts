@@ -73,10 +73,19 @@ export const HeaderAppContainer = styled.div`
     width: 100%;
     justify-content: space-between;
     top: 0;
+    left: 0;
     align-items: center;
     padding: 20px;
     position: absolute;
     z-index: 10;
+
+    .soundIcon {
+        display: none;
+
+        @media only screen and (max-width: 1000px) {
+            display: block;
+        }
+    }
 `;
 
 export const DesktopLogoIcon = styled.img`

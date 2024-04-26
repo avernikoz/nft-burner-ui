@@ -32,6 +32,7 @@ import { MainLevelContainer } from "../../components/Level/Level.styled";
 import { BetaContainer, BetaText } from "../../components/Header/Header";
 
 import { EAppPages } from "./AppModel";
+import { SoundIconElement } from "../../components/Footer/components/SoundIconElement";
 
 export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAppPages) => void }> = ({
     setAboutPageActive,
@@ -149,29 +150,43 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
         }
     }, [isBurningNFTComplete]);
 
+    const shouldShow = showUI && !showBurnedScreen;
+    const showingStyle = shouldShow ? {} : { display: "none" };
+
     return (
         <div className="App">
-            <HeaderAppContainer>
-                <LogoContainer>
-                    <DesktopLogoIcon src={BurnerLogoDesktopIcon} />
-                    <MobileLogoIcon src={BurnerLogoMobileIcon} />
-                </LogoContainer>
-                <BetaContainer>
-                    <BetaText> beta</BetaText>
-                </BetaContainer>
-                <LogoDivider />
-                <WalletSelector
-                    walletSelectPopupVisible={walletSelectPopupVisible}
-                    setWalletSelectPopupVisible={setWalletSelectPopupVisible}
-                    hideUI={() => {
-                        setShowUI(false);
-                    }}
-                />
+            <>
+                <BodyContainer $showBackground={true} style={showingStyle}>
+                    <div className="half">
+                        <NftList />
+                        <Control />
+                    </div>
+                </BodyContainer>
+                <HeaderAppContainer style={showingStyle}>
+                    <LogoContainer>
+                        <DesktopLogoIcon src={BurnerLogoDesktopIcon} />
+                        <MobileLogoIcon src={BurnerLogoMobileIcon} />
+                    </LogoContainer>
+                    <BetaContainer>
+                        <BetaText> beta</BetaText>
+                    </BetaContainer>
+                    <LogoDivider />
+                    <div className="soundIcon">
+                        <SoundIconElement />
+                    </div>
+                    <WalletSelector
+                        walletSelectPopupVisible={walletSelectPopupVisible}
+                        setWalletSelectPopupVisible={setWalletSelectPopupVisible}
+                        hideUI={() => {
+                            setShowUI(false);
+                        }}
+                    />
 
-                <MainLevelContainer $isVisible={isVisible}>
-                    <Level showTooltip={false} level={level} points={points} showLevelText={true} levelSize={200} />
-                </MainLevelContainer>
-            </HeaderAppContainer>
+                    <MainLevelContainer $isVisible={isVisible}>
+                        <Level showTooltip={false} level={level} points={points} showLevelText={true} levelSize={200} />
+                    </MainLevelContainer>
+                </HeaderAppContainer>
+            </>
             {showUI && !showBurnedScreen && !showConnectWalletScreen && (
                 <BodyContainer $showBackground={true}>
                     <div className="half">

@@ -1,8 +1,6 @@
 import { styled } from "styled-components";
 import { useState } from "react";
 import { GReactGLBridgeFunctions } from "../../webl/reactglBridge";
-import { ReactComponent as SoundEnabledIcon } from "../../assets/svg/soundEnabled.svg";
-import { ReactComponent as SoundDisabledIcon } from "../../assets/svg/soundDisabled.svg";
 import { ReactComponent as FAQIcon } from "../../assets/svg/faq.svg";
 import { ReactComponent as LetterIcon } from "../../assets/svg/letter.svg";
 
@@ -10,6 +8,7 @@ import { ReactComponent as FullScreenIcon } from "../../assets/svg/fullScreen.sv
 import { ERenderingState, GRenderingStateMachine } from "../../webl/states";
 import { ContactDialog } from "../ContactDialog/ContactDialog";
 import { EAppPages } from "../../pages/App/AppModel";
+import { SoundIconElement } from "./components/SoundIconElement";
 
 export const FooterContainer = styled.div`
     background-color: rgba(0, 0, 0, 0);
@@ -108,22 +107,6 @@ export const FullScreenButton = () => {
     return (
         <IconContainer onClick={handleFullscreen}>
             <FullScreenIcon />
-        </IconContainer>
-    );
-};
-
-const SoundIconElement = () => {
-    const [isSoundEnabled, setSoundEnabled] = useState(GReactGLBridgeFunctions.GetIsSoundEnabled());
-
-    return (
-        <IconContainer
-            onClick={() => {
-                GReactGLBridgeFunctions.OnToggleSoundInAudioEngine();
-                setSoundEnabled(!isSoundEnabled);
-            }}
-        >
-            {isSoundEnabled && <SoundEnabledIcon />}
-            {!isSoundEnabled && <SoundDisabledIcon />}
         </IconContainer>
     );
 };
