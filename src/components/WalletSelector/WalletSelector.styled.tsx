@@ -30,6 +30,14 @@ export const ButtonContainer = styled.div`
         border: ${STYLES_CONFIG.button.border};
         background-color: ${STYLES_CONFIG.button.backgroundColor};
     }
+
+    .soundIcon {
+        display: none;
+
+        @media only screen and (max-width: 1000px) {
+            display: block;
+        }
+    }
 `;
 
 export const ProfileLabel = styled.div`
