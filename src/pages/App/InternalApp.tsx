@@ -149,29 +149,34 @@ export const InternalApp: React.FC<{ setAboutPageActive: (isAboutPageActive: EAp
         }
     }, [isBurningNFTComplete]);
 
+    const shouldShow = showUI && !showBurnedScreen;
+    const showingStyle = shouldShow ? {} : { display: "none" };
+
     return (
         <div className="App">
-            <HeaderAppContainer>
-                <LogoContainer>
-                    <DesktopLogoIcon src={BurnerLogoDesktopIcon} />
-                    <MobileLogoIcon src={BurnerLogoMobileIcon} />
-                </LogoContainer>
-                <BetaContainer>
-                    <BetaText> beta</BetaText>
-                </BetaContainer>
-                <LogoDivider />
-                <WalletSelector
-                    walletSelectPopupVisible={walletSelectPopupVisible}
-                    setWalletSelectPopupVisible={setWalletSelectPopupVisible}
-                    hideUI={() => {
-                        setShowUI(false);
-                    }}
-                />
+            <>
+                <HeaderAppContainer style={showingStyle}>
+                    <LogoContainer>
+                        <DesktopLogoIcon src={BurnerLogoDesktopIcon} />
+                        <MobileLogoIcon src={BurnerLogoMobileIcon} />
+                    </LogoContainer>
+                    <BetaContainer>
+                        <BetaText> beta</BetaText>
+                    </BetaContainer>
+                    <LogoDivider />
+                    <WalletSelector
+                        walletSelectPopupVisible={walletSelectPopupVisible}
+                        setWalletSelectPopupVisible={setWalletSelectPopupVisible}
+                        hideUI={() => {
+                            setShowUI(false);
+                        }}
+                    />
 
-                <MainLevelContainer $isVisible={isVisible}>
-                    <Level showTooltip={false} level={level} points={points} showLevelText={true} levelSize={200} />
-                </MainLevelContainer>
-            </HeaderAppContainer>
+                    <MainLevelContainer $isVisible={isVisible}>
+                        <Level showTooltip={false} level={level} points={points} showLevelText={true} levelSize={200} />
+                    </MainLevelContainer>
+                </HeaderAppContainer>
+            </>
             {showUI && !showBurnedScreen && !showConnectWalletScreen && (
                 <BodyContainer $showBackground={true}>
                     <div className="half">
