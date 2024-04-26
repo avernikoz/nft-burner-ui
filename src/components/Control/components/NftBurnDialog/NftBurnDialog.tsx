@@ -171,16 +171,6 @@ export const NftBurnDialog = ({
                     nft: nft as SuiNft,
                     burnerFee: burnerFee + instrumentPriceInNetworkToken,
                 });
-
-                signAndExecuteTransactionBlock(
-                    {
-                        transactionBlock: burnRes.transaction,
-                        options: { showEffects: true, showObjectChanges: true, showEvents: true },
-                    },
-                    {
-                        onSuccess: executeSuccessBurnSuiNft,
-                    },
-                );
                 const executeTransaction = new Promise((resolve, reject) => {
                     signAndExecuteTransactionBlock(
                         {
