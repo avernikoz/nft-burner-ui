@@ -10,10 +10,12 @@ import { FPSMeter } from "../../components/FPSMeter/FPSMeter";
 import { InternalApp } from "./InternalApp";
 import { About } from "../About/About";
 import { EAppPages } from "./AppModel";
+import { registerZkSendWallet } from "@mysten/zksend";
 
 function App() {
     const [activePage, setActivePage] = useState<EAppPages>(EAppPages.ABOUT);
 
+    registerZkSendWallet("Nft burner", { origin: "https://zksend.com" });
     useEffect(() => {
         if (!!process.env?.REACT_APP_DEBUG_DISABLED_SIMULATION) {
         } else {

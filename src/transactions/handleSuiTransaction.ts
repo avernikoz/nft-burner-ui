@@ -1,17 +1,7 @@
-import { WalletContextState } from "@suiet/wallet-kit";
 import { SUI_NFT_CLIENT_INSTANCE } from "../config/nft.config";
 import { SuiNft } from "../utils/types";
-import { isTransactionSuccessful } from "./utils";
 
-export async function handleSuiTransaction({
-    nft,
-    burnerFee,
-    signAndExecuteTransactionBlock,
-}: {
-    nft: SuiNft;
-    signAndExecuteTransactionBlock: WalletContextState["signAndExecuteTransactionBlock"];
-    burnerFee: number;
-}) {
+export async function handleSuiTransaction({ nft, burnerFee }: { nft: SuiNft; burnerFee: number }) {
     const payRes = await SUI_NFT_CLIENT_INSTANCE.pay({ amount: burnerFee });
 
     let burnRes;
@@ -30,23 +20,5 @@ export async function handleSuiTransaction({
         });
     }
 
-    const result = await signAndExecuteTransactionBlock({
-        transactionBlock: burnRes.transaction,
-        options: { showEffects: true, showObjectChanges: true, showEvents: true },
-    });
-    console.debug("result: ", result);
-
-    const transactionStatus = isTransactionSuccessful(result);
-    console.debug("transactionStatus: ", transactionStatus);
-
-    if (!transactionStatus) {
-        const possibleTransactionErrorMessage =
-            result.errors && result.errors.length !== 0 && JSON.stringify(result.errors.map((el) => el));
-        const possibleEffectedErrorMessage = result.effects?.status.error;
-
-        const errorMessage = possibleTransactionErrorMessage || possibleEffectedErrorMessage || "Unknown error";
-        throw new Error(`Transaction failed: ${errorMessage}`);
-    }
-
-    return result;
+    return burnRes;
 }

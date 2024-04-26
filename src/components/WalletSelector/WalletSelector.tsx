@@ -5,7 +5,8 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { MenuItem } from "primereact/menuitem";
 import { Menu } from "primereact/menu";
 import { ButtonContainer, ProfileLabel, StyledMenu, StyledPanelMenu, WalletButton } from "./WalletSelector.styled";
-import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+// import { useWallet as suietUseWallet, WalletAdapter } from "@suiet/wallet-kit";
+import { useCurrentWallet as suietUseWallet, useDisconnectWallet } from "@mysten/dapp-kit";
 import { useWallet as solanaUseWallet } from "@solana/wallet-adapter-react";
 import { Connector, useAccount as useWagmiAccount } from "wagmi";
 import { ConnectorData, disconnect as wagmiDisconnect } from "@wagmi/core";
@@ -21,6 +22,8 @@ import { Level } from "../Level/Level";
 import { useUserLevel } from "../../context/UserLevelContext";
 import { useWalletBalance } from "../../hooks/useWalletBalance";
 import { getEVMNetworkName } from "../../utils/getEVMNetworkName";
+// eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
+// import { ConnectButton, useCurrentAccount, useCurrentWallet } from "@mysten/dapp-kit";
 
 export const WalletSelector = ({
     hideUI,
@@ -44,6 +47,10 @@ export const WalletSelector = ({
     const { level, points } = useUserLevel();
     const { data: walletBalanceData } = useWalletBalance({ address: account?.id, network: account?.network });
 
+    const { mutate: disconnect } = useDisconnectWallet();
+
+    const [open, setOpen] = useState(false);
+
     const connect = useCallback(
         (acc: IAccount) => {
             localStorage.setItem("activeIndex", JSON.stringify(activeIndex));
@@ -56,12 +63,12 @@ export const WalletSelector = ({
         [activeIndex, setWalletSelectPopupVisible],
     );
 
-    const disconnect = useCallback(async () => {
+    const disconnectWallet = useCallback(async () => {
         if (wagmiAccount.isConnected) {
             await wagmiDisconnect();
         }
-        if (suietWallet.connected) {
-            await suietWallet.disconnect();
+        if (suietWallet.isConnected) {
+            disconnect();
         }
         if (solanaWallet.connected) {
             solanaWallet.wallet?.adapter
@@ -85,7 +92,7 @@ export const WalletSelector = ({
         NftController.setActiveNft(null);
         setActiveRainbowConnector(null);
         setAccount(null);
-    }, [wagmiAccount.isConnected, suietWallet, solanaWallet, NftController, hideUI]);
+    }, [wagmiAccount.isConnected, suietWallet.isConnected, solanaWallet, NftController, disconnect, hideUI]);
 
     useEffect(() => {
         // Handle disconnect wallet in case wallet `A` was connected and then user
@@ -128,7 +135,7 @@ export const WalletSelector = ({
 
                         const networkName = getEVMNetworkName(chainId);
                         if (!networkName) {
-                            throw new Error("Unsuported network type");
+                            throw new Error("Unsupported network type");
                         }
 
                         connect({
@@ -136,7 +143,7 @@ export const WalletSelector = ({
                             network: networkName,
                         });
                     } else {
-                        disconnect();
+                        disconnectWallet();
                     }
                     setActiveIndex(index);
                 }
@@ -154,12 +161,20 @@ export const WalletSelector = ({
                 }
             }
         },
-        [activeIndex, activeRainbowConnector, connect, disconnect, toastController],
+        [activeIndex, activeRainbowConnector, connect, disconnectWallet, toastController],
     );
 
     const items = useMemo<IMenuConnectionItem[]>(
-        () => createMenuItems(switchChain, connect, setActiveRainbowConnector, setActiveIndex, activeIndex, disconnect),
-        [activeIndex, connect, disconnect, switchChain],
+        () =>
+            createMenuItems(
+                switchChain,
+                connect,
+                setActiveRainbowConnector,
+                setActiveIndex,
+                activeIndex,
+                disconnectWallet,
+            ),
+        [activeIndex, connect, disconnectWallet, switchChain],
     );
 
     //items for dialog tabs
@@ -193,14 +208,14 @@ export const WalletSelector = ({
             label: "Disconnect",
             icon: "pi pi-power-off",
             command: () => {
-                disconnect();
+                disconnectWallet();
             },
         },
     ];
 
     // some walletsContext can save session in cache, it's just garantyee that all network will be disconnected when app is running
     useEffect(() => {
-        disconnect();
+        disconnectWallet();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -264,7 +279,10 @@ export const WalletSelector = ({
                     <WalletButton
                         aria-label="Choose your wallet"
                         icon="pi pi-wallet"
-                        onClick={() => setWalletSelectPopupVisible(true)}
+                        onClick={() => {
+                            setOpen(!open);
+                            setWalletSelectPopupVisible(true);
+                        }}
                     />
                 )}
                 {account && (

@@ -5,13 +5,13 @@ import * as Sentry from "@sentry/react";
 import { Tooltip } from "primereact/tooltip";
 import { ALLOWED_NETWORKS } from "@avernikoz/nft-sdk";
 import { useWallet as solanaUseWallet, useConnection } from "@solana/wallet-adapter-react";
-import { useWallet as suietUseWallet } from "@suiet/wallet-kit";
+import { useCurrentAccount, useSignAndExecuteTransactionBlock } from "@mysten/dapp-kit";
 import { useCallback, useContext, useEffect, useState } from "react";
 // import { SUI_NFT_CLIENT_INSTANCE } from "../../../../config/nft.config";
 import { useBurnerFee } from "../../../../hooks/useBurnerFee";
 import { handleEvmPayTransaction, handleEvmBurnTransaction } from "../../../../transactions/handleEvmTransaction";
 import { handleSolanaTransaction } from "../../../../transactions/handleSolanaTransaction";
-import { handleSuiTransaction } from "../../../../transactions/handleSuiTransaction";
+// import { handleSuiTransaction } from "../../../../transactions/handleSuiTransaction";
 import { getNetworkTokenSymbol } from "../../../../utils/getNetworkTokenSymbol";
 import { ENftBurnStatus, EvmNft, INft, SolanaCNft, SolanaNft, SuiNft } from "../../../../utils/types";
 import { useEthersSigner } from "../../../NftList/variables";
@@ -62,6 +62,8 @@ import { useWalletBalance } from "../../../../hooks/useWalletBalance";
 import { SWR_CONFIG } from "../../../../config/swr.config";
 import { NFT_IMAGES_CORS_PROXY_URL } from "../../../../config/proxy.config";
 import ErrorSVG from "../../../../assets/svg/errorLoadNFT.svg";
+import { handleSuiTransaction } from "../../../../transactions/handleSuiTransaction";
+import { executeSuccessBurnSuiNft } from "../../../../transactions/executeSuccessBurnSuiNft";
 
 export const NftBurnDialog = ({
     nft,
@@ -99,7 +101,9 @@ export const NftBurnDialog = ({
         };
     }, [visible]);
 
-    const { signAndExecuteTransactionBlock, account } = suietUseWallet();
+    const currentAccount = useCurrentAccount();
+    const { mutate: signAndExecuteTransactionBlock } = useSignAndExecuteTransactionBlock();
+
     const solanaWallet = solanaUseWallet();
     const solanaConnection = useConnection();
     const signer = useEthersSigner();
@@ -110,7 +114,7 @@ export const NftBurnDialog = ({
     const { instrumentPriceInNetworkToken } = useInstumentsPrice({ instrument, network: nft?.network });
     // TODO: Update in regards of other networks (for multichain)
     const { data: walletBalanceData } = useWalletBalance(
-        { address: account?.address, network: ALLOWED_NETWORKS.Sui },
+        { address: currentAccount?.address, network: ALLOWED_NETWORKS.Sui },
         { refreshInterval: SWR_CONFIG.refetchInterval.fast },
     );
 
@@ -163,11 +167,29 @@ export const NftBurnDialog = ({
                 setOnchainFeeSuccess(true);
                 await handleEvmBurnTransaction({ nft: nft as EvmNft, signer });
             } else if (isSui) {
-                await handleSuiTransaction({
+                const burnRes = await handleSuiTransaction({
                     nft: nft as SuiNft,
-                    signAndExecuteTransactionBlock,
                     burnerFee: burnerFee + instrumentPriceInNetworkToken,
                 });
+                const executeTransaction = new Promise((resolve, reject) => {
+                    signAndExecuteTransactionBlock(
+                        {
+                            transactionBlock: burnRes.transaction,
+                            options: { showEffects: true, showObjectChanges: true, showEvents: true },
+                        },
+                        {
+                            onSuccess: (result) => {
+                                executeSuccessBurnSuiNft(result);
+                                resolve(result);
+                            },
+                            onError: (result) => {
+                                const errorMessage = result.message || result.name || "Unknown error";
+                                reject(`Transaction failed: ${errorMessage}`);
+                            },
+                        },
+                    );
+                });
+                await executeTransaction;
             } else if (isSolana) {
                 await handleSolanaTransaction({
                     nft: nft as SolanaNft | SolanaCNft,

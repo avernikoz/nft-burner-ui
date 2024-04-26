@@ -1,7 +1,6 @@
 // eslint-disable-next-line import/no-unresolved
 import { DynamicSuiTransport } from "@avernikoz/nft-sdk";
 import { SuiClient } from "@mysten/sui.js/client";
-
 import { Connection } from "@solana/web3.js";
 
 const urls = [
