@@ -1,6 +1,8 @@
 # NFT BURNER UI
 
-The NFT Burner UI is a user-friendly, closed-source web application designed to streamline and simplify the process of burning non-fungible tokens (NFTs).
+NFT Burner is a generative art web3 game built on top of webGL, designed to streamline and simplify the process of burning non-fungible tokens (NFTs).
+
+Supported blockchain networks: Sui, Solana, EVM (Ethereum, Arbitrum, Optimism, Polygon).
 
 # Prerequisites:
 
