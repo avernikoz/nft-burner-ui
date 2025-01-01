@@ -27,7 +27,7 @@
         "@mysten/sui.js": "^0.51.2"
     },
     "dependencies": {
-        "@avernikoz/nft-sdk": "2.1.1",
+        "@avernikoz/nft-sdk": "^2.1.1",
         "@mysten/dapp-kit": "^0.12.9",
         "@mysten/sui.js": "^0.51.2",
         "@mysten/wallet-standard": "^0.8.11",
