@@ -128,8 +128,7 @@ export class GTexturePool {
 
     private static DefaultFormatsArr = ["webp", "png", "jpg"];
 
-    //private static TextureLocationFolder = `assets/textures/`;
-    private static TextureLocationFolder = `https://assetsfr.s3.eu-west-3.amazonaws.com/`;
+    private static TextureLocationFolder = `assets/textures/`;
 
     static async LoadTextureImageAsync(
         gl: WebGL2RenderingContext,
